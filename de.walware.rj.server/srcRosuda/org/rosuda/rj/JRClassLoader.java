@@ -315,8 +315,14 @@ public class JRClassLoader extends URLClassLoader {
 					}
 					return cl;
 				}
-			} catch (final Exception fnf) {
-				fnf.printStackTrace();
+			}
+			catch (final Exception e) {
+				if (verbose) {
+					LOGGER.log(Level.FINE, "URL Loader could not find class", e);
+				}
+				if (!this.useSecond && e instanceof ClassNotFoundException) {
+					throw (ClassNotFoundException) e;
+				}
 			}
 		}
 		if (this.useSecond) {
@@ -405,7 +411,8 @@ public class JRClassLoader extends URLClassLoader {
 					}
 					return u;
 				}
-			} catch (final Exception fre) {
+			}
+			catch (final Exception e) {
 			}
 		}
 		if (this.useSecond) {
@@ -450,7 +457,8 @@ public class JRClassLoader extends URLClassLoader {
 			try {
 				addURL(f.toURI().toURL());
 				// return; // we need to add it anyway
-			} catch (final Exception ufe) {
+			}
+			catch (final Exception e) {
 			}
 		}
 		if (this.useSecond) {
@@ -502,9 +510,14 @@ public class JRClassLoader extends URLClassLoader {
 	}
 	
 	public Class<?> loadRJavaClass(final String name) throws ClassNotFoundException {
-		final Class clazz = findClass(name);
+		final Class<?> clazz = findClass(name);
 		resolveClass(clazz);
 		return clazz;
+	}
+	
+	
+	public void bootClass(final String cName, final String mName, final String[] args) throws java.lang.IllegalAccessException, java.lang.reflect.InvocationTargetException, java.lang.NoSuchMethodException, java.lang.ClassNotFoundException {
+		throw new UnsupportedOperationException();
 	}
 	
 }

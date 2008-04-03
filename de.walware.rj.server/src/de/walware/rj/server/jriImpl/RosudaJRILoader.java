@@ -12,9 +12,12 @@
 package de.walware.rj.server.jriImpl;
 
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
@@ -43,25 +46,40 @@ public class RosudaJRILoader {
 			
 			// Add JR classpath entry to rJava ClassLoader
 			// If this does not work, you can add in your command line to the rjava.class.path property
-			final String myself = getClass().getName().replace('.', '/')+".class";
-			final URL url = getClass().getClassLoader().getResource(myself);
+			final String myClassResource = getClass().getName().replace('.', '/')+".class";
+			final URL url = getClass().getClassLoader().getResource(myClassResource);
+			String myClasspath = null;
 			if (url != null) {
-				String s = url.getFile();
-				if (s.endsWith(myself)) {
-					s = s.substring(0, s.length()-myself.length());
-					if (s.endsWith(".jar!/")) {
-						s = s.substring(0, s.length()-2);
+				String s = url.toExternalForm();
+				s = URLDecoder.decode(s, System.getProperty("file.encoding"));
+				if (s.endsWith(myClassResource)) {
+					s = s.substring(0, s.length()-myClassResource.length());
+					if (s.startsWith("jar:") && s.endsWith("!/")) {
+						s = s.substring(4, s.length()-2);
 					}
+					if (s.startsWith("file:")) {
+						s = s.substring(5);
+					}
+					myClasspath = s;
 					loader.addClassPath(s);
 				}
 			}
 			
-			Thread.currentThread().setContextClassLoader(loader);
-			final Class<Server> serverClazz = (Class<Server>) loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer");
-			loader.loadRJavaClass("org.rosuda.JRI.REXP");
-			loader.loadRJavaClass("org.rosuda.JRI.Rengine");
+			final Server server;
+			try {
+				Thread.currentThread().setContextClassLoader(loader);
+				final Class<Server> serverClazz = (Class<Server>) loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer");
+				loader.loadRJavaClass("org.rosuda.JRI.REXP");
+				loader.loadRJavaClass("org.rosuda.JRI.Rengine");
 				
-			final Server server = serverClazz.newInstance();
+				server = serverClazz.newInstance();
+			}
+			catch (ClassNotFoundException e) {
+				Logger.getLogger("de.walware.rj.server.jri").log(Level.INFO, "Perhaps autodetection of RJ classpath entry failed: " + 
+						((myClasspath != null) ? myClasspath : "-"));
+				throw e;
+			}
+			
 			
 			final String string = args.get("plugins");
 			if (string != null && string.length() > 0) {
