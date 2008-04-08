@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -76,7 +78,7 @@ public class RMIServerControl {
 				resolved.put(args[i].substring(1, split), args[i].substring(split+1));
 			}
 		}
-		if (System.getProperty("verbose", "false").equals("true")) {
+		if (System.getProperty("de.walware.rj.verbose", "false").equals("true")) {
 			resolved.put("verbose", "true");
 		}
 		return resolved;
@@ -99,12 +101,28 @@ public class RMIServerControl {
 		System.out.println("  plugins:<..>   list of plugins");
 	}
 	
-	public static void setVerbose() {
-		if (true) {
-			LOGGER.setLevel(Level.ALL); // default is Level.INFO
-			RemoteServer.setLog(System.err);
-			ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(true);
+	public static void initVerbose() {
+		LOGGER.setLevel(Level.ALL); // default is Level.INFO
+		RemoteServer.setLog(System.err);
+		ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(true);
+		
+		Logger logger = LOGGER;
+		SEARCH_CONSOLE: while (logger != null) {
+			for (final Handler handler : logger.getHandlers()) {
+				if (handler instanceof ConsoleHandler) {
+					handler.setLevel(Level.ALL);
+					break SEARCH_CONSOLE;
+				}
+			}
+			if (!logger.getUseParentHandlers()) {
+				break SEARCH_CONSOLE;
+			}
+			logger = logger.getParent();
 		}
+		
+		LOGGER.log(Level.CONFIG, "verbose mode enabled.");
+		LOGGER.log(Level.CONFIG, "java properties: "+System.getProperties().toString());
+		LOGGER.log(Level.CONFIG, "env variables: "+System.getenv().toString());
 	}
 	
 	
@@ -118,7 +136,7 @@ public class RMIServerControl {
 		this.name = name;
 		this.args = args;
 		if (args.containsKey("verbose")) {
-			setVerbose();
+			initVerbose();
 		}
 	}
 	

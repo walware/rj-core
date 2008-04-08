@@ -7,6 +7,7 @@
  * 
  * Contributors:
  *    RoSuDa, University Augsburg - initial API and implementation
+ *    Stephan Wahlbrink - adjustments to RJ
  *******************************************************************************/
 
 package org.rosuda.rj;
@@ -38,7 +39,6 @@ public class JRClassLoader extends URLClassLoader {
 			if (instance != null) {
 				return instance;
 			}
-			JRClassLoader.setDebug(100);
 			instance = (JRClassLoader) Class.forName("RJavaClassLoader").newInstance();
 			return instance;
 		}
@@ -49,6 +49,9 @@ public class JRClassLoader extends URLClassLoader {
 	
 	public static void setDebug(final int level) {
 		verbose = (level > 0);
+		if (verbose) {
+			LOGGER.setLevel(Level.ALL);
+		}
 	}
 	
 	private static final Pattern PATH_SPLITTER = Pattern.compile(Pattern.quote(File.pathSeparator));
