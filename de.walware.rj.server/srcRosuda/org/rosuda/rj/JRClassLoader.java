@@ -218,6 +218,10 @@ public class JRClassLoader extends URLClassLoader {
 					this.defaultLibPath.add(l[i].replace(File.separatorChar, '/'));
 				}
 			}
+			
+			if (verbose) {
+				LOGGER.log(Level.CONFIG, "JR library path: " + this.defaultLibPath.toString());
+			}
 		}
 	}
 	
@@ -330,7 +334,7 @@ public class JRClassLoader extends URLClassLoader {
 		}
 		if (this.useSecond) {
 			if (verbose) {
-				System.out.println("RJavaClassLoaaer.findClass(\"" + name + "\")");
+				System.out.println("RJavaClassLoader.findClass(\"" + name + "\")");
 			}
 			
 			InputStream ins = null;

@@ -38,9 +38,12 @@ public class RosudaJRILoader {
 	public Server loadServer(final Map<String, String> args, final ServerLocalPlugin plugin) throws Exception {
 		final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 		try {
+			boolean verbose = args.containsKey("verbose");
+			if (verbose) {
+				JRClassLoader.setDebug(1000);
+			}
 			final JRClassLoader loader = JRClassLoader.getRJavaClassLoader();
-			if (args.containsKey("verbose")) {
-				loader.setDebug(1000);
+			if (verbose) {
 				loader.setDefaultAssertionStatus(true);
 			}
 			
