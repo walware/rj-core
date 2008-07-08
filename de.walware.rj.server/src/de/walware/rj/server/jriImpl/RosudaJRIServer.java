@@ -73,6 +73,7 @@ public class RosudaJRIServer implements Server, RMainLoopCallbacks, ServerLocalE
 	private boolean mainLoopBusyAtServer = false;
 	private boolean mainLoopBusyAtClient = false;
 	private int mainLoopClientNext;
+	private int mainLoopClientListen;
 	private int mainLoopServerStack;
 	private final char[] mainLoopStdOutBuffer = new char[STDOUT_BUFFER_SIZE];
 	private String mainLoopStdOutSingle;
@@ -321,22 +322,27 @@ public class RosudaJRIServer implements Server, RMainLoopCallbacks, ServerLocalE
 	
 	private RjsComObject internalMainCallbackFromClient(final MainCmdItem clientCommand) {
 		synchronized (this.mainLoopLock) {
-			
-			this.mainLoopLock.notifyAll();
 			if (this.mainLoopState == STATE_WAIT_FOR_CLIENT) {
 				this.mainLoopClientAnswer = clientCommand;
 			}
 			
+			this.mainLoopLock.notifyAll();
 			while (this.mainLoopClientNextCommands.isEmpty()
 					&& (this.mainLoopStdOutSize == 0)
 					&& (this.mainLoopBusyAtClient == this.mainLoopBusyAtServer)
 					&& (this.mainLoopState != STATE_STOPPED)) {
+				this.mainLoopClientListen++;
 				try {
 					this.mainLoopLock.wait(); // run in R
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					Thread.interrupted();
 				}
+				finally {
+					this.mainLoopClientListen--;
+				}
 			}
+			
 			if (this.mainLoopClientNext == CLIENT_OK) {
 				if (this.mainLoopStdOutSize > 0) {
 					internalClearStdOutBuffer();
@@ -459,22 +465,28 @@ public class RosudaJRIServer implements Server, RMainLoopCallbacks, ServerLocalE
 				if (this.mainLoopStdOutSize == 0) {
 					this.mainLoopStdOutSingle = text;
 					this.mainLoopStdOutSize = text.length();
-					return;
 				}
+				
 				// buffer full
-				if (this.mainLoopStdOutSize + text.length() > STDOUT_BUFFER_SIZE) {
+				else if (this.mainLoopStdOutSize + text.length() > STDOUT_BUFFER_SIZE) {
 					internalClearStdOutBuffer();
 					this.mainLoopStdOutSingle = text;
 					this.mainLoopStdOutSize = text.length();
-					return;
 				}
+				
 				// add to buffer
-				if (this.mainLoopStdOutSingle != null) {
-					this.mainLoopStdOutSingle.getChars(0, this.mainLoopStdOutSingle.length(), this.mainLoopStdOutBuffer, 0);
-					this.mainLoopStdOutSingle = null;
+				else {
+					if (this.mainLoopStdOutSingle != null) {
+						this.mainLoopStdOutSingle.getChars(0, this.mainLoopStdOutSingle.length(), this.mainLoopStdOutBuffer, 0);
+						this.mainLoopStdOutSingle = null;
+					}
+					text.getChars(0, text.length(), this.mainLoopStdOutBuffer, this.mainLoopStdOutSize);
+					this.mainLoopStdOutSize += text.length();
 				}
-				text.getChars(0, text.length(), this.mainLoopStdOutBuffer, this.mainLoopStdOutSize);
-				this.mainLoopStdOutSize += text.length();
+				
+				if (this.mainLoopClientListen > 0) {
+					this.mainLoopLock.notifyAll();
+				}
 				return;
 			}
 		}
