@@ -522,9 +522,4 @@ public class JRClassLoader extends URLClassLoader {
 		return clazz;
 	}
 	
-	
-	public void bootClass(final String cName, final String mName, final String[] args) throws java.lang.IllegalAccessException, java.lang.reflect.InvocationTargetException, java.lang.NoSuchMethodException, java.lang.ClassNotFoundException {
-		throw new UnsupportedOperationException();
-	}
-	
 }
