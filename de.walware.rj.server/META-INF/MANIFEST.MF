@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: WalWare.de
+Bundle-Name: RJ Server
+Bundle-SymbolicName: de.walware.rj.server
+Bundle-Version: 0.2.0.qualifier
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Import-Package: org.eclipse.swt;resolution:=optional,
+ org.eclipse.swt.graphics;resolution:=optional,
+ org.eclipse.swt.widgets;resolution:=optional,
+ org.rosuda.JRI;resolution:=optional
+Export-Package: de.walware.rj.server
