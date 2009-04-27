@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RJ remote tools -->
+<project name="project" default="default">
+	<description>
+	</description>
+
+<property name="tools.proj" location="."/>
+<property name="server.proj" location="../de.walware.rj.server"/>
+<property name="dest" location="../../_/remotetools/"/>
+
+<target name="default" description="export and pack" depends="pack-server">
+</target>
+
+<target name="build">
+</target>
+
+<target name="export">
+	<jar destfile="${dest}/shaj.jar"
+			basedir="${tools.proj}/binShaj"/>
+	<tar destfile="${dest}/shaj-native.tar.gz"
+			compression="gzip">
+		<tarfileset dir="${tools.proj}" includes="shaj-native/**"/>
+	</tar>
+	<copy todir="${dest}">
+		<filelist dir="${tools.proj}">
+			<file name="startup.sh"/>
+			<file name="security.policy"/>
+			<file name="lgpl.txt"/>
+			<file name="asl-v20.txt"/>
+		</filelist>
+	</copy>
+</target>
+
+<target name="check">
+	<fail message="RemoteTools not complete">
+		<condition><not><and>
+			<available file="${dest}/startup.sh" type="file"/>
+			<available file="${dest}/security.policy" type="file"/>
+			<available file="${dest}/lgpl.txt" type="file"/>
+			<available file="${dest}/asl-v20.txt" type="file"/>
+			<available file="${dest}/shaj.jar" type="file"/>
+			<available file="${dest}/shaj-native.tar.gz" type="file"/>
+		</and></not></condition>
+	</fail> 
+</target>
+
+<target name="pack-remotetools" depends="export,check">
+	<tar destfile="${dest}/../remotetools.tar"
+			basedir="${dest}"/>
+</target>
+
+<target name="export-server">
+	<jar destfile="${dest}/rj.server.jar">
+		<fileset dir="${server.proj}/bin"/>
+	</jar>
+</target>
+
+<target name="check-server">
+	<fail message="Server not complete">
+		<condition><not><and>
+			<available file="${dest}/rj.server.jar" type="file"/>
+		</and></not></condition>
+	</fail> 
+</target>
+	
+<target name="pack-server" depends="export,check,export-server,check-server">
+	<tar destfile="${dest}/../rjserver.tar">
+		<tarfileset dir="${dest}" includes="**" excludes="startup.sh"/>
+		<tarfileset dir="${dest}" includes="startup.sh" filemode="700"/>
+	</tar>
+</target>
+
+<target name="clean">
+	<delete>
+		<fileset dir="${dest}" includes="/**"/>
+	</delete>
+</target>
+
+</project>
