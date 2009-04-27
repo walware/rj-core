@@ -22,66 +22,75 @@ import java.io.ObjectOutput;
  */
 public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	
-	public static final String C_CHOOSE_FILE = "choose_file";
-	public static final String C_HISTORY_SAVE = "history.save";
-	public static final String C_HISTORY_LOAD = "history.load";
+	public static final String C_CHOOSE_FILE = "chooseFile";
+	public static final String C_OPENIN_EDITOR = "openinEditor";
+	public static final String C_LOAD_HISTORY = "loadHistory";
+	public static final String C_SAVE_HISTORY = "saveHistory";
+	public static final String C_SHOW_HISTORY = "showHistory";
+	public static final String C_ADDTO_HISTORY = "addtoHistory";
 	
 	public static final int O_NEW = 8;
 	
 	private static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
 	private static final int OS_STATUS =            24;
-	private static final int OM_HASTEXT =           0x10000000;
-	private static final int OM_WAITFORCLIENT =     0x20000000;
-	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_HASTEXT);
-	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OM_HASTEXT;
+	private static final int OM_WITH =              0x70000000;
+	private static final int OV_WITHTEXT =          0x10000000;
+	private static final int OM_WAITFORCLIENT =     0x80000000;
+	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
+	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OV_WITHTEXT;
 	private static final int OM_CUSTOM =            0x0000ffff;
 	
 	
 	private String command;
 	private int options;
-	private String data;
+	private String text;
 	
 	
+	/**
+	 * Constructor for automatic deserialization
+	 */
 	public ExtUICmdItem() {
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		assert (in.readInt() == T_EXTENDEDUI_ITEM);
-		this.command = in.readUTF();
-		this.options = in.readInt();
-		if ((this.options & OM_HASTEXT) != 0) {
-			this.data = in.readUTF();
-		}
-	}
-	
+	/**
+	 * Constructor for manual deserialization
+	 */
 	public ExtUICmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.command = in.readUTF();
-		this.options = in.readInt();
-		if ((this.options & OM_HASTEXT) != 0) {
-			this.data = in.readUTF();
-		}
+		readExternal(in);
 	}
 	
 	public ExtUICmdItem(final String command, final int options, final boolean waitForClient) {
+		assert (command != null);
 		this.command = command;
 		this.options = (waitForClient) ?
 				(options | OM_WAITFORCLIENT) : (options);
 	}
 	
-	public ExtUICmdItem(final String command, final int options, final boolean waitForClient, final String text) {
+	public ExtUICmdItem(final String command, final int options, final String text, final boolean waitForClient) {
+		assert (command != null);
 		this.command = command;
 		this.options = (waitForClient) ?
-				(options | OM_HASTEXT | OM_WAITFORCLIENT) : (options | OM_HASTEXT);
-		this.data = text;
+				(options | OM_WAITFORCLIENT) : (options);
+		if (text != null) {
+			this.options |= OV_WITHTEXT;
+			this.text = text;
+		}
 	}
 	
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeInt(T_EXTENDEDUI_ITEM);
 		out.writeUTF(this.command);
 		out.writeInt(this.options);
-		if ((this.options & OM_HASTEXT) != 0) {
-			out.writeUTF(this.data);
+		if ((this.options & OV_WITHTEXT) != 0) {
+			out.writeUTF(this.text);
+		}
+	}
+	
+	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+		this.command = in.readUTF();
+		this.options = in.readInt();
+		if ((this.options & OV_WITHTEXT) != 0) {
+			this.text = in.readUTF();
 		}
 	}
 	
@@ -95,13 +104,14 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	public void setAnswer(final int status) {
-		this.data = null;
 		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
+		this.text = null;
 	}
 	
 	public void setAnswer(final String text) {
-		this.data = text;
-		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
+		this.options = (text != null) ? 
+				((this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER) : (this.options & OM_CLEARFORANSWER);
+		this.text = text;
 	}
 	
 	
@@ -118,14 +128,46 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	public Object getData() {
-		return this.data;
+		return this.text;
 	}
 	
 	public String getDataText() {
-		if (this.data instanceof String) {
-			return this.data;
+		if (this.text instanceof String) {
+			return this.text;
 		}
 		return null;
+	}
+	
+	
+	public boolean testEquals(MainCmdItem other) {
+		if (!(other instanceof ExtUICmdItem)) {
+			return false;
+		}
+		ExtUICmdItem otherItem = (ExtUICmdItem) other;
+		if (!getCommand().equals(otherItem.getCommand())) {
+			return false;
+		}
+		if (this.options != otherItem.options) {
+			return false;
+		}
+		if (((this.options & OV_WITHTEXT) != 0)
+				&& !this.text.equals(otherItem.getDataText())) {
+			return false;
+		}
+		return true;
+	}
+	
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer(100);
+		sb.append("ExtUICmdItem (command=");
+		sb.append(this.command);
+		sb.append(", options=0x");
+		sb.append(Integer.toHexString(this.options));
+		sb.append(")\n\t");
+		sb.append(((this.options & OV_WITHTEXT) != 0) ? this.text : "<no data>");
+		return sb.toString();
 	}
 	
 }

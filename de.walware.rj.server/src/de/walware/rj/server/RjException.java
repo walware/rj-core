@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2009 Stephan Wahlbrink and others.
+ * Copyright (c) 2009 Stephan Wahlbrink and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
  * v2.1 or newer, which accompanies this distribution, and is available at
@@ -11,24 +11,19 @@
 
 package de.walware.rj.server;
 
-import java.io.IOException;
-import java.io.ObjectOutput;
 
-
-public interface MainCmdItem extends RjsComObject {
+public class RjException extends Exception{
 	
-	public boolean waitForClient();
-	public int getStatus();
 	
-	public void setAnswer(final int status);
+	private static final long serialVersionUID = 5870562800737177156L;
 	
-	public int getOption();
 	
-	public Object getData();
-	public String getDataText();
+	public RjException(String msg) {
+		super(msg);
+	}
 	
-	public void writeExternal(ObjectOutput out) throws IOException;
-	
-	public boolean testEquals(MainCmdItem other);
+	public RjException(String msg, Throwable cause) {
+		super(msg, cause);
+	}
 	
 }

@@ -9,10 +9,10 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server;
+package de.walware.rj.server.srvext;
 
 
-public interface ServerLocalPlugin {
+public interface ServerRuntimePlugin {
 	
 	
 	public String getSymbolicName();

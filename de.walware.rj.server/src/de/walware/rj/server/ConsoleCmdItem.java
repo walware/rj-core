@@ -20,7 +20,7 @@ import java.io.ObjectOutput;
 /**
  * Command for mainloop console commands.
  */
-public final class ConsoleCmdItem implements MainCmdItem, Externalizable {
+public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 	
 	
 	public static final int O_ADD_TO_HISTORY = 0;
@@ -28,93 +28,209 @@ public final class ConsoleCmdItem implements MainCmdItem, Externalizable {
 	
 	private static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
 	private static final int OS_STATUS =            24;
-	private static final int OM_HASTEXT =           0x10000000;
-	private static final int OM_WAITFORCLIENT =     0x20000000;
-	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_HASTEXT);
-	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OM_HASTEXT;
+	private static final int OM_WITH =              0x70000000;
+	private static final int OV_WITHTEXT =          0x10000000;
+	private static final int OM_WAITFORCLIENT =     0x80000000;
+	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
+	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OV_WITHTEXT;
 	private static final int OM_CUSTOM =            0x0000ffff;
 	
 	
-	private int cmdType;
+	public final static class Read extends ConsoleCmdItem {
+		
+		/**
+		 * Constructor for automatic deserialization
+		 */
+		public Read() {
+		}
+		
+		/**
+		 * Constructor for manual deserialization
+		 */
+		public Read(final ObjectInput in) throws IOException, ClassNotFoundException {
+			super(in);
+		}
+		
+		public Read(final int options, final String text) {
+			super(options, text, true);
+		}
+		
+		public final int getComType() {
+			return T_CONSOLE_READ_ITEM;
+		}
+		
+	}
+	
+	public final static class Write extends ConsoleCmdItem {
+		
+		/**
+		 * Constructor for automatic deserialization
+		 */
+		public Write() {
+		}
+		
+		/**
+		 * Constructor for manual deserialization
+		 */
+		public Write(final ObjectInput in) throws IOException, ClassNotFoundException {
+			super(in);
+		}
+		
+		public Write(final int options, final String text) {
+			super(options, text, false);
+		}
+		
+		public final int getComType() {
+			return T_CONSOLE_WRITE_ITEM;
+		}
+		
+	}
+	
+	public final static class Message extends ConsoleCmdItem {
+		
+		/**
+		 * Constructor for automatic deserialization
+		 */
+		public Message() {
+		}
+		
+		/**
+		 * Constructor for manual deserialization
+		 */
+		public Message(final ObjectInput in) throws IOException, ClassNotFoundException {
+			super(in);
+		}
+		
+		public Message(final int options, final String text) {
+			super(options, text, false);
+		}
+		
+		public final int getComType() {
+			return T_MESSAGE_ITEM;
+		}
+		
+	}
+	
+	
 	private int options;
 	private String text;
 	
 	
-	public ConsoleCmdItem() {
+	/**
+	 * Constructor for automatic serialization
+	 */
+	private ConsoleCmdItem() {
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.cmdType = in.readInt();
-		this.options = in.readInt();
-		if ((this.options & OM_HASTEXT) != 0) {
-			this.text = in.readUTF();
-		}
+	/**
+	 * Constructor for manual deserialization
+	 */
+	private ConsoleCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
+		readExternal(in);
 	}
 	
-	public ConsoleCmdItem(final int cmdType, final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.cmdType = cmdType;
-		this.options = in.readInt();
-		if ((this.options & OM_HASTEXT) != 0) {
-			this.text = in.readUTF();
-		}
-	}
-	
-	public ConsoleCmdItem(final int cmdType, final int options, final boolean waitForClient) {
-		this.cmdType = cmdType;
+	private ConsoleCmdItem(final int options, final boolean waitForClient) {
 		this.options = (waitForClient) ?
 				(options | OM_WAITFORCLIENT) : (options);
 	}
 	
-	public ConsoleCmdItem(final int cmdType, final int options, final boolean waitForClient, final String text) {
-		this.cmdType = cmdType;
+	private ConsoleCmdItem(final int options, final String text, final boolean waitForClient) {
+		assert (text != null);
 		this.options = (waitForClient) ?
-				(options | OM_HASTEXT | OM_WAITFORCLIENT) : (options | OM_HASTEXT);
+				(options | (OV_WITHTEXT | OM_WAITFORCLIENT)) : (options | OV_WITHTEXT);
 		this.text = text;
 	}
 	
 	
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeInt(this.cmdType);
+	public final void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.options);
-		if ((this.options & OM_HASTEXT) != 0) {
+		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
 		}
 	}
 	
+	public final void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+		this.options = in.readInt();
+		if ((this.options & OV_WITHTEXT) != 0) {
+			this.text = in.readUTF();
+		}
+	}
 	
-	public boolean waitForClient() {
+	
+	public final boolean waitForClient() {
 		return ((this.options & OM_WAITFORCLIENT) != 0);
 	}
 	
-	public int getStatus() {
+	public final int getStatus() {
 		return ((this.options & OM_STATUS) >> OS_STATUS);
 	}
 	
-	public void setAnswer(final int status) {
-		this.text = null;
+	public final void setAnswer(final int status) {
 		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
 	}
 	
-	public void setAnswer(final String text) {
-		this.text = text;
+	public final void setAnswer(final String text) {
+		assert (text != null);
 		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
+		this.text = text;
 	}
 	
 	
-	public int getComType() {
-		return this.cmdType;
-	}
-	
-	public int getOption() {
+	public final int getOption() {
 		return (this.options & OM_CUSTOM);
 	}
 	
-	public Object getData() {
+	public final Object getData() {
 		return this.text;
 	}
 	
-	public String getDataText() {
+	public final String getDataText() {
 		return this.text;
+	}
+	
+	
+	public boolean testEquals(MainCmdItem other) {
+		if (!(other instanceof ConsoleCmdItem)) {
+			return false;
+		}
+		ConsoleCmdItem otherItem = (ConsoleCmdItem) other;
+		if (getComType() != otherItem.getComType()) {
+			return false;
+		}
+		if (this.options != otherItem.options) {
+			return false;
+		}
+		if (((this.options & OV_WITHTEXT) != 0)
+				&& !this.text.equals(otherItem.getDataText())) {
+			return false;
+		}
+		return true;
+	}
+	
+	
+	@Override
+	public final String toString() {
+		StringBuffer sb = new StringBuffer(100);
+		sb.append("ConsoleCmdItem (type=");
+		switch (getComType()) {
+		case T_CONSOLE_READ_ITEM:
+			sb.append("CONSOLE_READ");
+			break;
+		case T_CONSOLE_WRITE_ITEM:
+			sb.append("CONSOLE_WRITE");
+			break;
+		case T_MESSAGE_ITEM:
+			sb.append("MESSAGE");
+			break;
+		default:
+			sb.append(getComType());
+			break;
+		}
+		sb.append(", options=0x");
+		sb.append(Integer.toHexString(this.options));
+		sb.append(")\n\t");
+		sb.append(((this.options & OV_WITHTEXT) != 0) ? this.text : "<no text>");
+		return sb.toString();
 	}
 	
 }

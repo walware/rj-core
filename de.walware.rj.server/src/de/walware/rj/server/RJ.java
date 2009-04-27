@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2009 Stephan Wahlbrink and others.
+ * Copyright (c) 2009 Stephan Wahlbrink and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
  * v2.1 or newer, which accompanies this distribution, and is available at
@@ -12,11 +12,31 @@
 package de.walware.rj.server;
 
 
-public interface ServerLocalExtension {
+public class RJ {
 	
 	
-	public void addPlugin(ServerLocalPlugin plugin);
+	private static RJ instance;
 	
-	public void removePlugin(ServerLocalPlugin plugin);
+	
+	public final static RJ get() {
+		return instance;
+	}
+	
+	
+	protected RJ() {
+		if (instance != null) {
+			throw new IllegalStateException();
+		}
+		instance = this;
+	}
+	
+	
+	public void onRExit() {
+		instance = null;
+	}
+	
+	public String execUICommand(final String command, final String arg, final boolean wait) {
+		throw new UnsupportedOperationException();
+	}
 	
 }

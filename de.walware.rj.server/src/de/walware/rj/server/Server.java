@@ -14,6 +14,8 @@ package de.walware.rj.server;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+import javax.security.auth.login.LoginException;
+
 
 /**
  * Interface of the R server visible for the remote clients.
@@ -22,31 +24,73 @@ import java.rmi.RemoteException;
 public interface Server extends Remote {
 	
 	/**
-	 * Status code indicating, that the server was stopped.
+	 * Status code indicating, that the R engine is not yet started.
 	 */
-	public static final int S_STOPPED = 		0x00011;
+	public static final int S_NOT_STARTED = 	0x00011;
+	
+	/**
+	 * Status code indicating, that the R engine is started and a/the client is connected.
+	 */
+	public static final int S_CONNECTED = 		0x00014;
 	
 	/**
 	 * Status code indicating, that the client was disconnected.
 	 */
-	public static final int S_DISCONNECTED = 	0x00012;
+	public static final int S_DISCONNECTED = 	0x00018;
+	
+	/**
+	 * Status code indicating, that the client-server connection was lost.
+	 */
+	public static final int S_LOST = 			0x00019;
+	
+	/**
+	 * Status code indicating, that the server was stopped.
+	 */
+	public static final int S_STOPPED = 		0x0001a;
+	
+	
+	ServerInfo getInfo() throws RemoteException;
+	
+	/**
+	 * Current state of this server. One of the constants with S_ prefix.
+	 * 
+	 * @return current state
+	 * @throws RemoteException
+	 */
+	int getState() throws RemoteException;
+	
+	
+	/**
+	 * Creates and returns the ServerLogin with all information necessary
+	 * to login (#start of #connect)
+	 * 
+	 * @return ServerLogin with information what i
+	 * @throws RemoteException
+	 */
+	ServerLogin createLogin() throws RemoteException;
 	
 	
 	/**
 	 * Starts the R server.
 	 * 
-	 * @param codeword
+	 * @param login
 	 * @param args
-	 * @return
+	 * @return ticket
 	 * @throws RemoteException
-	 *     - codeword is wrong
 	 *     - the server was already started
 	 *     - other remote error occured
+	 * @throws LoginException 
 	 */
-	int start(long codeword, String[] args) throws RemoteException;
+	int start(ServerLogin login, String[] args) throws RemoteException, LoginException;
 	
-	
-	int connect(long codeword) throws RemoteException;
+	/**
+	 * 
+	 * @param login
+	 * @return ticket
+	 * @throws RemoteException
+	 * @throws LoginException
+	 */
+	int connect(ServerLogin login) throws RemoteException, LoginException;
 	
 	/**
 	 * Tries to interrupt the current compution.

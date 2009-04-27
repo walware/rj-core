@@ -44,12 +44,18 @@ public final class RjsPing implements RjsComObject, Externalizable {
 	
 	@Override
 	public int hashCode() {
-		return INSTANCE.hashCode();
+		return 1;
 	}
 	
 	@Override
 	public boolean equals(final Object obj) {
 		return (obj instanceof RjsPing);
+	}
+	
+	
+	@Override
+	public String toString() {
+		return "RjsPing";
 	}
 	
 }

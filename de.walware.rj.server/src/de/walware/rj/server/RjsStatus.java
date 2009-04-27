@@ -11,70 +11,24 @@
 
 package de.walware.rj.server;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
-
-/**
- * Command usually reports status of last command.
- */
-public final class RjsStatus implements RjsComObject, Externalizable {
+public interface RjsStatus {
 	
 	
-	public static final RjsStatus OK_STATUS = new RjsStatus(V_OK, 0);
+	public static final int OK =               0x0;
+	public static final int INFO =             0x1;
+	public static final int WARNING =          0x2;
+	public static final int ERROR =            0x4;
+	public static final int CANCEL =           0x8;
 	
 	
-	private int severity;
-	private int code;
+	public static final RjsStatusImpl1 OK_STATUS = new RjsStatusImpl1(OK, 0);
 	
 	
-	public RjsStatus() {
-	}
+	public int getSeverity();
 	
-	public RjsStatus(final int severity, final int code) {
-		this.severity = severity;
-		this.code = code;
-	}
+	public int getCode();
 	
-	
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeInt(this.severity);
-		out.writeInt(this.code);
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.severity = in.readInt();
-		this.code = in.readInt();
-	}
-	
-	
-	public int getComType() {
-		return RjsComObject.T_STATUS;
-	}
-	
-	public int getSeverity() {
-		return this.severity;
-	}
-	
-	public int getCode() {
-		return this.code;
-	}
-	
-	
-	@Override
-	public int hashCode() {
-		return this.severity+this.code;
-	}
-	
-	@Override
-	public boolean equals(final Object obj) {
-		if (!(obj instanceof RjsStatus)) {
-			return false;
-		}
-		final RjsStatus other = (RjsStatus) obj;
-		return (other.code == this.code && other.severity == this.severity);
-	}
+	public String getTextDetail();
 	
 }

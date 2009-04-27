@@ -46,6 +46,7 @@ public final class MainCmdList implements RjsComObject, Externalizable {
 		out.writeInt(length);
 		for (int i = 0; i < length; i++) {
 			if (this.list[i] != null) {
+				out.writeInt(this.list[i].getComType());
 				this.list[i].writeExternal(out);
 			}
 			else {
@@ -65,9 +66,13 @@ public final class MainCmdList implements RjsComObject, Externalizable {
 				this.list[i] = null;
 				continue;
 			case T_CONSOLE_READ_ITEM:
+				this.list[i] = new ConsoleCmdItem.Read(in);
+				continue;
 			case T_CONSOLE_WRITE_ITEM:
+				this.list[i] = new ConsoleCmdItem.Write(in);
+				continue;
 			case T_MESSAGE_ITEM:
-				this.list[i] = new ConsoleCmdItem(type, in);
+				this.list[i] = new ConsoleCmdItem.Message(in);
 				continue;
 			case T_EXTENDEDUI_ITEM:
 				this.list[i] = new ExtUICmdItem(in);
@@ -103,6 +108,38 @@ public final class MainCmdList implements RjsComObject, Externalizable {
 	
 	public boolean isBusy() {
 		return this.isBusy;
+	}
+	
+	
+	public boolean testEquals(MainCmdList other) {
+		if (this.isBusy != other.isBusy()) {
+			return false;
+		}
+		MainCmdItem[] otherList = other.getItems();
+		if (this.list.length != otherList.length) {
+			return false;
+		}
+		for (int i = 0; i < this.list.length; i++) {
+			if (!this.list[i].testEquals(otherList[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(100 + this.list.length*100);
+		sb.append("MainCmdList (isBusy=");
+		sb.append(this.isBusy);
+		sb.append(", items=");
+		sb.append(this.list.length);
+		sb.append("):");
+		for (MainCmdItem item : this.list) {
+			sb.append("\n\t");
+			sb.append(item.toString());
+		}
+		return sb.toString();
 	}
 	
 }

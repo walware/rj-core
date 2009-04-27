@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2009 Stephan Wahlbrink and others.
+ * Copyright (c) 2009 Stephan Wahlbrink and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
  * v2.1 or newer, which accompanies this distribution, and is available at
@@ -9,17 +9,17 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.srvstdext;
 
 import org.eclipse.swt.widgets.Display;
 
-import de.walware.rj.server.ServerLocalPlugin;
+import de.walware.rj.server.srvext.ServerRuntimePlugin;
 
 
 /**
  * Creates a display for native widgets ('native' depends on SWT in classpath).
  */
-public class SWTPlugin implements ServerLocalPlugin {
+public class SWTPlugin implements ServerRuntimePlugin {
 	
 	
 	private Display display;

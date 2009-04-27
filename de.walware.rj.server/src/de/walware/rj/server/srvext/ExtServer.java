@@ -9,26 +9,21 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server;
+package de.walware.rj.server.srvext;
 
-import java.io.IOException;
-import java.io.ObjectOutput;
+import de.walware.rj.server.Server;
 
 
-public interface MainCmdItem extends RjsComObject {
+/**
+ * Interface for {@link Server} for local (none-exported) methods
+ */
+public interface ExtServer {
 	
-	public boolean waitForClient();
-	public int getStatus();
 	
-	public void setAnswer(final int status);
+	public void init(String name, ServerAuthMethod authMethod);
 	
-	public int getOption();
+	public void addPlugin(ServerRuntimePlugin plugin);
 	
-	public Object getData();
-	public String getDataText();
-	
-	public void writeExternal(ObjectOutput out) throws IOException;
-	
-	public boolean testEquals(MainCmdItem other);
+	public void removePlugin(ServerRuntimePlugin plugin);
 	
 }

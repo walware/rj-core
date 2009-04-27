@@ -17,9 +17,11 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -81,6 +83,20 @@ public class JRClassLoader extends URLClassLoader {
 	}
 	
 	
+	public static final int OS_WIN = 1;
+	public static final int OS_NIX = 2;
+	public static final int OS_MAC = 3;
+	
+	private final String r_home;
+	private final String r_arch;
+	private final List<String> r_libs;
+	private final List<String> r_libs_site;
+	private final List<String> r_libs_user;
+	
+	private final int os;
+	private final String arch;
+	
+	
 	private String rJavaPath;
 	private final HashMap<String, UnixFile> libMap;
 	private final Vector<UnixFile> classPath;
@@ -96,12 +112,30 @@ public class JRClassLoader extends URLClassLoader {
 		this.libMap = new HashMap<String, UnixFile>();
 		this.classPath = new Vector<UnixFile>();
 		this.defaultLibPath = new LinkedHashSet<String>();
-		initLibPath();
+		
+		this.r_home = checkDirPath(System.getenv("R_HOME"));
+		this.r_arch = System.getenv("R_ARCH");
+		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
+		this.r_libs_site = checkDirPathList(System.getenv("R_LIBS_SITE"));
+		this.r_libs_user = checkDirPathList(System.getenv("R_LIBS_USER"));
+		String osname = System.getProperty("os.name").toLowerCase();
+		if (osname.contains("win")) {
+			this.os = OS_WIN;
+		}
+		else if (osname.contains("mac")) {
+			this.os = OS_MAC;
+		}
+		else {
+			this.os = OS_NIX;
+		}
+		this.arch = (this.r_arch != null) ? this.r_arch : System.getProperty("os.arch");
+		
+		initRLibs();
 		
 		if (this.rJavaPath == null) {
 			this.rJavaPath = System.getProperty("rjava.path");
 			if (this.rJavaPath == null) {
-				this.rJavaPath = searchLibrary("rJava");
+				this.rJavaPath = searchPackageInLibrary("rJava");
 			}
 			if (this.rJavaPath == null) {
 				final String message = "Path to rJava package not found. Use R_LIBS or java property 'rjava.path' to specify the location.";
@@ -112,7 +146,7 @@ public class JRClassLoader extends URLClassLoader {
 		
 		final String rJavaClassPath = System.getProperty("rjava.class.path");
 		if (rJavaClassPath != null) {
-			addClassPath(PATH_SPLITTER.split(rJavaClassPath));
+			addClassPath(checkDirPathList(rJavaClassPath));
 		}
 		
 		String rJavaLibPath = System.getProperty("rjava.rjavalibs");
@@ -120,10 +154,16 @@ public class JRClassLoader extends URLClassLoader {
 			rJavaLibPath = this.rJavaPath + "/java";
 		}
 		addClassPath(this.rJavaPath + "/java");
-		UnixFile so = new UnixFile(rJavaLibPath + "/rJava.so");
-		if (!so.exists()) {
-			so = new UnixFile(rJavaLibPath + "/rJava.dll");
+		final String rJavaDynlibName;
+		switch (this.os) {
+		case OS_WIN:
+			rJavaDynlibName = "rJava.dll";
+			break;
+		default:
+			rJavaDynlibName = "rJava.so";
+			break;
 		}
+		UnixFile so = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
 		if (so.exists()) {
 			this.libMap.put("rJava", so);
 		}
@@ -132,100 +172,143 @@ public class JRClassLoader extends URLClassLoader {
 		if (jriLibPath == null) {
 			jriLibPath = this.rJavaPath + "/jri";
 		}
-		UnixFile jri = new UnixFile(jriLibPath + "/libjri.so");
-		final String rarch = System.getProperty("r.arch");
-		if (rarch != null && rarch.length() > 0) {
-			final UnixFile af = new UnixFile(jriLibPath + rarch + "/libjri.so");
-			if (af.exists()) {
-				jri = af;
+		final String jriDynlibName;
+		switch (this.os) {
+		case OS_WIN:
+			jriDynlibName = "jri.dll";
+			break;
+		case OS_MAC:
+			jriDynlibName = "libjri.jnilib";
+			break;
+		default:
+			jriDynlibName = "libjri.so";
+			break;
+		}
+		UnixFile jriDynlibFile = searchFile(new String[] {
+				jriLibPath + '/' + jriDynlibName,
+				jriLibPath + this.arch + '/' + jriDynlibName,
+		});
+		if (jriDynlibFile != null) {
+			this.libMap.put("jri", jriDynlibFile);
+			if (verbose) {
+				LOGGER.log(Level.CONFIG, "registered JRI: " + jriDynlibFile);
 			}
 		}
-		if (!jri.exists()) {
-			jri = new UnixFile(jriLibPath + "/libjri.jnilib");
-		}
-		if (!jri.exists()) {
-			jri = new UnixFile(jriLibPath + "/jri.dll");
-		}
-		if (jri.exists()) {
-			this.libMap.put("jri", jri);
+		else {
 			if (verbose) {
-				LOGGER.log(Level.CONFIG, "registered JRI: " + jri);
+				LOGGER.log(Level.WARNING, jriDynlibName + " not found");
 			}
 		}
 		
-		final String jriJar1 = jriLibPath + "/JRI.jar";
-		if (new UnixFile(jriJar1).exists()) {
-			addClassPath(jriJar1);
+		UnixFile jriJarFile = searchFile(new String[] {
+				jriLibPath + "/JRI.jar",
+				this.rJavaPath + "/jri/JRI.jar",
+		});
+		if (jriJarFile != null) {
+			addClassPath(jriJarFile);
 		}
 		else {
-			final String jriJar2 = this.rJavaPath + "/jri/JRI.jar";
-			if (!jriJar2.equals(jriJar1) && new UnixFile(jriJar2).exists()) {
-				addClassPath(jriJar2);
-			}
-			else {
-				if (verbose) {
-					LOGGER.log(Level.WARNING, "JRI.jar not found and not added to classpath");
-				}
+			if (verbose) {
+				LOGGER.log(Level.WARNING, "JRI.jar not found and not added to classpath");
 			}
 		}
 	}
 	
-	private void initLibPath() {
-		synchronized (this.defaultLibPath) {
-			this.defaultLibPath.clear();
-			String rHome = System.getenv("R_HOME");
-			if (rHome != null) {
-				if (rHome.length() == 0) {
-					rHome = null;
+	private String checkDirPath(String path) {
+		if (path != null) {
+			path = path.trim();
+			if (path.length() > 0) {
+				path = path.replace('\\', '/');
+				int end = path.length();
+				while (end > 0 && path.charAt(end-1) == '/') {
+					end--;
 				}
-				else {
-					rHome = rHome.replace(File.separatorChar, '/');
-					if (rHome.charAt(rHome.length()-1) == '/') {
-						rHome = rHome.substring(0, rHome.length()-1);
+				if (end != path.length()) {
+					path = path.substring(0, end);
+				}
+				return path+'/';
+			}
+		}
+		return null;
+	}
+	
+	private List<String> checkDirPathList(String pathList) {
+		if (pathList != null) {
+			pathList = pathList.trim();
+			if (pathList.length() > 0) {
+				String[] split = PATH_SPLITTER.split(pathList);
+				ArrayList<String> list = new ArrayList<String>(split.length);
+				for (int i = 0; i < split.length; i++) {
+					String path = checkDirPath(split[i]);
+					if (path != null) {
+						list.add(path);
 					}
 				}
+				return list;
 			}
+		}
+		return null;
+	}
+	
+	private UnixFile searchFile(String[] search) {
+		for (String path : search) {
+			UnixFile file = new UnixFile(path);
+			if (file.exists()) {
+				return file;
+			}
+		}
+		return null;
+	}
+	
+	private void initRLibs() {
+		synchronized (this.defaultLibPath) {
+			this.defaultLibPath.clear();
 			
-			final String libsSite = System.getenv("R_LIBS_SITE");
-			if (libsSite != null && libsSite.length() > 0) {
-				final String[] l = PATH_SPLITTER.split(libsSite);
-				for (int i = 0; i < l.length; i++) {
-					this.defaultLibPath.add(l[i].replace(File.separatorChar, '/'));
+			// R_LIBS_SITE
+			if (this.r_libs_site != null) {
+				for (String l : this.r_libs_site) {
+					this.defaultLibPath.add(l);
 				}
 			}
-			else if (rHome != null) {
-				if (rHome.startsWith("/usr/lib")) {
-					this.defaultLibPath.add("/usr/local/lib"+rHome.substring(8)+'/'+"site-library");
+			else if (this.r_home != null) {
+				if (this.r_home.startsWith("/usr/lib")) {
+					this.defaultLibPath.add("/usr/local/lib"+this.r_home.substring(8)+"/site-library");
 				}
-				this.defaultLibPath.add(rHome+'/'+"site-library");
+				this.defaultLibPath.add(this.r_home+"/site-library");
 			}
 			
-			final String libsS = System.getenv("R_LIBS");
-			if (libsS != null && libsS.length() > 0) {
-				final String[] l = PATH_SPLITTER.split(libsS);
-				for (int i = 0; i < l.length; i++) {
-					this.defaultLibPath.add(l[i].replace(File.separatorChar, '/'));
+			// R_LIBS
+			if (this.r_libs != null) {
+				for (String l : this.r_libs) {
+					this.defaultLibPath.add(l);
 				}
 			}
-			else if (rHome != null) {
-				this.defaultLibPath.add(rHome+'/'+"library");
+			else if (this.r_home != null) {
+				this.defaultLibPath.add(this.r_home+"/library");
 			}
 			
-			final String libsUser = System.getenv("R_LIBS_USER");
-			if (libsUser != null && libsUser.length() > 0) {
-				final String[] l = PATH_SPLITTER.split(libsUser);
-				for (int i = 0; i < l.length; i++) {
-					this.defaultLibPath.add(l[i].replace(File.separatorChar, '/'));
+			if (this.r_libs_user != null) {
+				for (String l : this.r_libs_user) {
+					this.defaultLibPath.add(l);
 				}
 			}
 			
 			if (verbose) {
-				LOGGER.log(Level.CONFIG, "JR library path: " + this.defaultLibPath.toString());
+				StringBuilder sb = new StringBuilder((1+this.defaultLibPath.size())*32);
+				sb.append("JR library path: ");
+				String sep = System.getProperty("line.separator")+"\t";
+				for (String item : this.defaultLibPath) {
+					sb.append(sep);
+					if (item != null) {
+						sb.append(item);
+					}
+				}
+				LOGGER.log(Level.CONFIG, sb.toString());
 			}
 		}
 	}
 	
-	private String searchLibrary(final String name) {
+	private String searchPackageInLibrary(final String name) {
 		synchronized (this.defaultLibPath) {
 			for (final String l : this.defaultLibPath) {
 				try {
@@ -431,8 +514,7 @@ public class JRClassLoader extends URLClassLoader {
 						final URL u = findInJARURL(cp.getPath(), name);
 						if (u != null) {
 							if (verbose) {
-								System.out.println(" - found in a JAR file, URL "
-										+ u);
+								System.out.println(" - found in a JAR file, URL " + u);
 							}
 							return u;
 						}
@@ -460,9 +542,16 @@ public class JRClassLoader extends URLClassLoader {
 	
 	public void addClassPath(final String cp) {
 		final UnixFile f = new UnixFile(cp);
+		addClassPath(f);
+	}
+	
+	public void addClassPath(final UnixFile f) {
 		if (this.useSystem) {
 			try {
 				addURL(f.toURI().toURL());
+				if (verbose) {
+					LOGGER.log(Level.FINE, "Added '"+f.getPath()+"' to classpath of URL loader");
+				}
 				// return; // we need to add it anyway
 			}
 			catch (final Exception e) {
@@ -481,6 +570,12 @@ public class JRClassLoader extends URLClassLoader {
 		int i = 0;
 		while (i < cp.length) {
 			addClassPath(cp[i++]);
+		}
+	}
+	
+	public void addClassPath(final List<String> cpList) {
+		for (String path : cpList) {
+			addClassPath(path);
 		}
 	}
 	

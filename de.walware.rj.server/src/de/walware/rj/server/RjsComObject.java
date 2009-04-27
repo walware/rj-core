@@ -64,14 +64,14 @@ public interface RjsComObject {
 	
 	
 	// Same value as in IStatus
-	public static final int V_OK =               0x0;
-	public static final int V_INFO =             0x1;
-	public static final int V_WARNING =          0x2;
-	public static final int V_ERROR =            0x4;
-	public static final int V_CANCEL =           0x8;
+	public static final int V_OK =               RjsStatus.OK;
+	public static final int V_INFO =             RjsStatus.INFO;
+	public static final int V_WARNING =          RjsStatus.WARNING;
+	public static final int V_ERROR =            RjsStatus.ERROR;
+	public static final int V_CANCEL =           RjsStatus.CANCEL;
 	
-	public static final int V_FALSE =				0x0;
-	public static final int V_TRUE =				0x1;
+	public static final int V_FALSE =            0x0;
+	public static final int V_TRUE =             0x1;
 	
 	
 	public int getComType();
