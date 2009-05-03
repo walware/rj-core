@@ -28,39 +28,9 @@ public interface RjsComObject {
 	public static final int T_PING =                 2;
 	
 	/**
-	 * {@link MainCmdList}
+	 * {@link MainCmdS2CList}
 	 */
 	public static final int T_MAIN_LIST =            3;
-	
-	/**
-	 * {@link ConsoleCmdItem}
-	 *      options = ADD_TO_HISTORY (TRUE, FALSE)
-	 *      in = prompt
-	 *      answer = (text) readed input
-	 */
-	public static final int T_CONSOLE_READ_ITEM =    4;
-	
-	/**
-	 * {@link ConsoleCmdItem}
-	 *     options = STATUS (OK, WARNING)
-	 *     in = output
-	 *     answer = -
-	 */
-	public static final int T_CONSOLE_WRITE_ITEM =   5;
-	
-	public static final int T_MESSAGE_ITEM =         6;
-	
-	/**
-	 * {@link ExtUICmdItem}
-	 * Detail depends on the concrete command
-	 * {@link ExtUICmdItem#getCommand()}
-	 */
-	public static final int T_EXTENDEDUI_ITEM =      7;
-	
-	/**
-	 * Not yet implemented
-	 */
-	public static final int T_GRAPH_ITEM =           8;
 	
 	
 	// Same value as in IStatus

@@ -260,10 +260,10 @@ fi
 ## Java config
 if [ $DEV ]
 then
-	JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin:$RJS_HOME/bin:$RJS_HOME/binShaj"
+	JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin:$RJS_HOME/../de.walware.rj.data/bin:$RJS_HOME/bin:$RJS_HOME/binShaj"
 	RJAVA_CP=
 else
-	JAVA_CP="$RJS_HOME/rj.server.jar:$JAVA_CP"
+	JAVA_CP="$RJS_HOME/rj.server.jar:$RJS_HOME/rj.data.jar:$JAVA_CP"
 	RJAVA_CP=
 fi
 

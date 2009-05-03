@@ -10,3 +10,4 @@ Import-Package: org.eclipse.swt;resolution:=optional,
  org.eclipse.swt.widgets;resolution:=optional,
  org.rosuda.JRI;resolution:=optional
 Export-Package: de.walware.rj.server
+Require-Bundle: de.walware.rj.data;bundle-version="0.2.0"

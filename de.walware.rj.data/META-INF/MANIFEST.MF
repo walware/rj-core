@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: WalWare.de
+Bundle-Name: RJ Data
+Bundle-SymbolicName: de.walware.rj.data
+Bundle-Version: 0.2.0.qualifier
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: de.walware.rj.data,
+ de.walware.rj.data.defaultImpl

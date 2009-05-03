@@ -15,20 +15,87 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 
 
-public interface MainCmdItem extends RjsComObject {
+public abstract class MainCmdItem {
 	
-	public boolean waitForClient();
-	public int getStatus();
 	
-	public void setAnswer(final int status);
+	public static final byte T_NONE = 0;
 	
-	public int getOption();
+	/**
+	 * {@link ConsoleCmdItem}
+	 *      options = ADD_TO_HISTORY (TRUE, FALSE)
+	 *      in = prompt
+	 *      answer = (text) readed input
+	 */
+	public static final byte T_CONSOLE_READ_ITEM =    1;
 	
-	public Object getData();
-	public String getDataText();
+	/**
+	 * {@link ConsoleCmdItem}
+	 *     options = STATUS (OK, WARNING)
+	 *     in = output
+	 *     answer = -
+	 */
+	public static final byte T_CONSOLE_WRITE_ITEM =   2;
 	
-	public void writeExternal(ObjectOutput out) throws IOException;
+	public static final byte T_MESSAGE_ITEM =         3;
 	
-	public boolean testEquals(MainCmdItem other);
+	/**
+	 * {@link ExtUICmdItem}
+	 * Detail depends on the concrete command
+	 * {@link ExtUICmdItem#getCommand()}
+	 */
+	public static final byte T_EXTENDEDUI_ITEM =      5;
+	
+	/**
+	 * Not yet implemented
+	 */
+	public static final byte T_GRAPH_ITEM =           7;
+	
+	public static final byte T_S2C_C2S = 9;
+	
+	public static final byte T_DATA_ITEM =           10;
+	
+	
+	protected static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
+	protected static final int OS_STATUS =            24;
+	
+	protected static final int OM_WITH =              0x70000000;
+	
+	protected static final int OM_WAITFORCLIENT =     0x80000000;
+	protected static final int OV_WAITFORCLIENT =     0x80000000;
+	protected static final int OC_WAITFORCLIENT =     ~(OM_WAITFORCLIENT);
+	
+	private static final int OM_CUSTOM =            0x0000ffff;
+	
+	protected static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
+	
+	
+	protected int options;
+	
+	public MainCmdItem next;
+	
+	
+	public abstract byte getCmdType();
+	
+	public final boolean waitForClient() {
+		return ((this.options & OM_WAITFORCLIENT) != 0);
+	}
+	
+	public final int getStatus() {
+		return ((this.options & OM_STATUS) >> OS_STATUS);
+	}
+	
+	public final int getCmdOption() {
+		return ((this.options & OM_CUSTOM));
+	}
+	
+	public abstract void setAnswer(final int status);
+	public abstract void setAnswer(String dataText);
+	
+	public abstract Object getData();
+	public abstract String getDataText();
+	
+	public abstract void writeExternal(ObjectOutput out) throws IOException;
+	
+	public abstract boolean testEquals(MainCmdItem other);
 	
 }

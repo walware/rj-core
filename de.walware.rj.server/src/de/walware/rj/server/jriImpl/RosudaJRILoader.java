@@ -38,10 +38,10 @@ public class RosudaJRILoader {
 	}
 	
 	
-	public Server loadServer(String name, final Map<String, String> args, final ServerRuntimePlugin plugin) throws Exception {
+	public Server loadServer(final String name, final Map<String, String> args, final ServerRuntimePlugin plugin) throws Exception {
 		final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 		try {
-			boolean verbose = args.containsKey("verbose");
+			final boolean verbose = args.containsKey("verbose");
 			if (verbose) {
 				JRClassLoader.setDebug(1000);
 			}
@@ -80,19 +80,19 @@ public class RosudaJRILoader {
 				
 				server = serverClazz.newInstance();
 			}
-			catch (ClassNotFoundException e) {
+			catch (final ClassNotFoundException e) {
 				Logger.getLogger("de.walware.rj.server.jri").log(Level.INFO, "Perhaps autodetection of RJ classpath entry failed: " + 
 						((myClasspath != null) ? myClasspath : "-"));
 				throw e;
 			}
 			
-			ExtServer localServer = (ExtServer) server;
+			final ExtServer localServer = (ExtServer) server;
 			
 			// auth
 			final String authType;
 			final String authConfig;
 			{
-				String[] auth = ServerUtil.getArgSubValue(args.remove("auth"));
+				final String[] auth = ServerUtil.getArgSubValue(args.remove("auth"));
 				if (auth[0].length() == 0) {
 					throw new RjException("Missing 'auth' configuration");
 				}
@@ -113,14 +113,14 @@ public class RosudaJRILoader {
 				}
 				authConfig = auth[1];
 			}
-			Class<ServerAuthMethod> authClazz = (Class<ServerAuthMethod>) Class.forName(authType, true, oldLoader);
-			ServerAuthMethod authMethod = authClazz.newInstance();
+			final Class<ServerAuthMethod> authClazz = (Class<ServerAuthMethod>) Class.forName(authType, true, oldLoader);
+			final ServerAuthMethod authMethod = authClazz.newInstance();
 			authMethod.init(authConfig);
 			
 			localServer.init(name, authMethod);
 			
 			// plugins
-			List<String> plugins = ServerUtil.getArgValueList(args.get("plugins"));
+			final List<String> plugins = ServerUtil.getArgValueList(args.get("plugins"));
 			if (plugins.contains("awt")) {
 				UIManager.put("ClassLoader", loader);
 				try {

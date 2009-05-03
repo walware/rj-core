@@ -20,7 +20,7 @@ import java.io.ObjectOutput;
 /**
  * Command for mainloop UI commands.
  */
-public final class ExtUICmdItem implements MainCmdItem, Externalizable {
+public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	
 	public static final String C_CHOOSE_FILE = "chooseFile";
 	public static final String C_OPENIN_EDITOR = "openinEditor";
@@ -31,18 +31,11 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	
 	public static final int O_NEW = 8;
 	
-	private static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
-	private static final int OS_STATUS =            24;
-	private static final int OM_WITH =              0x70000000;
 	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_WAITFORCLIENT =     0x80000000;
-	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
-	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OV_WITHTEXT;
-	private static final int OM_CUSTOM =            0x0000ffff;
+	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
 	
 	
 	private String command;
-	private int options;
 	private String text;
 	
 	
@@ -78,6 +71,7 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeUTF(this.command);
 		out.writeInt(this.options);
@@ -95,14 +89,13 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
-	public boolean waitForClient() {
-		return ((this.options & OM_WAITFORCLIENT) != 0);
+	@Override
+	public byte getCmdType() {
+		return T_EXTENDEDUI_ITEM;
 	}
 	
-	public int getStatus() {
-		return ((this.options & OM_STATUS) >> OS_STATUS);
-	}
 	
+	@Override
 	public void setAnswer(final int status) {
 		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
 		this.text = null;
@@ -115,35 +108,27 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
-	public int getComType() {
-		return RjsComObject.T_EXTENDEDUI_ITEM;
-	}
-	
 	public String getCommand() {
 		return this.command;
 	}
 	
-	public int getOption() {
-		return (this.options & OM_CUSTOM);
-	}
-	
+	@Override
 	public Object getData() {
 		return this.text;
 	}
 	
+	@Override
 	public String getDataText() {
-		if (this.text instanceof String) {
-			return this.text;
-		}
-		return null;
+		return this.text;
 	}
 	
 	
-	public boolean testEquals(MainCmdItem other) {
+	@Override
+	public boolean testEquals(final MainCmdItem other) {
 		if (!(other instanceof ExtUICmdItem)) {
 			return false;
 		}
-		ExtUICmdItem otherItem = (ExtUICmdItem) other;
+		final ExtUICmdItem otherItem = (ExtUICmdItem) other;
 		if (!getCommand().equals(otherItem.getCommand())) {
 			return false;
 		}
@@ -151,16 +136,15 @@ public final class ExtUICmdItem implements MainCmdItem, Externalizable {
 			return false;
 		}
 		if (((this.options & OV_WITHTEXT) != 0)
-				&& !this.text.equals(otherItem.getDataText())) {
+				&& !this.getDataText().equals(otherItem.getDataText())) {
 			return false;
 		}
 		return true;
 	}
 	
-	
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer(100);
+		final StringBuffer sb = new StringBuffer(100);
 		sb.append("ExtUICmdItem (command=");
 		sb.append(this.command);
 		sb.append(", options=0x");

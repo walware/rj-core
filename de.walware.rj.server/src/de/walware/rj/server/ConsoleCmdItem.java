@@ -20,20 +20,14 @@ import java.io.ObjectOutput;
 /**
  * Command for mainloop console commands.
  */
-public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
+public abstract class ConsoleCmdItem extends MainCmdItem implements Externalizable {
 	
 	
 	public static final int O_ADD_TO_HISTORY = 0;
 	
 	
-	private static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
-	private static final int OS_STATUS =            24;
-	private static final int OM_WITH =              0x70000000;
 	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_WAITFORCLIENT =     0x80000000;
-	private static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
-	private static final int OM_TEXTANSWER =        (V_OK << OS_STATUS) | OV_WITHTEXT;
-	private static final int OM_CUSTOM =            0x0000ffff;
+	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
 	
 	
 	public final static class Read extends ConsoleCmdItem {
@@ -55,7 +49,8 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 			super(options, text, true);
 		}
 		
-		public final int getComType() {
+		@Override
+		public final byte getCmdType() {
 			return T_CONSOLE_READ_ITEM;
 		}
 		
@@ -80,7 +75,8 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 			super(options, text, false);
 		}
 		
-		public final int getComType() {
+		@Override
+		public final byte getCmdType() {
 			return T_CONSOLE_WRITE_ITEM;
 		}
 		
@@ -105,14 +101,14 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 			super(options, text, false);
 		}
 		
-		public final int getComType() {
+		@Override
+		public final byte getCmdType() {
 			return T_MESSAGE_ITEM;
 		}
 		
 	}
 	
 	
-	private int options;
 	private String text;
 	
 	
@@ -142,6 +138,7 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
+	@Override
 	public final void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.options);
 		if ((this.options & OV_WITHTEXT) != 0) {
@@ -157,18 +154,12 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
-	public final boolean waitForClient() {
-		return ((this.options & OM_WAITFORCLIENT) != 0);
-	}
-	
-	public final int getStatus() {
-		return ((this.options & OM_STATUS) >> OS_STATUS);
-	}
-	
+	@Override
 	public final void setAnswer(final int status) {
 		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
 	}
 	
+	@Override
 	public final void setAnswer(final String text) {
 		assert (text != null);
 		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
@@ -176,25 +167,24 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 	}
 	
 	
-	public final int getOption() {
-		return (this.options & OM_CUSTOM);
-	}
-	
+	@Override
 	public final Object getData() {
 		return this.text;
 	}
 	
+	@Override
 	public final String getDataText() {
 		return this.text;
 	}
 	
 	
-	public boolean testEquals(MainCmdItem other) {
+	@Override
+	public boolean testEquals(final MainCmdItem other) {
 		if (!(other instanceof ConsoleCmdItem)) {
 			return false;
 		}
-		ConsoleCmdItem otherItem = (ConsoleCmdItem) other;
-		if (getComType() != otherItem.getComType()) {
+		final ConsoleCmdItem otherItem = (ConsoleCmdItem) other;
+		if (getCmdType() != otherItem.getCmdType()) {
 			return false;
 		}
 		if (this.options != otherItem.options) {
@@ -207,12 +197,11 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 		return true;
 	}
 	
-	
 	@Override
 	public final String toString() {
-		StringBuffer sb = new StringBuffer(100);
+		final StringBuffer sb = new StringBuffer(100);
 		sb.append("ConsoleCmdItem (type=");
-		switch (getComType()) {
+		switch (getCmdType()) {
 		case T_CONSOLE_READ_ITEM:
 			sb.append("CONSOLE_READ");
 			break;
@@ -223,7 +212,7 @@ public abstract class ConsoleCmdItem implements MainCmdItem, Externalizable {
 			sb.append("MESSAGE");
 			break;
 		default:
-			sb.append(getComType());
+			sb.append(getCmdType());
 			break;
 		}
 		sb.append(", options=0x");

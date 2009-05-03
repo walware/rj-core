@@ -5,10 +5,11 @@
 	</description>
 
 <property name="tools.proj" location="."/>
-<property name="server.proj" location="../de.walware.rj.server"/>
-<property name="dest" location="../../_/remotetools/"/>
+<property name="rj.data.proj" location="../de.walware.rj.data"/>
+<property name="rj.server.proj" location="../de.walware.rj.server"/>
+<property name="dest" location="./build"/>
 
-<target name="default" description="export and pack" depends="pack-server">
+<target name="default" description="export and pack" depends="pack-bundle">
 </target>
 
 <target name="build">
@@ -50,20 +51,24 @@
 </target>
 
 <target name="export-server">
+	<jar destfile="${dest}/rj.data.jar">
+		<fileset dir="${rj.data.proj}/bin"/>
+	</jar>
 	<jar destfile="${dest}/rj.server.jar">
-		<fileset dir="${server.proj}/bin"/>
+		<fileset dir="${rj.server.proj}/bin"/>
 	</jar>
 </target>
 
 <target name="check-server">
 	<fail message="Server not complete">
 		<condition><not><and>
+			<available file="${dest}/rj.data.jar" type="file"/>
 			<available file="${dest}/rj.server.jar" type="file"/>
 		</and></not></condition>
 	</fail> 
 </target>
 	
-<target name="pack-server" depends="export,check,export-server,check-server">
+<target name="pack-bundle" depends="export,check,export-server,check-server">
 	<tar destfile="${dest}/../rjserver.tar">
 		<tarfileset dir="${dest}" includes="**" excludes="startup.sh"/>
 		<tarfileset dir="${dest}" includes="startup.sh" filemode="700"/>

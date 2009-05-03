@@ -27,8 +27,8 @@ public class ServerInfo implements Serializable {
 	private String currentUser;
 	
 	
-	public ServerInfo(String name, String ownerUser, String directory,
-			int state, String currentUser) {
+	public ServerInfo(final String name, final String ownerUser, final String directory,
+			final int state, final String currentUser) {
 		this.name = name;
 		this.ownerUser = ownerUser;
 		this.directory = directory;
