@@ -242,6 +242,10 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	
+	public int[] getVersion() throws RemoteException {
+		return new int[] { 0, 2, 0 };
+	}
+	
 	public ServerInfo getInfo() throws RemoteException {
 		return new ServerInfo(this.name, this.ownerUsername, this.workingDirectory,
 				this.serverState, this.currentUsername);

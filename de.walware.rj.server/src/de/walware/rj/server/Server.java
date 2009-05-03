@@ -48,6 +48,13 @@ public interface Server extends Remote {
 	 */
 	public static final int S_STOPPED = 		0x0001a;
 	
+	/**
+	 * Triple of version number of the server API
+	 * 
+	 * @return version number
+	 * @throws RemoteException
+	 */
+	int[] getVersion() throws RemoteException;
 	
 	ServerInfo getInfo() throws RemoteException;
 	
