@@ -145,6 +145,7 @@ public class RosudaJRIServer extends RJ
 	
 	private int rniTemp;
 	private int rniMax;
+	private boolean rniInterrupted;
 	
 	
 	public RosudaJRIServer() {
@@ -443,7 +444,10 @@ public class RosudaJRIServer extends RJ
 	public void interrupt(final int ticket) throws RemoteException {
 		checkClient(ticket);
 		try {
-			this.rEngine.rniStop(1);
+			synchronized(this.mainLoopLock) {
+				this.rniInterrupted = true;
+				this.rEngine.rniStop(1);
+			}
 		}
 		catch (final Throwable e) {
 			LOGGER.log(Level.SEVERE, "An error occurred when trying to interrupt the R engine.", e);
@@ -513,6 +517,7 @@ public class RosudaJRIServer extends RJ
 					this.mainLoopS2CAnswerFail = 0;
 					if (mainC2SCmdList != null) {
 						this.mainLoopC2SCommandFirst = mainC2SCmdList.getItems();
+						this.rniInterrupted = false;
 					}
 					// continue in R
 				}
@@ -636,6 +641,7 @@ public class RosudaJRIServer extends RJ
 				final MainCmdItem command = this.mainLoopC2SCommandFirst;
 				this.mainLoopC2SCommandFirst = this.mainLoopC2SCommandFirst.next;
 				item = internalEvalData((DataCmdItem) command);
+				this.rniInterrupted = false;
 				continue;
 			}
 			else {
@@ -726,6 +732,9 @@ public class RosudaJRIServer extends RJ
 			default:
 				throw new RjException("Unsupported EvalCmd");
 			}
+			if (this.rniInterrupted) {
+				cmd.setAnswer(RjsStatus.CANCEL);
+			}
 			return cmd;
 		}
 		catch (final Throwable e) {
@@ -743,7 +752,8 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly) {
-		if (objP == 0 || this.rniTemp > 512 || this.rniTemp > this.rniMax) {
+		if (objP == 0 || this.rniTemp > 512 || this.rniTemp > this.rniMax 
+				|| this.rniInterrupted) {
 			return null;
 		}
 		boolean tmpAssigned;

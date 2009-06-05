@@ -161,6 +161,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void setAnswer(final int status) {
 		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
 		this.text = null;
+		this.rdata = null;
 	}
 	
 	@Override
