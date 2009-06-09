@@ -121,4 +121,11 @@ public class RDataUtil {
 		return dataIdxs;
 	}
 	
+	public static boolean isSingleString(final RObject obj) {
+		return (obj != null
+				&& (obj.getRObjectType() == RObject.TYPE_VECTOR || obj.getRObjectType() == RObject.TYPE_ARRAY)
+				&& obj.getLength() == 1
+				&& obj.getData().getStoreType() == RStore.CHARACTER);
+	}
+	
 }
