@@ -53,7 +53,7 @@ public class RFunctionImpl extends AbstractRObject
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_FUNCTION;
 	}
 	

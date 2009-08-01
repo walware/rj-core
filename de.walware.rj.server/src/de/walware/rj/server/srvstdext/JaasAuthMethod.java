@@ -23,7 +23,7 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
-import de.walware.rj.server.RjException;
+import de.walware.rj.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 
 
@@ -40,16 +40,16 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 	private class JaasConfig extends Configuration {
 		
 		
-		private AppConfigurationEntry entry;
+		private final AppConfigurationEntry entry;
 		
 		
-		JaasConfig(String clazz) {
+		JaasConfig(final String clazz) {
 			this.entry = new AppConfigurationEntry(clazz, AppConfigurationEntry.LoginModuleControlFlag.REQUIRED, new HashMap());
 		}
 		
 		
 		@Override
-		public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+		public AppConfigurationEntry[] getAppConfigurationEntry(final String name) {
 			return null;
 		}
 		
@@ -79,14 +79,14 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 	private final Thread loginThread;
 	
 	
-	protected JaasAuthMethod(String id) {
+	protected JaasAuthMethod(final String id) {
 		super(id, true);
 		this.loginThread = new Thread(this);
 	}
 	
 	
 	@Override
-	public void doInit(String arg) throws RjException {
+	public void doInit(final String arg) throws RjException {
 		this.configuration = Configuration.getConfiguration();
 		if (this.configuration.getAppConfigurationEntry(JAAS_NAME) == null) {
 			this.configuration = new JaasConfig(arg);
@@ -94,7 +94,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 		try {
 			this.context = new LoginContext(JAAS_NAME, new Subject(), this, this.configuration);
 		}
-		catch (LoginException e) {
+		catch (final LoginException e) {
 			e.printStackTrace();
 		}
 	}
@@ -109,7 +109,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (InterruptedException e) {
+				catch (final InterruptedException e) {
 					Thread.interrupted();
 				}
 			}
@@ -121,7 +121,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 	}
 	
 	@Override
-	protected String doPerformLogin(Callback[] callbacks) throws LoginException, RjException {
+	protected String doPerformLogin(final Callback[] callbacks) throws LoginException, RjException {
 		this.pendingLoginCallback = callbacks;
 		this.pendingLogin = PERFORM;
 		synchronized (this) {
@@ -130,7 +130,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (InterruptedException e) {
+				catch (final InterruptedException e) {
 					Thread.interrupted();
 				}
 			}
@@ -156,7 +156,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (InterruptedException e) {
+				catch (final InterruptedException e) {
 					Thread.interrupted();
 				}
 			}
@@ -171,11 +171,11 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 			this.pendingLogin = LOGGED_IN;
 			this.context.logout();
 		}
-		catch (LoginException e) {
+		catch (final LoginException e) {
 			this.pendingLogin = FAILED;
 			this.pendingLoginMsg = e.getLocalizedMessage();
 		}
-		catch (Throwable e) {
+		catch (final Throwable e) {
 			this.pendingLogin = FAILED;
 		}
 		finally {
@@ -185,7 +185,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 		}
 	}
 	
-	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+	public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 		if (this.pendingLogin == STARTED) {
 			this.pendingLogin = CALLBACK;
 			this.pendingLoginCallback = callbacks;
@@ -196,7 +196,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 					try {
 						wait();
 					}
-					catch (InterruptedException e) {
+					catch (final InterruptedException e) {
 						Thread.interrupted();
 					}
 				}

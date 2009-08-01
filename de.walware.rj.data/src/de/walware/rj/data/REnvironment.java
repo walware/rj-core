@@ -13,7 +13,15 @@ package de.walware.rj.data;
 
 
 /**
- * RObject of type 'environment'
+ * An R object is of the type {@link RObject#TYPE_ENV environment}, if the
+ * object is an R environment.  Such an R environment object is represented
+ * by an instance of this interface.
+ * <p>
+ * The R function <code>typeof(object)</code> returns 'environment' for objects
+ * of this type.</p>
+ * <p>
+ * Even the interface extends {@link RList}, the objects are not a list in R!
+ * The inheritance is only for a uniform API.</p>
  */
 public interface REnvironment extends RList {
 	
@@ -23,7 +31,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	public static final String ENVNAME_GLOBAL = "R_GlobalEnv";
+	static final String ENVNAME_GLOBAL = "R_GlobalEnv";
 	
 	/**
 	 * Environment name of the empty environment
@@ -31,7 +39,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	public static final String ENVNAME_EMPTY = "R_EmptyEnv";
+	static final String ENVNAME_EMPTY = "R_EmptyEnv";
 	
 	/**
 	 * Environment name of the base environment
@@ -39,7 +47,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	public static final String ENVNAME_BASE = "base";
+	static final String ENVNAME_BASE = "base";
 	
 	/**
 	 * Environment name of the Autoloads environment
@@ -47,29 +55,37 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	public static final String ENVNAME_AUTOLOADS = "Autoloads";
+	static final String ENVNAME_AUTOLOADS = "Autoloads";
 	
-	public static final int ENVTYPE_BASE = 1;
-	public static final int ENVTYPE_AUTOLOADS = 2;
-	public static final int ENVTYPE_PACKAGE = 5;
-	public static final int ENVTYPE_GLOBAL = 7;
-	public static final int ENVTYPE_EMTPY = 9;
+	static final int ENVTYPE_BASE = 1;
+	static final int ENVTYPE_AUTOLOADS = 2;
+	static final int ENVTYPE_PACKAGE = 5;
+	static final int ENVTYPE_GLOBAL = 7;
+	static final int ENVTYPE_EMTPY = 9;
 	
-	
-	/**
-	 * Indicating a special type (> 0)
-	 * see <code>ENVTYPE_</code> constants above.
-	 * 
-	 * @return the type constant
-	 */
-	public int getSpecialType();
 	
 	/**
-	 * Name of the environment 
-	 * (<code>environmentName(x)</code>)
+	 * Returns the length of the object. The length of an {@link RObject#TYPE_ENV environment}
+	 * is the count the objects in the environment.
 	 * 
-	 * @return
+	 * @return the length
 	 */
-	public String getEnvironmentName();
+	int getLength();
+	
+	/**
+	 * Indicates a special environment type (> 0)
+	 * see <code>ENVTYPE_</code> constants defined in {@link REnvironment}.
+	 * 
+	 * @return the type constant or &lt;= 0
+	 */
+	int getSpecialType();
+	
+	/**
+	 * Returns the environment name of the environment.  This is the return value
+	 * of the R command <code>environmentName(object)</code>.
+	 * 
+	 * @return the environment name
+	 */
+	String getEnvironmentName();
 	
 }

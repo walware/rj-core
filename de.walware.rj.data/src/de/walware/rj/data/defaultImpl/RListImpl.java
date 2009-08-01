@@ -26,11 +26,11 @@ public class RListImpl extends AbstractRObject
 		implements RList, ExternalizableRObject {
 	
 	
-	private RObject[] components;
+	private RObject[] components; // null of RObject.F_NOCHILDREN
 	private int length;
 	
 	private String className1;
-	private RCharacterDataImpl namesAttribute;
+	protected RCharacterDataImpl namesAttribute;
 	
 	
 	public RListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
@@ -40,11 +40,11 @@ public class RListImpl extends AbstractRObject
 	public RListImpl(final RObject[] initialComponents, final String className1, String[] initialNames, final int length) {
 		this.length = length;
 		this.components = initialComponents;
-		this.className1 = (className1 != null) ? className1 : RObject.CLASSNAME_LIST;
-		if (initialNames == null) {
+		this.className1 = className1;
+		if (initialNames == null && initialComponents != null) {
 			initialNames = new String[length];
 		}
-		this.namesAttribute = new RCharacterDataImpl(initialNames, length);
+		this.namesAttribute = (initialNames != null) ? new RCharacterDataImpl(initialNames, length) : null;
 	}
 	
 	public RListImpl(final RObject[] initialComponents, final RCharacterDataImpl initialNames) {
@@ -64,21 +64,32 @@ public class RListImpl extends AbstractRObject
 		//-- options
 		final int options = in.readInt();
 		//-- special attributes
-		this.className1 = ((options & RObjectFactoryImpl.O_CLASS_NAME) != 0) ?
+		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				in.readUTF() : ((getRObjectType() == RObject.TYPE_DATAFRAME) ?
 						RObject.CLASSNAME_DATAFRAME : RObject.CLASSNAME_LIST);
-		this.namesAttribute = new RCharacterDataImpl(in);
-		//-- data
+		
 		this.length = in.readInt();
-		this.components = new RObject[this.length];
-		for (int i = 0; i < this.length; i++) {
-			this.components[i] = factory.readObject(in, flags);
+		
+		if ((options & RObjectFactory.O_NOCHILDREN) != 0) {
+			this.namesAttribute = null;
+			this.components = null;
+		}
+		else {
+			this.namesAttribute = readNames(in, flags);
+			//-- data
+			this.components = new RObject[this.length];
+			for (int i = 0; i < this.length; i++) {
+				this.components[i] = factory.readObject(in, flags);
+			}
 		}
 		//-- attributes
-		if ((options & RObjectFactoryImpl.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(in, flags));
 		}
 		return options;
+	}
+	protected RCharacterDataImpl readNames(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
+		return new RCharacterDataImpl(in);
 	}
 	
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
@@ -87,22 +98,29 @@ public class RListImpl extends AbstractRObject
 		final boolean customClass = !((getRObjectType() == TYPE_DATAFRAME) ?
 				this.className1.equals(RObject.CLASSNAME_DATAFRAME) : this.className1.equals(RObject.CLASSNAME_LIST));
 		if (customClass) {
-			options |= RObjectFactory.O_CLASS_NAME;
+			options |= RObjectFactory.F_CLASS_NAME;
 		}
-		final RList attributes = ((flags & RObjectFactoryImpl.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
-			options |= RObjectFactory.O_WITH_ATTR;
+			options |= RObjectFactory.F_WITH_ATTR;
+		}
+		if (this.components == null) {
+			options |= RObjectFactory.F_NOCHILDREN;
 		}
 		out.writeInt(options);
 		//-- special attributes
 		if (customClass) {
 			out.writeUTF(this.className1);
 		}
-		this.namesAttribute.writeExternal(out);
-		//-- data
+		
 		out.writeInt(this.length);
-		for (int i = 0; i < this.length; i++) {
-			factory.writeObject(this.components[i], out, flags);
+		
+		if (this.components != null) {
+			this.namesAttribute.writeExternal(out);
+			//-- data
+			for (int i = 0; i < this.length; i++) {
+				factory.writeObject(this.components[i], out, flags);
+			}
 		}
 		//-- attributes
 		if (attributes != null) {
@@ -111,7 +129,7 @@ public class RListImpl extends AbstractRObject
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_LIST;
 	}
 	
@@ -141,7 +159,7 @@ public class RListImpl extends AbstractRObject
 	}
 	
 	public final RObject get(final String name) {
-		final int idx = this.namesAttribute.getIdx(name);
+		final int idx = this.namesAttribute.indexOf(name);
 		if (idx >= 0) {
 			return this.components[idx];
 		}
@@ -157,7 +175,7 @@ public class RListImpl extends AbstractRObject
 		if (component == null) {
 			throw new NullPointerException();
 		}
-		final int idx = this.namesAttribute.getIdx(name);
+		final int idx = this.namesAttribute.indexOf(name);
 		if (idx >= 0) {
 			set(idx, component);
 			return true;
@@ -203,15 +221,20 @@ public class RListImpl extends AbstractRObject
 		final StringBuilder sb = new StringBuilder();
 		sb.append("RObject type=list, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(this.length);
-		sb.append("\n\tdata: ");
-		for (int i = 0; i < this.length; i++) {
-			if (this.namesAttribute.isNA(i)) {
-				sb.append("\n[[").append(i).append("]]\n");
+		if (this.components != null) {
+			sb.append("\n\tdata: ");
+			for (int i = 0; i < this.length; i++) {
+				if (this.namesAttribute.isNA(i)) {
+					sb.append("\n[[").append(i).append("]]\n");
+				}
+				else {
+					sb.append("\n$").append(this.namesAttribute.getChar(i)).append("\n");
+				}
+				sb.append(this.components[i]);
 			}
-			else {
-				sb.append("\n$").append(this.namesAttribute.getChar(i)).append("\n");
-			}
-			sb.append(this.components[i]);
+		}
+		else {
+			sb.append("\n<NODATA/>");
 		}
 		return sb.toString();
 	}

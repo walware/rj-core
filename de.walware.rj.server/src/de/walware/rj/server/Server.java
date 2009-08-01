@@ -13,6 +13,7 @@ package de.walware.rj.server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 import javax.security.auth.login.LoginException;
 
@@ -48,14 +49,31 @@ public interface Server extends Remote {
 	 */
 	public static final int S_STOPPED = 		0x0001a;
 	
+	public static final String C_CONSOLE_START = "console.start";
+	
+	public static final String C_CONSOLE_CONNECT = "console.connect";
+	
+	public static final String C_RSERVI_NODECONTROL = "rservi.nodecontrol";
+	
+	
 	/**
-	 * Triple of version number of the server API
+	 * Triple of API version of the this server
 	 * 
-	 * @return version number
+	 * @return the version number
 	 * @throws RemoteException
 	 */
 	int[] getVersion() throws RemoteException;
 	
+	/**
+	 * The current server information
+	 * 
+	 * The information represents the state this method is call
+	 * and is not updated. To check for updates the method must be
+	 * called again. 
+	 * 
+	 * @return a server information object
+	 * @throws RemoteException
+	 */
 	ServerInfo getInfo() throws RemoteException;
 	
 	/**
@@ -69,55 +87,25 @@ public interface Server extends Remote {
 	
 	/**
 	 * Creates and returns the ServerLogin with all information necessary
-	 * to login (#start of #connect)
+	 * to login ({@link #execute(String, Map, ServerLogin)})
+	 * to run the specified command 
 	 * 
-	 * @return ServerLogin with information what i
+	 * @param the execute command constant the login will be for
+	 * @return the server login for the command
 	 * @throws RemoteException
 	 */
-	ServerLogin createLogin() throws RemoteException;
+	ServerLogin createLogin(String command) throws RemoteException;
 	
 	
 	/**
-	 * Starts the R server.
+	 * Universal method to executes a server command
 	 * 
-	 * @param login
-	 * @param args
-	 * @return ticket
-	 * @throws RemoteException
-	 *     - the server was already started
-	 *     - other remote error occured
-	 * @throws LoginException 
-	 */
-	int start(ServerLogin login, String[] args) throws RemoteException, LoginException;
-	
-	/**
-	 * 
-	 * @param login
-	 * @return ticket
-	 * @throws RemoteException
-	 * @throws LoginException
-	 */
-	int connect(ServerLogin login) throws RemoteException, LoginException;
-	
-	/**
-	 * Tries to interrupt the current compution.
-	 * 
-	 * @param ticket
+	 * @param command a command, default are available as constants with C_ prefix. 
+	 * @param login the login creditals a answer of {@link #createConsoleLogin()}
+	 * @return the return value of the command, see command description
+	 * @throws LoginException if login failed
 	 * @throws RemoteException
 	 */
-	void interrupt(int ticket) throws RemoteException;
-	
-	/**
-	 * Disconnects the client from the server.
-	 * The client can reconnect using {@link #connect(long)}.
-	 * 
-	 * @param ticket
-	 * @throws RemoteException
-	 */
-	void disconnect(int ticket) throws RemoteException;
-	
-	RjsComObject runMainLoop(int ticket, RjsComObject com) throws RemoteException;
-	
-	RjsComObject runAsync(int ticket, RjsComObject com) throws RemoteException;
+	Object execute(String command, Map<String, ? extends Object> args, ServerLogin login) throws LoginException, RemoteException;
 	
 }

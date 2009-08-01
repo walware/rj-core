@@ -14,7 +14,15 @@ package de.walware.rj.data;
 
 public class RDataUtil {
 	
-	
+	/**
+	 * Returns the common abbreviation for the type of the given data store.
+	 * These are the abbreviations used by the R function <code>str(x)</code>.
+	 * If there is no abbreviation for the given type, it return the class name 
+	 * of an R vector with data of this type.
+	 * 
+	 * @param store the data store
+	 * @return an abbreviation
+	 */
 	public static String getStoreAbbr(final RStore store) {
 		switch (store.getStoreType()) {
 		case RStore.LOGICAL:
@@ -121,11 +129,12 @@ public class RDataUtil {
 		return dataIdxs;
 	}
 	
+	
 	public static boolean isSingleString(final RObject obj) {
-		return (obj != null
-				&& (obj.getRObjectType() == RObject.TYPE_VECTOR || obj.getRObjectType() == RObject.TYPE_ARRAY)
-				&& obj.getLength() == 1
-				&& obj.getData().getStoreType() == RStore.CHARACTER);
+		final RStore data;
+		return (obj != null && (data = obj.getData()) != null
+				&& data.getStoreType() == RStore.CHARACTER
+				&& data.getLength() == 1 );
 	}
 	
 }

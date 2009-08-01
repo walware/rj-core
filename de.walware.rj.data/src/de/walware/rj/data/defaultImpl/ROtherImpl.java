@@ -52,14 +52,14 @@ public class ROtherImpl extends AbstractRObject
 		//-- special attributes
 		this.className1 = in.readUTF();
 		//-- attributes
-		if ((options & RObjectFactoryImpl.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(in, flags));
 		}
 	}
 	
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		final RList attributes = ((flags & RObjectFactoryImpl.F_WITH_ATTR) != 0) ? getAttributes() : null;
-		out.writeInt((attributes != null) ? RObjectFactoryImpl.F_WITH_ATTR : 0);
+		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		out.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
 		out.writeUTF(this.className1);
 		if (attributes != null) {
 			factory.writeAttributeList(attributes, out, flags);
@@ -67,7 +67,7 @@ public class ROtherImpl extends AbstractRObject
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_OTHER;
 	}
 	

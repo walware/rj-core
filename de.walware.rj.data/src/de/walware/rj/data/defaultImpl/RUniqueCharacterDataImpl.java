@@ -32,7 +32,7 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	
 	@Override
-	public int getIdx(final String value) {
+	public int indexOf(final String value) {
 		for (int i = 0; i < this.charValues.length; i++) {
 			if (this.charValues[i].equals(value)) {
 				return i;
@@ -43,8 +43,8 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	@Override
 	public void setChar(final int idx, final String value) {
-		if (getIdx(value) >= 0) {
-			if (getIdx(value) == idx) {
+		if (indexOf(value) >= 0) {
+			if (indexOf(value) == idx) {
 				return;
 			}
 			throw new IllegalArgumentException();
@@ -54,7 +54,7 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	@Override
 	public void insertChar(final int idx, final String value) {
-		if (getIdx(value) >= 0) {
+		if (indexOf(value) >= 0) {
 			throw new IllegalArgumentException();
 		}
 		super.insertChar(idx, value);
@@ -78,12 +78,12 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	protected String createAuto(final int idx) {
 		final String nr = Integer.toString(idx+1);
-		if (getIdx(nr) < 0) {
+		if (indexOf(nr) < 0) {
 			return nr;
 		}
 		for (int i = 1; ; i++) {
 			final String sub = nr+'.'+Integer.toString(i);
-			if (getIdx(sub) < 0) {
+			if (indexOf(sub) < 0) {
 				return sub;
 			}
 		}

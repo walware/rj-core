@@ -18,65 +18,18 @@ import java.io.ObjectOutput;
 
 
 /**
- * Based on int array, default value is FALSE
+ * Based on int array
  */
 public class RLogicalDataIntImpl extends AbstractLogicalData
-		implements RDataReziseExtension, Externalizable {
+		implements RDataResizeExtension, Externalizable {
 	
 	
-	public static RLogicalDataIntImpl createOtherTrue(final int[] values, final int falseCode, final int naCode) {
-		int naCount = 0;
-		for (int i = 0; i < values.length; i++) {
-			if (values[i] == falseCode) {
-				values[i] = FALSE_INT;
-			}
-			else if (values[i] == naCode) {
-				values[i] = NA_logical_INT;
-				naCount++;
-			}
-			else {
-				values[i] = TRUE_INT;
-			}
-		}
-		return new RLogicalDataIntImpl(values, naCount);
-	}
-	
-	public static RLogicalDataIntImpl createOtherFalse(final int[] values, final int trueCode, final int naCode) {
-		int naCount = 0;
-		if (trueCode != TRUE_INT || naCode != NA_logical_INT) {
-			for (int i = values.length-1; i >= 0; i--) {
-				final int value = values[i];
-				if (value == trueCode) {
-					values[i] = TRUE_INT;
-				}
-				else if (value == naCode) {
-					values[i] = NA_logical_INT;
-					naCount++;
-				}
-				else {
-					values[i] = FALSE_INT;
-				}
-			}
-		}
-		else {
-			for (int i = 0; i < values.length; i++) {
-				if (values[i] == NA_logical_INT) {
-					naCount++;
-				}
-			}
-		}
-		return new RLogicalDataIntImpl(values, naCount);
-	}
-	
-	
-	private int[] boolValues;
-	private int naCount;
+	protected int[] boolValues;
 	
 	
 	public RLogicalDataIntImpl() {
 		this.boolValues = new int[0];
 		this.length = 0;
-		this.naCount = 0;
 	}
 	
 	public RLogicalDataIntImpl(final boolean[] values, final int[] naIdxs) {
@@ -90,43 +43,68 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 				this.boolValues[naIdxs[i]] = NA_logical_INT;
 			}
 		}
-		this.naCount = naIdxs.length;
 	}
 	
-	private RLogicalDataIntImpl(final int[] values, final int naCount) {
+	/**
+	 * Create new logical data based on the given Java int array
+	 * encoded as follows:
+	 * <code>FALSE</code> = 0
+	 * <code>NA</code> = 2
+	 * <code>TRUE</code> = anything else (default value 1)
+	 * 
+	 * @param values encoded value array, used directly (not copied)
+	 */
+	public RLogicalDataIntImpl(final int[] values) {
 		this.length = values.length;
 		this.boolValues = values;
-		this.naCount = naCount;
 	}
 	
+	/**
+	 * Constructor for deserialization
+	 * 
+	 * @param in the input stream providing the serizalized object
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public RLogicalDataIntImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
+		readExternal(in);
+	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.length = in.readInt();
-		this.naCount = 0;
 		this.boolValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
-			if ((this.boolValues[i] = in.readByte()) == NA_logical_INT) {
-				this.naCount++;
-			}
+			this.boolValues[i] = in.readByte();
 		}
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
-			out.writeByte(this.boolValues[i]);
+			switch (this.boolValues[i]) {
+			case FALSE_INT:
+				out.writeByte(FALSE_BYTE);
+				continue;
+			case NA_logical_INT:
+				out.writeByte(NA_logical_BYTE);
+				continue;
+			default:
+				out.writeByte(TRUE_BYTE);
+				continue;
+			}
 		}
 	}
 	
 	
 	@Override
-	public boolean getLogi(final int idx) {
-		return (this.boolValues[idx] == TRUE_INT);
+	protected final boolean isStructOnly() {
+		return false;
 	}
 	
+	
 	@Override
-	public boolean hasNA() {
-		return (this.naCount > 0);
+	public boolean getLogi(final int idx) {
+		return (this.boolValues[idx] != FALSE_INT);
 	}
 	
 	@Override
@@ -134,11 +112,12 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		return (this.boolValues[idx] == NA_logical_INT);
 	}
 	
+	public boolean isMissing(final int idx) {
+		return (this.boolValues[idx] == NA_logical_INT);
+	}
+	
 	@Override
 	public void setLogi(final int idx, final boolean value) {
-		if (this.boolValues[idx] == NA_logical_INT) {
-			this.naCount --;
-		}
 		this.boolValues[idx] = value ? TRUE_INT : FALSE_INT;
 	}
 	
@@ -148,7 +127,6 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 			return;
 		}
 		this.boolValues[idx] = NA_logical_INT;
-		this.naCount ++;
 	}
 	
 	private void prepareInsert(final int[] idxs) {
@@ -164,7 +142,6 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.boolValues[idx] = NA_logical_INT;
-		this.naCount ++;
 	}
 	
 	public void insertNA(final int[] idxs) {
@@ -175,25 +152,24 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		for (int idx = 0; idx < idxs.length; idx++) {
 			this.boolValues[idxs[idx]+idx] = NA_logical_INT;
 		}
-		this.naCount += idxs.length;
 	}
 	
 	public void remove(final int idx) {
-		if (this.boolValues[idx] == NA_logical_INT) {
-			this.naCount --;
-		}
 		this.boolValues = remove(this.boolValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
 	public void remove(final int[] idxs) {
-		for (int i = 0; i < idxs.length; i++) {
-			if (this.boolValues[idxs[i]] == NA_logical_INT) {
-				this.naCount --;
-			}
-		}
 		this.boolValues = remove(this.boolValues, this.length, idxs);
 		this.length -= idxs.length;
+	}
+	
+	public Boolean get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (this.boolValues[idx] != NA_logical_INT) ?
+				((this.boolValues[idx] == TRUE_INT) ? Boolean.TRUE : Boolean.FALSE) : null;
 	}
 	
 	public Boolean[] toArray() {

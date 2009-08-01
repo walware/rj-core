@@ -9,21 +9,24 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server;
+package de.walware.rj;
 
 
-public class RjException extends Exception{
+/**
+ * Exception indicating that RJ operation failed
+ */
+public class RjOperationFailedException extends RjException {
 	
 	
-	private static final long serialVersionUID = 5870562800737177156L;
+	private static final long serialVersionUID = -4522905374338039910L;
 	
 	
-	public RjException(String msg) {
-		super(msg);
+	public RjOperationFailedException(final String message) {
+		super(message);
 	}
 	
-	public RjException(String msg, Throwable cause) {
-		super(msg, cause);
+	public RjOperationFailedException(final String message, final Throwable cause) {
+		super(message, cause);
 	}
 	
 }

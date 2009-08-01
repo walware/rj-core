@@ -13,6 +13,7 @@ package de.walware.rj.data.defaultImpl;
 
 import java.util.Arrays;
 
+import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RStore;
 
 
@@ -59,7 +60,8 @@ public abstract class AbstractRData implements RStore {
 		}
 		
 		d = Double.longBitsToDouble(l);
-		if (d != NA_numeric_DOUBLE) {
+		l = Double.doubleToRawLongBits(d);
+		if (l != NA_numeric_LONG) {
 			return false;
 		}
 		return true;
@@ -344,11 +346,11 @@ public abstract class AbstractRData implements RStore {
 		throw new UnsupportedOperationException();
 	}
 	
-	public double getCplxI(final int idx) {
+	public double getCplxIm(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public double getCplxR(final int idx) {
+	public double getCplxRe(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -365,16 +367,84 @@ public abstract class AbstractRData implements RStore {
 	}
 	
 	
-	public boolean hasNA() {
-		throw new UnsupportedOperationException();
-	}
-	
 	public boolean isNA(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
 	public void setNA(final int idx) {
 		throw new UnsupportedOperationException();
+	}
+	
+	
+	protected abstract boolean isStructOnly();
+	
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append(RDataUtil.getStoreAbbr(this));
+		sb.append(' ');
+		if (isStructOnly()) {
+			sb.append("<struct only>");
+		}
+		else {
+			int end = (this.length <= 25) ? this.length : 10;
+			if (getStoreType() == CHARACTER) {
+				for (int i = 0; true;) {
+					if (isNA(i)) {
+						sb.append("NA");
+					}
+					else {
+						sb.append('"');
+						sb.append(getChar(i));
+						sb.append('"');
+					}
+					i++;
+					if (i < end) {
+						sb.append(", ");
+						continue;
+					}
+					else {
+						if (end == this.length) {
+							break;
+						}
+						else {
+							sb.append(", .., ");
+							i = this.length - 10;
+							end = this.length;
+							continue;
+						}
+					}
+				}
+			}
+			else {
+				for (int i = 0; true;) {
+					if (isNA(i)) {
+						sb.append("NA");
+					}
+					else {
+						sb.append(getChar(i));
+					}
+					i++;
+					if (i < end) {
+						sb.append(", ");
+						continue;
+					}
+					else {
+						if (end == this.length) {
+							break;
+						}
+						else {
+							sb.append(", .., ");
+							i = this.length - 10;
+							end = this.length;
+							continue;
+						}
+					}
+				}
+			}
+		}
+		return sb.toString();
 	}
 	
 }

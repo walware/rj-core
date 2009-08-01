@@ -11,88 +11,164 @@
 
 package de.walware.rj.data;
 
+import de.walware.rj.data.defaultImpl.RNull;
+
 
 /**
- * Basic interface of all R object
- * 
- * To detect the type of an RObject instance, use always {@link #getRObjectType()},
- * not the java class type (e.g. instanceof).
+ * Basic interface of all R object.
+ * <p>
+ * To detect the type of an RObject instance, the method {@link #getRObjectType()} 
+ * should be used, not the java class type (e.g. instanceof) of the object.</p>
  */
 public interface RObject {
 	
-	public static final int TYPE_NULL =            0x00000001;
-	public static final int TYPE_VECTOR =          0x00000002;
-	public static final int TYPE_ARRAY =           0x00000003;
-	public static final int TYPE_DATAFRAME =       0x00000006;
-	public static final int TYPE_LIST =            0x00000007;
-	public static final int TYPE_ENV =             0x00000008;
-	public static final int TYPE_S4OBJECT =        0x0000000a;
-	public static final int TYPE_FUNCTION =        0x0000000d;
-	public static final int TYPE_REFERENCE =       0x0000000e;
-	public static final int TYPE_OTHER =           0x0000000f;
+	/**
+	 * Constant indicating the RNull object respectively the R NULL value.
+	 * <p>
+	 * The object is an instance of {@link RNull}.</p>
+	 */
+	byte TYPE_NULL =            0x00000001;
 	
-	public static final String ATTR_ROW_NAMES = "row.names";
-	public static final String ATTR_NAMES = "names";
+	/**
+	 * Constant indicating an {@link RVector} object. An R object is of this type
+	 * if it is a R data object of an "atomic" mode without a dimension attribute
+	 * (<code>dim</dim>).
+	 * <p>
+	 * The object is an instance of {@link RVector}.</p>
+	 */
+	byte TYPE_VECTOR =          0x00000002;
 	
-	//-- Default class names --//
-	public static final String CLASSNAME_LOGICAL = "logical";
-	public static final String CLASSNAME_INTEGER = "integer";
-	public static final String CLASSNAME_NUMERIC = "numeric";
-	public static final String CLASSNAME_CHARACTER = "character";
-	public static final String CLASSNAME_COMPLEX = "complex";
-	public static final String CLASSNAME_RAW = "raw";
-	public static final String CLASSNAME_FACTOR = "factor";
-	public static final String CLASSNAME_ORDERED = "ordered";
+	/**
+	 * Constant indicating an {@link RArray} object. An R object is of this type
+	 * if it is a R data object of an "atomic" mode with a dimension attribute
+	 * (<code>dim</dim>).
+	 * <p>
+	 * The object is an instance of {@link RArray}.</p>
+	 */
+	byte TYPE_ARRAY =           0x00000003;
 	
-	public static final String CLASSNAME_ARRAY = "array";
-	public static final String CLASSNAME_MATRIX = "matrix";
-	public static final String CLASSNAME_DATAFRAME = "data.frame";
-	public static final String CLASSNAME_LIST = "list";
-	public static final String CLASSNAME_ENV = "environment";
+	/**
+	 * Constant indicating an RDataFrame object. An R object is of this type
+	 * if it is an R list object inheriting the R class {@link #CLASSNAME_DATAFRAME data.frame}
+	 * and compiling with the R rules for a data frame, especially its children 
+	 * are {@link RVector}s of the same length.
+	 * <p>
+	 * The object is an instance of {@link RDataFrame}.</p>
+	 */
+	byte TYPE_DATAFRAME =       0x00000006;
 	
-	public static final String CLASSNAME_NULL = "NULL";
+	/**
+	 * Constant indicating an RList object. An R object is of this type if it is 
+	 * a list but not a data frame (see {@link #TYPE_DATAFRAME}).
+	 * <p>
+	 * The object is an instance of {@link RList}.</p>
+	 */
+	byte TYPE_LIST =            0x00000007;
+	
+	/**
+	 * Constant indicating an R environment object.
+	 * <p>
+	 * The object is an instance of {@link REnvironment}.</p>
+	 */
+	byte TYPE_ENV =             0x00000008;
+	
+	/**
+	 * Constant indicating an S4 object. An R object is of this type if the R
+	 * command <code>isS4</code> returns true. This is criterion has priority
+	 * above the criteria for the other data types. If an S4 object represents 
+	 * also a simple data type, this data is accessible by its data slot.
+	 * <p>
+	 * The object is an instance of {@link RS4Object}.</p>
+	 */
+	byte TYPE_S4OBJECT =        0x0000000a;
+	
+	/**
+	 * Constant indicating an R function object.
+	 * <p>
+	 * The object is an instance of {@link RFunction}.</p>
+	 */
+	byte TYPE_FUNCTION =        0x0000000d;
+	
+	/**
+	 * Constant indicating a reference to a R object.
+	 * <p>
+	 * The object is an instance of {@link RReference}.</p>
+	 */
+	byte TYPE_REFERENCE =       0x0000000e;
+	
+	/**
+	 * Constant indicating an R object not matching one of the other types.
+	 */
+	byte TYPE_OTHER =           0x0000000f;
+	
+	
+	//-- Common class names --//
+	String CLASSNAME_LOGICAL = "logical";
+	String CLASSNAME_INTEGER = "integer";
+	String CLASSNAME_NUMERIC = "numeric";
+	String CLASSNAME_CHARACTER = "character";
+	String CLASSNAME_COMPLEX = "complex";
+	String CLASSNAME_RAW = "raw";
+	String CLASSNAME_FACTOR = "factor";
+	String CLASSNAME_ORDERED = "ordered";
+	
+	String CLASSNAME_ARRAY = "array";
+	String CLASSNAME_MATRIX = "matrix";
+	String CLASSNAME_DATAFRAME = "data.frame";
+	String CLASSNAME_LIST = "list";
+	String CLASSNAME_PAIRLIST = "pairlist";
+	String CLASSNAME_ENV = "environment";
+	
+	String CLASSNAME_NULL = "NULL";
+	
+	//-- Common attribute names --//
+	String ATTR_ROW_NAMES = "row.names";
+	String ATTR_NAMES = "names";
 	
 	
 	/**
-	 * The object type of this object
-	 * 
-	 * See the object type constants <code>TYPE_</code> defined in {@link RObject}.
+	 * Returns the object type constant of this object
+	 * <p>
+	 * See the object type constants <code>TYPE_</code> defined in {@link RObject}.</p>
 	 * 
 	 * @return the object type constant
 	 */
-	public int getRObjectType();
+	byte getRObjectType();
 	
 	/**
-	 * The class name of this object in R
-	 * 
+	 * Returns the class name of this object in R.
+	 * <p>
 	 * If the object has multiple S3 class names in R, it returns the first one.
-	 *   <code>class(x)[1]</code>
+	 * The analog R command is <code>class(x)[1]</code>.</p>
 	 * 
 	 * @return the R class name
 	 */
-	public String getRClassName();
+	String getRClassName();
 	
 	/**
-	 * The length of the object
-	 * 
-	 * Depends on the R object type and doesn't return a valid value
-	 * for unknown types.
+	 * Returns the length of the object.
+	 * <p>
+	 * Its meaning depends on the R object type and is undefined for unknown types.</p>
 	 * 
 	 * @return the length
 	 */
 	int getLength();
 	
 	/**
-	 * The data store containing object data as 1-dim structure
+	 * Returns the data store containing object data in a one-dimensional structure.
+	 * <p>
+	 * This is supported by objects of {@link #TYPE_VECTOR}, {@link #TYPE_ARRAY} and
+	 * of {@link #TYPE_S4OBJECT} with a data slot of a one of these types providing a data
+	 * store.</p>
 	 * 
-	 * @return the data store or <code>null</code>, if not supported by the object type
+	 * @return the data store or <code>null</code>, if not supported by the object
 	 */
 	RStore getData();
 	
 	/**
-	 * The attribute list of the object
-	 * 
-	 * Note: By default the attributes are not loaded.
+	 * Returns the attribute list of the object
+	 * <p>
+	 * Note that by default the attributes are not loaded.</p>
 	 * 
 	 * @return the attribute list or <code>null</code>, if not available
 	 */

@@ -17,23 +17,28 @@ import java.io.Serializable;
 public class ServerInfo implements Serializable {
 	
 	
-	private static final long serialVersionUID = -7708452527229108455L;
+	private static final long serialVersionUID = -562826190851033291L;
+	
+	public static final String USER_OWNER = "owner";
+	public static final String USER_CONSOLE = "console";
+	public static final String USER_RSERVI = "rservi";
 	
 	
-	private String name;
-	private String ownerUser;
-	private String directory;
-	private int state;
-	private String currentUser;
+	private final String name;
+	private final String[] userTypes;
+	private final String[] userNames;
+	private final String directory;
+	private final int state;
 	
 	
-	public ServerInfo(final String name, final String ownerUser, final String directory,
-			final int state, final String currentUser) {
+	public ServerInfo(final String name, final String directory,
+			final String[] userTypes, final String[] userNames,
+			final int state) {
 		this.name = name;
-		this.ownerUser = ownerUser;
+		this.userTypes = userTypes;
+		this.userNames = userNames;
 		this.directory = directory;
 		this.state = state;
-		this.currentUser = currentUser;
 	}
 	
 	
@@ -41,8 +46,13 @@ public class ServerInfo implements Serializable {
 		return this.name;
 	}
 	
-	public String getOwnerUsername() {
-		return this.ownerUser;
+	public String getUsername(final String type) {
+		for (int i = 0; i < this.userTypes.length; i++) {
+			if (this.userTypes[i].equals(type)) {
+				return this.userNames[i];
+			}
+		}
+		return null;
 	}
 	
 	public String getDirectory() {
@@ -51,10 +61,6 @@ public class ServerInfo implements Serializable {
 	
 	public int getState() {
 		return this.state;
-	}
-	
-	public String getCurrentUsername() {
-		return this.currentUser;
 	}
 	
 }

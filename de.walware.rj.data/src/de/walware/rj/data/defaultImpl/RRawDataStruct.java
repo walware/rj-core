@@ -11,6 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RRawDataStruct extends AbstractRawData {
 	
@@ -20,8 +22,27 @@ public class RRawDataStruct extends AbstractRawData {
 	}
 	
 	
-	public Byte[] toArray() {
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
+	}
+	
+	public Byte get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final Byte[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == RAW && other.getLength() == -1);
 	}
 	
 }

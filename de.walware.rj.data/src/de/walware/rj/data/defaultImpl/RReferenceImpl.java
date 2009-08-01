@@ -52,7 +52,7 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_REFERENCE;
 	}
 	

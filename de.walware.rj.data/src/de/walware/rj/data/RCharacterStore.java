@@ -13,14 +13,19 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for R data type 'character'
+ * Interface for R data stores of type {@link RStore#CHARACTER}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'character'.</p>
  */
 public interface RCharacterStore extends RStore {
 	
 	
-	int getIdx(String value);
+	int indexOf(String value);
+	int indexOf(String value, int fromIdx);
 	boolean contains(final String value);
 	
+	String get(int idx);
 	String[] toArray();
 	
 }

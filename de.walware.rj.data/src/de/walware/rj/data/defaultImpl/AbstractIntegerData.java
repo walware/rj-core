@@ -20,7 +20,7 @@ public abstract class AbstractIntegerData extends AbstractRData
 		implements RIntegerStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.INTEGER;
 	}
 	
@@ -36,6 +36,11 @@ public abstract class AbstractIntegerData extends AbstractRData
 	@Override
 	public final void setNum(final int idx, final double real) {
 		setInt(idx, (int) real);
+	}
+	
+	@Override
+	public final String getChar(final int idx) {
+		return Integer.toString(getInt(idx));
 	}
 	
 	@Override
@@ -56,6 +61,19 @@ public abstract class AbstractIntegerData extends AbstractRData
 			}
 		}
 		return array;
+	}
+	
+	public boolean allEqual(final RStore other) {
+		if (other.getStoreType() != INTEGER || other.getLength() != this.length) {
+			return false;
+		}
+		for (int i = 0; i < this.length; i++) {
+			if (!(other.isNA(i) ? isNA(i) :
+					other.getInt(i) == getInt(i) )) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }

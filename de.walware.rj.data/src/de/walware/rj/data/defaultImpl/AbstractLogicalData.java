@@ -20,7 +20,7 @@ public abstract class AbstractLogicalData extends AbstractRData
 		implements RLogicalStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.LOGICAL;
 	} 
 	
@@ -34,8 +34,26 @@ public abstract class AbstractLogicalData extends AbstractRData
 	}
 	
 	@Override
-	public void setInt(final int idx, final int integer) {
+	public final void setInt(final int idx, final int integer) {
 		setLogi(idx, integer != 0);
+	}
+	
+	@Override
+	public final String getChar(final int idx) {
+		return getLogi(idx) ? "TRUE" : "FALSE";
+	}
+	
+	public boolean allEqual(final RStore other) {
+		if (other.getStoreType() != LOGICAL || other.getLength() != this.length) {
+			return false;
+		}
+		for (int i = 0; i < this.length; i++) {
+			if (!(other.isNA(i) ? isNA(i) :
+					other.getLogi(i) == getLogi(i) )) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }

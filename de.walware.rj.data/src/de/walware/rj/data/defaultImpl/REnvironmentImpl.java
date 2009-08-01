@@ -27,13 +27,6 @@ public class REnvironmentImpl extends AbstractRObject
 		implements REnvironment, ExternalizableRObject {
 	
 	
-	public static REnvironmentImpl createForServer(final String name, final long handle, 
-			final RObject[] initialComponents, final String[] initialNames, final int length,
-			final String className1) {
-		return new REnvironmentImpl(name, handle, initialComponents, initialNames, length, className1);
-	}
-	
-	
 	private String className1;
 	
 	private String id;
@@ -43,7 +36,7 @@ public class REnvironmentImpl extends AbstractRObject
 	private RCharacterDataImpl namesAttribute;
 	
 	
-	private REnvironmentImpl(final String name, final long handle, final RObject[] initialComponents, String[] initialNames, final int length, final String className1) {
+	protected REnvironmentImpl(final String name, final long handle, final RObject[] initialComponents, String[] initialNames, final int length, final String className1) {
 		this.id = name;
 		this.handle = handle;
 		this.components = initialComponents;
@@ -63,19 +56,26 @@ public class REnvironmentImpl extends AbstractRObject
 		//-- options
 		final int options = in.readInt();
 		//-- special attributes
-		this.className1 = ((options & RObjectFactoryImpl.O_CLASS_NAME) != 0) ?
+		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				in.readUTF() : RObject.CLASSNAME_ENV;
 		//-- data
 		this.handle = in.readLong();
 		this.id = in.readUTF();
 		this.length = in.readInt();
-		this.namesAttribute = new RUniqueCharacterDataWithHashImpl(in);
-		this.components = new RObject[this.length];
-		for (int i = 0; i < this.length; i++) {
-			this.components[i] = factory.readObject(in, flags);
+		
+		if ((options & RObjectFactory.O_NOCHILDREN) != 0) {
+			this.namesAttribute = null;
+			this.components = null;
+		}
+		else {
+			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(in);
+			this.components = new RObject[this.length];
+			for (int i = 0; i < this.length; i++) {
+				this.components[i] = factory.readObject(in, flags);
+			}
 		}
 		//-- attributes
-		if ((options & RObjectFactoryImpl.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(in, flags));
 		}
 	}
@@ -87,9 +87,12 @@ public class REnvironmentImpl extends AbstractRObject
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		final RList attributes = ((flags & RObjectFactoryImpl.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
+		}
+		if (this.components == null) {
+			options |= RObjectFactory.F_NOCHILDREN;
 		}
 		out.writeInt(options);
 		//-- special attributes
@@ -100,9 +103,13 @@ public class REnvironmentImpl extends AbstractRObject
 		out.writeLong(this.handle);
 		out.writeUTF(this.id);
 		out.writeInt(this.length);
-		this.namesAttribute.writeExternal(out);
-		for (int i = 0; i < this.length; i++) {
-			factory.writeObject(this.components[i], out, flags);
+		
+		if (this.components != null) {
+			this.namesAttribute.writeExternal(out);
+			//-- data
+			for (int i = 0; i < this.length; i++) {
+				factory.writeObject(this.components[i], out, flags);
+			}
 		}
 		//-- attributes
 		if (attributes != null) {
@@ -111,7 +118,7 @@ public class REnvironmentImpl extends AbstractRObject
 	}
 	
 	
-	public final int getRObjectType() {
+	public final byte getRObjectType() {
 		return TYPE_ENV;
 	}
 	
@@ -158,7 +165,7 @@ public class REnvironmentImpl extends AbstractRObject
 		if (component == null) {
 			throw new NullPointerException();
 		}
-		final int idx = this.namesAttribute.getIdx(name);
+		final int idx = this.namesAttribute.indexOf(name);
 		if (idx >= 0) {
 			this.components[idx] = component;
 			return true;
@@ -194,7 +201,7 @@ public class REnvironmentImpl extends AbstractRObject
 	
 	
 	public RObject get(final String name) {
-		final int idx = this.namesAttribute.getIdx(name);
+		final int idx = this.namesAttribute.indexOf(name);
 		if (idx >= 0) {
 			return this.components[idx];
 		}
@@ -202,7 +209,7 @@ public class REnvironmentImpl extends AbstractRObject
 	}
 	
 	public boolean containsName(final String name) {
-		return (this.namesAttribute.getIdx(name) >= 0);
+		return (this.namesAttribute.indexOf(name) >= 0);
 	}
 	
 	@Override
@@ -210,10 +217,15 @@ public class REnvironmentImpl extends AbstractRObject
 		final StringBuilder sb = new StringBuilder();
 		sb.append("RObject type=environment, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(this.length);
-		sb.append("\n\tdata: ");
-		for (int i = 0; i < this.length; i++) {
-			sb.append("\n$").append(this.namesAttribute.getChar(i)).append("\n");
-			sb.append(this.components[i]);
+		if (this.components != null) {
+			sb.append("\n\tdata: ");
+			for (int i = 0; i < this.length; i++) {
+				sb.append("\n$").append(this.namesAttribute.getChar(i)).append("\n");
+				sb.append(this.components[i]);
+			}
+		}
+		else {
+			sb.append("\n<NODATA/>");
 		}
 		return sb.toString();
 	}

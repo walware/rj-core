@@ -51,7 +51,7 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	
 	
 	@Override
-	public int getIdx(final String name) {
+	public int indexOf(final String name) {
 		return this.map.get(name);
 	}
 	

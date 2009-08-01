@@ -21,16 +21,27 @@ import java.io.ObjectOutput;
  * Based on byte array, default value is FALSE
  */
 public class RLogicalDataByteImpl extends AbstractLogicalData
-		implements RDataReziseExtension, Externalizable {
+		implements RDataResizeExtension, Externalizable {
+	
+	
+	public static final byte TRUE = TRUE_BYTE;
+	public static final byte FALSE = FALSE_BYTE;
 	
 	
 	private byte[] boolValues;
-	private int naCount;
 	
 	
 	public RLogicalDataByteImpl() {
 		this.boolValues = new byte[0];
 		this.length = 0;
+	}
+	
+	public RLogicalDataByteImpl(final boolean[] values) {
+		this.boolValues = new byte[values.length];
+		for (int i = values.length-1; i >= 0; i--) {
+			this.boolValues[i] = (values[i]) ? TRUE_BYTE : FALSE_BYTE;
+		}
+		this.length = this.boolValues.length;
 	}
 	
 	public RLogicalDataByteImpl(final boolean[] values, final int[] naIdxs) {
@@ -44,7 +55,11 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 				this.boolValues[naIdxs[i]] = NA_logical_BYTE;
 			}
 		}
-		this.naCount = naIdxs.length;
+	}
+	
+	public RLogicalDataByteImpl(final byte[] values) {
+		this.boolValues = values;
+		this.length = this.boolValues.length;
 	}
 	
 	public RLogicalDataByteImpl(final byte[] values, final byte trueCode, final byte naCode) {
@@ -66,6 +81,11 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 		this.length = this.boolValues.length;
 	}
 	
+	public RLogicalDataByteImpl(final int length) {
+		this.boolValues = new byte[length];
+		this.length = length;
+	}
+	
 	
 	public RLogicalDataByteImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
 		readExternal(in);
@@ -73,12 +93,9 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.length = in.readInt();
-		this.naCount = 0;
 		this.boolValues = new byte[this.length];
 		for (int i = 0; i < this.length; i++) {
-			if ((this.boolValues[i] = in.readByte()) == NA_logical_BYTE) {
-				this.naCount++;
-			}
+			this.boolValues[i] = in.readByte();
 		}
 	}
 	
@@ -91,13 +108,14 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	
 	
 	@Override
-	public boolean getLogi(final int idx) {
-		return (this.boolValues[idx] == TRUE_BYTE);
+	protected final boolean isStructOnly() {
+		return false;
 	}
 	
+	
 	@Override
-	public boolean hasNA() {
-		return (this.naCount > 0);
+	public boolean getLogi(final int idx) {
+		return (this.boolValues[idx] == TRUE_BYTE);
 	}
 	
 	@Override
@@ -105,21 +123,18 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 		return (this.boolValues[idx] == NA_logical_BYTE);
 	}
 	
+	public boolean isMissing(final int idx) {
+		return (this.boolValues[idx] == NA_logical_BYTE);
+	}
+	
 	@Override
 	public void setLogi(final int idx, final boolean value) {
-		if (this.boolValues[idx] == NA_logical_BYTE) {
-			this.naCount --;
-		}
 		this.boolValues[idx] = value ? TRUE_BYTE : FALSE_BYTE;
 	}
 	
 	@Override
 	public void setNA(final int idx) {
-		if (this.boolValues[idx] == NA_logical_BYTE) {
-			return;
-		}
 		this.boolValues[idx] = NA_logical_BYTE;
-		this.naCount ++;
 	}
 	
 	private void prepareInsert(final int[] idxs) {
@@ -135,7 +150,6 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.boolValues[idx] = NA_logical_BYTE;
-		this.naCount ++;
 	}
 	
 	public void insertNA(final int[] idxs) {
@@ -146,25 +160,24 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 		for (int idx = 0; idx < idxs.length; idx++) {
 			this.boolValues[idxs[idx]+idx] = NA_logical_BYTE;
 		}
-		this.naCount += idxs.length;
 	}
 	
 	public void remove(final int idx) {
-		if (this.boolValues[idx] == NA_logical_BYTE) {
-			this.naCount --;
-		}
 		this.boolValues = remove(this.boolValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
 	public void remove(final int[] idxs) {
-		for (int i = 0; i < idxs.length; i++) {
-			if (this.boolValues[idxs[i]] == NA_logical_BYTE) {
-				this.naCount --;
-			}
-		}
 		this.boolValues = remove(this.boolValues, this.length, idxs);
 		this.length -= idxs.length;
+	}
+	
+	public Boolean get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (this.boolValues[idx] != NA_logical_BYTE) ?
+				((this.boolValues[idx] == TRUE_BYTE) ? Boolean.TRUE : Boolean.FALSE) : null;
 	}
 	
 	public Boolean[] toArray() {

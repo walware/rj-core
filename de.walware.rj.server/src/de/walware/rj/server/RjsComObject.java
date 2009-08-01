@@ -32,6 +32,11 @@ public interface RjsComObject {
 	 */
 	public static final int T_MAIN_LIST =            3;
 	
+	/**
+	 * {@link BinExchange}
+	 */
+	public static final int T_FILE_EXCHANGE =        4;
+	
 	
 	// Same value as in IStatus
 	public static final int V_OK =               RjsStatus.OK;

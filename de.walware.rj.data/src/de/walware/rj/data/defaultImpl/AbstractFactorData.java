@@ -23,7 +23,7 @@ public abstract class AbstractFactorData extends AbstractRData
 	protected boolean isOrdered;
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.FACTOR;
 	}
 	
@@ -45,5 +45,8 @@ public abstract class AbstractFactorData extends AbstractRData
 	public final void setLogi(final int idx, final boolean logi) {
 		setInt(idx, logi ? 1 : 0);
 	}
+	
+	
+	public abstract Integer[] toArray();
 	
 }

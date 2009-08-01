@@ -27,16 +27,18 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	private boolean isBusy;
 	
 	
-	public MainCmdS2CList() {
-		this.first = null;
-		this.isBusy = false;
-	}
-	
 	public MainCmdS2CList(final MainCmdItem first, final boolean isBusy) {
 		this.first = first;
 		this.isBusy = isBusy;
 	}
 	
+	/**
+	 * Constructor for automatic deserialization
+	 */
+	public MainCmdS2CList() {
+		this.first = null;
+		this.isBusy = false;
+	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeBoolean(this.isBusy);
@@ -60,13 +62,13 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 				this.first = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				this.first = new ConsoleCmdItem.Read(in);
+				this.first = new ConsoleReadCmdItem(in);
 				break;
 			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				this.first = new ConsoleCmdItem.Write(in);
+				this.first = new ConsoleWriteCmdItem(in);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				this.first = new ConsoleCmdItem.Message(in);
+				this.first = new ConsoleMessageCmdItem(in);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				this.first = new ExtUICmdItem(in);
@@ -86,13 +88,13 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_NONE:
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				item = item.next = new ConsoleCmdItem.Read(in);
+				item = item.next = new ConsoleReadCmdItem(in);
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				item = item.next = new ConsoleCmdItem.Write(in);
+				item = item.next = new ConsoleWriteCmdItem(in);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				item = item.next = new ConsoleCmdItem.Message(in);
+				item = item.next = new ConsoleMessageCmdItem(in);
 				continue;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				item = item.next = new ExtUICmdItem(in);
@@ -108,6 +110,12 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	
 	
 	public void clear() {
+		MainCmdItem item = this.first;
+		while (item != null) {
+			final MainCmdItem tmp = item;
+			item = item.next;
+			tmp.next = null;
+		}
 		this.first = null;
 	}
 	
@@ -162,12 +170,20 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		final StringBuilder sb = new StringBuilder(100);
 		sb.append("MainCmdS2CList (isBusy=");
 		sb.append(this.isBusy);
-		sb.append("):");
+		sb.append(')');
+		if (this.first != null) {
+			sb.append(':');
+		}
 		MainCmdItem item = this.first;
+		int i = 0;
 		while (item != null) {
-			sb.append("\n\t");
+			sb.append("\n<ITEM i=\"");
+			sb.append(i);
+			sb.append("\">\n");
 			sb.append(item.toString());
+			sb.append("\n</ITEM>");
 			item = item.next;
+			i++;
 		}
 		return sb.toString();
 	}

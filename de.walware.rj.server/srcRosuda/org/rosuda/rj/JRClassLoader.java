@@ -118,7 +118,7 @@ public class JRClassLoader extends URLClassLoader {
 		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		this.r_libs_site = checkDirPathList(System.getenv("R_LIBS_SITE"));
 		this.r_libs_user = checkDirPathList(System.getenv("R_LIBS_USER"));
-		String osname = System.getProperty("os.name").toLowerCase();
+		final String osname = System.getProperty("os.name").toLowerCase();
 		if (osname.contains("win")) {
 			this.os = OS_WIN;
 		}
@@ -144,7 +144,7 @@ public class JRClassLoader extends URLClassLoader {
 			}
 		}
 		
-		final String rJavaClassPath = System.getProperty("rjava.class.path");
+		String rJavaClassPath = System.getProperty("rjava.class.path");
 		if (rJavaClassPath != null) {
 			addClassPath(checkDirPathList(rJavaClassPath));
 		}
@@ -163,9 +163,9 @@ public class JRClassLoader extends URLClassLoader {
 			rJavaDynlibName = "rJava.so";
 			break;
 		}
-		UnixFile so = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
-		if (so.exists()) {
-			this.libMap.put("rJava", so);
+		UnixFile rJavaDynlibFile = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
+		if (rJavaDynlibFile.exists()) {
+			this.libMap.put("rJava", rJavaDynlibFile);
 		}
 		
 		String jriLibPath = System.getProperty("rjava.jrilibs");
@@ -226,7 +226,9 @@ public class JRClassLoader extends URLClassLoader {
 				if (end != path.length()) {
 					path = path.substring(0, end);
 				}
-				return path+'/';
+				if (path.length() > 0) {
+					return path;
+				}
 			}
 		}
 		return null;
@@ -236,10 +238,10 @@ public class JRClassLoader extends URLClassLoader {
 		if (pathList != null) {
 			pathList = pathList.trim();
 			if (pathList.length() > 0) {
-				String[] split = PATH_SPLITTER.split(pathList);
-				ArrayList<String> list = new ArrayList<String>(split.length);
+				final String[] split = PATH_SPLITTER.split(pathList);
+				final ArrayList<String> list = new ArrayList<String>(split.length);
 				for (int i = 0; i < split.length; i++) {
-					String path = checkDirPath(split[i]);
+					final String path = checkDirPath(split[i]);
 					if (path != null) {
 						list.add(path);
 					}
@@ -250,9 +252,9 @@ public class JRClassLoader extends URLClassLoader {
 		return null;
 	}
 	
-	private UnixFile searchFile(String[] search) {
-		for (String path : search) {
-			UnixFile file = new UnixFile(path);
+	private UnixFile searchFile(final String[] search) {
+		for (final String path : search) {
+			final UnixFile file = new UnixFile(path);
 			if (file.exists()) {
 				return file;
 			}
@@ -266,7 +268,7 @@ public class JRClassLoader extends URLClassLoader {
 			
 			// R_LIBS_SITE
 			if (this.r_libs_site != null) {
-				for (String l : this.r_libs_site) {
+				for (final String l : this.r_libs_site) {
 					this.defaultLibPath.add(l);
 				}
 			}
@@ -279,7 +281,7 @@ public class JRClassLoader extends URLClassLoader {
 			
 			// R_LIBS
 			if (this.r_libs != null) {
-				for (String l : this.r_libs) {
+				for (final String l : this.r_libs) {
 					this.defaultLibPath.add(l);
 				}
 			}
@@ -288,16 +290,16 @@ public class JRClassLoader extends URLClassLoader {
 			}
 			
 			if (this.r_libs_user != null) {
-				for (String l : this.r_libs_user) {
+				for (final String l : this.r_libs_user) {
 					this.defaultLibPath.add(l);
 				}
 			}
 			
 			if (verbose) {
-				StringBuilder sb = new StringBuilder((1+this.defaultLibPath.size())*32);
+				final StringBuilder sb = new StringBuilder((1+this.defaultLibPath.size())*32);
 				sb.append("JR library path: ");
-				String sep = System.getProperty("line.separator")+"\t";
-				for (String item : this.defaultLibPath) {
+				final String sep = System.getProperty("line.separator")+"\t";
+				for (final String item : this.defaultLibPath) {
 					sb.append(sep);
 					if (item != null) {
 						sb.append(item);
@@ -574,20 +576,26 @@ public class JRClassLoader extends URLClassLoader {
 	}
 	
 	public void addClassPath(final List<String> cpList) {
-		for (String path : cpList) {
+		for (final String path : cpList) {
 			addClassPath(path);
 		}
 	}
 	
 	public String[] getClassPath() {
-		final int j = this.classPath.size();
-		final String[] s = new String[j];
-		int i = 0;
-		while (i < j) {
-			s[i] = (this.classPath.elementAt(i)).getPath();
-			i++;
+		final List<String> list = new ArrayList<String>();
+		if (this.useSystem) {
+			final URL[] urls = getURLs();
+			for (final URL url : urls) {
+				list.add(url.toString());
+			}
 		}
-		return s;
+		if (this.useSecond) {
+			final UnixFile[] files = this.classPath.toArray(new UnixFile[list.size()]);
+			for (final UnixFile file : files) {
+				list.add(file.getPath());
+			}
+		}
+		return list.toArray(new String[list.size()]);
 	}
 	
 	@Override

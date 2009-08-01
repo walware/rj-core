@@ -29,7 +29,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import de.walware.rj.server.RjException;
+import de.walware.rj.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 import de.walware.rj.server.srvext.ServerUtil;
 
@@ -54,7 +54,7 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 	
 	
 	@Override
-	public void doInit(String arg) throws RjException {
+	public void doInit(final String arg) throws RjException {
 		final String configType;
 		final String configValue;
 		{	final String[] args = ServerUtil.getArgConfigValue(arg);
@@ -63,12 +63,12 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 		}
 		try {
 			this.digestSash = new byte[8];
-			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+			final SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 			random.nextBytes(this.digestSash);
 			this.digestService = MessageDigest.getInstance("SHA-512");
 			this.digestCharset = Charset.forName("UTF-8");
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			throw new RjException("", e);
 		}
 		
@@ -76,12 +76,12 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 			if (configValue == null || configValue.length() == 0) {
 				throw new RjException("Missing password file name.", null);
 			}
-			File file = new File(configValue);
+			final File file = new File(configValue);
 			this.users = new Properties();
 			try {
 				this.users.load(new FileInputStream(file));
 			}
-			catch (IOException e) {
+			catch (final IOException e) {
 				throw new RjException("Reading password file failed.", null);
 			}
 		}
@@ -89,9 +89,9 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 			throw new RjException("Unsupported configuration type '"+configType+"'.", null);
 		}
 		this.digestService.update(this.digestSash);
-		Set<Entry<Object,Object>> entrySet = this.users.entrySet();
-		for (Entry<Object, Object> entry : entrySet) {
-			byte[] password = this.digestService.digest(this.digestCharset.encode(
+		final Set<Entry<Object,Object>> entrySet = this.users.entrySet();
+		for (final Entry<Object, Object> entry : entrySet) {
+			final byte[] password = this.digestService.digest(this.digestCharset.encode(
 					(String) entry.getValue()).array());
 			entry.setValue(password);
 		}
@@ -107,9 +107,9 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 	}
 	
 	@Override
-	protected String doPerformLogin(Callback[] callbacks) throws LoginException, RjException {
+	protected String doPerformLogin(final Callback[] callbacks) throws LoginException, RjException {
 		final String loginName = ((NameCallback) callbacks[0]).getName();
-		Object object = this.users.get(loginName);
+		final Object object = this.users.get(loginName);
 		if (object instanceof byte[]) {
 			final byte[] loginPassword = getPass((PasswordCallback) callbacks[1]);
 			if (Arrays.equals((byte[]) object, loginPassword)) {
@@ -119,7 +119,7 @@ public class SimpleNamePassAuthMethod extends ServerAuthMethod {
 		throw new FailedLoginException("Invalid loginname or password");
 	}
 	
-	private byte[] getPass(PasswordCallback callback) {
+	private byte[] getPass(final PasswordCallback callback) {
 		final char[] loginPassword = callback.getPassword();
 		final byte[] loginBytes;
 		if (loginPassword == null) {

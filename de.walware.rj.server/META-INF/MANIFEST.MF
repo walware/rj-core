@@ -3,11 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Server
 Bundle-SymbolicName: de.walware.rj.server
-Bundle-Version: 0.2.0.qualifier
+Bundle-Version: 0.3.0.qualifier
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Require-Bundle: de.walware.rj.data;bundle-version="0.3.0"
 Import-Package: org.eclipse.swt;resolution:=optional,
  org.eclipse.swt.graphics;resolution:=optional,
  org.eclipse.swt.widgets;resolution:=optional,
  org.rosuda.JRI;resolution:=optional
-Export-Package: de.walware.rj.server
-Require-Bundle: de.walware.rj.data;bundle-version="0.2.0"
+Export-Package: de.walware.rj,
+ de.walware.rj.server,
+ de.walware.rj.server.srvImpl;x-friends:="de.walware.rj.servi",
+ de.walware.rj.server.srvext,
+ de.walware.rj.server.srvstdext;x-friends:="de.walware.rj.servi"

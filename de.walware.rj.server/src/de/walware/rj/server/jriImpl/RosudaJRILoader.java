@@ -22,23 +22,23 @@ import javax.swing.UIManager;
 
 import org.rosuda.rj.JRClassLoader;
 
-import de.walware.rj.server.RjException;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvext.ExtServer;
-import de.walware.rj.server.srvext.ServerAuthMethod;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
 import de.walware.rj.server.srvstdext.SWTPlugin;
 
 
-public class RosudaJRILoader {
+public final class RosudaJRILoader {
 	
 	
 	public RosudaJRILoader() {
 	}
 	
 	
-	public Server loadServer(final String name, final Map<String, String> args, final ServerRuntimePlugin plugin) throws Exception {
+	public InternalEngine loadServer(final String name, final Map<String, String> args,
+			final Server publicServer, final ServerRuntimePlugin plugin) throws Exception {
 		final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			final boolean verbose = args.containsKey("verbose");
@@ -71,14 +71,16 @@ public class RosudaJRILoader {
 				}
 			}
 			
-			final Server server;
+			final InternalEngine engine;
 			try {
 				Thread.currentThread().setContextClassLoader(loader);
-				final Class<Server> serverClazz = (Class<Server>) loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer");
 				loader.loadRJavaClass("org.rosuda.JRI.REXP");
+				loader.loadRJavaClass("org.rosuda.JRI.RMainLoopCallbacks");
 				loader.loadRJavaClass("org.rosuda.JRI.Rengine");
+				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer");
+				loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer$InitCallbacks");
 				
-				server = serverClazz.newInstance();
+				engine = serverClazz.newInstance();
 			}
 			catch (final ClassNotFoundException e) {
 				Logger.getLogger("de.walware.rj.server.jri").log(Level.INFO, "Perhaps autodetection of RJ classpath entry failed: " + 
@@ -86,38 +88,9 @@ public class RosudaJRILoader {
 				throw e;
 			}
 			
-			final ExtServer localServer = (ExtServer) server;
+			final ExtServer localServer = (ExtServer) engine;
 			
-			// auth
-			final String authType;
-			final String authConfig;
-			{
-				final String[] auth = ServerUtil.getArgSubValue(args.remove("auth"));
-				if (auth[0].length() == 0) {
-					throw new RjException("Missing 'auth' configuration");
-				}
-				else if (auth[0].equals("none")) {
-					authType = "de.walware.rj.server.srvstdext.NoAuthMethod";
-				}
-				else if (auth[0].equals("name-pass")) {
-					authType = "de.walware.rj.server.srvstdext.SimpleNamePassAuthMethod";
-				}
-				else if (auth[0].equals("fx")) {
-					authType = "de.walware.rj.server.srvstdext.FxAuthMethod";
-				}
-				else if (auth[0].equals("local-shaj")) {
-					authType = "de.walware.rj.server.authShaj.LocalShajAuthMethod";
-				}
-				else {
-					authType = auth[0];
-				}
-				authConfig = auth[1];
-			}
-			final Class<ServerAuthMethod> authClazz = (Class<ServerAuthMethod>) Class.forName(authType, true, oldLoader);
-			final ServerAuthMethod authMethod = authClazz.newInstance();
-			authMethod.init(authConfig);
-			
-			localServer.init(name, authMethod);
+			localServer.init(name, publicServer);
 			
 			// plugins
 			final List<String> plugins = ServerUtil.getArgValueList(args.get("plugins"));
@@ -135,7 +108,7 @@ public class RosudaJRILoader {
 			if (plugin != null) {
 				localServer.addPlugin(plugin);
 			}
-			return server;
+			return engine;
 		}
 		finally {
 			try {

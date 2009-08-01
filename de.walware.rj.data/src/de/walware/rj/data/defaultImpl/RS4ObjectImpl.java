@@ -39,7 +39,7 @@ public class RS4ObjectImpl extends AbstractRObject
 		this.className = className;
 		this.slotNames = new RCharacterDataImpl(slotNames);
 		
-		this.hasDataSlot = this.slotNames.getIdx(".Data");
+		this.hasDataSlot = this.slotNames.indexOf(".Data");
 		this.slotValues = slotValues;
 	}
 	
@@ -69,7 +69,7 @@ public class RS4ObjectImpl extends AbstractRObject
 		}
 	}
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_S4OBJECT;
 	}
 	
@@ -81,7 +81,11 @@ public class RS4ObjectImpl extends AbstractRObject
 		return (this.hasDataSlot >= 0);
 	}
 	
-	public int getDataType() {
+	public RObject getDataSlot() {
+		return (this.hasDataSlot >= 0) ? this.slotValues[this.hasDataSlot] : null;
+	}
+	
+	public byte getDataType() {
 		return (this.hasDataSlot >= 0 && this.slotValues[this.hasDataSlot] != null) ?
 				this.slotValues[this.hasDataSlot].getData().getStoreType() : 0;
 	}
@@ -109,7 +113,7 @@ public class RS4ObjectImpl extends AbstractRObject
 			return this.slotValues[this.hasDataSlot];
 		}
 		else {
-			final int i = this.slotNames.getIdx(name);
+			final int i = this.slotNames.indexOf(name);
 			if (i >= 0) {
 				return this.slotValues[i];
 			}
@@ -144,7 +148,7 @@ public class RS4ObjectImpl extends AbstractRObject
 			return true;
 		}
 		else {
-			final int i = this.slotNames.getIdx(name);
+			final int i = this.slotNames.indexOf(name);
 			if (i >= 0) {
 				this.slotValues[i] = component;
 				return true;

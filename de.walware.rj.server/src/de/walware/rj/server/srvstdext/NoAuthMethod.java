@@ -14,7 +14,7 @@ package de.walware.rj.server.srvstdext;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.login.LoginException;
 
-import de.walware.rj.server.RjException;
+import de.walware.rj.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 
 
@@ -29,9 +29,18 @@ public class NoAuthMethod extends ServerAuthMethod {
 		super("none", false);
 	}
 	
+	public NoAuthMethod(final String client) {
+		super("none", false);
+		setExpliciteClient(client);
+		try {
+			init("");
+		}
+		catch (final RjException e) {}
+	}
+	
 	
 	@Override
-	public void doInit(String arg) throws RjException {
+	public void doInit(final String arg) throws RjException {
 	}
 	
 	@Override
@@ -40,7 +49,7 @@ public class NoAuthMethod extends ServerAuthMethod {
 	}
 	
 	@Override
-	protected String doPerformLogin(Callback[] callbacks) throws LoginException, RjException {
+	protected String doPerformLogin(final Callback[] callbacks) throws LoginException, RjException {
 		return "-";
 	}
 	

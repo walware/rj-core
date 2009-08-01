@@ -26,14 +26,16 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 	private MainCmdItem first;
 	
 	
-	public MainCmdC2SList() {
-		this.first = null;
-	}
-	
 	public MainCmdC2SList(final MainCmdItem first, final boolean isBusy) {
 		this.first = first;
 	}
 	
+	/**
+	 * Constructor for automatic deserialization
+	 */
+	public MainCmdC2SList() {
+		this.first = null;
+	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		MainCmdItem item = this.first;
@@ -49,17 +51,17 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 		{	// first
 			final byte type = in.readByte();
 			switch (type) {
-//			case MainCmdItem.T_NONE:
-//				this.first = null;
-//				return;
+			case MainCmdItem.T_NONE:
+				this.first = null;
+				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				this.first = new ConsoleCmdItem.Read(in);
+				this.first = new ConsoleReadCmdItem(in);
 				break;
 			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				this.first = new ConsoleCmdItem.Write(in);
+				this.first = new ConsoleWriteCmdItem(in);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				this.first = new ConsoleCmdItem.Message(in);
+				this.first = new ConsoleMessageCmdItem(in);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				this.first = new ExtUICmdItem(in);
@@ -79,13 +81,13 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_NONE:
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				item = item.next = new ConsoleCmdItem.Read(in);
+				item = item.next = new ConsoleReadCmdItem(in);
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				item = item.next = new ConsoleCmdItem.Write(in);
+				item = item.next = new ConsoleWriteCmdItem(in);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				item = item.next = new ConsoleCmdItem.Message(in);
+				item = item.next = new ConsoleMessageCmdItem(in);
 				continue;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				item = item.next = new ExtUICmdItem(in);
@@ -137,12 +139,20 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder(100);
 		sb.append("MainCmdC2SList (");
-		sb.append("):");
+		sb.append(')');
+		if (this.first != null) {
+			sb.append(':');
+		}
 		MainCmdItem item = this.first;
+		int i = 0;
 		while (item != null) {
-			sb.append("\n\t");
+			sb.append("\n<ITEM i=\"");
+			sb.append(i);
+			sb.append("\">\n");
 			sb.append(item.toString());
+			sb.append("\n</ITEM>");
 			item = item.next;
+			i++;
 		}
 		return sb.toString();
 	}

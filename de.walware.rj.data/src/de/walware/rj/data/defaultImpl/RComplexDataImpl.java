@@ -16,11 +16,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
-import de.walware.rj.data.RComplexStore;
+import de.walware.rj.data.RStore;
 
 
 public class RComplexDataImpl extends AbstractComplexData
-		implements RComplexStore, RDataReziseExtension {
+		implements RDataResizeExtension {
 	
 	
 	private double[] realValues;
@@ -40,6 +40,12 @@ public class RComplexDataImpl extends AbstractComplexData
 		this.realValues = realValues;
 		this.imaginaryValues = imaginaryValues;
 		this.naIdxs = naIdxs;
+		for (int i = 0; i < realValues.length; i++) {
+			if (Double.isNaN(realValues[i]) || Double.isNaN(imaginaryValues[i])) {
+				realValues[i] = Double.NaN;
+				imaginaryValues[i] = Double.NaN;
+			}
+		}
 		this.length = realValues.length;
 	}
 	
@@ -55,7 +61,7 @@ public class RComplexDataImpl extends AbstractComplexData
 		for (int i = 0; i < this.length; i++) {
 			final long l = in.readLong();
 			if (l == NA_numeric_LONG) {
-				this.realValues[i] = NA_numeric_DOUBLE;
+				this.realValues[i] = Double.NaN;
 				this.naIdxs = addIdx(this.naIdxs, i);
 			}
 			else {
@@ -85,18 +91,19 @@ public class RComplexDataImpl extends AbstractComplexData
 	
 	
 	@Override
-	public double getCplxR(final int idx) {
+	protected final boolean isStructOnly() {
+		return false;
+	}
+	
+	
+	@Override
+	public double getCplxRe(final int idx) {
 		return this.realValues[idx];
 	}
 	
 	@Override
-	public double getCplxI(final int idx) {
+	public double getCplxIm(final int idx) {
 		return this.imaginaryValues[idx];
-	}
-	
-	@Override
-	public boolean hasNA() {
-		return (this.naIdxs.length > 0);
 	}
 	
 	@Override
@@ -105,18 +112,37 @@ public class RComplexDataImpl extends AbstractComplexData
 				&& Arrays.binarySearch(this.naIdxs, idx) >= 0);
 	}
 	
+	public boolean isNaN(final int idx) {
+		return (Double.isNaN(this.realValues[idx])
+				&& Arrays.binarySearch(this.naIdxs, idx) < 0);
+	}
+	
+	public boolean isMissing(final int idx) {
+		return (Double.isNaN(this.realValues[idx]));
+	}
+	
 	@Override
 	public void setCplx(final int idx, final double realValue, final double imaginaryValue) {
-		if (Double.isNaN(this.realValues[idx])) {
-			this.naIdxs = deleteIdx(this.naIdxs, idx);
+		if (Double.isNaN(realValue) || Double.isNaN(imaginaryValue)) {
+			if (Double.isNaN(this.realValues[idx])) {
+				this.naIdxs = deleteIdx(this.naIdxs, idx);
+			}
+			this.realValues[idx] = Double.NaN;
+			this.imaginaryValues[idx] = Double.NaN;
 		}
-		this.realValues[idx] = realValue;
-		this.imaginaryValues[idx] = imaginaryValue;
+		else {
+			if (Double.isNaN(this.realValues[idx])) {
+				this.naIdxs = deleteIdx(this.naIdxs, idx);
+			}
+			this.realValues[idx] = realValue;
+			this.imaginaryValues[idx] = imaginaryValue;
+		}
 	}
 	
 	@Override
 	public void setNA(final int idx) {
 		this.realValues[idx] = Double.NaN;
+		this.imaginaryValues[idx] = Double.NaN;
 		this.naIdxs = addIdx(this.naIdxs, idx);
 	}
 	
@@ -129,8 +155,14 @@ public class RComplexDataImpl extends AbstractComplexData
 	public void insertCplx(final int idx, final double realValue, final double imaginaryValue) {
 		final int[] idxs = new int[] { idx };
 		prepareInsert(idxs);
-		this.realValues[idx] = realValue;
-		this.imaginaryValues[idx] = imaginaryValue;
+		if (Double.isNaN(realValue) || Double.isNaN(imaginaryValue)) {
+			this.realValues[idx] = Double.NaN;
+			this.imaginaryValues[idx] = Double.NaN;
+		}
+		else {
+			this.realValues[idx] = realValue;
+			this.imaginaryValues[idx] = imaginaryValue;
+		}
 		updateIdxInserted(this.naIdxs, idxs);
 	}
 	
@@ -145,6 +177,7 @@ public class RComplexDataImpl extends AbstractComplexData
 		prepareInsert(idxs);
 		for (int idx = 0; idx < idxs.length; idx++) {
 			this.realValues[idx] = Double.NaN;
+			this.imaginaryValues[idx] = Double.NaN;
 		}
 		this.naIdxs = insertIdx(this.naIdxs, idxs);
 	}
@@ -160,8 +193,16 @@ public class RComplexDataImpl extends AbstractComplexData
 		this.naIdxs = updateIdxRemoved(this.naIdxs, idxs);
 	}
 	
+	public Object get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
 	public Object[] toArray() {
 		throw new UnsupportedOperationException();
+	}
+	
+	public boolean allEqual(final RStore other) {
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	
 }

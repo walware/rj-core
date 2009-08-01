@@ -20,12 +20,23 @@ public abstract class AbstractComplexData extends AbstractRData
 		implements RComplexStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.COMPLEX;
 	}
 	
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_COMPLEX;
+	}
+	
+	
+	@Override
+	public final String getChar(final int idx) {
+		final StringBuilder sb = new StringBuilder();
+		sb.append(getCplxRe(idx));
+		sb.append('+');
+		sb.append(getCplxIm(idx));
+		sb.append('i');
+		return sb.toString();
 	}
 	
 }

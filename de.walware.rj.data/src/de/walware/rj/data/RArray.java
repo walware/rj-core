@@ -13,10 +13,23 @@ package de.walware.rj.data;
 
 
 /**
- * Data structure with dimension property in R
- * 
- * An object is an arrays if it is a R data type objects with a valid
- * dimension attribute.
+ * An R object is of the type {@link RObject#TYPE_ARRAY array}, if it is an R
+ * data object of an "atomic" mode with a dimension attribute (<code>dim</code>).
+ * Such an R vector object is represented by an instance of this interface.
+ * <p>
+ * The real data is stored in a {@link RStore} accessible by {@link #getData()}.
+ * An index for the one-dimensional data store can be computed from an
+ * index tuple relative to the dimension of the object using the methods
+ * {@link RDataUtil#getDataIdx(int[], int[])}.</p>
+ * <p>
+ * Also an S3 object based on a such an data object is of the type {@link RObject#TYPE_ARRAY array}.
+ * Whereas a S4 object is never directly of this type even the object simulates such
+ * a data object in R. Such an object is of the type {@link RObject#TYPE_S4OBJECT S4 object},
+ * and implements {@link RS4Object} with an object of the type {@link RObject#TYPE_VECTOR vector}
+ * as data slot.</p>
+ * <p>
+ * The complementary type for objects without dimension attribute is the type
+ * {@link RObject#TYPE_ARRAY array} and the interface {@link RArray}.</p>
  * 
  * @see RDataUtil#getDataIdx(int[], int[])
  * @see RDataUtil#getDataIdxs(int[], int, int)
@@ -25,20 +38,35 @@ package de.walware.rj.data;
 public interface RArray<DataType extends RStore> extends RObject {
 	
 	/**
-	 * @return the dimension of this object (at no time <code>null</code>)
+	 * Returns the length of the object. The length of an {@link RObject#TYPE_ARRAY array}
+	 * is the count of all data values, the product of its dimensions.
+	 * 
+	 * @return the length
 	 */
-	int[] getDim();
+	int getLength();
 	
 	/**
-	 * @return the names for the dimensions and its indices (may be <code>null</code>)
+	 * Returns the dimension of this array. This corresponds to the R dimension
+	 * attribute (<code>dim</dim>) respectively the R <code>dim</code> function.
+	 * 
+	 * @return the dimension of this array
 	 */
-	RList getDimNames();
+	RIntegerStore getDim();
+	
+//	/**
+//	 * Returns the names for the dimensions and its indexes. This corresponds to 
+//	 * the R dimension names attribute (<code>dimnames</code>) respectively the 
+//	 * R function <code>dimnames(object)</code>.
+//	 * 
+//	 * @return a R list with the dimension names or <code>null</code>
+//	 */
+//	SimpleRList<RCharacterStore> getDimNames();
 	
 	DataType getData();
 	
-	void setDim(int[] dim);
-	void setDimNames(RList list);
-	void insert(int dim, int idx);
-	void remove(int dim, int idx);
+//	void setDim(int[] dim);
+//	void setDimNames(RList list);
+//	void insert(int dim, int idx);
+//	void remove(int dim, int idx);
 	
 }

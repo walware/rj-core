@@ -37,6 +37,10 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		this(data, data.getLength(), className1, null);
 	}
 	
+	public RVectorImpl(final DataType data) {
+		this(data, data.getLength(), data.getBaseVectorRClassName(), null);
+	}
+	
 	public RVectorImpl(final DataType data, final String className1, final String[] initialNames) {
 		this(data, data.getLength(), className1, initialNames);
 	}
@@ -63,7 +67,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
 		//-- options
 		final int options = in.readInt();
-		final boolean customClass = ((options & RObjectFactoryImpl.O_CLASS_NAME) != 0);
+		final boolean customClass = ((options & RObjectFactory.O_CLASS_NAME) != 0);
 		//-- special attributes
 		if (customClass) {
 			this.className1 = in.readUTF();
@@ -76,7 +80,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
 		// attributes
-		if ((options & RObjectFactoryImpl.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(in, flags));
 		}
 	}
@@ -88,7 +92,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		final RList attributes = ((flags & RObjectFactoryImpl.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
@@ -107,7 +111,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_VECTOR;
 	}
 	
@@ -132,11 +136,11 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	public void insert(final int idx) {
-		((RDataReziseExtension) this.data).insertNA(idx);
+		((RDataResizeExtension) this.data).insertNA(idx);
 	}
 	
 	public void remove(final int idx) {
-		((RDataReziseExtension) this.data).remove(idx);
+		((RDataResizeExtension) this.data).remove(idx);
 	}
 	
 	

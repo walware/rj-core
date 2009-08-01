@@ -13,25 +13,80 @@ package de.walware.rj.data;
 
 
 /**
- * List object in R
- * 
- * Can be a list or a pairlist in R.
- * Other R object types extending this interface does not necessary provide the
- * full functionality of all methods of this interface.
+ * An R object is of the type {@link RObject#TYPE_LIST list}, if the object is
+ * an R list but not an R data frame (see {@link #TYPE_DATAFRAME}).  Such an R
+ * list object is represented by an instance of this interface.
+ * <p>
+ * The R function <code>typeof(object)</code> returns 'list' or 'pairlist' for
+ * objects of this type.</p>
+ * <p>
+ * The interfaces for R objects of the type {@value RObject#TYPE_DATAFRAME} -
+ * {@link RDataFrame}, {@link RObject#TYPE_S4OBJECT} - {@link RS4Object} and 
+ * {@link RObject#TYPE_ENV} - {@link REnvironment} extends this interface for the
+ * purpose of a uniform API.
+ * Objects of this type does not necessary provide the full functionality and the
+ * methods can have special meaning and conditions; see the documentation of these
+ * interfaces.</p>
+ * <p>
+ * Indexes are zero-based (as usual in Java) and not one-base like in R.</p>
  */
-public interface RList extends RObject {
+public interface RList extends RObject, SimpleRList<RObject> {
 	
+	/**
+	 * Returns the length of the object. The length of a {@link RObject#TYPE_LIST list}
+	 * is the count of list items.
+	 * 
+	 * @return the length
+	 */
+	int getLength();
+	
+	/**
+	 * Returns the names of the list items.
+	 * 
+	 * @return the item names
+	 */
 	RCharacterStore getNames();
+	
+	/**
+	 * Returns the name of the item at the given index (zero-based).
+	 * <p>
+	 * This is equivalent to <code>getNames().getChar(idx)</code>.</p>
+	 * 
+	 * @param idx the index of the item
+	 * @return the slot names
+	 */
 	String getName(int idx);
+	
+	/**
+	 * Returns the item at the given index (zero-based).
+	 * 
+	 * @param idx the index of the item
+	 * @return the item
+	 */
 	RObject get(int idx);
+	
+	/**
+	 * Returns the item with the given name. If multiple items has that name,
+	 * the first item with the given name is picked.
+	 * 
+	 * @param name the name of the item
+	 * @return the item
+	 */
 	RObject get(String name);
 	
+	/**
+	 * Returns an array with the R object items of the list.
+	 * <p>
+	 * The array is newly created for each call of this method.</p>
+	 * 
+	 * @return an array with the items of the list
+	 */
 	RObject[] toArray();
 	
-	void insert(int idx, String name, RObject component);
-	void add(String name, RObject component);
-	boolean set(int idx, RObject component);
-	boolean set(String name, RObject component);
-	void remove(int idx);
+//	void insert(int idx, String name, RObject component);
+//	void add(String name, RObject component);
+//	boolean set(int idx, RObject component);
+//	boolean set(String name, RObject component);
+//	void remove(int idx);
 	
 }

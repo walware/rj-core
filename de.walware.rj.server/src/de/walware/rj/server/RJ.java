@@ -12,6 +12,9 @@
 package de.walware.rj.server;
 
 
+/**
+ * Interface from R to Java side of the RJ server
+ */
 public class RJ {
 	
 	

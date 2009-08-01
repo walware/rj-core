@@ -9,16 +9,24 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.data.defaultImpl;
-
-import de.walware.rj.data.RStore;
+package de.walware.rj;
 
 
-public interface RDataReziseExtension extends RStore {
+/**
+ * Exception indicating that setting the configuration failed because it is invalid
+ */
+public class RjInvalidConfigurationException extends RjException {
 	
-	void remove(int idx);
-	void remove(int[] idxs);
-	void insertNA(int idx);
-	void insertNA(int[] idxs);
+	
+	private static final long serialVersionUID = 6709030537472523580L;
+	
+	
+	public RjInvalidConfigurationException(final String message) {
+		super(message);
+	}
+	
+	public RjInvalidConfigurationException(final String message, final Throwable cause) {
+		super(message, cause);
+	}
 	
 }

@@ -19,7 +19,7 @@ import javax.security.auth.login.LoginException;
 
 import com.cenqua.shaj.Shaj;
 
-import de.walware.rj.server.RjException;
+import de.walware.rj.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 
 

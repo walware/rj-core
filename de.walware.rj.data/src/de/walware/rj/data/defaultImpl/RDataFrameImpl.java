@@ -26,12 +26,7 @@ public class RDataFrameImpl extends RListImpl
 		implements RDataFrame, ExternalizableRObject {
 	
 	
-	public static RDataFrameImpl createForServer(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames) {
-		return new RDataFrameImpl(columns, className1, initialNames, initialRownames, false);
-	}
-	
-	
-	private RUniqueCharacterDataImpl rownamesAttribute;
+	private AbstractRData rownamesAttribute;
 	private int rowCount;
 	
 	
@@ -39,7 +34,7 @@ public class RDataFrameImpl extends RListImpl
 		this(columns, className1, initialNames, initialRownames, true);
 	}
 	
-	private RDataFrameImpl(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames, final boolean check) {
+	protected RDataFrameImpl(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames, final boolean check) {
 		super(columns, className1, initialNames);
 		if (columns.length == 0) {
 			this.rowCount = 0;
@@ -79,7 +74,7 @@ public class RDataFrameImpl extends RListImpl
 	
 	
 	@Override
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_DATAFRAME;
 	}
 	
@@ -154,30 +149,30 @@ public class RDataFrameImpl extends RListImpl
 		return this.rowCount;
 	}
 	
-	public RCharacterStore getRowNames() {
+	public RStore getRowNames() {
 		return this.rownamesAttribute;
 	}
 	
 	public void insertRow(final int idx) {
 		final int length = getLength();
 		for (int i = 0; i < length; i++) {
-			((RDataReziseExtension) get(i)).insertNA(idx);
+			((RDataResizeExtension) get(i)).insertNA(idx);
 		}
 		this.rowCount++;
-		if (this.rownamesAttribute != null) {
-			this.rownamesAttribute.insertAuto(idx);
-		}
+//		if (this.rownamesAttribute != null) {
+//			((RDataResizeExtension) this.rownamesAttribute).insertAuto(idx);
+//		}
 	}
 	
 	public void removeRow(final int idx) {
 		final int length = getLength();
 		for (int i = 0; i < length; i++) {
-			((RDataReziseExtension) this.get(i)).remove(idx);
+			((RDataResizeExtension) this.get(i)).remove(idx);
 		}
 		this.rowCount--;
-		if (this.rownamesAttribute != null) {
-			this.rownamesAttribute.remove(idx);
-		}
+//		if (this.rownamesAttribute != null) {
+//			this.rownamesAttribute.remove(idx);
+//		}
 	}
 	
 }

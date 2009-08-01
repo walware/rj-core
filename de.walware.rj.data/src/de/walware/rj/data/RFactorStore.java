@@ -11,8 +11,6 @@
 
 package de.walware.rj.data;
 
-import java.util.List;
-
 
 /**
  * Data store for 'factor' data
@@ -21,15 +19,14 @@ public interface RFactorStore extends RIntegerStore {
 	
 	boolean isOrdered();
 	
-	List<String> getLevels();
+	RCharacterStore getLevels();
 	int getLevelCount();
 	
-	void addLevel(final String label);
-	void renameLevel(final String oldLabel, final String newLabel);
-	void insertLevel(final int position, final String label);
-	void removeLevel(final String label);
+//	void addLevel(final String label);
+//	void renameLevel(final String oldLabel, final String newLabel);
+//	void insertLevel(final int position, final String label);
+//	void removeLevel(final String label);
 	
 	RCharacterStore toCharacterData();
-	public Integer[] toArray();
 	
 }

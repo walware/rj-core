@@ -11,6 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RComplexDataStruct extends AbstractComplexData {
 	
@@ -20,8 +22,30 @@ public class RComplexDataStruct extends AbstractComplexData {
 	}
 	
 	
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isNaN(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public boolean isMissing(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public Object get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
 	public Object[] toArray() {
 		throw new UnsupportedOperationException();
+	}
+	
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == COMPLEX && other.getLength() == -1);
 	}
 	
 }

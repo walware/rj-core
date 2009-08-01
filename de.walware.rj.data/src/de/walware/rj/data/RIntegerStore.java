@@ -13,11 +13,15 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for R data type 'integer'
+ * Interface for R data stores of type {@link RStore#INTEGER}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'integer'.</p>
  */
 public interface RIntegerStore extends RStore {
 	
 	
-	public Integer[] toArray();
+	Integer get(int idx);
+	Integer[] toArray();
 	
 }

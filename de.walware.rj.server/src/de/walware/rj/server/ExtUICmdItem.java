@@ -18,7 +18,7 @@ import java.io.ObjectOutput;
 
 
 /**
- * Command for mainloop UI commands.
+ * Command item for main loop UI interaction.
  */
 public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	
@@ -39,19 +39,6 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	private String text;
 	
 	
-	/**
-	 * Constructor for automatic deserialization
-	 */
-	public ExtUICmdItem() {
-	}
-	
-	/**
-	 * Constructor for manual deserialization
-	 */
-	public ExtUICmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
-	}
-	
 	public ExtUICmdItem(final String command, final int options, final boolean waitForClient) {
 		assert (command != null);
 		this.command = command;
@@ -70,11 +57,24 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		}
 	}
 	
+	/**
+	 * Constructor for automatic deserialization
+	 */
+	public ExtUICmdItem() {
+	}
+	
+	/**
+	 * Constructor for deserialization
+	 */
+	public ExtUICmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
+		readExternal(in);
+	}
 	
 	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeUTF(this.command);
 		out.writeInt(this.options);
+		out.writeByte(this.requestId);
 		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
 		}
@@ -83,6 +83,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.command = in.readUTF();
 		this.options = in.readInt();
+		this.requestId = in.readByte();
 		if ((this.options & OV_WITHTEXT) != 0) {
 			this.text = in.readUTF();
 		}
@@ -101,6 +102,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		this.text = null;
 	}
 	
+	@Override
 	public void setAnswer(final String text) {
 		this.options = (text != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER) : (this.options & OM_CLEARFORANSWER);
@@ -149,8 +151,14 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		sb.append(this.command);
 		sb.append(", options=0x");
 		sb.append(Integer.toHexString(this.options));
-		sb.append(")\n\t");
-		sb.append(((this.options & OV_WITHTEXT) != 0) ? this.text : "<no data>");
+		if ((this.options & OV_WITHTEXT) != 0) {
+			sb.append("\n<TEXT>\n");
+			sb.append(this.text);
+			sb.append("\n</TEXT>");
+		}
+		else {
+			sb.append("\n<TEXT />");
+		}
 		return sb.toString();
 	}
 	

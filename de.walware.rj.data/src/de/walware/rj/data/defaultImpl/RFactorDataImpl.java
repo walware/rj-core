@@ -15,19 +15,18 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.List;
 
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RStore;
 
 
 public class RFactorDataImpl extends AbstractFactorData
-		implements RDataReziseExtension, Externalizable {
+		implements RDataResizeExtension, Externalizable {
 	
 	
-	private int[] codes;
-	private int naCount;
+	protected int[] codes;
 	
-	private RUniqueCharacterDataImpl codeLabels;
+	protected RCharacterDataImpl codeLabels;
 	
 	
 	public RFactorDataImpl(final int[] codes, final boolean isOrdered, final String[] levelLabels) {
@@ -52,7 +51,10 @@ public class RFactorDataImpl extends AbstractFactorData
 		for (int i = 0; i < this.length; i++) {
 			this.codes[i] = in.readInt();
 		}
-		this.codeLabels = new RUniqueCharacterDataImpl(in);
+		this.codeLabels = readLabels(in);
+	}
+	protected RCharacterDataImpl readLabels(final ObjectInput in) throws IOException, ClassNotFoundException {
+		return new RUniqueCharacterDataImpl(in);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
@@ -66,13 +68,14 @@ public class RFactorDataImpl extends AbstractFactorData
 	
 	
 	@Override
-	public String getChar(final int idx) {
-		return (this.codes[idx] >= 0) ? this.codeLabels.getChar(this.codes[idx]): null;
+	protected final boolean isStructOnly() {
+		return false;
 	}
 	
+	
 	@Override
-	public boolean hasNA() {
-		return (this.naCount > 0);
+	public String getChar(final int idx) {
+		return (this.codes[idx] >= 0) ? this.codeLabels.getChar(this.codes[idx]): null;
 	}
 	
 	@Override
@@ -80,12 +83,17 @@ public class RFactorDataImpl extends AbstractFactorData
 		return (this.codes[idx] == NA_integer_INT);
 	}
 	
+	public boolean isMissing(final int idx) {
+		return (this.codes[idx] == NA_integer_INT);
+	}
+	
 	@Override
 	public void setChar(final int idx, final String data) {
-		if (this.codes[idx] == NA_integer_INT) {
-			this.naCount--;
+		final int code = this.codeLabels.indexOf(data) + 1;
+		if (code <= 0) {
+			throw new IllegalArgumentException();
 		}
-		this.codes[idx] = this.codeLabels.getIdx(data);
+		this.codes[idx] = code;
 	}
 	
 	@Override
@@ -94,7 +102,6 @@ public class RFactorDataImpl extends AbstractFactorData
 			return;
 		}
 		this.codes[idx] = NA_integer_INT;
-		this.naCount++;
 	}
 	
 	private void prepareInsert(final int[] idxs) {
@@ -103,14 +110,17 @@ public class RFactorDataImpl extends AbstractFactorData
 	}
 	
 	public void insertChar(final int idx, final String data) {
+		final int code = this.codeLabels.indexOf(data) + 1;
+		if (code <= 0) {
+			throw new IllegalArgumentException();
+		}
 		prepareInsert(new int[] { idx });
-		this.codes[idx] = this.codeLabels.getIdx(data);
+		this.codes[idx] = code;
 	}
 	
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.codes[idx] = NA_integer_INT;
-		this.naCount++;
 	}
 	
 	public void insertNA(final int[] idxs) {
@@ -118,30 +128,21 @@ public class RFactorDataImpl extends AbstractFactorData
 		for (int idx = 0; idx < idxs.length; idx++) {
 			this.codes[idx] = NA_integer_INT;
 		}
-		this.naCount+=idxs.length;
 	}
 	
 	public void remove(final int idx) {
-		if (this.codes[idx] == NA_integer_INT) {
-			this.naCount--;
-		}
 		this.codes = remove(this.codes, this.length, new int[] { idx });
 		this.length--;
 	}
 	
 	public void remove(final int[] idxs) {
-		for (int i = 0; i < idxs.length; i++) {
-			if (this.codes[idxs[i]] == NA_integer_INT) {
-				this.naCount--;
-			}
-		}
 		this.codes = remove(this.codes, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
 	
-	public List<String> getLevels() {
-		return null;
+	public RCharacterStore getLevels() {
+		return this.codeLabels;
 	}
 	
 	public int getLevelCount() {
@@ -164,24 +165,24 @@ public class RFactorDataImpl extends AbstractFactorData
 	}
 	
 	public void renameLevel(final String oldLabel, final String newLabel) {
-		final int code = this.codeLabels.getIdx(oldLabel);
-		if (code < 0) {
+		final int level = this.codeLabels.indexOf(oldLabel);
+		if (level < 0) {
 			throw new IllegalArgumentException();
 		}
-		this.codeLabels.setChar(code, newLabel);
+		this.codeLabels.setChar(level, newLabel);
 	}
 	
 	public void removeLevel(final String label) {
-		final int code = this.codeLabels.getIdx(label);
-		if (code < 0) {
+		final int level = this.codeLabels.indexOf(label);
+		if (level < 0) {
 			throw new IllegalArgumentException();
 		}
-		this.codeLabels.remove(code);
+		this.codeLabels.remove(level);
 		for (int i = 0; i < this.length; i++) {
-			if (this.codes[i] == code) {
+			if (this.codes[i] == level) {
 				this.codes[i] = NA_integer_INT;
 			}
-			else if (this.codes[i] > code) {
+			else if (this.codes[i] > level) {
 				this.codes[i]--;
 			}
 		}
@@ -195,6 +196,14 @@ public class RFactorDataImpl extends AbstractFactorData
 		return new RCharacterDataImpl(data);
 	}
 	
+	public Integer get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (this.codes[idx] != NA_integer_INT) ? Integer.valueOf(this.codes[idx]) : null;
+	}
+	
+	@Override
 	public Integer[] toArray() {
 		final Integer[] array = new Integer[this.length];
 		for (int i = 0; i < this.length; i++) {
@@ -203,6 +212,10 @@ public class RFactorDataImpl extends AbstractFactorData
 			}
 		}
 		return array;
+	}
+	
+	public boolean allEqual(final RStore other) {
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	
 }

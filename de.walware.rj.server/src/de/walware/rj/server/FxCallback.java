@@ -16,17 +16,20 @@ import java.io.Serializable;
 import javax.security.auth.callback.Callback;
 
 
+/**
+ * Callback for authentication using file permission
+ */
 public class FxCallback implements Callback, Serializable {
 	
 	
 	private static final long serialVersionUID = 3559656299612581181L;
 	
 	
-	private String filename;
+	private final String filename;
 	private byte[] content;
 	
 	
-	public FxCallback(String filename, byte[] pendingKey) {
+	public FxCallback(final String filename, final byte[] pendingKey) {
 		this.filename = filename;
 		this.content = pendingKey;
 	}
@@ -36,11 +39,11 @@ public class FxCallback implements Callback, Serializable {
 		return this.filename;
 	}
 	
-	public byte[] createContent(byte[] clientKey) {
+	public byte[] createContent(final byte[] clientKey) {
 		if (clientKey == null) {
 			throw new NullPointerException();
 		}
-		byte[] newContent = new byte[this.content.length+clientKey.length];
+		final byte[] newContent = new byte[this.content.length+clientKey.length];
 		System.arraycopy(this.content, 0, newContent, 0, this.content.length);
 		System.arraycopy(clientKey, 0, newContent, this.content.length, clientKey.length);
 		this.content = clientKey;

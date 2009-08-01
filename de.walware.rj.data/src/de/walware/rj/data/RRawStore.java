@@ -13,13 +13,15 @@ package de.walware.rj.data;
 
 
 /**
- * For R data type 'raw'
- * 
- * Note: raw does not support NA (0 is used to initialize new values).
+ * Interface for R data stores of type {@link RStore#RAW}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'raw'.</p>
  */
 public interface RRawStore extends RStore {
 	
 	
-	public Byte[] toArray();
+	Byte get(int idx);
+	Byte[] toArray();
 	
 }

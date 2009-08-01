@@ -20,12 +20,25 @@ public abstract class AbstractCharacterData extends AbstractRData
 		implements RCharacterStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.CHARACTER;
 	}
 	
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_CHARACTER;
+	}
+	
+	public boolean allEqual(final RStore other) {
+		if (other.getStoreType() != CHARACTER || other.getLength() != this.length) {
+			return false;
+		}
+		for (int i = 0; i < this.length; i++) {
+			if (!(other.isNA(i) ? isNA(i) :
+					other.getChar(i).equals(getChar(i)) )) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }

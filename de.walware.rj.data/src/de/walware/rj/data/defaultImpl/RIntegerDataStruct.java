@@ -11,12 +11,39 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RIntegerDataStruct extends AbstractIntegerData {
 	
 	
 	public RIntegerDataStruct(final int length) {
 		this.length = length;
+	}
+	
+	
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isMissing(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public Integer get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final Integer[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == INTEGER && other.getLength() == -1);
 	}
 	
 }

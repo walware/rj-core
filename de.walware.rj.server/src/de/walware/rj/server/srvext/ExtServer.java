@@ -20,7 +20,7 @@ import de.walware.rj.server.Server;
 public interface ExtServer {
 	
 	
-	public void init(String name, ServerAuthMethod authMethod);
+	public void init(String name, Server publicServer) throws Exception;
 	
 	public void addPlugin(ServerRuntimePlugin plugin);
 	

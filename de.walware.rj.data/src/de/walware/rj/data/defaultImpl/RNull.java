@@ -26,7 +26,7 @@ public class RNull implements RObject {
 	}
 	
 	
-	public int getRObjectType() {
+	public byte getRObjectType() {
 		return TYPE_NULL;
 	}
 	
@@ -34,6 +34,12 @@ public class RNull implements RObject {
 		return CLASSNAME_NULL;
 	}
 	
+	/**
+	 * Returns the length of the object. The length of {@link RObject#TYPE_NULL NULL}
+	 * is always zero.
+	 * 
+	 * @return the length
+	 */
 	public int getLength() {
 		return 0;
 	}

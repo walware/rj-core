@@ -20,7 +20,7 @@ public interface RDataFrame extends RList, RObject {
 	public RStore getColumn(int idx);
 	
 	int getRowCount();
-	RCharacterStore getRowNames();
+	RStore getRowNames();
 	
 //	void setColumn(int idx, RStore column);
 //	void insertColumn(int idx, RStore column);

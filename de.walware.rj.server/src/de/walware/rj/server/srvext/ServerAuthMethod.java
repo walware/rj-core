@@ -12,6 +12,7 @@
 package de.walware.rj.server.srvext;
 
 import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -33,7 +34,9 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import de.walware.rj.server.RjException;
+import de.walware.rj.RjException;
+import de.walware.rj.RjInitFailedException;
+import de.walware.rj.RjOperationFailedException;
 import de.walware.rj.server.ServerLogin;
 
 
@@ -69,7 +72,7 @@ public abstract class ServerAuthMethod {
 				continue;
 			}
 			if (from[i] instanceof ChoiceCallback) {
-				int[] selectedIndexes = ((ChoiceCallback) from[i]).getSelectedIndexes();
+				final int[] selectedIndexes = ((ChoiceCallback) from[i]).getSelectedIndexes();
 				if (((ChoiceCallback) from[i]).allowMultipleSelections()) {
 					((ChoiceCallback) to[i]).setSelectedIndexes(selectedIndexes);
 				}
@@ -92,7 +95,7 @@ public abstract class ServerAuthMethod {
 	
 	
 	private static final Logger LOGGER = Logger.getLogger("de.walware.rj.server.auth");
-	private String logPrefix;
+	private final String logPrefix;
 	
 	
 	private final String id;
@@ -106,19 +109,41 @@ public abstract class ServerAuthMethod {
 	private long pendingLoginId;
 	private KeyPair pendingLoginKeyPair;
 	
+	private String expliciteClient;
+	
 	
 	/**
 	 * 
 	 * @param usePubkeyExchange enables default encryption of secret data (password)
 	 */
-	protected ServerAuthMethod(String id, boolean usePubkeyExchange) {
+	protected ServerAuthMethod(final String id, final boolean usePubkeyExchange) {
 		this.usePubkeyExchange = usePubkeyExchange;
 		this.id = id;
 		this.logPrefix = "[Auth:"+id+"]";
 	}
 	
 	
-	public final void init(String arg) throws RjException {
+	public void setExpliciteClient(final String client) {
+		this.expliciteClient = client;
+	}
+	
+	private String getCallingClient() throws ServerNotActiveException {
+		if (this.expliciteClient != null) {
+			return this.expliciteClient;
+		}
+		return RemoteServer.getClientHost();
+	}
+	
+	public boolean isValid(final Client client) {
+		try {
+			return (getCallingClient().equals(client.clientId));
+		}
+		catch (final ServerNotActiveException e) {
+			return false;
+		}
+	}
+	
+	public final void init(final String arg) throws RjException {
 		try {
 			if (this.usePubkeyExchange) {
 				this.keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -129,9 +154,9 @@ public abstract class ServerAuthMethod {
 			
 			doInit(arg);
 		}
-		catch (Exception e) {
-			RjException rje = (e instanceof RjException) ? (RjException) e :
-					new RjException("An error occurred when initializing authentication method '"+this.id+"'.", e);
+		catch (final Exception e) {
+			final RjException rje = (e instanceof RjException) ? (RjException) e :
+					new RjInitFailedException("An error occurred when initializing authentication method '"+this.id+"'.", e);
 			throw rje;
 		}
 	}
@@ -151,8 +176,8 @@ public abstract class ServerAuthMethod {
 	
 	public final ServerLogin createLogin() throws RjException {
 		try {
-			final String client = RemoteServer.getClientHost();
-			boolean same = client.equals(this.pendingLoginClient);
+			final String client = getCallingClient();
+			final boolean same = client.equals(this.pendingLoginClient);
 			this.pendingLoginClient = client;
 			
 			LOGGER.log(Level.INFO, "{0} creating new login ({1}).",
@@ -171,9 +196,9 @@ public abstract class ServerAuthMethod {
 			
 			return createNewLogin(doCreateLogin());
 		}
-		catch (Exception e) {
-			RjException rje = (e instanceof RjException) ? (RjException) e :
-					new RjException("An unexpected error occurred when preparing login process.", e);
+		catch (final Exception e) {
+			final RjException rje = (e instanceof RjException) ? (RjException) e :
+					new RjOperationFailedException("An unexpected error occurred when preparing login process.", e);
 			throw rje;
 		}
 	}
@@ -187,7 +212,7 @@ public abstract class ServerAuthMethod {
 	 */
 	protected abstract Callback[] doCreateLogin() throws RjException;
 	
-	private ServerLogin createNewLogin(Callback[] callbacks) {
+	private ServerLogin createNewLogin(final Callback[] callbacks) {
 		if (this.usePubkeyExchange) {
 			return new ServerLogin(this.pendingLoginId, this.pendingLoginKeyPair.getPublic(), callbacks);
 		}
@@ -196,10 +221,10 @@ public abstract class ServerAuthMethod {
 		}
 	}
 	
-	public final String performLogin(ServerLogin login) throws RjException, LoginException {
+	public final Client performLogin(final ServerLogin login) throws RjException, LoginException {
 		String client = null;
 		try {
-			client = RemoteServer.getClientHost();
+			client = getCallingClient();
 			if (login.getId() != this.pendingLoginId ||
 					!client.equals(this.pendingLoginClient)) {
 				throw new FailedLoginException("Login process was interrupted by another client.");
@@ -207,15 +232,15 @@ public abstract class ServerAuthMethod {
 			
 			login.readAnswer(this.usePubkeyExchange ? this.pendingLoginKeyPair.getPrivate() : null);
 			this.pendingLoginKeyPair = null;
-			String name = doPerformLogin(login.getCallbacks());
+			final String name = doPerformLogin(login.getCallbacks());
 			
 			LOGGER.log(Level.INFO, "{0} performing login completed successfull: {1} ({2}).",
 					new Object[] { this.logPrefix, name, client });
-			return name;
+			return new Client(name, getCallingClient(), (byte) 0);
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			if (e instanceof LoginException) {
-				LogRecord log = new LogRecord(Level.INFO, "{0} performing login failed ({1}).");
+				final LogRecord log = new LogRecord(Level.INFO, "{0} performing login failed ({1}).");
 				log.setParameters(new Object[] { this.logPrefix, client });
 				log.setThrown(e);
 				LOGGER.log(log);
@@ -224,7 +249,7 @@ public abstract class ServerAuthMethod {
 			if (e instanceof RjException) {
 				throw (RjException) e;
 			}
-			throw new RjException("An unexpected error occurred when validating the login credential.", e);
+			throw new RjOperationFailedException("An unexpected error occurred when validating the login credential.", e);
 		}
 		finally {
 			System.gc();
@@ -232,7 +257,7 @@ public abstract class ServerAuthMethod {
 	}
 	
 	/**
-	 * Is called when the client sends the login data
+	 * This method is called when the client sends the login data
 	 * 
 	 * @param callbacks the callbacks handled by the client (note, the callbacks are not
 	 *     the same instances returned by {@link #createLogin()}, but clones)

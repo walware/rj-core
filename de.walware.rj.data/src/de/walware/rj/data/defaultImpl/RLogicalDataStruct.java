@@ -11,6 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RLogicalDataStruct extends AbstractLogicalData {
 	
@@ -20,8 +22,27 @@ public class RLogicalDataStruct extends AbstractLogicalData {
 	}
 	
 	
-	public Boolean[] toArray() {
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
+	}
+	
+	public Boolean get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public final Boolean[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == LOGICAL && other.getLength() == -1);
 	}
 	
 }

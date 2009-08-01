@@ -13,8 +13,17 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for R data type 'complex'
+ * Interface for R data stores of type {@link RStore#COMPLEX}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'complex'.</p>
  */
 public interface RComplexStore extends RStore {
+	
+	
+	/** Type not yet defined */
+	Object get(int idx);
+	/** Type not yet defined */
+	Object[] toArray();
 	
 }

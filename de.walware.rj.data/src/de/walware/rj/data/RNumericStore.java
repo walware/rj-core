@@ -13,11 +13,15 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for R data type 'numeric'
+ * Interface for R data stores of type {@link RStore#NUMERIC}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'double'.</p>
  */
 public interface RNumericStore extends RStore {
 	
 	
-	public Double[] toArray();
+	Double get(int idx);
+	Double[] toArray();
 	
 }

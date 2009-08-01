@@ -11,6 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RCharacterDataStruct extends AbstractCharacterData {
 	
@@ -20,7 +22,21 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 	}
 	
 	
-	public int getIdx(final String value) {
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isMissing(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public int indexOf(final String value) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public int indexOf(final String value, final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -28,8 +44,17 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 		throw new UnsupportedOperationException();
 	}
 	
-	public String[] toArray() {
+	public String get(final int idx) {
 		throw new UnsupportedOperationException();
+	}
+	
+	public final String[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == CHARACTER && other.getLength() == -1);
 	}
 	
 }

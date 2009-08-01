@@ -24,8 +24,8 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
+import de.walware.rj.RjException;
 import de.walware.rj.server.FxCallback;
-import de.walware.rj.server.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 import de.walware.rj.server.srvext.ServerUtil;
 
@@ -50,7 +50,7 @@ public class FxAuthMethod extends ServerAuthMethod {
 	
 	
 	@Override
-	public void doInit(String arg) throws RjException {
+	public void doInit(final String arg) throws RjException {
 		final String configType;
 		final String configValue;
 		{	final String[] args = ServerUtil.getArgConfigValue(arg);
@@ -70,7 +70,7 @@ public class FxAuthMethod extends ServerAuthMethod {
 				this.fileChannel = new RandomAccessFile(this.file, "rws").getChannel();
 				this.fileChannel.truncate(512);
 			}
-			catch (IOException e) {
+			catch (final IOException e) {
 				throw new RjException("Cannot read lock file.", e);
 			}
 		}
@@ -85,7 +85,7 @@ public class FxAuthMethod extends ServerAuthMethod {
 		try {
 			this.fileChannel.position(this.fileChannel.size());
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			throw new RjException("Cannot read lock file.", e);
 		}
 		
@@ -96,9 +96,9 @@ public class FxAuthMethod extends ServerAuthMethod {
 	}
 	
 	@Override
-	protected String doPerformLogin(Callback[] callbacks) throws LoginException, RjException {
+	protected String doPerformLogin(final Callback[] callbacks) throws LoginException, RjException {
 		final String userName = ((NameCallback) callbacks[0]).getName();
-		byte[] clientKey = ((FxCallback) callbacks[1]).getContent();
+		final byte[] clientKey = ((FxCallback) callbacks[1]).getContent();
 		if (clientKey.length < 1024) {
 			throw new RjException("Unsufficient client key");
 		}
@@ -107,15 +107,15 @@ public class FxAuthMethod extends ServerAuthMethod {
 				return userName;
 			}
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			throw new RjException("Cannot read lock file.", e);
 		}
 		throw new FailedLoginException();
 	}
 	
-	private boolean compare(byte[] key) throws IOException {
-		byte[] check = new byte[key.length];
-		int n = this.fileChannel.read(ByteBuffer.wrap(check));
+	private boolean compare(final byte[] key) throws IOException {
+		final byte[] check = new byte[key.length];
+		final int n = this.fileChannel.read(ByteBuffer.wrap(check));
 		if (n != key.length) {
 			return false;
 		}

@@ -105,7 +105,7 @@ HOSTADDRESS=
 ##
 # Example:
 #     JAVA_OPTS="-server"
-JAVA_OPTS=
+JAVA_OPTS="-server"
 JAVA_OPTS_LIB=
 
 
@@ -261,13 +261,15 @@ fi
 if [ $DEV ]
 then
 	JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin:$RJS_HOME/../de.walware.rj.data/bin:$RJS_HOME/bin:$RJS_HOME/binShaj"
+	RMI_BASE="file://$RJS_HOME/../de.walware.rj.server/bin"
 	RJAVA_CP=
 else
 	JAVA_CP="$RJS_HOME/rj.server.jar:$RJS_HOME/rj.data.jar:$JAVA_CP"
+	RMI_BASE="file://$RJS_HOME/rj.server.jar"
 	RJAVA_CP=
 fi
 
-JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$HOSTADDRESS -Djava.security.policy=$RJS_HOME/security.policy"
+JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$HOSTADDRESS -Djava.security.policy=$RJS_HOME/security.policy -Djava.rmi.server.codebase=$RMI_BASE"
 if [ "$JAVA_OPTS_LIB" ]
 then
 	JAVA_OPTS="$JAVA_OPTS -Djava.library.path=$JAVA_OPTS_LIB"

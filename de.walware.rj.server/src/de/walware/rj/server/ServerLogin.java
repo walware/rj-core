@@ -23,6 +23,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 
+import de.walware.rj.RjException;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 
 
@@ -42,7 +43,7 @@ public final class ServerLogin implements Serializable {
 	public ServerLogin() {
 	}
 	
-	public ServerLogin(long id, Key pubkey, Callback[] callbacks) {
+	public ServerLogin(final long id, final Key pubkey, final Callback[] callbacks) {
 		this.id = id;
 		this.pubkey = pubkey;
 		this.callbacks = callbacks;
@@ -86,7 +87,7 @@ public final class ServerLogin implements Serializable {
 			}
 			return new ServerLogin(this.id, null, copy);
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			throw new RjException("An error occurred when creating login data.", e);
 		}
 	}
@@ -98,18 +99,18 @@ public final class ServerLogin implements Serializable {
 	 * @param privateKey the key to decrypt the data
 	 * @throws RjException when processing login data failed
 	 */
-	public void readAnswer(Key privateKey) throws RjException {
+	public void readAnswer(final Key privateKey) throws RjException {
 		try {
 			if (privateKey != null) {
 				process(this.callbacks, Cipher.DECRYPT_MODE, privateKey);
 			}
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			throw new RjException("An error occurred when processing login data.", e);
 		}
 	}
 	
-	private void process(Callback[] callbacks, final int mode, Key key) throws Exception {
+	private void process(final Callback[] callbacks, final int mode, final Key key) throws Exception {
 		final Cipher with = Cipher.getInstance("RSA");
 		with.init(mode, key);
 		final Charset charset = Charset.forName("UTF-8");
@@ -117,7 +118,7 @@ public final class ServerLogin implements Serializable {
 		for (int i = 0; i < callbacks.length; i++) {
 			if (callbacks[i] instanceof PasswordCallback) {
 				final PasswordCallback c = (PasswordCallback) callbacks[i];
-				char[] orgPassword = c.getPassword();
+				final char[] orgPassword = c.getPassword();
 				if (orgPassword != null) {
 					final byte[] orgBytes;
 					if (mode == Cipher.ENCRYPT_MODE) {
@@ -142,7 +143,7 @@ public final class ServerLogin implements Serializable {
 					}
 					
 					if (mode == Cipher.ENCRYPT_MODE) {
-						PasswordCallback copy = new PasswordCallback(c.getPrompt(), c.isEchoOn());
+						final PasswordCallback copy = new PasswordCallback(c.getPrompt(), c.isEchoOn());
 						copy.setPassword(encPassword);
 						callbacks[i] = copy;
 					}

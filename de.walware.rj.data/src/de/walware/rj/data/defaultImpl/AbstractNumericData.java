@@ -20,7 +20,7 @@ public abstract class AbstractNumericData extends AbstractRData
 		implements RNumericStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.NUMERIC;
 	}
 	
@@ -38,6 +38,11 @@ public abstract class AbstractNumericData extends AbstractRData
 		setNum(idx, integer);
 	}
 	
+	@Override
+	public String getChar(final int idx) {
+		return Double.toString(getNum(idx));
+	}
+	
 	
 	public Double[] toArray() {
 		final Double[] array = new Double[this.length];
@@ -47,6 +52,19 @@ public abstract class AbstractNumericData extends AbstractRData
 			}
 		}
 		return array;
+	}
+	
+	public boolean allEqual(final RStore other) {
+		if (other.getStoreType() != NUMERIC || other.getLength() != this.length) {
+			return false;
+		}
+		for (int i = 0; i < this.length; i++) {
+			if (!(other.isNA(i) ? isNA(i) :
+					Math.abs(other.getNum(i) - getNum(i)) < 2.220446e-16 )) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 }

@@ -17,16 +17,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
-import de.walware.rj.data.RNumericStore;
-
 
 public class RNumericDataImpl extends AbstractNumericData
-		implements RNumericStore, RDataReziseExtension, Externalizable {
-	
-	
-	public static RNumericDataImpl createFromWithNAList(final double[] values, final int[] naIdxs) {
-		return new RNumericDataImpl(values, naIdxs);
-	}
+		implements RDataResizeExtension, Externalizable {
 	
 	
 	private double[] realValues;
@@ -38,9 +31,19 @@ public class RNumericDataImpl extends AbstractNumericData
 		this.naIdxs = new int[0];
 	}
 	
-	private RNumericDataImpl(final double[] values, final int[] naIdxs) {
+	public RNumericDataImpl(final double[] values) {
+		this.realValues = values;
+		this.naIdxs = new int[0];
+	}
+	
+	public RNumericDataImpl(final double[] values, final int[] naIdxs) {
 		this.realValues = values;
 		this.naIdxs = naIdxs;
+	}
+	
+	public RNumericDataImpl(final int length) {
+		this.realValues = new double[length];
+		this.naIdxs = new int[0];
 	}
 	
 	
@@ -83,13 +86,14 @@ public class RNumericDataImpl extends AbstractNumericData
 	
 	
 	@Override
-	public double getNum(final int idx) {
-		return this.realValues[idx];
+	protected final boolean isStructOnly() {
+		return false;
 	}
 	
+	
 	@Override
-	public boolean hasNA() {
-		return (this.naIdxs.length > 0);
+	public double getNum(final int idx) {
+		return this.realValues[idx];
 	}
 	
 	@Override
@@ -98,12 +102,21 @@ public class RNumericDataImpl extends AbstractNumericData
 				&& Arrays.binarySearch(this.naIdxs, idx) >= 0);
 	}
 	
+	public boolean isNaN(final int idx) {
+		return (Double.isNaN(this.realValues[idx])
+				&& Arrays.binarySearch(this.naIdxs, idx) < 0);
+	}
+	
+	public boolean isMissing(final int idx) {
+		return (Double.isNaN(this.realValues[idx]));
+	}
+	
 	@Override
 	public void setNum(final int idx, final double value) {
 		if (Double.isNaN(this.realValues[idx])) {
 			this.naIdxs = deleteIdx(this.naIdxs, idx);
 		}
-		this.realValues[idx] = value;
+		this.realValues[idx] = Double.isNaN(value) ? Double.NaN : value;
 	}
 	
 	@Override
@@ -117,10 +130,10 @@ public class RNumericDataImpl extends AbstractNumericData
 		this.length += idxs.length;
 	}
 	
-	public void insertReal(final int idx, final double value) {
+	public void insertNum(final int idx, final double value) {
 		final int[] idxs = new int[] { idx };
 		prepareInsert(idxs);
-		this.realValues[idx] = Double.NaN;
+		this.realValues[idx] = Double.isNaN(value) ? Double.NaN : value;
 		updateIdxInserted(this.naIdxs, idxs);
 	}
 	
@@ -149,6 +162,14 @@ public class RNumericDataImpl extends AbstractNumericData
 		this.length -= idxs.length;
 	}
 	
+	public Double get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (!Double.isNaN(this.realValues[idx])
+				|| Arrays.binarySearch(this.naIdxs, idx) < 0) ?
+			Double.valueOf(this.realValues[idx]) : null;
+	}
 	
 	@Override
 	public Double[] toArray() {

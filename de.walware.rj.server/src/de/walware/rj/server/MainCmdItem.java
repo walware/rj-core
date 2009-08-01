@@ -21,7 +21,7 @@ public abstract class MainCmdItem {
 	public static final byte T_NONE = 0;
 	
 	/**
-	 * {@link ConsoleCmdItem}
+	 * {@link ConsoleReadCmdItem}
 	 *      options = ADD_TO_HISTORY (TRUE, FALSE)
 	 *      in = prompt
 	 *      answer = (text) readed input
@@ -29,7 +29,7 @@ public abstract class MainCmdItem {
 	public static final byte T_CONSOLE_READ_ITEM =    1;
 	
 	/**
-	 * {@link ConsoleCmdItem}
+	 * {@link ConsoleReadCmdItem}
 	 *     options = STATUS (OK, WARNING)
 	 *     in = output
 	 *     answer = -
@@ -72,6 +72,9 @@ public abstract class MainCmdItem {
 	protected int options;
 	
 	public MainCmdItem next;
+	
+	public byte requestId = -1;
+	public byte slot = 0;
 	
 	
 	public abstract byte getCmdType();

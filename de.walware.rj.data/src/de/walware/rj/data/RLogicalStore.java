@@ -13,11 +13,15 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for R data type 'logical'
+ * Interface for R data stores of type {@link RStore#LOGICAL}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>typeof(object)</code> returns 'logical'.</p>
  */
 public interface RLogicalStore extends RStore {
 	
 	
-	public Boolean[] toArray();
+	Boolean get(int idx);
+	Boolean[] toArray();
 	
 }

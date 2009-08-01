@@ -16,11 +16,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import de.walware.rj.data.RRawStore;
+import de.walware.rj.data.RStore;
 
 
 public class RRawDataImpl extends AbstractRawData
-		implements RRawStore, RDataReziseExtension, Externalizable {
+		implements RDataResizeExtension, Externalizable {
 	
 	
 	public static RRawDataImpl createForServer(final byte[] initialValues) {
@@ -28,7 +28,7 @@ public class RRawDataImpl extends AbstractRawData
 	}
 	
 	
-	private byte[] byteValues;
+	protected byte[] byteValues;
 	
 	
 	public RRawDataImpl() {
@@ -58,17 +58,22 @@ public class RRawDataImpl extends AbstractRawData
 	
 	
 	@Override
+	protected final boolean isStructOnly() {
+		return false;
+	}
+	
+	
+	@Override
 	public byte getRaw(final int idx) {
 		return this.byteValues[idx];
 	}
 	
 	@Override
-	public boolean hasNA() {
+	public boolean isNA(final int idx) {
 		return false;
 	}
 	
-	@Override
-	public boolean isNA(final int idx) {
+	public boolean isMissing(final int idx) {
 		return false;
 	}
 	
@@ -117,6 +122,13 @@ public class RRawDataImpl extends AbstractRawData
 		this.length -= idxs.length;
 	}
 	
+	public Byte get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return Byte.valueOf(this.byteValues[idx]);
+	}
+	
 	@Override
 	public Byte[] toArray() {
 		final Byte[] array = new Byte[this.length];
@@ -124,6 +136,10 @@ public class RRawDataImpl extends AbstractRawData
 			array[i] = Byte.valueOf(this.byteValues[i]);
 		}
 		return array;
+	}
+	
+	public boolean allEqual(final RStore other) {
+		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	
 }

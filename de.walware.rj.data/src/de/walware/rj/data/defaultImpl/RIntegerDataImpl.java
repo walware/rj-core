@@ -18,43 +18,35 @@ import java.io.ObjectOutput;
 
 
 public class RIntegerDataImpl extends AbstractIntegerData
-		implements RDataReziseExtension, Externalizable {
+		implements RDataResizeExtension, Externalizable {
 	
 	
-	public static RIntegerDataImpl createForServer(final int[] values) {
-		return new RIntegerDataImpl(values);
-	}
-	
-	public static RIntegerDataImpl createFromWithNAList(final int[] values, final int[] naIdxs) {
-		return new RIntegerDataImpl(values, naIdxs);
-	}
-	
-	
-	private int[] intValues;
-	private int naCount;
+	protected int[] intValues;
 	
 	
 	public RIntegerDataImpl() {
 		this.intValues = new int[0];
 		this.length = 0;
-		this.naCount = 0;
 	}
 	
-	private RIntegerDataImpl(final int[] values) {
+	public RIntegerDataImpl(final int[] values) {
 		this.intValues = values;
-		this.length = this.intValues.length;
+		this.length = values.length;
 	}
 	
-	private RIntegerDataImpl(final int[] values, final int[] naIdxs) {
+	public RIntegerDataImpl(final int[] values, final int[] naIdxs) {
 		this.intValues = values;
-		this.length = this.intValues.length;
-		this.naCount = 0;
+		this.length = values.length;
 		if (naIdxs != null) {
 			for (int i = 0; i < naIdxs.length; i++) {
 				this.intValues[naIdxs[i]] = NA_integer_INT;
 			}
-			this.naCount = naIdxs.length;
 		}
+	}
+	
+	public RIntegerDataImpl(final int length) {
+		this.intValues = new int[length];
+		this.length = length;
 	}
 	
 	
@@ -64,12 +56,9 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.length = in.readInt();
-		this.naCount = 0;
 		this.intValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
-			if ((this.intValues[i] = in.readInt()) == NA_integer_INT) {
-				this.naCount++;
-			}
+			this.intValues[i] = in.readInt();
 		}
 	}
 	
@@ -82,13 +71,14 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	
 	@Override
-	public int getInt(final int idx) {
-		return this.intValues[idx];
+	protected final boolean isStructOnly() {
+		return false;
 	}
 	
+	
 	@Override
-	public boolean hasNA() {
-		return (this.naCount > 0);
+	public int getInt(final int idx) {
+		return this.intValues[idx];
 	}
 	
 	@Override
@@ -96,20 +86,18 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		return (this.intValues[idx] == NA_integer_INT);
 	}
 	
+	public boolean isMissing(final int idx) {
+		return (this.intValues[idx] == NA_integer_INT);
+	}
+	
 	@Override
 	public void setInt(final int idx, final int value) {
-		assert (value != NA_integer_INT);
-		if (this.intValues[idx] == NA_integer_INT) {
-			this.naCount --;
-		}
+//		assert (value != NA_integer_INT);
 		this.intValues[idx] = value;
 	}
 	
 	@Override
 	public void setNA(final int idx) {
-		if (this.intValues[idx] == NA_integer_INT) {
-			return;
-		}
 		this.intValues[idx] = NA_integer_INT;
 	}
 	
@@ -119,7 +107,7 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	}
 	
 	public void insertInt(final int idx, final int value) {
-		assert (value != NA_integer_INT);
+//		assert (value != NA_integer_INT);
 		prepareInsert(new int[] { idx });
 		this.intValues[idx] = value;
 	}
@@ -127,7 +115,6 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.intValues[idx] = NA_integer_INT;
-		this.naCount ++;
 	}
 	
 	public void insertNA(final int[] idxs) {
@@ -138,25 +125,36 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		for (int idx = 0; idx < idxs.length; idx++) {
 			this.intValues[idxs[idx]+idx] = NA_integer_INT;
 		}
-		this.naCount += idxs.length;
 	}
 	
 	public void remove(final int idx) {
-		if (this.intValues[idx] == NA_integer_INT) {
-			this.naCount --;
-		}
 		this.intValues = remove(this.intValues, this.length, new int[] { idx });
 		this.length --;
 	}
 	
 	public void remove(final int[] idxs) {
-		for (int i = 0; i < idxs.length; i++) {
-			if (this.intValues[idxs[i]] == NA_integer_INT) {
-				this.naCount --;
-			}
-		}
 		this.intValues = remove(this.intValues, this.length, idxs);
 		this.length -= idxs.length;
+	}
+	
+	
+	public Integer get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (this.intValues[idx] != NA_integer_INT) ?
+			Integer.valueOf(this.intValues[idx]) : null;
+	}
+	
+	@Override
+	public Integer[] toArray() {
+		final Integer[] array = new Integer[this.length];
+		for (int i = 0; i < this.length; i++) {
+			if (this.intValues[i] != NA_integer_INT) {
+				array[i] = Integer.valueOf(this.intValues[i]);
+			}
+		}
+		return array;
 	}
 	
 }

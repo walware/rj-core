@@ -11,6 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import de.walware.rj.data.RStore;
+
 
 public class RNumericDataStruct extends AbstractNumericData {
 	
@@ -21,8 +23,31 @@ public class RNumericDataStruct extends AbstractNumericData {
 	
 	
 	@Override
-	public Double[] toArray() {
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public final boolean isNaN(final int idx) {
 		throw new UnsupportedOperationException();
+	}
+	
+	public boolean isMissing(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public Double get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final Double[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == NUMERIC && other.getLength() == -1);
 	}
 	
 }

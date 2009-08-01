@@ -20,12 +20,28 @@ public abstract class AbstractRawData extends AbstractRData
 		implements RRawStore {
 	
 	
-	public final int getStoreType() {
+	public final byte getStoreType() {
 		return RStore.RAW;
 	}
 	
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_RAW;
+	}
+	
+	
+	@Override
+	public final int getInt(final int idx) {
+		return getRaw(idx);
+	}
+	
+	@Override
+	public final void setInt(final int idx, final int integer) {
+		setRaw(idx, (byte) integer);
+	}
+	
+	@Override
+	public final String getChar(final int idx) {
+		return Integer.toHexString(getRaw(idx));
 	}
 	
 	

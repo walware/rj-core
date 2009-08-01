@@ -11,21 +11,41 @@
 
 package de.walware.rj.data.defaultImpl;
 
-import java.util.List;
-
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RFactorStore;
+import de.walware.rj.data.RStore;
 
 
 public class RFactorDataStruct extends AbstractFactorData {
 	
 	
-	private int levelCount;
+	private final int levelCount;
 	
 	
 	public RFactorDataStruct(final int length, final boolean isOrdered, final int levelCount) {
 		this.length = length;
 		this.isOrdered = isOrdered;
 		this.levelCount = levelCount;
+	}
+	
+	
+	@Override
+	protected final boolean isStructOnly() {
+		return true;
+	}
+	
+	
+	public boolean isMissing(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	public Integer get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final Integer[] toArray() {
+		throw new UnsupportedOperationException();
 	}
 	
 	
@@ -37,7 +57,7 @@ public class RFactorDataStruct extends AbstractFactorData {
 		return this.levelCount;
 	}
 	
-	public List<String> getLevels() {
+	public RCharacterStore getLevels() {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -57,8 +77,10 @@ public class RFactorDataStruct extends AbstractFactorData {
 		return new RCharacterDataStruct(this.length);
 	}
 	
-	public Integer[] toArray() {
-		throw new UnsupportedOperationException();
+	public boolean allEqual(final RStore other) {
+		return (other.getStoreType() == FACTOR
+				&& ((RFactorStore) other).isOrdered() == this.isOrdered
+				&& other.getLength() == -1);
 	}
 	
 }

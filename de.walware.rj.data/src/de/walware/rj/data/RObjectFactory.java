@@ -22,10 +22,14 @@ public interface RObjectFactory {
 	public static final int F_ONLY_STRUCT = 0x1;
 	
 	/** XXX: Not yet fully implemented */
-	public static final int F_WITH_ATTR = 0x2;
 	public static final int O_WITH_ATTR = 0x2;
+	public static final int F_WITH_ATTR = 0x2;
 	
 	public static final int O_CLASS_NAME = 0x4;
+	public static final int F_CLASS_NAME = 0x4;
+	
+	public static final int O_NOCHILDREN = 0x8;
+	public static final int F_NOCHILDREN = 0x8;
 	
 	
 //	RArgument createArgument(String name, String defaultSource);
@@ -42,8 +46,8 @@ public interface RObjectFactory {
 	
 	<DataType extends RStore> RVector<DataType> createVector(DataType data);
 	<DataType extends RStore> RArray<DataType> createArray(DataType data, int[] dim);
-//	<DataType extends RData> RArray<DataType> createMatrix(DataType data);
-//	RList createList(RObject[] components, String names);
+	<DataType extends RStore> RArray<DataType> createMatrix(DataType data, int dim1, int dim2);
+	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
 	
 	void writeObject(RObject object, ObjectOutput out, int flags) throws IOException;
