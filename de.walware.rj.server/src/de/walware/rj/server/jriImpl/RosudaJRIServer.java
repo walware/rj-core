@@ -855,7 +855,7 @@ public class RosudaJRIServer extends RJ
 					if (expP != 0) {
 						final long objP = this.rEngine.rniEval(expP, 0L);
 						if (objP != 0) {
-							final RObject obj = rniCreateDataObject(objP, null, false);
+							final RObject obj = rniCreateDataObject(objP, null, false, true);
 							cmd.setAnswer(obj);
 							break DATA_CMD;
 						}
@@ -870,7 +870,7 @@ public class RosudaJRIServer extends RJ
 					if (expP != 0) {
 						final long objP = this.rEngine.rniEval(expP, 0L);
 						if (objP != 0) {
-							final RObject obj = rniCreateDataObject(objP, null, true);
+							final RObject obj = rniCreateDataObject(objP, null, true, true);
 							cmd.setAnswer(obj);
 							break DATA_CMD;
 						}
@@ -882,7 +882,7 @@ public class RosudaJRIServer extends RJ
 				if (input != null) {
 					final long objP = Long.parseLong(input);
 					if (objP != 0) {
-						final RObject obj = rniCreateDataObject(objP, null, false);
+						final RObject obj = rniCreateDataObject(objP, null, false, true);
 						cmd.setAnswer(obj);
 						break DATA_CMD;
 					}
@@ -893,7 +893,7 @@ public class RosudaJRIServer extends RJ
 				if (input != null) {
 					final long objP = Long.parseLong(input);
 					if (objP != 0) {
-						final RObject obj = rniCreateDataObject(objP, null, true);
+						final RObject obj = rniCreateDataObject(objP, null, true, true);
 						cmd.setAnswer(obj);
 						break DATA_CMD;
 					}
@@ -1109,9 +1109,9 @@ public class RosudaJRIServer extends RJ
 		return objP;
 	}
 	
-	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly) throws RjException {
-		if (objP == 0 || this.rniTemp > 512 || this.rniTemp >= this.rniMaxDepth
-				|| this.rniInterrupted) {
+	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly, boolean force) throws RjException {
+		if (objP == 0 
+				|| (!force && (this.rniTemp > 512 || this.rniTemp >= this.rniMaxDepth || this.rniInterrupted)) ) {
 			return null;
 		}
 		boolean tmpAssigned;
@@ -1374,7 +1374,7 @@ public class RosudaJRIServer extends RJ
 					final RObject[] itemObjects = new RObject[itemP.length];
 					for (int i = 0; i < itemP.length; i++) {
 						final String itemTmp = objTmp+"[["+(i+1)+"]]";
-						itemObjects[i] = rniCreateDataObject(itemP[i], itemTmp, structOnly);
+						itemObjects[i] = rniCreateDataObject(itemP[i], itemTmp, structOnly, true);
 					}
 					return new JRIDataFrameImpl(itemObjects, className1, itemNames, rowNames);
 				}
@@ -1385,7 +1385,7 @@ public class RosudaJRIServer extends RJ
 					final RObject[] itemObjects = new RObject[itemP.length];
 					for (int i = 0; i < itemP.length; i++) {
 						final String itemTmp = objTmp+"[["+(i+1)+"]]";
-						itemObjects[i] = rniCreateDataObject(itemP[i], itemTmp, structOnly);
+						itemObjects[i] = rniCreateDataObject(itemP[i], itemTmp, structOnly, false);
 					}
 					return new JRIListImpl(itemObjects, className1, itemNames);
 				}
@@ -1413,7 +1413,7 @@ public class RosudaJRIServer extends RJ
 					final long tag = this.rEngine.rniTAG(cdr);
 					itemNames[i] = (tag != 0 && this.rEngine.rniExpType(tag) == REXP.SYMSXP) ?
 							this.rEngine.rniGetSymbolName(tag) : null;
-					itemObjects[i] = rniCreateDataObject(car, null, structOnly);
+					itemObjects[i] = rniCreateDataObject(car, null, structOnly, false);
 					cdr = this.rEngine.rniCDR(cdr);
 					if (cdr == 0 || this.rEngine.rniExpType(cdr) != REXP.LISTSXP) {
 						break;
@@ -1455,7 +1455,7 @@ public class RosudaJRIServer extends RJ
 						names[idx] = names[i];
 						final String itemTmp = objTmp+"$`"+names[i]+'`';
 						final long itemP = this.rEngine.rniEval(this.rEngine.rniParse(itemTmp, 1), 0L);
-						itemObjects[idx] = rniCreateDataObject(itemP, itemTmp, structOnly);
+						itemObjects[idx] = rniCreateDataObject(itemP, itemTmp, structOnly, false);
 //						if (itemObjects[idx] == null) {
 //							System.out.println("type="+ this.rEngine.rniExpType(itemP) + ", name=" + names[i]);
 //						}
@@ -1521,7 +1521,7 @@ public class RosudaJRIServer extends RJ
 					for (int i = 0; i < slotNames.length; i++) {
 						final String itemTmp = objTmp + "@`" + slotNames[i] + '`';
 						final long slotValueP = this.rEngine.rniEval(this.rEngine.rniParse(itemTmp, 1), 0L);
-						slotValues[i] = rniCreateDataObject(slotValueP, itemTmp, structOnly);
+						slotValues[i] = rniCreateDataObject(slotValueP, itemTmp, structOnly, true);
 					}
 					return new RS4ObjectImpl(className, slotNames, slotValues);
 				}
