@@ -60,7 +60,8 @@ public abstract class AbstractNumericData extends AbstractRData
 		}
 		for (int i = 0; i < this.length; i++) {
 			if (!(other.isNA(i) ? isNA(i) :
-					Math.abs(other.getNum(i) - getNum(i)) < 2.220446e-16 )) {
+					(other.isMissing(i) ? isMissing(i) :
+							(Math.abs(other.getNum(i) - getNum(i)) < 2.220446e-16 )) )) {
 				return false;
 			}
 		}

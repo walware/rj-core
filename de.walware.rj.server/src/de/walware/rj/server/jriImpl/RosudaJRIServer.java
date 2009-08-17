@@ -614,6 +614,7 @@ public class RosudaJRIServer extends RJ
 						else { // fail
 							this.mainLoopC2SCommandFirst = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
 							this.mainLoopC2SCommandFirst.setAnswer(RjsComObject.V_ERROR);
+							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = null;
 							// continue in R
 						}
 					}
@@ -834,7 +835,7 @@ public class RosudaJRIServer extends RJ
 		}
 		try {
 			String input = cmd.getDataText();
-			switch (cmd.getEvalType()) {
+			DATA_CMD: switch (cmd.getEvalType()) {
 			case DataCmdItem.EVAL_VOID: {
 				if (input != null) {
 					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
@@ -842,10 +843,11 @@ public class RosudaJRIServer extends RJ
 					if (expP != 0) {
 						this.rEngine.rniEval(expP, 0L);
 						cmd.setAnswer(RjsStatus.OK);
-						break;
+						break DATA_CMD;
 					}
 				}
-				cmd.setAnswer(RjsStatus.ERROR); }
+				cmd.setAnswer(RjsStatus.ERROR);
+				break DATA_CMD; }
 			case DataCmdItem.EVAL_DATA: {
 				if (input != null) {
 					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
@@ -855,12 +857,12 @@ public class RosudaJRIServer extends RJ
 						if (objP != 0) {
 							final RObject obj = rniCreateDataObject(objP, null, false);
 							cmd.setAnswer(obj);
-							break;
+							break DATA_CMD;
 						}
 					}
 				}
 				cmd.setAnswer(RjsStatus.ERROR);
-				break; }
+				break DATA_CMD; }
 			case DataCmdItem.EVAL_STRUCT: {
 				if (input != null) {
 					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
@@ -870,34 +872,34 @@ public class RosudaJRIServer extends RJ
 						if (objP != 0) {
 							final RObject obj = rniCreateDataObject(objP, null, true);
 							cmd.setAnswer(obj);
-							break;
+							break DATA_CMD;
 						}
 					}
 				}
 				cmd.setAnswer(RjsStatus.ERROR);
-				break; }
+				break DATA_CMD; }
 			case DataCmdItem.RESOLVE_DATA: {
 				if (input != null) {
 					final long objP = Long.parseLong(input);
 					if (objP != 0) {
 						final RObject obj = rniCreateDataObject(objP, null, false);
 						cmd.setAnswer(obj);
-						break;
+						break DATA_CMD;
 					}
 				}
 				cmd.setAnswer(RjsStatus.ERROR);
-				break; }
+				break DATA_CMD; }
 			case DataCmdItem.RESOLVE_STRUCT: {
 				if (input != null) {
 					final long objP = Long.parseLong(input);
 					if (objP != 0) {
 						final RObject obj = rniCreateDataObject(objP, null, true);
 						cmd.setAnswer(obj);
-						break;
+						break DATA_CMD;
 					}
 				}
 				cmd.setAnswer(RjsStatus.ERROR);
-				break; }
+				break DATA_CMD; }
 			case DataCmdItem.ASSIGN_DATA: {
 				if (input != null) {
 					final RObject obj = cmd.getData();
@@ -905,10 +907,10 @@ public class RosudaJRIServer extends RJ
 						rniAssignDataObject(input, obj);
 					}
 					cmd.setAnswer(RjsStatus.OK);
-					break;
+					break DATA_CMD;
 				}
 				cmd.setAnswer(RjsStatus.ERROR);
-				break; }
+				break DATA_CMD; }
 			default:
 				throw new RjException("Unsupported EvalCmd");
 			}
@@ -1115,7 +1117,7 @@ public class RosudaJRIServer extends RJ
 		boolean tmpAssigned;
 		if (objTmp == null) {
 			objTmp = ".rj_eval.temp"+this.rniTemp++;
-			this.rEngine.rniAssign(objTmp, objP, 0);
+			this.rEngine.rniAssign(objTmp, objP, 0L);
 			tmpAssigned = true;
 		}
 		else {
@@ -1363,7 +1365,7 @@ public class RosudaJRIServer extends RJ
 				final long[] itemP = this.rEngine.rniGetVector(objP);
 				if (itemP.length > 16 && !tmpAssigned) {
 					objTmp = ".rj_eval.temp"+(this.rniTemp-1);
-					this.rEngine.rniAssign(objTmp, objP, 0);
+					this.rEngine.rniAssign(objTmp, objP, 0L);
 					tmpAssigned = true;
 				}
 				if (className1 != null &&
@@ -1726,10 +1728,10 @@ public class RosudaJRIServer extends RJ
 		if (command == null) {
 			throw new NullPointerException("command");
 		}
-		final MainCmdItem cmd = internalMainFromR(new ExtUICmdItem(command, 0, arg, wait));
-		if (wait && cmd instanceof ExtUICmdItem
-				&& cmd.getStatus() == V_OK) {
-			return cmd.getDataText();
+		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, arg, wait));
+		if (wait && answer instanceof ExtUICmdItem
+				&& answer.getStatus() == V_OK) {
+			return answer.getDataText();
 		}
 		return null;
 	}

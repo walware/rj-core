@@ -92,7 +92,7 @@ public class ServerUtil {
 			return Arrays.asList(arg.split(","));
 		}
 		else {
-			return Arrays.asList(new String[0]);
+			return Collections.emptyList();
 		}
 	}
 	

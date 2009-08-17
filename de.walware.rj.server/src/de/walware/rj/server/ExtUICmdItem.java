@@ -138,7 +138,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 			return false;
 		}
 		if (((this.options & OV_WITHTEXT) != 0)
-				&& !this.getDataText().equals(otherItem.getDataText())) {
+				&& !getDataText().equals(otherItem.getDataText())) {
 			return false;
 		}
 		return true;
@@ -151,6 +151,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		sb.append(this.command);
 		sb.append(", options=0x");
 		sb.append(Integer.toHexString(this.options));
+		sb.append(")");
 		if ((this.options & OV_WITHTEXT) != 0) {
 			sb.append("\n<TEXT>\n");
 			sb.append(this.text);

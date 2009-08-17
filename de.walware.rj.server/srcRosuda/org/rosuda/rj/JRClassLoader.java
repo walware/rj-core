@@ -115,8 +115,8 @@ public class JRClassLoader extends URLClassLoader {
 		
 		this.r_home = checkDirPath(System.getenv("R_HOME"));
 		this.r_arch = System.getenv("R_ARCH");
-		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		this.r_libs_site = checkDirPathList(System.getenv("R_LIBS_SITE"));
+		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		this.r_libs_user = checkDirPathList(System.getenv("R_LIBS_USER"));
 		final String osname = System.getProperty("os.name").toLowerCase();
 		if (osname.contains("win")) {
@@ -266,7 +266,21 @@ public class JRClassLoader extends URLClassLoader {
 		synchronized (this.defaultLibPath) {
 			this.defaultLibPath.clear();
 			
-			// R_LIBS_SITE
+			// R user libraries (R_LIBS_USER)
+			if (this.r_libs_user != null) {
+				for (final String l : this.r_libs_user) {
+					this.defaultLibPath.add(l);
+				}
+			}
+			
+			// R other libraries (R_LIBS)
+			if (this.r_libs != null) {
+				for (final String l : this.r_libs) {
+					this.defaultLibPath.add(l);
+				}
+			}
+			
+			// R site libraries (R_LIBS_SITE)
 			if (this.r_libs_site != null) {
 				for (final String l : this.r_libs_site) {
 					this.defaultLibPath.add(l);
@@ -276,23 +290,10 @@ public class JRClassLoader extends URLClassLoader {
 				if (this.r_home.startsWith("/usr/lib")) {
 					this.defaultLibPath.add("/usr/local/lib"+this.r_home.substring(8)+"/site-library");
 				}
-				this.defaultLibPath.add(this.r_home+"/site-library");
 			}
-			
-			// R_LIBS
-			if (this.r_libs != null) {
-				for (final String l : this.r_libs) {
-					this.defaultLibPath.add(l);
-				}
-			}
-			else if (this.r_home != null) {
+			// R default library
+			if (this.r_home != null) {
 				this.defaultLibPath.add(this.r_home+"/library");
-			}
-			
-			if (this.r_libs_user != null) {
-				for (final String l : this.r_libs_user) {
-					this.defaultLibPath.add(l);
-				}
 			}
 			
 			if (verbose) {
