@@ -1,0 +1,7 @@
+JRI - Java/R Interface (www.rforge.net/JRI)
+developed by Simon Urbanek <simon.urbanek@r-project.org> and others
+
+-> srcJRI/org/rosuda/JRI
+
+
+Packaged as OSGi bundle (for development)
