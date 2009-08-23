@@ -11,8 +11,8 @@
 
 #ifndef Win32
 #include <R_ext/eventloop.h>
+#include <R_ext/GraphicsEngine.h>
 #endif
-
 
 #ifdef Win32
 #include <R_ext/RStartup.h>
@@ -96,6 +96,13 @@ int Re_ReadConsole(RCCONST char *prompt, unsigned char *buf, int len, int addtoh
 		}
 		(*lenv)->ReleaseStringUTFChars(lenv, r, c);
 		(*lenv)->DeleteLocalRef(lenv, r);
+		
+#ifndef Win32
+		if (R_interrupts_pending) {
+			R_CheckUserInterrupt();
+		}
+#endif
+		
 		return 1;
     }
     return -1;

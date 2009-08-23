@@ -30,7 +30,7 @@ extern int UserBreak;
 #else
 /* for R_runHandlers */
 #include <R_ext/eventloop.h>
-#include <signal.h>
+#include <R_ext/GraphicsEngine.h>
 #include <unistd.h>
 #endif
 
@@ -284,7 +284,9 @@ JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniIdle
   (JNIEnv *env, jobject this)
 {
 #ifndef Win32
-    R_runHandlers(R_InputHandlers, R_checkActivity(0, 1));
+    if (!R_interrupts_pending) {
+        R_runHandlers(R_InputHandlers, R_checkActivity(0, 1));
+    }
 #endif
 }
 
@@ -609,8 +611,7 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniStop
 #ifdef Win32
     UserBreak=1;
 #else
-    /* not really a perfect solution ... need to clarify what's the best ... */
-    kill(getpid(), SIGINT);
+    R_interrupts_pending=1;
 #endif
     return 0;
 }

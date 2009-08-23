@@ -5,3 +5,7 @@ developed by Simon Urbanek <simon.urbanek@r-project.org> and others
 
 
 Packaged as OSGi bundle (for development)
+
+Adapted for advanced usability of RJ (www.walware.de/goto/opensource) and other
+client applications
+  - Support for canceling current R task on Linux
