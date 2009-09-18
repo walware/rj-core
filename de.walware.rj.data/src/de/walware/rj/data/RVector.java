@@ -24,7 +24,7 @@ package de.walware.rj.data;
  * are allowed (in the R function only the names attribute is allowed).  Especially
  * an R factor object is of the type {@link RObject#TYPE_VECTOR vector}, implements
  * RVector and has a data store of the type {@link RStore#FACTOR}.  Also another S3 
- * object based on a such an data object is of the type {@link RObject#TYPE_VECTOR vector}.
+ * object based on a such a data object is of the type {@link RObject#TYPE_VECTOR vector}.
  * Whereas a S4 object is never directly of this type even the object simulates such
  * a data object in R. Such an object is of the type {@link RObject#TYPE_S4OBJECT S4 object},
  * and implements {@link RS4Object} with an object of the type {@link RObject#TYPE_VECTOR vector}

@@ -13,7 +13,10 @@ package de.walware.rj.data;
 
 
 /**
- * Data store for 'factor' data
+ * Interface for R data stores of type {@link RStore#FACTOR}.
+ * <p>
+ * An R data store implements this interface if the R function
+ * <code>class(object)</code> returns 'factor'.</p>
  */
 public interface RFactorStore extends RIntegerStore {
 	

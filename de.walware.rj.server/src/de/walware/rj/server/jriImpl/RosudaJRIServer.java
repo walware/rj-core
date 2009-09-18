@@ -44,6 +44,7 @@ import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
+import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
 import de.walware.rj.data.RStore;
@@ -827,6 +828,13 @@ public class RosudaJRIServer extends RJ
 		}
 	}
 	
+	/**
+	 * Executes an {@link DataCmdItem R data command} (assignment, evaluation, ...).
+	 * Returns the result in the cmd object passed in, which is passed back out.
+	 * 
+	 * @param cmd the data command item
+	 * @return the data command item with setted answer
+	 */
 	private DataCmdItem internalEvalData(final DataCmdItem cmd) {
 		final boolean ownLock = this.rEngine.getRsync().safeLock();
 		final int prevMaxDepth = this.rniMaxDepth;
@@ -933,6 +941,13 @@ public class RosudaJRIServer extends RJ
 		}
 	}
 	
+	/**
+	 * Assigns an {@link RObject RJ R object} to an expression (e.g. symbol) in R.
+	 * 
+	 * @param expression an expression the R object is assigned to
+	 * @param obj an R object to assign
+	 * @throws RjException
+	 */ 
 	private void rniAssignDataObject(final String expression, final RObject obj) throws RjException {
 		final int before = this.rniProtectedCounter;
 		try {
@@ -953,6 +968,12 @@ public class RosudaJRIServer extends RJ
 		}
 	}
 	
+	/**
+	 * Put an {@link RObject RJ R object} into JRI, and get back the pointer to the object.
+	 * 
+	 * @param obj an R object
+	 * @return long R pointer
+	 */ 
 	private long rniAssignDataObject(final RObject obj) {
 		final RStore data;
 		final long objP;
@@ -1109,6 +1130,15 @@ public class RosudaJRIServer extends RJ
 		return objP;
 	}
 	
+	/**
+	 * Returns {@link RObject RJ R object} for the given R pointer.
+	 * 
+	 * @param objP a valid pointer to an object in R
+	 * @param objTmp an optional R expression pointing to the same object in R
+	 * @param structOnly enables {@link RObjectFactory#F_ONLY_STRUCT}
+	 * @param force forces the creation of the object (ignoring the depth etc.)
+	 * @return new created R object
+	 */ 
 	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly, boolean force) throws RjException {
 		if (objP == 0 
 				|| (!force && (this.rniTemp > 512 || this.rniTemp >= this.rniMaxDepth || this.rniInterrupted)) ) {

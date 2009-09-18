@@ -34,7 +34,7 @@ import javax.naming.OperationNotSupportedException;
  *   <li>{@link #FACTOR}</li>
  * </ul>
  * <p>
- * The Java value can be accessed by a the getter methods for the different
+ * The Java value can be accessed by the getter methods for the different
  * data types.  The indexes are zero-based like in Java and not one-base like in R.
  * Because Java doesn't provide NA for primitive data types directly,
  * the data store provides the methods {@link #isNA(int)} and {@link #setNA(int)}
