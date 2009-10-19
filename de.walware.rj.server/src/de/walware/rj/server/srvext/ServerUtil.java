@@ -25,12 +25,15 @@ import java.util.regex.Pattern;
 import de.walware.rj.RjInvalidConfigurationException;
 
 
+/**
+ * Server utilities.
+ */
 public class ServerUtil {
 	
 	
-	public static final String RJ_DATA = "de.walware.rj.data";
-	public static final String RJ_SERVER = "de.walware.rj.server";
-	public static final String RJ_SERVI = "de.walware.rj.servi";
+	public static final String RJ_DATA_ID = "de.walware.rj.data";
+	public static final String RJ_SERVER_ID = "de.walware.rj.server";
+	public static final String RJ_SERVI_ID = "de.walware.rj.servi";
 	
 	
 	private static final Pattern URL_SPACES = Pattern.compile("\\ ");
@@ -210,6 +213,7 @@ public class ServerUtil {
 		}
 		throw new RjInvalidConfigurationException("Missing or invalid RJ library location.");
 	}
+	
 	
 	
 	public static String concatPathVar(final String[] entries) {

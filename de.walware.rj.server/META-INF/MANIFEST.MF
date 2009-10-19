@@ -6,9 +6,12 @@ Bundle-SymbolicName: de.walware.rj.server
 Bundle-Version: 0.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Require-Bundle: de.walware.rj.data;bundle-version="[0.3.0,0.5.0)"
-Import-Package: org.eclipse.swt;resolution:=optional,
+Import-Package: org.eclipse.core.runtime;resolution:=optional,
+ org.eclipse.osgi.service.datalocation;version="1.2.0";resolution:=optional,
+ org.eclipse.swt;resolution:=optional,
  org.eclipse.swt.graphics;resolution:=optional,
  org.eclipse.swt.widgets;resolution:=optional,
+ org.osgi.framework;resolution:=optional,
  org.rosuda.JRI;resolution:=optional
 Export-Package: de.walware.rj,
  de.walware.rj.server,
