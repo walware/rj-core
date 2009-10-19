@@ -43,7 +43,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 	
 	
 	static int[] version() {
-		return new int[] { 0, 3, 0 };
+		return new int[] { 0, 4, 0 };
 	}
 	
 	
@@ -70,6 +70,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 	private final String[] userTypes;
 	private String[] userNames;
 	protected String workingDirectory;
+	protected long timestamp;
 	
 	protected ServerAuthMethod consoleAuthMethod;
 	
@@ -128,7 +129,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 	}
 	
 	public ServerInfo getInfo() throws RemoteException {
-		return new ServerInfo(this.name, this.workingDirectory,
+		return new ServerInfo(this.name, this.workingDirectory, this.timestamp,
 				this.userTypes, this.userNames,
 				this.internalEngine.getState());
 	}
@@ -170,6 +171,10 @@ public class DefaultServerImpl implements Server, PathResolver {
 			if (command.equals(C_CONSOLE_START)) {
 				final Client client = connectClient(command, login);
 				final Object r = this.internalEngine.start(client, properties);
+				Object startupTime = properties.get("rj.session.startup.time");
+				if (startupTime instanceof Long) {
+					this.timestamp = ((Long) startupTime).longValue();
+				}
 				return r;
 			}
 			if (command.equals(C_CONSOLE_CONNECT)) {

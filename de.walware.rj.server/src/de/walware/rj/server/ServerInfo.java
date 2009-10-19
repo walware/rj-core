@@ -17,7 +17,7 @@ import java.io.Serializable;
 public class ServerInfo implements Serializable {
 	
 	
-	private static final long serialVersionUID = -562826190851033291L;
+	private static final long serialVersionUID = -5411479269748201535L;
 	
 	public static final String USER_OWNER = "owner";
 	public static final String USER_CONSOLE = "console";
@@ -28,16 +28,18 @@ public class ServerInfo implements Serializable {
 	private final String[] userTypes;
 	private final String[] userNames;
 	private final String directory;
+	private final long timestamp;
 	private final int state;
 	
 	
-	public ServerInfo(final String name, final String directory,
+	public ServerInfo(final String name, final String directory, long timestamp,
 			final String[] userTypes, final String[] userNames,
 			final int state) {
 		this.name = name;
 		this.userTypes = userTypes;
 		this.userNames = userNames;
 		this.directory = directory;
+		this.timestamp = timestamp;
 		this.state = state;
 	}
 	
@@ -57,6 +59,10 @@ public class ServerInfo implements Serializable {
 	
 	public String getDirectory() {
 		return this.directory;
+	}
+	
+	public long getTimestamp() {
+		return this.timestamp;
 	}
 	
 	public int getState() {
