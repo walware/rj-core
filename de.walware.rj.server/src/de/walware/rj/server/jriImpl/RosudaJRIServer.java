@@ -68,6 +68,7 @@ import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
 import de.walware.rj.server.RJ;
 import de.walware.rj.server.RjsComObject;
+import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
@@ -556,22 +557,23 @@ public class RosudaJRIServer extends RJ
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;
 			default:
-				throw new IllegalArgumentException("Unknown command: " + 
-						((command != null) ? "0x"+Integer.toHexString(command.getComType()) : "-"));
+				throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
 			}
 		}
 	}
 	
 	
 	public RjsComObject runAsync(final Client client, final RjsComObject command) throws RemoteException {
+		if (command == null) {
+			throw new IllegalArgumentException("Missing command.");
+		}
 		switch (command.getComType()) {
 		case T_PING:
 			return internalPing();
 		case RjsComObject.T_FILE_EXCHANGE:
 			return command;
 		default:
-			throw new IllegalArgumentException("Unknown command: " + 
-					((command != null) ? "0x"+Integer.toHexString(command.getComType()) : "-"));
+			throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
 		}
 	}
 	
@@ -614,7 +616,7 @@ public class RosudaJRIServer extends RJ
 						}
 						else { // fail
 							this.mainLoopC2SCommandFirst = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
-							this.mainLoopC2SCommandFirst.setAnswer(RjsComObject.V_ERROR);
+							this.mainLoopC2SCommandFirst.setAnswer(new RjsStatus(RjsStatus.ERROR, 0));
 							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = null;
 							// continue in R
 						}
@@ -731,7 +733,7 @@ public class RosudaJRIServer extends RJ
 				
 				// initial != null && initial.waitForClient()
 				if (this.mainLoopState == ENGINE_STOPPED) {
-					initialItem.setAnswer(V_ERROR);
+					initialItem.setAnswer(new RjsStatus(RjsStatus.ERROR, S_STOPPED));
 					return initialItem;
 				}
 				
@@ -841,104 +843,115 @@ public class RosudaJRIServer extends RJ
 		{	final byte depth = cmd.getDepth();
 			this.rniMaxDepth = this.rniTemp + ((depth >= 1) ? depth : 128);
 		}
+		final int before = this.rniProtectedCounter;
 		try {
-			String input = cmd.getDataText();
+			final String input = cmd.getDataText();
+			if (input == null) {
+				throw new IllegalStateException("Missing input.");
+			}
 			DATA_CMD: switch (cmd.getEvalType()) {
 			case DataCmdItem.EVAL_VOID: {
-				if (input != null) {
-					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
-					final long expP = this.rEngine.rniParse(input, 1);
-					if (expP != 0) {
-						this.rEngine.rniEval(expP, 0L);
-						cmd.setAnswer(RjsStatus.OK);
-						break DATA_CMD;
-					}
-				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
+				rniEval(input);
+				cmd.setAnswer(RjsStatus.OK_STATUS);
+				break DATA_CMD;
+			}
 			case DataCmdItem.EVAL_DATA: {
-				if (input != null) {
-					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
-					final long expP = this.rEngine.rniParse(input, 1);
-					if (expP != 0) {
-						final long objP = this.rEngine.rniEval(expP, 0L);
-						if (objP != 0) {
-							final RObject obj = rniCreateDataObject(objP, null, false, true);
-							cmd.setAnswer(obj);
-							break DATA_CMD;
-						}
-					}
-				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
+				final long objP = rniEval(input);
+				final RObject obj = rniCreateDataObject(objP, null, false, true);
+				cmd.setAnswer(obj);
+				break DATA_CMD;
+			}
 			case DataCmdItem.EVAL_STRUCT: {
-				if (input != null) {
-					input = "tryCatch(expr="+input+",error=function(x){assign(x=\".rj_eval.error\",envir=as.environment(\".GlobalEnv\"),value=x);e<-raw(5);class(e)<-\".rj_eval.error\";e})";
-					final long expP = this.rEngine.rniParse(input, 1);
-					if (expP != 0) {
-						final long objP = this.rEngine.rniEval(expP, 0L);
-						if (objP != 0) {
-							final RObject obj = rniCreateDataObject(objP, null, true, true);
-							cmd.setAnswer(obj);
-							break DATA_CMD;
-						}
-					}
-				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
+				final long objP = rniEval(input);
+				final RObject obj = rniCreateDataObject(objP, null, true, true);
+				cmd.setAnswer(obj);
+				break DATA_CMD;
+			}
 			case DataCmdItem.RESOLVE_DATA: {
-				if (input != null) {
-					final long objP = Long.parseLong(input);
-					if (objP != 0) {
-						final RObject obj = rniCreateDataObject(objP, null, false, true);
-						cmd.setAnswer(obj);
-						break DATA_CMD;
-					}
-				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
-			case DataCmdItem.RESOLVE_STRUCT: {
-				if (input != null) {
-					final long objP = Long.parseLong(input);
-					if (objP != 0) {
-						final RObject obj = rniCreateDataObject(objP, null, true, true);
-						cmd.setAnswer(obj);
-						break DATA_CMD;
-					}
-				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
-			case DataCmdItem.ASSIGN_DATA: {
-				if (input != null) {
-					final RObject obj = cmd.getData();
-					if (obj != null) {
-						rniAssignDataObject(input, obj);
-					}
-					cmd.setAnswer(RjsStatus.OK);
+				final long objP = Long.parseLong(input);
+				if (objP != 0) {
+					final RObject obj = rniCreateDataObject(objP, null, false, true);
+					cmd.setAnswer(obj);
 					break DATA_CMD;
 				}
-				cmd.setAnswer(RjsStatus.ERROR);
-				break DATA_CMD; }
+				else {
+					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, 1021, "Invalid reference."));
+					break DATA_CMD;
+				}
+			}
+			case DataCmdItem.RESOLVE_STRUCT: {
+				final long objP = Long.parseLong(input);
+				if (objP != 0) {
+					final RObject obj = rniCreateDataObject(objP, null, true, true);
+					cmd.setAnswer(obj);
+					break DATA_CMD;
+				}
+				else {
+					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, 1021, "Invalid reference."));
+					break DATA_CMD;
+				}
+			}
+			case DataCmdItem.ASSIGN_DATA: {
+				rniAssign(input, cmd.getData());
+				break DATA_CMD;
+			}
 			default:
-				throw new RjException("Unsupported EvalCmd");
+				throw new IllegalStateException("Unsupported command.");
 			}
 			if (this.rniInterrupted) {
-				cmd.setAnswer(RjsStatus.CANCEL);
+				cmd.setAnswer(RjsStatus.CANCEL_STATUS);
 			}
+			return cmd;
+		}
+		catch (final RjsException e) {
+			cmd.setAnswer(e.getStatus());
 			return cmd;
 		}
 		catch (final Throwable e) {
-			final String message = "Eval data failed. Cmd:\n" + ((cmd != null) ? cmd.toString() : "<missing>");
+			final String message = "Eval data failed. Cmd:\n" + cmd.toString() + ".";
 			LOGGER.log(Level.SEVERE, message, e);
-			cmd.setAnswer(RjsStatus.ERROR);
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, 101, "Internal server error (see server log)."));
 			return cmd;
 		}
 		finally {
+			if (this.rniProtectedCounter > before) {
+				this.rEngine.rniUnprotect(this.rniProtectedCounter - before);
+				this.rniProtectedCounter = before;
+			}
 			this.rniMaxDepth = prevMaxDepth;
 			if (ownLock) {
 				this.rEngine.getRsync().unlock();
 			}
 		}
+	}
+	
+	private long rniEval(final String expression) throws RjsException {
+		final long expP = this.rEngine.rniParse("tryCatch(expr="+expression+",error=function(e){s<-raw(5);class(s)<-\".rj.eval.error\";attr(s,\"error\")<-e;attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");s})", 1);
+		if (expP == 0 || expP == this.rniP_NULL) {
+			throw new RjsException(1001, "Invalid expression.");
+		}
+		final long objP = this.rEngine.rniEval(expP, 0L);
+		if (objP <= 0 && objP > -4) {
+			throw new IllegalStateException("rJava returns error code " + objP);
+		}
+		this.rEngine.rniProtect(objP);
+		this.rniProtectedCounter++;
+		if (this.rEngine.rniExpType(objP) == REXP.RAWSXP) {
+			final long classP = this.rEngine.rniGetAttr(objP, "class");
+			if (classP != 0
+					&& ".rj.eval.error".equals(this.rEngine.rniGetString(classP))) {
+				String message = null;
+				final long outputP = this.rEngine.rniGetAttr(objP, "output");
+				if (outputP != 0) {
+					message = this.rEngine.rniGetString(outputP);
+				}
+				if (message == null) {
+					message = "<no information available>";
+				}
+				throw new RjsException(1002, "Evaluation failed: " + message);
+			}
+		}
+		return objP;
 	}
 	
 	/**
@@ -947,24 +960,38 @@ public class RosudaJRIServer extends RJ
 	 * @param expression an expression the R object is assigned to
 	 * @param obj an R object to assign
 	 * @throws RjException
-	 */ 
-	private void rniAssignDataObject(final String expression, final RObject obj) throws RjException {
-		final int before = this.rniProtectedCounter;
-		try {
-			this.rEngine.rniAssign("rjadtmp", rniAssignDataObject(obj), 0L);
-			final long assignEvalP = this.rEngine.rniParse(expression + "<-.rj_eval.getTmp(\"rjadtmp\")", 1);
-			if (assignEvalP != 0) {
-				this.rEngine.rniEval(assignEvalP, 0L);
-			}
-			else {
-				throw new RjException("Invalid assignment expression: <CODE>" + expression + "</CODE>.");
-			}
+	*/ 
+	private void rniAssign(final String expression, final RObject obj) throws RjsException {
+		if (obj == null) {
+			throw new RjsException(1032, "Missing data to assign.");
 		}
-		finally {
-			if (this.rniProtectedCounter > before) {
-				this.rEngine.rniUnprotect(this.rniProtectedCounter - before);
-				this.rniProtectedCounter = before;
+		this.rEngine.rniAssign("rj.eval.adtmp", rniAssignDataObject(obj), 0L);
+		final long assignEvalP = this.rEngine.rniParse("tryCatch(expr={"+expression+"<-.rj.getTmp(\"rj.eval.adtmp\");NULL},error=function(e){s<-raw(5);class(s)<-\".rj.eval.error\";attr(s,\"error\")<-e;attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");s})", 1);
+		if (assignEvalP == 0 || assignEvalP == this.rniP_NULL) {
+			throw new RjsException(1031, "Invalid expression.");
+		}
+		long returnP = this.rEngine.rniEval(assignEvalP, 0L);
+		if (returnP != this.rniP_NULL) {
+			if (returnP <= 0 && returnP > -4) {
+				throw new IllegalStateException("rJava returns error code " + returnP);
 			}
+			this.rEngine.rniProtect(returnP);
+			this.rniProtectedCounter++;
+			String message = null;
+			if (this.rEngine.rniExpType(returnP) == REXP.RAWSXP) {
+				final long classP = this.rEngine.rniGetAttr(returnP, "class");
+				if (classP != 0
+						&& ".rj.eval.error".equals(this.rEngine.rniGetString(classP))) {
+					final long outputP = this.rEngine.rniGetAttr(returnP, "output");
+					if (outputP != 0) {
+						message = this.rEngine.rniGetString(outputP);
+					}
+				}
+			}
+			if (message == null) {
+				message = "<no information available>";
+			}
+			throw new RjsException(1033, "Assignment failed: " + message);
 		}
 	}
 	
@@ -1038,7 +1065,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniProtect(objP);
 				this.rniProtectedCounter++;
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P;
 			case RStore.INTEGER:
 				objP = this.rEngine.rniPutIntArray(
@@ -1046,7 +1073,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniProtect(objP);
 				this.rniProtectedCounter++;
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P;
 			case RStore.NUMERIC:
 				objP = this.rEngine.rniPutDoubleArray(
@@ -1054,7 +1081,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniProtect(objP);
 				this.rniProtectedCounter++;
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P;
 //			case RStore.COMPLEX
 			case RStore.CHARACTER:
@@ -1063,7 +1090,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniProtect(objP);
 				this.rniProtectedCounter++;
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P;
 			case RStore.RAW:
 				objP = this.rEngine.rniPutRawArray(
@@ -1071,7 +1098,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniProtect(objP);
 				this.rniProtectedCounter++;
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P;
 			case RStore.FACTOR: {
 				final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
@@ -1083,7 +1110,7 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniSetAttr(objP, "class",
 						factor.isOrdered() ? this.rniP_orderedClass : this.rniP_factorClass);
 				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl) obj).getJRIDimArray()));
+						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 				break CREATE_P; }
 			default:
 				throw new UnsupportedOperationException();
@@ -1139,14 +1166,14 @@ public class RosudaJRIServer extends RJ
 	 * @param force forces the creation of the object (ignoring the depth etc.)
 	 * @return new created R object
 	 */ 
-	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly, boolean force) throws RjException {
+	private RObject rniCreateDataObject(final long objP, String objTmp, final boolean structOnly, final boolean force) throws RjException {
 		if (objP == 0 
 				|| (!force && (this.rniTemp > 512 || this.rniTemp >= this.rniMaxDepth || this.rniInterrupted)) ) {
 			return null;
 		}
 		boolean tmpAssigned;
 		if (objTmp == null) {
-			objTmp = ".rj_eval.temp"+this.rniTemp++;
+			objTmp = ".rj.eval.temp"+this.rniTemp++;
 			this.rEngine.rniAssign(objTmp, objP, 0L);
 			tmpAssigned = true;
 		}
@@ -1369,7 +1396,7 @@ public class RosudaJRIServer extends RJ
 									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
 									className1, dim);
 				}
-				else if (className1 == null || !className1.equals(".rj_eval.error")) {
+				else {
 					return (structOnly) ?
 							new JRIVectorImpl<RRawStore>(
 									RObjectFactoryImpl.RAW_STRUCT_DUMMY,
@@ -1377,9 +1404,6 @@ public class RosudaJRIServer extends RJ
 							new JRIVectorImpl<RRawStore>(
 									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
 									className1, rniGetNames(objP));
-				}
-				else { // .rj_eval.error
-					throw new RjException(".rj_eval.error");
 				}
 			}
 			case REXP.VECSXP: { // generic vector / list
@@ -1394,7 +1418,7 @@ public class RosudaJRIServer extends RJ
 				
 				final long[] itemP = this.rEngine.rniGetVector(objP);
 				if (itemP.length > 16 && !tmpAssigned) {
-					objTmp = ".rj_eval.temp"+(this.rniTemp-1);
+					objTmp = ".rj.eval.temp"+(this.rniTemp-1);
 					this.rEngine.rniAssign(objTmp, objP, 0L);
 					tmpAssigned = true;
 				}
@@ -1472,14 +1496,14 @@ public class RosudaJRIServer extends RJ
 					}
 					
 					if (names.length > 16 && !tmpAssigned) {
-						objTmp = ".rj_eval.temp"+(this.rniTemp-1);
+						objTmp = ".rj.eval.temp"+(this.rniTemp-1);
 						this.rEngine.rniAssign(objTmp, objP, 0);
 						tmpAssigned = true;
 					}
 					final RObject[] itemObjects = new RObject[names.length];
 					int idx = 0;
 					for (int i = 0; i < names.length; i++) {
-						if (names[i] == null || names[i].startsWith(".rj_eval.temp")) {
+						if (names[i] == null || names[i].startsWith(".rj.eval.temp")) {
 							continue;
 						}
 						names[idx] = names[i];
@@ -1627,7 +1651,7 @@ public class RosudaJRIServer extends RJ
 	public String rReadConsole(final Rengine engine, final String prompt, final int addToHistory) {
 		final MainCmdItem cmd = internalMainFromR(new ConsoleReadCmdItem(
 				(addToHistory == 1) ? V_TRUE : V_FALSE, prompt));
-		if (cmd.getStatus() == V_OK) {
+		if (cmd.isOK()) {
 			return cmd.getDataText();
 		}
 		return "\n";
@@ -1693,7 +1717,7 @@ public class RosudaJRIServer extends RJ
 	public String rChooseFile(final Rengine engine, final int newFile) {
 		final MainCmdItem cmd = internalMainFromR(new ExtUICmdItem(ExtUICmdItem.C_CHOOSE_FILE,
 				(newFile == 1) ? ExtUICmdItem.O_NEW : 0, true));
-		if (cmd.getStatus() == V_OK) {
+		if (cmd.isOK()) {
 			return cmd.getDataText();
 		}
 		else {
@@ -1760,7 +1784,7 @@ public class RosudaJRIServer extends RJ
 		}
 		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, arg, wait));
 		if (wait && answer instanceof ExtUICmdItem
-				&& answer.getStatus() == V_OK) {
+				&& answer.isOK()) {
 			return answer.getDataText();
 		}
 		return null;

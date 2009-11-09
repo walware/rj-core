@@ -32,11 +32,15 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	public static final int O_NEW = 8;
 	
 	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
+	private static final int OV_WITHSTATUS =        0x40000000;
+	private static final int OM_TEXTANSWER =        OV_WITHTEXT;
+	private static final int OM_STATUSANSWER =      OV_WITHSTATUS;
 	
 	
 	private String command;
 	private String text;
+	
+	private RjsStatus status;
 	
 	
 	public ExtUICmdItem(final String command, final int options, final boolean waitForClient) {
@@ -75,6 +79,10 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		out.writeUTF(this.command);
 		out.writeInt(this.options);
 		out.writeByte(this.requestId);
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status.writeExternal(out);
+			return;
+		}
 		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
 		}
@@ -84,6 +92,10 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		this.command = in.readUTF();
 		this.options = in.readInt();
 		this.requestId = in.readByte();
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status = new RjsStatus(in);
+			return;
+		}
 		if ((this.options & OV_WITHTEXT) != 0) {
 			this.text = in.readUTF();
 		}
@@ -95,23 +107,39 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		return T_EXTENDEDUI_ITEM;
 	}
 	
-	
 	@Override
-	public void setAnswer(final int status) {
-		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
-		this.text = null;
+	public void setAnswer(final RjsStatus status) {
+		if (status == RjsStatus.OK_STATUS) {
+			this.options = (this.options & OM_CLEARFORANSWER);
+			this.status = null;
+		}
+		else {
+			this.options = ((this.options & OM_CLEARFORANSWER) | OM_STATUSANSWER);
+			this.status = status;
+		}
 	}
 	
 	@Override
 	public void setAnswer(final String text) {
 		this.options = (text != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER) : (this.options & OM_CLEARFORANSWER);
+		this.status = null;
 		this.text = text;
 	}
 	
 	
 	public String getCommand() {
 		return this.command;
+	}
+	
+	@Override
+	public boolean isOK() {
+		return (this.status == null || this.status.getSeverity() == RjsStatus.OK);
+	}
+	
+	@Override
+	public RjsStatus getStatus() {
+		return this.status;
 	}
 	
 	@Override

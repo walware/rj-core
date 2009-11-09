@@ -29,6 +29,8 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 	
 	public static final RjsStatus OK_STATUS = new RjsStatus(OK, 0);
 	
+	public static final RjsStatus CANCEL_STATUS = new RjsStatus(CANCEL, 0);
+	
 	
 	private int severity;
 	private int code;

@@ -11,6 +11,8 @@
 
 package de.walware.rj.server.srvImpl;
 
+import static de.walware.rj.server.srvext.ServerUtil.MISSING_ANSWER_STATUS;
+
 import java.io.File;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -23,7 +25,6 @@ import java.util.logging.Logger;
 import javax.security.auth.login.LoginException;
 
 import de.walware.rj.RjException;
-import de.walware.rj.RjOperationFailedException;
 import de.walware.rj.data.RObject;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
@@ -171,7 +172,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 			if (command.equals(C_CONSOLE_START)) {
 				final Client client = connectClient(command, login);
 				final Object r = this.internalEngine.start(client, properties);
-				Object startupTime = properties.get("rj.session.startup.time");
+				final Object startupTime = properties.get("rj.session.startup.time");
 				if (startupTime instanceof Long) {
 					this.timestamp = ((Long) startupTime).longValue();
 				}
@@ -216,7 +217,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 						}
 						break COM_TYPE;
 					default:
-						throw new RjOperationFailedException(status.getMessage());
+						throw new RjException(status.getMessage());
 					}
 				case RjsComObject.T_MAIN_LIST:
 					final MainCmdS2CList list = (MainCmdS2CList) receivedCom;
@@ -227,11 +228,9 @@ public class DefaultServerImpl implements Server, PathResolver {
 				sendCom = null;
 			}
 			this.serverC2SList.clear();
-			if (answer == null) {
-				throw new RjOperationFailedException("R commands failed (no answer).");
-			}
-			if (answer.getStatus() >= RjsStatus.ERROR) {
-				throw new RjOperationFailedException("R commands failed ("+answer.getDataText()+").");
+			if (answer == null || !answer.isOK()) {
+				final RjsStatus status = (answer != null) ? answer.getStatus() : MISSING_ANSWER_STATUS;
+				throw new RjException("R commands failed ("+status.getMessage()+").");
 			}
 			return answer.getData();
 		}
@@ -239,7 +238,7 @@ public class DefaultServerImpl implements Server, PathResolver {
 			if (e instanceof RjException) {
 				throw (RjException) e;
 			}
-			throw new RjOperationFailedException("An error when executing R command.", e);
+			throw new RjException("An error when executing R command.", e);
 		}
 	}
 	

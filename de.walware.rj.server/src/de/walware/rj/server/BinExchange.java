@@ -155,6 +155,10 @@ public class BinExchange implements RjsComObject, Externalizable {
 		return T_FILE_EXCHANGE;
 	}
 	
+	public boolean isOK() {
+		return (this.status == null || this.status.getSeverity() == RjsStatus.OK);
+	}
+	
 	public RjsStatus getStatus() {
 		return this.status;
 	}

@@ -24,7 +24,6 @@ public final class ConsoleMessageCmdItem extends MainCmdItem implements External
 	
 	
 	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
 	
 	
 	private String text;
@@ -50,14 +49,14 @@ public final class ConsoleMessageCmdItem extends MainCmdItem implements External
 	}
 	
 	@Override
-	public final void writeExternal(final ObjectOutput out) throws IOException {
+	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.options);
 		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
 		}
 	}
 	
-	public final void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.options = in.readInt();
 		if ((this.options & OV_WITHTEXT) != 0) {
 			this.text = in.readUTF();
@@ -66,31 +65,39 @@ public final class ConsoleMessageCmdItem extends MainCmdItem implements External
 	
 	
 	@Override
-	public final byte getCmdType() {
+	public byte getCmdType() {
 		return T_MESSAGE_ITEM;
 	}
 	
 	
 	@Override
-	public final void setAnswer(final int status) {
-		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
+	public void setAnswer(final RjsStatus status) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public final void setAnswer(final String text) {
-		assert (text != null);
-		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
-		this.text = text;
+	public void setAnswer(final String text) {
+		throw new UnsupportedOperationException();
 	}
 	
 	
 	@Override
-	public final Object getData() {
+	public boolean isOK() {
+		return true;
+	}
+	
+	@Override
+	public RjsStatus getStatus() {
+		return null;
+	}
+	
+	@Override
+	public Object getData() {
 		return this.text;
 	}
 	
 	@Override
-	public final String getDataText() {
+	public String getDataText() {
 		return this.text;
 	}
 	
@@ -112,7 +119,7 @@ public final class ConsoleMessageCmdItem extends MainCmdItem implements External
 	}
 	
 	@Override
-	public final String toString() {
+	public String toString() {
 		final StringBuffer sb = new StringBuffer(100);
 		sb.append("ConsoleCmdItem (type=");
 		sb.append("MESSAGE");

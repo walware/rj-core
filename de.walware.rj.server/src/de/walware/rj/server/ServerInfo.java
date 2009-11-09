@@ -32,7 +32,7 @@ public class ServerInfo implements Serializable {
 	private final int state;
 	
 	
-	public ServerInfo(final String name, final String directory, long timestamp,
+	public ServerInfo(final String name, final String directory, final long timestamp,
 			final String[] userTypes, final String[] userNames,
 			final int state) {
 		this.name = name;

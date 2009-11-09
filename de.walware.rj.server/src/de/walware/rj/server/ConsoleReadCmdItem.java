@@ -53,7 +53,7 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	}
 	
 	@Override
-	public final void writeExternal(final ObjectOutput out) throws IOException {
+	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.options);
 		out.writeByte(this.requestId);
 		if ((this.options & OV_WITHTEXT) != 0) {
@@ -61,7 +61,7 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 		}
 	}
 	
-	public final void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.options = in.readInt();
 		this.requestId = in.readByte();
 		if ((this.options & OV_WITHTEXT) != 0) {
@@ -71,18 +71,18 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	
 	
 	@Override
-	public final byte getCmdType() {
+	public byte getCmdType() {
 		return T_CONSOLE_READ_ITEM;
 	}
 	
 	
 	@Override
-	public final void setAnswer(final int status) {
-		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
+	public void setAnswer(final RjsStatus status) {
+		this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
 	}
 	
 	@Override
-	public final void setAnswer(final String text) {
+	public void setAnswer(final String text) {
 		assert (text != null);
 		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
 		this.text = text;
@@ -90,12 +90,22 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	
 	
 	@Override
-	public final Object getData() {
+	public boolean isOK() {
+		return ((this.options & OM_STATUS) == RjsStatus.OK);
+	}
+	
+	@Override
+	public RjsStatus getStatus() {
+		return null;
+	}
+	
+	@Override
+	public Object getData() {
 		return this.text;
 	}
 	
 	@Override
-	public final String getDataText() {
+	public String getDataText() {
 		return this.text;
 	}
 	
@@ -117,7 +127,7 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	}
 	
 	@Override
-	public final String toString() {
+	public String toString() {
 		final StringBuffer sb = new StringBuffer(100);
 		sb.append("ConsoleCmdItem (type=");
 		sb.append("CONSOLE_READ");

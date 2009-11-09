@@ -36,7 +36,6 @@ import javax.security.auth.login.LoginException;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
-import de.walware.rj.RjOperationFailedException;
 import de.walware.rj.server.ServerLogin;
 
 
@@ -198,7 +197,7 @@ public abstract class ServerAuthMethod {
 		}
 		catch (final Exception e) {
 			final RjException rje = (e instanceof RjException) ? (RjException) e :
-					new RjOperationFailedException("An unexpected error occurred when preparing login process.", e);
+					new RjException("An unexpected error occurred when preparing login process.", e);
 			throw rje;
 		}
 	}
@@ -249,7 +248,7 @@ public abstract class ServerAuthMethod {
 			if (e instanceof RjException) {
 				throw (RjException) e;
 			}
-			throw new RjOperationFailedException("An unexpected error occurred when validating the login credential.", e);
+			throw new RjException("An unexpected error occurred when validating the login credential.", e);
 		}
 		finally {
 			System.gc();

@@ -39,9 +39,10 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	private static final int OV_USEFACTORY =        0x00100000;
 	
 	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
 	private static final int OV_WITHDATA =          0x20000000;
-	private static final int OM_DATAANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHDATA | OV_USEFACTORY;
+	private static final int OV_WITHSTATUS =        0x40000000;
+	private static final int OM_DATAANSWER =        OV_WITHDATA | OV_USEFACTORY;
+	private static final int OM_STATUSANSWER =      OV_WITHSTATUS;
 	
 	
 	public static final String DEFAULT_FACTORY_ID = "default"; //$NON-NLS-1$
@@ -90,11 +91,14 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	
 	
 	private byte type;
+	
 	private byte depth;
 	private String text;
 	private RObject rdata;
 	
 	private String factoryId;
+	
+	private RjsStatus status;
 	
 	
 	/**
@@ -164,8 +168,12 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeByte(this.type);
 		out.writeInt(this.options);
-		out.writeByte(this.depth);
 		out.writeByte(this.requestId);
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status.writeExternal(out);
+			return;
+		}
+		out.writeByte(this.depth);
 		out.writeUTF(this.factoryId);
 		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
@@ -179,8 +187,12 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.type = in.readByte();
 		this.options = in.readInt();
-		this.depth = in.readByte();
 		this.requestId = in.readByte();
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status = new RjsStatus(in);
+			return;
+		}
+		this.depth = in.readByte();
 		this.factoryId = in.readUTF();
 		if ((this.options & OV_WITHTEXT) != 0) {
 			this.text = in.readUTF();
@@ -202,11 +214,17 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		return T_DATA_ITEM;
 	}
 	
+	
 	@Override
-	public void setAnswer(final int status) {
-		this.options = (this.options & OM_CLEARFORANSWER) | (status << OS_STATUS);
-		this.text = null;
-		this.rdata = null;
+	public void setAnswer(final RjsStatus status) {
+		if (status == RjsStatus.OK_STATUS) {
+			this.options = (this.options & OM_CLEARFORANSWER);
+			this.status = null;
+		}
+		else {
+			this.options = ((this.options & OM_CLEARFORANSWER) | OM_STATUSANSWER);
+			this.status = status;
+		}
 	}
 	
 	@Override
@@ -217,12 +235,23 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void setAnswer(final RObject rdata) {
 		this.options = (rdata != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_DATAANSWER) : (this.options & OM_CLEARFORANSWER);
+		this.status = null;
 		this.rdata = rdata;
 	}
 	
 	
 	public byte getEvalType() {
 		return this.type;
+	}
+	
+	@Override
+	public boolean isOK() {
+		return (this.status == null || this.status.getSeverity() == RjsStatus.OK);
+	}
+	
+	@Override
+	public RjsStatus getStatus() {
+		return this.status;
 	}
 	
 	@Override

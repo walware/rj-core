@@ -83,17 +83,15 @@ public abstract class MainCmdItem {
 		return ((this.options & OM_WAITFORCLIENT) != 0);
 	}
 	
-	public final int getStatus() {
-		return ((this.options & OM_STATUS) >> OS_STATUS);
-	}
-	
 	public final int getCmdOption() {
 		return ((this.options & OM_CUSTOM));
 	}
 	
-	public abstract void setAnswer(final int status);
+	public abstract void setAnswer(RjsStatus status);
 	public abstract void setAnswer(String dataText);
 	
+	public abstract boolean isOK();
+	public abstract RjsStatus getStatus();
 	public abstract Object getData();
 	public abstract String getDataText();
 	

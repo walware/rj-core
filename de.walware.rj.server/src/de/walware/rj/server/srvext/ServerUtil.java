@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import de.walware.rj.RjInvalidConfigurationException;
+import de.walware.rj.server.RjsStatus;
 
 
 /**
@@ -35,6 +36,7 @@ public class ServerUtil {
 	public static final String RJ_SERVER_ID = "de.walware.rj.server";
 	public static final String RJ_SERVI_ID = "de.walware.rj.servi";
 	
+	public static final RjsStatus MISSING_ANSWER_STATUS = new RjsStatus(RjsStatus.ERROR, 121, "Server error (missing answer).");
 	
 	private static final Pattern URL_SPACES = Pattern.compile("\\ ");
 	
