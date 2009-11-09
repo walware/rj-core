@@ -128,15 +128,15 @@ public class ServerUtil {
 	}
 	
 	
-	private static class PathEntry implements Comparable {
+	private static class PathEntry implements Comparable<PathEntry> {
 		final File dir;
 		final String child;
 		public PathEntry(final File dir, final String child) {
 			this.dir = dir;
 			this.child = child;
 		}
-		public int compareTo(final Object o) {
-			return this.child.compareTo(((PathEntry) o).child);
+		public int compareTo(final PathEntry o) {
+			return this.child.compareTo((o).child);
 		}
 	}
 	
@@ -217,7 +217,6 @@ public class ServerUtil {
 	}
 	
 	
-	
 	public static String concatPathVar(final String[] entries) {
 		if (entries.length == 0) {
 			return "";
@@ -235,16 +234,8 @@ public class ServerUtil {
 			return "";
 		}
 		final StringBuilder sb = new StringBuilder();
-		for (String entry : entries) {
-			entry = URL_SPACES.matcher(entry).replaceAll("%20");
-			sb.append("file://");
-			if (entry.charAt(0) != '/') {
-				entry = '/' + entry;
-			}
-			if (entry.charAt(entry.length()-1) != '/' && new File(entry).isDirectory()) {
-				entry = entry + '/';
-			}
-			sb.append(entry);
+		for (final String entry : entries) {
+			sb.append(new File(entry).toURI().toString());
 			sb.append(' ');
 		}
 		return sb.substring(0, sb.length()-1);

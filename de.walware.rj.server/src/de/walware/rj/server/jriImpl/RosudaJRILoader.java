@@ -11,6 +11,7 @@
 
 package de.walware.rj.server.jriImpl;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.List;
@@ -76,9 +77,17 @@ public final class RosudaJRILoader {
 				Thread.currentThread().setContextClassLoader(loader);
 				loader.loadRJavaClass("org.rosuda.JRI.REXP");
 				loader.loadRJavaClass("org.rosuda.JRI.RMainLoopCallbacks");
-				loader.loadRJavaClass("org.rosuda.JRI.Rengine");
-				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer");
-				loader.loadRJavaClass("de.walware.rj.server.jriImpl.RosudaJRIServer$InitCallbacks");
+				final Class<?> rEngineClazz = loader.loadRJavaClass("org.rosuda.JRI.Rengine");
+				final Method versionMethod = rEngineClazz.getMethod("getVersion");
+				final long version = ((Long) versionMethod.invoke(null)).longValue();
+				String serverClazzName = "de.walware.rj.server.jriImpl.RosudaJRIServer";
+				if (!args.containsKey("disable-jri-switch")) {
+					if (version < 0x010a) { // 3159 (rJava < 0.8)
+						serverClazzName = "de.walware.rj.server.jriImpl.RosudaJRIServer1";
+					}
+				}
+				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass(serverClazzName);
+				loader.loadRJavaClass(serverClazzName + "$InitCallbacks");
 				
 				engine = serverClazz.newInstance();
 			}
