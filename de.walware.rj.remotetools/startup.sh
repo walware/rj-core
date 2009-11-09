@@ -5,7 +5,7 @@
 # Usually you have to change only the CONFIG sections. You should set at least:
 #     R_HOME
 #     JAVA_HOME
-#     HOSTNAME
+#     HOSTADDRESS
 # 
 # The authentication is set to 'fx' (method using SSH) by default.
 ##
@@ -16,6 +16,10 @@
 #     -wd=<working directory>          initial R working directory
 #     -debug                           enables debug output and
 #                                      runs R in foreground
+#
+# Note: This script does not start an RMI registry! You have to launch it
+# as system daemon or manually (see Java documentation), e.g. by:
+#     $JAVA_HOME/bin/rmiregistry &
 ##
 # Author: Stephan Wahlbrink
 ###############################################################################
@@ -104,7 +108,7 @@ HOSTADDRESS=
 # Add additional java options here
 ##
 # Example:
-#     JAVA_OPTS="-server"
+#     JAVA_OPTS="-server -Drjava.path=<path-to-rjava>"
 JAVA_OPTS="-server"
 JAVA_OPTS_LIB=
 
