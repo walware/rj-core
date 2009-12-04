@@ -18,7 +18,7 @@ public final class Client {
 	private final String username;
 	final String clientId;
 	
-	public byte slot;
+	public final byte slot;
 	
 	
 	public Client(final String username, final String clientId, final byte slot) {

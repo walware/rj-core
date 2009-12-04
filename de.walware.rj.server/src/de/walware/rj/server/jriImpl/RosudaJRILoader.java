@@ -28,7 +28,6 @@ import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvext.ExtServer;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
-import de.walware.rj.server.srvstdext.SWTPlugin;
 
 
 public final class RosudaJRILoader {
@@ -112,7 +111,7 @@ public final class RosudaJRILoader {
 				}
 			}
 			if (plugins.contains("swt")) {
-				localServer.addPlugin(new SWTPlugin());
+				localServer.addPlugin((ServerRuntimePlugin) Class.forName("de.walware.rj.server.srvstdext.SWTPlugin").newInstance());
 			}
 			if (plugin != null) {
 				localServer.addPlugin(plugin);

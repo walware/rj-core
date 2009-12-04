@@ -38,8 +38,6 @@ public class ServerUtil {
 	
 	public static final RjsStatus MISSING_ANSWER_STATUS = new RjsStatus(RjsStatus.ERROR, 121, "Server error (missing answer).");
 	
-	private static final Pattern URL_SPACES = Pattern.compile("\\ ");
-	
 	
 	/**
 	 * Split at next ':'

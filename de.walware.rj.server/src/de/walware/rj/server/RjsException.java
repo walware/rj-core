@@ -24,6 +24,7 @@ public class RjsException extends Exception {
 	
 	private int code;
 	
+	
 	public RjsException(final int code, final String message) {
 		super(message);
 		this.code = code;

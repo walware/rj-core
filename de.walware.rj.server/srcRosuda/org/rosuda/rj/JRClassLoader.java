@@ -395,6 +395,9 @@ public class JRClassLoader extends URLClassLoader {
 	
 	@Override
 	protected Class<?> findClass(final String name) throws ClassNotFoundException {
+		if (verbose) {
+			LOGGER.entering("RJavaClassLoader", "findClass", name);
+		}
 		Class cl = null;
 		if ("RJavaClassLoader".equals(name)) {
 			return getClass();

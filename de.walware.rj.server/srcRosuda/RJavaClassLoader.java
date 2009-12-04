@@ -58,34 +58,34 @@ public class RJavaClassLoader extends JRClassLoader {
 	//----- tools -----
 	
 	class RJavaObjectInputStream extends ObjectInputStream {
-		public RJavaObjectInputStream(InputStream in) throws IOException {
+		public RJavaObjectInputStream(final InputStream in) throws IOException {
 			super(in);
 		}
 		@Override
-		protected Class resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+		protected Class resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
 			return Class.forName(desc.getName(), false, getPrimaryLoader());
 		}
 	}
 	
 	/** Serialize an object to a byte array. (code by CB) */
-	public static byte[] toByte(Object object) throws Exception {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(os);
+	public static byte[] toByte(final Object object) throws Exception {
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		final ObjectOutputStream oos = new ObjectOutputStream(os);
 		oos.writeObject(object);
 		oos.close();
 		return os.toByteArray();
 	}
 	
 	/** Deserialize an object from a byte array. (code by CB) */
-	public Object toObject(byte[] byteArray) throws Exception {
-		InputStream is = new ByteArrayInputStream(byteArray);
-		RJavaObjectInputStream ois = new RJavaObjectInputStream(is);
-		Object o = ois.readObject();
+	public Object toObject(final byte[] byteArray) throws Exception {
+		final InputStream is = new ByteArrayInputStream(byteArray);
+		final RJavaObjectInputStream ois = new RJavaObjectInputStream(is);
+		final Object o = ois.readObject();
 		ois.close();
 		return o;
 	}
 	
-	public static Object toObjectPL(byte[] byteArray) throws Exception {
+	public static Object toObjectPL(final byte[] byteArray) throws Exception {
 		return getPrimaryLoader().toObject(byteArray);
 	}
 	
