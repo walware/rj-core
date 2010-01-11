@@ -33,9 +33,9 @@ public abstract class AbstractRData implements RStore {
 	protected static final byte TRUE_BYTE = 1;
 	protected static final byte NA_logical_BYTE = 2;
 	
-	protected static final int FALSE_INT = FALSE_BYTE;
-	protected static final int TRUE_INT = TRUE_BYTE;
-	protected static final int NA_logical_INT = NA_logical_BYTE;
+	protected static final int FALSE_INT = 0;
+	protected static final int TRUE_INT = 1;
+	protected static final int NA_logical_INT = Integer.MIN_VALUE;
 	
 	protected static final int WITH_NAMES = 0x1;
 	

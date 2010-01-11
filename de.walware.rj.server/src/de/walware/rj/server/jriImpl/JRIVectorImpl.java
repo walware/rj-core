@@ -38,7 +38,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	
 	
 	public JRIVectorImpl(final DataType data, final String className1, final String[] initialNames) {
-		this(data, data.getLength(), data.getBaseVectorRClassName(), null);
+		this(data, data.getLength(), className1, initialNames);
 	}
 	
 	public JRIVectorImpl(final DataType data, final int length, final String className1, final String[] initialNames) {
