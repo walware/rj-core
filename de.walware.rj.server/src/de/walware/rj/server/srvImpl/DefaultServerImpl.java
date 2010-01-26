@@ -30,21 +30,21 @@ import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
+import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.ServerInfo;
 import de.walware.rj.server.ServerLogin;
-import de.walware.rj.server.BinExchange.PathResolver;
 import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 
 
-public class DefaultServerImpl implements Server, PathResolver {
+public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	
 	
 	static int[] version() {
-		return new int[] { 0, 4, 0 };
+		return new int[] { 0, 5, 0 };
 	}
 	
 	
