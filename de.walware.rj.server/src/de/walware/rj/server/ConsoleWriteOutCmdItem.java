@@ -11,63 +11,41 @@
 
 package de.walware.rj.server;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 
 /**
- * Command for main loop console output.
+ * Command for main loop console standard output.
  */
-public final class ConsoleWriteCmdItem extends MainCmdItem implements Externalizable {
+public final class ConsoleWriteOutCmdItem extends MainCmdItem {
 	
 	
-	private static final int OV_WITHTEXT =          0x10000000;
+	private final String text;
 	
 	
-	private String text;
-	
-	
-	/**
-	 * Constructor for automatic deserialization
-	 */
-	
-	public ConsoleWriteCmdItem() {
+	public ConsoleWriteOutCmdItem(final String text) {
+		assert (text != null);
+		this.text = text;
 	}
 	
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleWriteCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
-	}
-	
-	public ConsoleWriteCmdItem(final int options, final String text) {
-		assert (text != null);
-		this.options = (options | OV_WITHTEXT);
-		this.text = text;
+	public ConsoleWriteOutCmdItem(final ObjectInput in) throws IOException {
+		this.text = in.readUTF();
 	}
 	
 	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeInt(this.options);
-		if ((this.options & OV_WITHTEXT) != 0) {
-			out.writeUTF(this.text);
-		}
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.options = in.readInt();
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = in.readUTF();
-		}
+		out.writeUTF(this.text);
 	}
 	
 	
 	@Override
 	public byte getCmdType() {
-		return T_CONSOLE_WRITE_ITEM;
+		return T_CONSOLE_WRITE_OUT_ITEM;
 	}
 	
 	
@@ -81,20 +59,10 @@ public final class ConsoleWriteCmdItem extends MainCmdItem implements Externaliz
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override
-	public void setAnswer(final String text) {
-		throw new UnsupportedOperationException();
-	}
-	
 	
 	@Override
 	public RjsStatus getStatus() {
 		return null;
-	}
-	
-	@Override
-	public Object getData() {
-		return this.text;
 	}
 	
 	@Override
@@ -105,18 +73,14 @@ public final class ConsoleWriteCmdItem extends MainCmdItem implements Externaliz
 	
 	@Override
 	public boolean testEquals(final MainCmdItem other) {
-		if (!(other instanceof ConsoleWriteCmdItem)) {
+		if (!(other instanceof ConsoleWriteOutCmdItem)) {
 			return false;
 		}
-		final ConsoleWriteCmdItem otherItem = (ConsoleWriteCmdItem) other;
+		final ConsoleWriteOutCmdItem otherItem = (ConsoleWriteOutCmdItem) other;
 		if (this.options != otherItem.options) {
 			return false;
 		}
-		if (((this.options & OV_WITHTEXT) != 0)
-				&& !this.text.equals(otherItem.getDataText())) {
-			return false;
-		}
-		return true;
+		return this.text.equals(otherItem.getDataText());
 	}
 	
 	@Override
@@ -127,14 +91,9 @@ public final class ConsoleWriteCmdItem extends MainCmdItem implements Externaliz
 		sb.append(", options=0x");
 		sb.append(Integer.toHexString(this.options));
 		sb.append(")");
-		if ((this.options & OV_WITHTEXT) != 0) {
-			sb.append("\n<TEXT>\n");
-			sb.append(this.text);
-			sb.append("\n</TEXT>");
-		}
-		else {
-			sb.append("\n<TEXT />");
-		}
+		sb.append("\n<TEXT>\n");
+		sb.append(this.text);
+		sb.append("\n</TEXT>");
 		return sb.toString();
 	}
 	

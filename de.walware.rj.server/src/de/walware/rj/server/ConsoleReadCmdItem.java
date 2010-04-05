@@ -11,7 +11,6 @@
 
 package de.walware.rj.server;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -20,7 +19,7 @@ import java.io.ObjectOutput;
 /**
  * Command for main loop console prompt/input.
  */
-public final class ConsoleReadCmdItem extends MainCmdItem implements Externalizable {
+public final class ConsoleReadCmdItem extends MainCmdItem {
 	
 	
 	public static final int O_ADD_TO_HISTORY = 0;
@@ -33,23 +32,21 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	private String text;
 	
 	
-	/**
-	 * Constructor for automatic deserialization
-	 */
-	public ConsoleReadCmdItem() {
+	public ConsoleReadCmdItem(final int options, final String text) {
+		assert (text != null);
+		this.options = (options | (OV_WITHTEXT | OM_WAITFORCLIENT));
+		this.text = text;
 	}
 	
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleReadCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
-	}
-	
-	public ConsoleReadCmdItem(final int options, final String text) {
-		assert (text != null);
-		this.options = (options | (OV_WITHTEXT | OM_WAITFORCLIENT));
-		this.text = text;
+	public ConsoleReadCmdItem(final ObjectInput in) throws IOException {
+		this.options = in.readInt();
+		this.requestId = in.readByte();
+		if ((this.options & OV_WITHTEXT) != 0) {
+			this.text = in.readUTF();
+		}
 	}
 	
 	@Override
@@ -58,14 +55,6 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 		out.writeByte(this.requestId);
 		if ((this.options & OV_WITHTEXT) != 0) {
 			out.writeUTF(this.text);
-		}
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.options = in.readInt();
-		this.requestId = in.readByte();
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = in.readUTF();
 		}
 	}
 	
@@ -81,7 +70,6 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 		this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
 	}
 	
-	@Override
 	public void setAnswer(final String text) {
 		assert (text != null);
 		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
@@ -97,11 +85,6 @@ public final class ConsoleReadCmdItem extends MainCmdItem implements Externaliza
 	@Override
 	public RjsStatus getStatus() {
 		return null;
-	}
-	
-	@Override
-	public Object getData() {
-		return this.text;
 	}
 	
 	@Override

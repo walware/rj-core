@@ -64,7 +64,7 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 	/**
 	 * Constructor for deserialization
 	 */
-	public RjsStatus(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public RjsStatus(final ObjectInput in) throws IOException {
 		readExternal(in);
 	}
 	
@@ -82,7 +82,7 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 		}
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in) throws IOException {
 		if (in.readBoolean()) {
 			this.severity = in.readByte();
 			this.code = in.readInt();

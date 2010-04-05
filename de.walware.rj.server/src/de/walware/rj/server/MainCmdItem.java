@@ -22,36 +22,61 @@ public abstract class MainCmdItem {
 	
 	/**
 	 * {@link ConsoleReadCmdItem}
+	 * S2C
 	 *      options = ADD_TO_HISTORY (TRUE, FALSE)
-	 *      in = prompt
-	 *      answer = (text) readed input
+	 *      text = prompt
+	 * C2S
+	 *      text = input
 	 */
 	public static final byte T_CONSOLE_READ_ITEM =    1;
 	
 	/**
-	 * {@link ConsoleReadCmdItem}
-	 *     options = STATUS (OK, WARNING)
-	 *     in = output
-	 *     answer = -
+	 * {@link ConsoleWriteOutCmdItem}
+	 * S2C
+	 *     text = output
+	 * C2S
+	 *     -
 	 */
-	public static final byte T_CONSOLE_WRITE_ITEM =   2;
+	public static final byte T_CONSOLE_WRITE_OUT_ITEM =   2;
 	
-	public static final byte T_MESSAGE_ITEM =         3;
+	/**
+	 * {@link ConsoleWriteErrCmdItem}
+	 * S2C
+	 *     text = output
+	 * C2S
+	 *     -
+	 */
+	public static final byte T_CONSOLE_WRITE_ERR_ITEM =   3;
+	
+	/**
+	 * {@link ConsoleMessageCmdItem}
+	 * S2C
+	 *     text = message
+	 * C2S
+	 *     -
+	 */
+	public static final byte T_MESSAGE_ITEM =         4;
 	
 	/**
 	 * {@link ExtUICmdItem}
-	 * Detail depends on the concrete command
-	 * {@link ExtUICmdItem#getCommand()}
+	 * Detail depends on the concrete command {@link ExtUICmdItem#getCommand()}
 	 */
 	public static final byte T_EXTENDEDUI_ITEM =      5;
 	
 	/**
-	 * Not yet implemented
+	 * {@link GDCmdItem}
 	 */
 	public static final byte T_GRAPH_ITEM =           7;
 	
+	/**
+	 * T_id <  => initiated by server
+	 * T_id >  => initiated by client
+	 */
 	public static final byte T_S2C_C2S = 9;
 	
+	/**
+	 * {@link DataCmdItem}
+	 */
 	public static final byte T_DATA_ITEM =           10;
 	
 	
@@ -61,10 +86,10 @@ public abstract class MainCmdItem {
 	protected static final int OM_WITH =              0x70000000;
 	
 	protected static final int OM_WAITFORCLIENT =     0x80000000;
-	protected static final int OV_WAITFORCLIENT =     0x80000000;
+	public static final int OV_WAITFORCLIENT =     0x80000000;
 	protected static final int OC_WAITFORCLIENT =     ~(OM_WAITFORCLIENT);
 	
-	private static final int OM_CUSTOM =            0x0000ffff;
+	public static final int OM_CUSTOM =            0x0000ffff;
 	
 	protected static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
 	
@@ -88,11 +113,9 @@ public abstract class MainCmdItem {
 	}
 	
 	public abstract void setAnswer(RjsStatus status);
-	public abstract void setAnswer(String dataText);
 	
 	public abstract boolean isOK();
 	public abstract RjsStatus getStatus();
-	public abstract Object getData();
 	public abstract String getDataText();
 	
 	public abstract void writeExternal(ObjectOutput out) throws IOException;

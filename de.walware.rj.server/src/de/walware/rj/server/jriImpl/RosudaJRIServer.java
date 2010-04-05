@@ -60,15 +60,19 @@ import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
-import de.walware.rj.server.ConsoleWriteCmdItem;
+import de.walware.rj.server.ConsoleWriteErrCmdItem;
+import de.walware.rj.server.ConsoleWriteOutCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
+import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
 import de.walware.rj.server.RJ;
+import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsException;
+import de.walware.rj.server.RjsGraphic;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
@@ -173,6 +177,8 @@ public class RosudaJRIServer extends RJ
 	private ConsoleEngine client0ExpRef;
 	private ConsoleEngine client0PrevExpRef;
 	
+	private byte currentSlot;
+	
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
@@ -188,6 +194,9 @@ public class RosudaJRIServer extends RJ
 	private long rniP_factorClass;
 	private long rniP_orderedClass;
 	private long rniP_dataframeClass;
+	
+	private RjsGraphic graphicLast;
+	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
 	
 	
 	public RosudaJRIServer() {
@@ -341,7 +350,7 @@ public class RosudaJRIServer extends RJ
 				this.mainLoopClient0State = CLIENT_OK;
 			}
 			
-			setProperties(properties);
+			setProperties(client.slot, properties, true);
 			
 			LOGGER.log(Level.INFO, "R engine started successfully. New Client-State: 'Connected'.");
 			
@@ -368,17 +377,28 @@ public class RosudaJRIServer extends RJ
 	
 	public synchronized void setProperties(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		checkClient(client);
+		setProperties(client.slot, properties, false);
 	}
 	
-	private void setProperties(final Map<String, ? extends Object> properties) {
-		{	final Object max = properties.get("rj.data.lists.structs.max_length");
+	private void setProperties(final byte slot, final Map<String, ? extends Object> properties, final boolean init) {
+		{	final Object max = properties.get(RjsComConfig.RJ_DATA_STRUCTS_LISTS_MAX_LENGTH_PROPERTY_ID);
 			if (max instanceof Integer) {
 				this.rniListsMaxLength = ((Integer) max).intValue();
 			}
 		}
-		{	final Object max = properties.get("rj.data.envs.structs.max_length");
+		{	final Object max = properties.get(RjsComConfig.RJ_DATA_STRUCTS_ENVS_MAX_LENGTH_PROPERTY_ID);
 			if (max instanceof Integer) {
 				this.rniEnvsMaxLength = ((Integer) max).intValue();
+			}
+		}
+		if (init) {
+			{	final Object id = properties.get(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID);
+				if (id instanceof Integer) {
+					this.mainLoopS2CLastCommands[slot].setId(((Integer) id).intValue());
+				}
+				else {
+					this.mainLoopS2CLastCommands[slot].setId(0);
+				}
 			}
 		}
 	}
@@ -396,7 +416,7 @@ public class RosudaJRIServer extends RJ
 		this.rniP_dataframeClass = this.rEngine.rniPutString("data.frame");
 		this.rEngine.rniPreserve(this.rniP_dataframeClass);
 		
-		DataCmdItem.setDefaultRObjectFactory(new JRIObjectFactory());
+		RjsComConfig.setDefaultRObjectFactory(new JRIObjectFactory());
 		
 		this.rEngine.addMainLoopCallbacks(RosudaJRIServer.this);
 	}
@@ -478,7 +498,7 @@ public class RosudaJRIServer extends RJ
 //					catch (Throwable e) {}
 					LOGGER.log(Level.INFO, "New client connected. New Client-State: 'Connected'.");
 					
-					setProperties(properties);
+					setProperties(client.slot, properties, true);
 					
 					this.client0 = client;
 					this.client0Engine = consoleEngine;
@@ -614,12 +634,14 @@ public class RosudaJRIServer extends RJ
 						if (this.mainLoopS2CAnswerFail == 0) { // retry
 							this.mainLoopS2CAnswerFail++;
 							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
+							LOGGER.log(Level.WARNING, "Unanswered request - retry: " + this.mainLoopS2CNextCommandsLast[0]);
 							// continue ANSWER
 						}
 						else { // fail
 							this.mainLoopC2SCommandFirst = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
 							this.mainLoopC2SCommandFirst.setAnswer(new RjsStatus(RjsStatus.ERROR, 0));
 							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = null;
+							LOGGER.log(Level.SEVERE, "Unanswered request - skip: " + this.mainLoopC2SCommandFirst);
 							// continue in R
 						}
 					}
@@ -797,7 +819,7 @@ public class RosudaJRIServer extends RJ
 				if (item.getCmdType() < MainCmdItem.T_S2C_C2S) {
 					// ANSWER
 					if (initialItem.requestId == item.requestId) {
-						this.mainLoopS2CRequest.remove(initialItem.requestId);
+						this.mainLoopS2CRequest.remove((initialItem.requestId & 0xff));
 						return item;
 					}
 					else {
@@ -818,11 +840,11 @@ public class RosudaJRIServer extends RJ
 	private void internalClearStdOutBuffer() {
 		final MainCmdItem item;
 		if (this.mainLoopStdOutSingle != null) {
-			item = new ConsoleWriteCmdItem(V_OK, this.mainLoopStdOutSingle);
+			item = new ConsoleWriteOutCmdItem(this.mainLoopStdOutSingle);
 			this.mainLoopStdOutSingle = null;
 		}
 		else {
-			item = new ConsoleWriteCmdItem(V_OK, new String(this.mainLoopStdOutBuffer, 0, this.mainLoopStdOutSize));
+			item = new ConsoleWriteOutCmdItem(new String(this.mainLoopStdOutBuffer, 0, this.mainLoopStdOutSize));
 		}
 		if (this.mainLoopS2CNextCommandsFirst[0] == null) {
 			this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = item;
@@ -840,6 +862,8 @@ public class RosudaJRIServer extends RJ
 	 * @return the data command item with setted answer
 	 */
 	private DataCmdItem internalEvalData(final DataCmdItem cmd) {
+		final byte previousSlot = this.currentSlot;
+		this.currentSlot = cmd.slot;
 		final boolean ownLock = this.rEngine.getRsync().safeLock();
 		final int prevMaxDepth = this.rniMaxDepth;
 		{	final byte depth = cmd.getDepth();
@@ -916,6 +940,7 @@ public class RosudaJRIServer extends RJ
 			return cmd;
 		}
 		finally {
+			this.currentSlot = previousSlot;
 			if (this.rniProtectedCounter > savedProtectedCounter) {
 				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
 				this.rniProtectedCounter = savedProtectedCounter;
@@ -1701,8 +1726,7 @@ public class RosudaJRIServer extends RJ
 			}
 		}
 		else {
-			internalMainFromR(new ConsoleWriteCmdItem(
-					V_ERROR, text));
+			internalMainFromR(new ConsoleWriteErrCmdItem(text));
 		}
 	}
 	
@@ -1716,8 +1740,7 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	public void rShowMessage(final Rengine engine, final String message) {
-		internalMainFromR(new ConsoleMessageCmdItem(
-				0, message));
+		internalMainFromR(new ConsoleMessageCmdItem(message));
 	}
 	
 	public String rChooseFile(final Rengine engine, final int newFile) {
@@ -1792,6 +1815,37 @@ public class RosudaJRIServer extends RJ
 		if (wait && answer instanceof ExtUICmdItem
 				&& answer.isOK()) {
 			return answer.getDataText();
+		}
+		return null;
+	}
+	
+	@Override
+	public void registerGraphic(final RjsGraphic graphic) {
+		this.graphicLast = graphic;
+		this.graphicList.add(graphic);
+		graphic.setSlot(this.currentSlot);
+	}
+	
+	public void initLastGraphic(final int devId, final String target) {
+		if (this.graphicLast == null
+				|| (this.graphicLast.getDevId() > 0 && this.graphicLast.getDevId() != devId) ) {
+			return;
+		}
+		this.graphicLast.deferredInit(devId, target);
+		this.graphicLast = null;
+	}
+	
+	@Override
+	public void unregisterGraphic(final RjsGraphic graphic) {
+		this.graphicList.remove(graphic);
+	}
+	
+	@Override
+	public double[] execGDCommand(final GDCmdItem cmd) {
+		final MainCmdItem answer = internalMainFromR(cmd);
+		if (cmd.waitForClient() && answer instanceof GDCmdItem
+				&& answer.isOK()) {
+			return ((GDCmdItem) answer).getData();
 		}
 		return null;
 	}

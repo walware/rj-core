@@ -42,4 +42,17 @@ public class RJ {
 		throw new UnsupportedOperationException();
 	}
 	
+	public void registerGraphic(final RjsGraphic graphic) {
+	}
+	
+	public void initLastGraphic(final int devId, final String target) {
+	}
+	
+	public void unregisterGraphic(final RjsGraphic graphic) {
+	}
+	
+	public double[] execGDCommand(final GDCmdItem cmd) {
+		throw new UnsupportedOperationException();
+	}
+	
 }

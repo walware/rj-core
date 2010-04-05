@@ -23,24 +23,32 @@ import java.io.ObjectOutput;
 public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	
 	
-	private MainCmdItem first;
+	static final AutoIdMap<ComHandler> gComHandlers = new AutoIdMap<ComHandler>();
+	
+	
+	private int id;
+	
 	private boolean isBusy;
+	
+	private MainCmdItem first;
 	
 	
 	public MainCmdS2CList(final MainCmdItem first, final boolean isBusy) {
-		this.first = first;
 		this.isBusy = isBusy;
+		this.first = first;
 	}
 	
 	/**
 	 * Constructor for automatic deserialization
 	 */
 	public MainCmdS2CList() {
-		this.first = null;
 		this.isBusy = false;
+		this.first = null;
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
+		out.writeShort(this.id);
+		
 		out.writeBoolean(this.isBusy);
 		
 		MainCmdItem item = this.first;
@@ -53,6 +61,12 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+		this.id = in.readUnsignedShort();
+		if (this.id != 0) {
+			gComHandlers.get(this.id).processMainCmd(in);
+			return;
+		}
+		
 		this.isBusy = in.readBoolean();
 		
 		{	// first
@@ -64,8 +78,8 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				this.first = new ConsoleReadCmdItem(in);
 				break;
-			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				this.first = new ConsoleWriteCmdItem(in);
+			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
+				this.first = new ConsoleWriteOutCmdItem(in);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				this.first = new ConsoleMessageCmdItem(in);
@@ -90,8 +104,8 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				item = item.next = new ConsoleReadCmdItem(in);
 				continue;
-			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				item = item.next = new ConsoleWriteCmdItem(in);
+			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
+				item = item.next = new ConsoleWriteOutCmdItem(in);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				item = item.next = new ConsoleMessageCmdItem(in);
@@ -121,6 +135,10 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	
 	public boolean isEmpty() {
 		return (this.first == null);
+	}
+	
+	public void setId(final int id) {
+		this.id = (short) id;
 	}
 	
 	public void setBusy(final boolean isBusy) {

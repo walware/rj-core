@@ -17,15 +17,15 @@ import java.io.ObjectOutput;
 
 
 /**
- * Command for main loop console messages.
+ * Command for main loop console error output.
  */
-public final class ConsoleMessageCmdItem extends MainCmdItem {
+public final class ConsoleWriteErrCmdItem extends MainCmdItem {
 	
 	
 	private final String text;
 	
 	
-	public ConsoleMessageCmdItem(final String text) {
+	public ConsoleWriteErrCmdItem(final String text) {
 		assert (text != null);
 		this.text = text;
 	}
@@ -33,7 +33,7 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleMessageCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public ConsoleWriteErrCmdItem(final ObjectInput in) throws IOException {
 		this.text = in.readUTF();
 	}
 	
@@ -45,13 +45,7 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	
 	@Override
 	public byte getCmdType() {
-		return T_MESSAGE_ITEM;
-	}
-	
-	
-	@Override
-	public void setAnswer(final RjsStatus status) {
-		throw new UnsupportedOperationException();
+		return T_CONSOLE_WRITE_ERR_ITEM;
 	}
 	
 	
@@ -59,6 +53,12 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	public boolean isOK() {
 		return true;
 	}
+	
+	@Override
+	public void setAnswer(final RjsStatus status) {
+		throw new UnsupportedOperationException();
+	}
+	
 	
 	@Override
 	public RjsStatus getStatus() {
@@ -73,24 +73,23 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	
 	@Override
 	public boolean testEquals(final MainCmdItem other) {
-		if (!(other instanceof ConsoleMessageCmdItem)) {
+		if (!(other instanceof ConsoleWriteErrCmdItem)) {
 			return false;
 		}
-		final ConsoleMessageCmdItem otherItem = (ConsoleMessageCmdItem) other;
+		final ConsoleWriteErrCmdItem otherItem = (ConsoleWriteErrCmdItem) other;
 		if (this.options != otherItem.options) {
 			return false;
 		}
-		return (this.text.equals(otherItem.getDataText()));
+		return this.text.equals(otherItem.getDataText());
 	}
 	
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer(100);
 		sb.append("ConsoleCmdItem (type=");
-		sb.append("MESSAGE");
+		sb.append("CONSOLE_WRITE");
 		sb.append(", options=0x");
 		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
 		sb.append(")");
 		sb.append("\n<TEXT>\n");
 		sb.append(this.text);

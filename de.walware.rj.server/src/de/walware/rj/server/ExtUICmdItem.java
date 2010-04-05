@@ -70,7 +70,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ExtUICmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public ExtUICmdItem(final ObjectInput in) throws IOException {
 		readExternal(in);
 	}
 	
@@ -88,7 +88,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		}
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in) throws IOException {
 		this.command = in.readUTF();
 		this.options = in.readInt();
 		this.requestId = in.readByte();
@@ -119,7 +119,6 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 		}
 	}
 	
-	@Override
 	public void setAnswer(final String text) {
 		this.options = (text != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER) : (this.options & OM_CLEARFORANSWER);
@@ -140,11 +139,6 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	@Override
 	public RjsStatus getStatus() {
 		return this.status;
-	}
-	
-	@Override
-	public Object getData() {
-		return this.text;
 	}
 	
 	@Override

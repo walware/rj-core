@@ -57,14 +57,17 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				this.first = new ConsoleReadCmdItem(in);
 				break;
-			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				this.first = new ConsoleWriteCmdItem(in);
+			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
+				this.first = new ConsoleWriteOutCmdItem(in);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				this.first = new ConsoleMessageCmdItem(in);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				this.first = new ExtUICmdItem(in);
+				break;
+			case MainCmdItem.T_GRAPH_ITEM:
+				this.first = new GDCmdItem.Answer(in);
 				break;
 			case MainCmdItem.T_DATA_ITEM:
 				this.first = new DataCmdItem(in);
@@ -83,14 +86,17 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				item = item.next = new ConsoleReadCmdItem(in);
 				continue;
-			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
-				item = item.next = new ConsoleWriteCmdItem(in);
+			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
+				item = item.next = new ConsoleWriteOutCmdItem(in);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				item = item.next = new ConsoleMessageCmdItem(in);
 				continue;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				item = item.next = new ExtUICmdItem(in);
+				continue;
+			case MainCmdItem.T_GRAPH_ITEM:
+				item = item.next = new GDCmdItem.Answer(in);
 				continue;
 			case MainCmdItem.T_DATA_ITEM:
 				item = item.next = new DataCmdItem(in);
@@ -139,20 +145,22 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder(100);
 		sb.append("MainCmdC2SList (");
-		sb.append(')');
-		if (this.first != null) {
-			sb.append(':');
+		sb.append("):");
+		if (this.first == null) {
+			sb.append("\n<ITEM />");
 		}
-		MainCmdItem item = this.first;
-		int i = 0;
-		while (item != null) {
-			sb.append("\n<ITEM i=\"");
-			sb.append(i);
-			sb.append("\">\n");
-			sb.append(item.toString());
-			sb.append("\n</ITEM>");
-			item = item.next;
-			i++;
+		else {
+			MainCmdItem item = this.first;
+			int i = 0;
+			while (item != null) {
+				sb.append("\n<ITEM i=\"");
+				sb.append(i);
+				sb.append("\">\n");
+				sb.append(item.toString());
+				sb.append("\n</ITEM>");
+				item = item.next;
+				i++;
+			}
 		}
 		return sb.toString();
 	}

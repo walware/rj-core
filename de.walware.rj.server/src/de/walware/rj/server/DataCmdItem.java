@@ -48,9 +48,9 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public static final String DEFAULT_FACTORY_ID = "default"; //$NON-NLS-1$
 	
 	
-	private static RObjectFactory gDefaultFactory;
+	static RObjectFactory gDefaultFactory;
 	
-	private static final Map<String, RObjectFactory> gFactories = new ConcurrentHashMap<String, RObjectFactory>();
+	static final Map<String, RObjectFactory> gFactories = new ConcurrentHashMap<String, RObjectFactory>();
 	
 	private static final RObjectFactory getFactory(final String id) {
 		final RObjectFactory factory = gFactories.get(id);
@@ -60,33 +60,8 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		return gDefaultFactory;
 	}
 	
-	/**
-	 * Registers an additional RObject factory
-	 * 
-	 * Factory registration is valid for the current VM.
-	 */
-	public static final void registerRObjectFactory(final String id, final RObjectFactory factory) {
-		if (id == null || factory == null) {
-			throw new NullPointerException();
-		}
-		if (id.equals(DEFAULT_FACTORY_ID)) {
-			throw new IllegalArgumentException();
-		}
-		gFactories.put(id, factory);
-	}
-	
-	/**
-	 * Sets the default RObject factory
-	 * 
-	 * Factory registration is valid for the current VM.
-	 */
-	public static final void setDefaultRObjectFactory(final RObjectFactory factory) {
-		gDefaultFactory = factory;
-		gFactories.put(DEFAULT_FACTORY_ID, factory);
-	}
-	
 	static {
-		setDefaultRObjectFactory(RObjectFactoryImpl.INSTANCE);
+		RjsComConfig.setDefaultRObjectFactory(RObjectFactoryImpl.INSTANCE);
 	}
 	
 	
@@ -168,7 +143,6 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeByte(this.type);
 		out.writeInt(this.options);
-		out.writeByte(this.requestId);
 		if ((this.options & OV_WITHSTATUS) != 0) {
 			this.status.writeExternal(out);
 			return;
@@ -187,7 +161,6 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.type = in.readByte();
 		this.options = in.readInt();
-		this.requestId = in.readByte();
 		if ((this.options & OV_WITHSTATUS) != 0) {
 			this.status = new RjsStatus(in);
 			return;
@@ -227,11 +200,6 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		}
 	}
 	
-	@Override
-	public void setAnswer(final String dataText) {
-		throw new UnsupportedOperationException(); 
-	}
-	
 	public void setAnswer(final RObject rdata) {
 		this.options = (rdata != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_DATAANSWER) : (this.options & OM_CLEARFORANSWER);
@@ -254,7 +222,6 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		return this.status;
 	}
 	
-	@Override
 	public RObject getData() {
 		return this.rdata;
 	}
