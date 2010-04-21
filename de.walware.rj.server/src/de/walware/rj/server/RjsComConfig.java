@@ -11,6 +11,10 @@
 
 package de.walware.rj.server;
 
+import java.io.File;
+import java.rmi.Remote;
+
+import de.walware.rj.RjException;
 import de.walware.rj.data.RObjectFactory;
 
 
@@ -21,6 +25,16 @@ public class RjsComConfig {
 	
 	public static final String RJ_DATA_STRUCTS_LISTS_MAX_LENGTH_PROPERTY_ID = "rj.data.structs.lists.max_length";
 	public static final String RJ_DATA_STRUCTS_ENVS_MAX_LENGTH_PROPERTY_ID = "rj.data.structs.envs.max_length";
+	
+	
+	public static interface PathResolver {
+		File resolve(Remote client, String path) throws RjException;
+	}
+	
+	
+	public static void setServerPathResolver(final RjsComConfig.PathResolver resolver) {
+		BinExchange.gSPathResolver = resolver;
+	}
 	
 	
 	public static int registerClientComHandler(final ComHandler handler) {

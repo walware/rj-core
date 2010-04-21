@@ -14,6 +14,7 @@ package de.walware.rj.server;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +22,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.rmi.Remote;
-import java.util.ArrayList;
-import java.util.List;
 
 import de.walware.rj.RjException;
 
@@ -46,22 +45,18 @@ public class BinExchange implements RjsComObject, Externalizable {
 	private final static int DEFAULT_BUFFER_SIZE = 8192;
 	
 	
-	private final static List<OutputStream> gCOutList = new ArrayList<OutputStream>();
+	private final static AutoIdMap<OutputStream> gCOutList = new AutoIdMap<OutputStream>();
 	
 	
-	public static interface PathResolver {
-		File resolve(Remote client, String path) throws RjException;
-	}
-	
-	private static PathResolver gSPathResolver = new PathResolver() {
+	static RjsComConfig.PathResolver gSPathResolver = new RjsComConfig.PathResolver() {
 		public File resolve(final Remote client, final String path) throws RjException {
-			throw new RjException("Unsupported operation.");
+			final File file = new File(path);
+			if (!file.isAbsolute()) {
+				throw new RjException("Relative path not supported.");
+			}
+			return file;
 		}
 	};
-	
-	public static void setPathResolver(final PathResolver resolver) {
-		gSPathResolver = resolver;
-	}
 	
 	
 	private int options;
@@ -98,7 +93,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 		this.remoteFilePath = path;
 		this.inputLength = length;
 		this.inputStream = in;
-		this.outputId = -1;
+		this.outputId = 0;
 	}
 	
 	/**
@@ -119,7 +114,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 		this.ref = ref;
 		this.inputLength = -1;
 		this.inputStream = null;
-		remember(out);
+		this.outputId = gCOutList.put(out);
 		this.remoteFilePath = path;
 	}
 	
@@ -140,7 +135,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 		this.ref = ref;
 		this.inputLength = -1;
 		this.inputStream = null;
-		this.outputId = -1;
+		this.outputId = 0;
 		this.remoteFilePath = path;
 	}
 	
@@ -171,43 +166,8 @@ public class BinExchange implements RjsComObject, Externalizable {
 		return this.bytes;
 	}
 	
-	private void remember(final OutputStream out) {
-		synchronized (gCOutList) {
-			final int size = gCOutList.size();
-			for (int i = 0; i < size; i++) {
-				if (gCOutList.get(i) == null) {
-					gCOutList.set(i, out);
-					this.outputId = i;
-					return;
-				}
-			}
-			gCOutList.add(out);
-			this.outputId = size;
-		}
-	}
-	
-	private OutputStream resolve() {
-		synchronized (gCOutList) {
-			final int id = this.outputId;
-			if (id < 0) {
-				throw new IllegalStateException();
-			}
-			return gCOutList.get(id);
-		}
-	}
-	
 	public void clear() {
-		synchronized (gCOutList) {
-			if (this.outputId >= 0) {
-				if (gCOutList.size() - 1 == this.outputId) {
-					gCOutList.remove(this.outputId);
-				}
-				else {
-					gCOutList.set(this.outputId, null);
-				}
-				this.outputId = -1;
-			}
-		}
+		gCOutList.remove(this.outputId);
 	}
 	
 	
@@ -236,12 +196,10 @@ public class BinExchange implements RjsComObject, Externalizable {
 				this.status = RjsStatus.OK_STATUS;
 			}
 			catch (final RjException e) {
-				e.printStackTrace();
 				this.status = new RjsStatus(RjsStatus.ERROR, 0, e.getMessage());
 				throw new IOException("Failed to resolve file path.");
 			}
 			catch (final IOException e) {
-				e.printStackTrace();
 				this.status = new RjsStatus(RjsStatus.ERROR, 0, e.getMessage());
 				throw new IOException("Failed to write stream to file.");
 			}
@@ -274,8 +232,8 @@ public class BinExchange implements RjsComObject, Externalizable {
 				long length = this.inputLength = in.readLong();
 				boolean writing = false;
 				try {
-					if (this.outputId >= 0) {
-						final OutputStream out = resolve();
+					if (this.outputId > 0) {
+						final OutputStream out = gCOutList.get(this.outputId);
 						final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
 						while (length > 0) {
 							final int n = in.read(buffer, 0, (int) Math.min(DEFAULT_BUFFER_SIZE, length));
@@ -374,14 +332,29 @@ public class BinExchange implements RjsComObject, Externalizable {
 			FileInputStream input = null;
 			try {
 				final File file = (gSPathResolver != null) ? gSPathResolver.resolve(this.ref, this.remoteFilePath) : new File(this.remoteFilePath);
-				if (!file.exists()) {
-					new RjsStatus(RjsStatus.ERROR, 0, "File does not exists.").writeExternal(out);
+				try {
+					input = new FileInputStream(file);
+					input.available();
 				}
-				else {
+				catch (final IOException e) {
+					if (input != null) {
+						try {
+							input.close();
+							input = null;
+						}
+						catch (final IOException ignore) {}
+					}
+					if (!file.exists() || e instanceof FileNotFoundException) {
+						new RjsStatus(RjsStatus.ERROR, 0, "Failed to find file '"+ this.remoteFilePath + "'.").writeExternal(out);
+					}
+					else {
+						new RjsStatus(RjsStatus.ERROR, 0, "Failed to open file '"+ this.remoteFilePath + "'.").writeExternal(out);
+					}
+				}
+				if (input != null) {
 					RjsStatus.OK_STATUS.writeExternal(out);
 					long length = this.inputLength = file.length();
 					out.writeLong(length);
-					input = new FileInputStream(file);
 					final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
 					while (length > 0) {
 						final int n = input.read(buffer, 0, (int) Math.min(DEFAULT_BUFFER_SIZE, length));
@@ -394,7 +367,6 @@ public class BinExchange implements RjsComObject, Externalizable {
 				}
 			}
 			catch (final RjException e) {
-				e.printStackTrace();
 				this.status = new RjsStatus(RjsStatus.ERROR, 0, e.getMessage());
 				throw new IOException("Failed to resolve file path.");
 			}
@@ -403,7 +375,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 					try {
 						input.close();
 					}
-					catch (final IOException e) {}
+					catch (final IOException ignore) {}
 				}
 			}
 			return; }
