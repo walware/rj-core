@@ -29,10 +29,17 @@ public class RComplexDataImpl extends AbstractComplexData
 	
 	
 	public RComplexDataImpl() {
-		this.realValues = new double[0];
-		this.imaginaryValues = new double[0];
-		this.naIdxs = new int[0];
+		this.realValues = EMPTY_DOUBLE_ARRAY;
+		this.imaginaryValues = EMPTY_DOUBLE_ARRAY;
+		this.naIdxs = EMPTY_INT_ARRAY;
 		this.length = 0;
+	}
+	
+	public RComplexDataImpl(final int length) {
+		this.realValues = new double[length];
+		this.imaginaryValues = new double[length];
+		this.naIdxs = EMPTY_INT_ARRAY;
+		this.length = length;
 	}
 	
 	public RComplexDataImpl(final double realValues[], final double[] imaginaryValues, final int[] naIdxs) {

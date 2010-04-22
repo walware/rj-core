@@ -27,23 +27,27 @@ public class RNumericDataImpl extends AbstractNumericData
 	
 	
 	public RNumericDataImpl() {
-		this.realValues = new double[0];
-		this.naIdxs = new int[0];
-	}
-	
-	public RNumericDataImpl(final double[] values) {
-		this.realValues = values;
-		this.naIdxs = new int[0];
-	}
-	
-	public RNumericDataImpl(final double[] values, final int[] naIdxs) {
-		this.realValues = values;
-		this.naIdxs = naIdxs;
+		this.realValues = EMPTY_DOUBLE_ARRAY;
+		this.length = 0;
+		this.naIdxs = EMPTY_INT_ARRAY;
 	}
 	
 	public RNumericDataImpl(final int length) {
 		this.realValues = new double[length];
-		this.naIdxs = new int[0];
+		this.length = length;
+		this.naIdxs = EMPTY_INT_ARRAY;
+	}
+	
+	public RNumericDataImpl(final double[] values) {
+		this.realValues = values;
+		this.length = values.length;
+		this.naIdxs = EMPTY_INT_ARRAY;
+	}
+	
+	public RNumericDataImpl(final double[] values, final int[] naIdxs) {
+		this.realValues = values;
+		this.length = values.length;
+		this.naIdxs = naIdxs;
 	}
 	
 	

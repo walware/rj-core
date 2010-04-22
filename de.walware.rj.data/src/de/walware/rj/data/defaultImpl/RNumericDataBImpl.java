@@ -25,8 +25,13 @@ public class RNumericDataBImpl extends AbstractNumericData
 	
 	
 	public RNumericDataBImpl() {
-		this.realValues = new double[0];
-		this.length = this.realValues.length;
+		this.realValues = EMPTY_DOUBLE_ARRAY;
+		this.length = 0;
+	}
+	
+	public RNumericDataBImpl(final int length) {
+		this.realValues = new double[length];
+		this.length = length;
 	}
 	
 	public RNumericDataBImpl(final double[] values, final int[] naIdxs) {
@@ -42,11 +47,6 @@ public class RNumericDataBImpl extends AbstractNumericData
 	public RNumericDataBImpl(final double[] values) {
 		this.realValues = values;
 		this.length = values.length;
-	}
-	
-	public RNumericDataBImpl(final int length) {
-		this.realValues = new double[length];
-		this.length = length;
 	}
 	
 	

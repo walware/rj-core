@@ -23,17 +23,18 @@ public class RRawDataImpl extends AbstractRawData
 		implements RDataResizeExtension, Externalizable {
 	
 	
-	public static RRawDataImpl createForServer(final byte[] initialValues) {
-		return new RRawDataImpl(initialValues);
-	}
-	
 	
 	protected byte[] byteValues;
 	
 	
 	public RRawDataImpl() {
-		this.byteValues = new byte[0];
+		this.byteValues = EMPTY_BYTE_ARRAY;
 		this.length = 0;
+	}
+	
+	public RRawDataImpl(final int length) {
+		this.byteValues = new byte[length];
+		this.length = length;
 	}
 	
 	public RRawDataImpl(final byte[] initialValues) {

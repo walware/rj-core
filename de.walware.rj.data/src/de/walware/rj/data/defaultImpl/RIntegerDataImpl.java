@@ -25,7 +25,7 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	
 	public RIntegerDataImpl() {
-		this.intValues = new int[0];
+		this.intValues = EMPTY_INT_ARRAY;
 		this.length = 0;
 	}
 	

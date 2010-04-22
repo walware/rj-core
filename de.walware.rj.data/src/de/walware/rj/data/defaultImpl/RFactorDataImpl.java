@@ -15,6 +15,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RStore;
@@ -29,6 +30,17 @@ public class RFactorDataImpl extends AbstractFactorData
 	protected RCharacterDataImpl codeLabels;
 	
 	
+	public RFactorDataImpl(final int length, final boolean isOrdered, final String[] levelLabels) {
+		if (levelLabels == null) {
+			throw new NullPointerException();
+		}
+		this.codes = new int[length];
+		Arrays.fill(this.codes, NA_integer_INT);
+		this.codeLabels = new RUniqueCharacterDataImpl(levelLabels);
+		this.length = length;
+		this.isOrdered = isOrdered;
+	}
+	
 	public RFactorDataImpl(final int[] codes, final boolean isOrdered, final String[] levelLabels) {
 		if (codes == null || levelLabels == null) {
 			throw new NullPointerException();
@@ -38,7 +50,6 @@ public class RFactorDataImpl extends AbstractFactorData
 		this.length = codes.length;
 		this.isOrdered = isOrdered;
 	}
-	
 	
 	public RFactorDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
 		readExternal(in);

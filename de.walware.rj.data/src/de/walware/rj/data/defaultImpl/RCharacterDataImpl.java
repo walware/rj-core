@@ -26,7 +26,8 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	
 	
 	public RCharacterDataImpl() {
-		this(new String[0], 0);
+		this.charValues = EMPTY_STRING_ARRAY;
+		this.length = 0;
 	}
 	
 	public RCharacterDataImpl(final String[] values) {

@@ -46,9 +46,15 @@ public class RComplexDataBImpl extends AbstractComplexData
 	
 	
 	public RComplexDataBImpl() {
-		this.realValues = new double[0];
-		this.imaginaryValues = new double[0];
+		this.realValues = EMPTY_DOUBLE_ARRAY;
+		this.imaginaryValues = EMPTY_DOUBLE_ARRAY;
 		this.length = 0;
+	}
+	
+	public RComplexDataBImpl(final int length) {
+		this.realValues = new double[length];
+		this.imaginaryValues = new double[length];
+		this.length = length;
 	}
 	
 	public RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues, final int[] naIdxs) {

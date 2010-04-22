@@ -28,7 +28,7 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	
 	
 	public RLogicalDataIntImpl() {
-		this.boolValues = new int[0];
+		this.boolValues = EMPTY_INT_ARRAY;
 		this.length = 0;
 	}
 	

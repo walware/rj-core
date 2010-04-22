@@ -18,6 +18,7 @@ import java.io.ObjectOutput;
 
 import de.walware.rj.data.RArray;
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
@@ -26,6 +27,7 @@ import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
+import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.RVector;
 
@@ -176,6 +178,21 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	/**
+	 * Creates an R complex vector of the given length.
+	 * <p>
+	 * The vector has the default R class name 'complex'.</p>
+	 * <p>
+	 * The function works analog to the R function <code>complex(length)</code>;
+	 * the vector is initialized with 0.0 values.</p>
+	 * 
+	 * @param length the length of the vector
+	 * @return the R complex vector
+	 */
+	public RVector<RComplexStore> createCplxVector(final int length) {
+		return createVector(createCplxData(length), RObject.CLASSNAME_COMPLEX);
+	}
+	
+	/**
 	 * Creates an R character vector with values from a Java String array.
 	 * <p>
 	 * The vector has the default R class name 'character'.</p>
@@ -206,6 +223,21 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	/**
+	 * Creates an R raw vector of the specified length.
+	 * <p>
+	 * The vector has the default R class name 'raw'.</p>
+	 * <p>
+	 * The function works analog to the R function <code>raw(length)</code>;
+	 * the vector is initialized with 0.0 values.</p>
+	 * 
+	 * @param length the length of the vector
+	 * @return the R complex vector
+	 */
+	public RVector<RRawStore> createRawVector(final int length) {
+		return createVector(createRawData(length), RObject.CLASSNAME_RAW);
+	}
+	
+	/**
 	 * Creates an R (unordered) factor vector with level codes from a Java integer array.
 	 * <p>
 	 * The vector has the default R class name 'factor'.</p>
@@ -221,6 +253,19 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	/**
+	 * Creates an R (unordered) factor vector of the specified length.
+	 * <p>
+	 * The vector has the default R class name 'factor'.</p>
+	 * 
+	 * @param length the length of the vector
+	 * @param levels the labels of the levels
+	 * @return the R factor vector
+	 */
+	public RVector<RFactorStore> createFactorVector(final int length, final String[] levels) {
+		return createVector(createFactorData(length, levels), RObject.CLASSNAME_FACTOR);
+	}
+	
+	/**
 	 * Creates an R ordered factor vector with level codes from a Java integer array.
 	 * <p>
 	 * The vector has the default R class name 'ordered'.</p>
@@ -233,6 +278,19 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 */
 	public RVector<RFactorStore> createOrderedVector(final int[] codes, final String[] levels) {
 		return createVector(createOrderedData(codes, levels), RObject.CLASSNAME_ORDERED);
+	}
+	
+	/**
+	 * Creates an R ordered factor vector of the specified length.
+	 * <p>
+	 * The vector has the default R class name 'factor'.</p>
+	 * 
+	 * @param length the length of the vector
+	 * @param levels the labels of the levels
+	 * @return the R factor vector
+	 */
+	public RVector<RFactorStore> createOrderedVector(final int length, final String[] levels) {
+		return createVector(createOrderedData(length, levels), RObject.CLASSNAME_ORDERED);
 	}
 	
 	
@@ -373,6 +431,10 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(length) : new RNumericDataImpl(length);
 	}
 	
+	public RComplexStore createCplxData(final int length) {
+		return RNumericDataBImpl.isBforNASupported() ? new RComplexDataBImpl(length) : new RComplexDataImpl(length);
+	}
+	
 	public RCharacterStore createCharData(final String[] characters) {
 		return new RCharacterDataImpl(characters);
 	}
@@ -381,12 +443,24 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return new RCharacterDataImpl(length);
 	}
 	
+	public RRawStore createRawData(final int length) {
+		return new RRawDataImpl(length);
+	}
+	
 	public RFactorStore createFactorData(final int[] codes, final String[] levels) {
 		return new RFactorDataImpl(codes, false, levels);
 	}
 	
+	public RFactorStore createFactorData(final int length, final String[] levels) {
+		return new RFactorDataImpl(length, false, levels);
+	}
+	
 	public RFactorStore createOrderedData(final int[] codes, final String[] levels) {
 		return new RFactorDataImpl(codes, true, levels);
+	}
+	
+	public RFactorStore createOrderedData(final int length, final String[] levels) {
+		return new RFactorDataImpl(length, true, levels);
 	}
 	
 	
@@ -509,8 +583,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			case RStore.CHARACTER:
 				return new RCharacterDataImpl(in);
 			case RStore.RAW:
-				return new RRawDataStruct(in.readInt());
-//				return new RRawDataImpl(in);
+				return new RRawDataImpl(in);
 			case RStore.FACTOR:
 				return new RFactorDataImpl(in);
 			default:

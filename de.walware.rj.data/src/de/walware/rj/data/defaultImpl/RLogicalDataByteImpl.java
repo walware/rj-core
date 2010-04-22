@@ -32,7 +32,7 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	
 	
 	public RLogicalDataByteImpl() {
-		this.boolValues = new byte[0];
+		this.boolValues = EMPTY_BYTE_ARRAY;
 		this.length = 0;
 	}
 	

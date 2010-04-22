@@ -39,6 +39,11 @@ public abstract class AbstractRData implements RStore {
 	
 	protected static final int WITH_NAMES = 0x1;
 	
+	protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+	protected static final int[] EMPTY_INT_ARRAY = new int[0];
+	protected static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
+	protected static final String[] EMPTY_STRING_ARRAY = new String[0];
+	
 	
 	private final static boolean gIsBSupported;
 	static {
