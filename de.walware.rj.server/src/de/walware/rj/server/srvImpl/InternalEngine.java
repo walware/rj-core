@@ -32,6 +32,6 @@ public interface InternalEngine {
 	RjsComObject runMainLoop(Client client, RjsComObject com) throws RemoteException;
 	RjsComObject runAsync(Client client, RjsComObject com) throws RemoteException;
 	
-	void interrupt(Client client) throws RemoteException;
+	boolean interrupt(Client client) throws RemoteException;
 	
 }

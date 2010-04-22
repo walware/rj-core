@@ -39,8 +39,8 @@ public final class ConsoleEngineImpl implements ConsoleEngine, Unreferenced {
 		return this.publicServer;
 	}
 	
-	public void interrupt() throws RemoteException {
-		this.internalEngine.interrupt(this.client);
+	public boolean interrupt() throws RemoteException {
+		return this.internalEngine.interrupt(this.client);
 	}
 	
 	public void disconnect() throws RemoteException {

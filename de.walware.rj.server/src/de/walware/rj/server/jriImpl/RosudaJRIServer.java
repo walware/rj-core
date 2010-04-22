@@ -27,6 +27,10 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -153,7 +157,10 @@ public class RosudaJRIServer extends RJ
 	private JRClassLoader rClassLoader;
 	private Rengine rEngine;
 	
-	private final Object mainLoopLock = new Object();
+	private final ReentrantLock mainExchangeLock = new ReentrantLock();
+	private final Condition mainExchangeClient = this.mainExchangeLock.newCondition();
+	private final Condition mainExchangeR = this.mainExchangeLock.newCondition();
+	private final ReentrantLock mainInterruptLock = new ReentrantLock();
 	private int mainLoopState;
 	private boolean mainLoopBusyAtServer = false;
 	private boolean mainLoopBusyAtClient = true;
@@ -172,6 +179,8 @@ public class RosudaJRIServer extends RJ
 	
 	private int serverState;
 	
+	private final ReentrantReadWriteLock[] clientLocks = new ReentrantReadWriteLock[] {
+			new ReentrantReadWriteLock(), new ReentrantReadWriteLock() };
 	private Client client0;
 	private ConsoleEngine client0Engine;
 	private ConsoleEngine client0ExpRef;
@@ -256,7 +265,7 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	
-	private void disconnectClient() {
+	private void disconnectClient0() {
 		this.serverState = S_DISCONNECTED;
 		if (this.client0PrevExpRef != null) {
 			try {
@@ -274,19 +283,6 @@ public class RosudaJRIServer extends RJ
 		}
 	}
 	
-	public void unreferenced() {
-		boolean disconnected = false;
-		synchronized (this.mainLoopLock) {
-			if (this.mainLoopClient0State != CLIENT_NONE) {
-				this.mainLoopClient0State = CLIENT_NONE;
-				disconnectClient();
-				disconnected = true;
-			}
-		}
-		if (disconnected) {
-			LOGGER.log(Level.INFO, "R engine is no longer referenced by a client. New Client-State: 'Disconnected'.");
-		}
-	}
 	
 	private void checkClient(final Client client) throws RemoteException {
 //		final String expectedClient = this.currentMainClientId;
@@ -315,69 +311,85 @@ public class RosudaJRIServer extends RJ
 	
 	public synchronized ConsoleEngine start(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		assert (client.slot == 0);
-		if (this.mainLoopState != ENGINE_NOT_STARTED) {
-			throw new IllegalStateException("R engine is already started.");
-		}
-		
-		final ConsoleEngineImpl consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-		final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
-		
-		final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+		this.clientLocks[client.slot].writeLock().lock();
 		try {
-			this.rClassLoader = JRClassLoader.getRJavaClassLoader();
-			Thread.currentThread().setContextClassLoader(this.rClassLoader);
-			
-			if (Rengine.getVersion() < REQUIRED_JRI_API) {
-				final String message = "Unsupported JRI version (API found: " + Long.toHexString(Rengine.getVersion()) + ", required: " + Long.toHexString(REQUIRED_JRI_API) + ").";
-				LOGGER.log(Level.SEVERE, message);
-				internalRStopped();
-				throw new RjInitFailedException(message);
+			if (this.mainLoopState != ENGINE_NOT_STARTED) {
+				throw new IllegalStateException("R engine is already started.");
 			}
 			
-			this.mainLoopState = ENGINE_RUN_IN_R;
-			final Rengine engine = new Rengine(checkArgs((String[]) properties.get("args")), true, new InitCallbacks());
+			final ConsoleEngineImpl consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
+			final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
 			
-			while (this.rEngine != engine) {
-				Thread.sleep(100);
+			final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+			try {
+				this.rClassLoader = JRClassLoader.getRJavaClassLoader();
+				Thread.currentThread().setContextClassLoader(this.rClassLoader);
+				
+				if (Rengine.getVersion() < REQUIRED_JRI_API) {
+					final String message = "Unsupported JRI version (API found: 0x" + Long.toHexString(Rengine.getVersion()) + ", required: 0x" + Long.toHexString(REQUIRED_JRI_API) + ").";
+					LOGGER.log(Level.SEVERE, message);
+					internalRStopped();
+					throw new RjInitFailedException(message);
+				}
+				
+				this.mainLoopState = ENGINE_RUN_IN_R;
+				final Rengine engine = new Rengine(checkArgs((String[]) properties.get("args")), true, new InitCallbacks());
+				
+				while (this.rEngine != engine) {
+					Thread.sleep(100);
+				}
+				if (!engine.waitForR()) {
+					internalRStopped();
+					throw new IllegalThreadStateException("R thread not started");
+				}
+				
+				this.mainExchangeLock.lock();
+				try {
+					this.mainLoopS2CAnswerFail = 0;
+					this.mainLoopClient0State = CLIENT_OK;
+				}
+				finally {
+					this.mainExchangeLock.unlock();
+				}
+				
+				setProperties(client.slot, properties, true);
+				
+				LOGGER.log(Level.INFO, "R engine started successfully. New Client-State: 'Connected'.");
+				
+				this.client0 = client;
+				this.client0Engine = consoleEngine;
+				this.client0ExpRef = export;
+				DefaultServerImpl.addClient(export);
+				this.serverState = S_CONNECTED;
+				return export;
 			}
-			if (!engine.waitForR()) {
-				internalRStopped();
-				throw new IllegalThreadStateException("R thread not started");
+			catch (final Throwable e) {
+				this.serverState = S_STOPPED;
+				final String message = "Could not start the R engine";
+				LOGGER.log(Level.SEVERE, message, e);
+				if (export != null) {
+					UnicastRemoteObject.unexportObject(export, true);
+				}
+				throw new RemoteException(message, e);
 			}
-			
-			synchronized (this.mainLoopLock) {
-				this.mainLoopS2CAnswerFail = 0;
-				this.mainLoopClient0State = CLIENT_OK;
+			finally {
+				Thread.currentThread().setContextClassLoader(oldLoader);
 			}
-			
-			setProperties(client.slot, properties, true);
-			
-			LOGGER.log(Level.INFO, "R engine started successfully. New Client-State: 'Connected'.");
-			
-			this.client0 = client;
-			this.client0Engine = consoleEngine;
-			this.client0ExpRef = export;
-			DefaultServerImpl.addClient(export);
-			this.serverState = S_CONNECTED;
-			return export;
-		}
-		catch (final Throwable e) {
-			this.serverState = S_STOPPED;
-			final String message = "Could not start the R engine";
-			LOGGER.log(Level.SEVERE, message, e);
-			if (export != null) {
-				UnicastRemoteObject.unexportObject(export, true);
-			}
-			throw new RemoteException(message, e);
 		}
 		finally {
-			Thread.currentThread().setContextClassLoader(oldLoader);
+			this.clientLocks[client.slot].writeLock().unlock();
 		}
 	}
 	
-	public synchronized void setProperties(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
-		checkClient(client);
-		setProperties(client.slot, properties, false);
+	public void setProperties(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
+		this.clientLocks[client.slot].readLock().lock();
+		try {
+			checkClient(client);
+			setProperties(client.slot, properties, false);
+		}
+		finally {
+			this.clientLocks[client.slot].readLock().unlock();
+		}
 	}
 	
 	private void setProperties(final byte slot, final Map<String, ? extends Object> properties, final boolean init) {
@@ -439,13 +451,18 @@ public class RosudaJRIServer extends RJ
 		return checked.toArray(new String[checked.size()]);
 	}
 	
-	public synchronized ConsoleEngine connect(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
+	public ConsoleEngine connect(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		assert (client.slot == 0);
-		final ConsoleEngine consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-		final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
-		
+		this.clientLocks[client.slot].writeLock().lock();
 		try {
-			synchronized (this.mainLoopLock) {
+			if (this.client0 == client) {
+				return this.client0ExpRef;
+			}
+			final ConsoleEngine consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
+			final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
+			
+			this.mainExchangeLock.lock();
+			try {
 				this.mainLoopS2CAnswerFail = 0;
 				switch (this.mainLoopState) {
 				case ENGINE_WAIT_FOR_CLIENT:
@@ -453,10 +470,10 @@ public class RosudaJRIServer extends RJ
 					// exit old client
 					if (this.mainLoopClient0State == CLIENT_OK_WAIT) {
 						this.mainLoopClient0State = CLIENT_CANCEL;
-						this.mainLoopLock.notifyAll();
+						this.mainExchangeClient.signalAll();
 						while (this.mainLoopClient0State == CLIENT_CANCEL) {
 							try {
-								this.mainLoopLock.wait(100);
+								this.mainExchangeClient.awaitNanos(100000000L);
 							}
 							catch (final InterruptedException e) {
 								Thread.interrupted();
@@ -504,98 +521,158 @@ public class RosudaJRIServer extends RJ
 					this.client0Engine = consoleEngine;
 					this.client0ExpRef = export;
 					DefaultServerImpl.addClient(export);
+					this.serverState = S_CONNECTED;
 					return export;
 				default:
 					throw new IllegalStateException("R engine is not running.");
 				}
 			}
-		}
-		catch (final Throwable e) {
-			final String message = "An error occurred when connecting.";
-			LOGGER.log(Level.SEVERE, message, e);
-			if (export != null) {
-				UnicastRemoteObject.unexportObject(export, true);
+			catch (final Throwable e) {
+				final String message = "An error occurred when connecting.";
+				LOGGER.log(Level.SEVERE, message, e);
+				if (export != null) {
+					UnicastRemoteObject.unexportObject(export, true);
+				}
+				throw new RemoteException(message, e);
 			}
-			throw new RemoteException(message, e);
+			finally {
+				this.mainExchangeLock.unlock();
+			}
+		}
+		finally {
+			this.clientLocks[client.slot].writeLock().unlock();
 		}
 	}
 	
-	public synchronized void disconnect(final Client client) throws RemoteException {
-		synchronized (this.mainLoopLock) {
-			if (client != null) {
-				checkClient(client);
-			}
-			if (this.mainLoopClient0State == CLIENT_OK_WAIT) {
-				// exit old client
-				this.mainLoopClient0State = CLIENT_CANCEL;
-				while (this.mainLoopClient0State == CLIENT_CANCEL) {
-					this.mainLoopLock.notifyAll();
-					try {
-						this.mainLoopLock.wait(100);
-					}
-					catch (final InterruptedException e) {
-						Thread.interrupted();
-					}
-				}
-				// setup new client
-				if (this.mainLoopClient0State != CLIENT_NONE) {
-					throw new AssertionError();
-				}
-			}
-			else {
-				this.mainLoopClient0State = CLIENT_NONE;
-			}
-			disconnectClient();
-		}
-	}
-	
-	public void interrupt(final Client client) throws RemoteException {
+	public void disconnect(final Client client) throws RemoteException {
+		this.clientLocks[client.slot].writeLock().lock();
 		try {
-			synchronized(this.mainLoopLock) {
-				if (client != null) {
-					checkClient(client);
+			checkClient(client);
+			
+			this.mainExchangeLock.lock();
+			try {
+				if (this.mainLoopClient0State == CLIENT_OK_WAIT) {
+					// exit old client
+					this.mainLoopClient0State = CLIENT_CANCEL;
+					while (this.mainLoopClient0State == CLIENT_CANCEL) {
+						this.mainExchangeClient.signalAll();
+						try {
+							this.mainExchangeClient.awaitNanos(100000000L);
+						}
+						catch (final InterruptedException e) {
+							Thread.interrupted();
+						}
+					}
+					// setup new client
+					if (this.mainLoopClient0State != CLIENT_NONE) {
+						throw new AssertionError();
+					}
 				}
-				this.rniInterrupted = true;
-				this.rEngine.rniStop(1);
+				else {
+					this.mainLoopClient0State = CLIENT_NONE;
+				}
+				disconnectClient0();
+			}
+			finally {
+				this.mainExchangeLock.unlock();
 			}
 		}
-		catch (final Throwable e) {
-			LOGGER.log(Level.SEVERE, "An error occurred when trying to interrupt the R engine.", e);
+		finally {
+			this.clientLocks[client.slot].writeLock().unlock();
 		}
-		return;
+	}
+	
+	public boolean interrupt(final Client client) throws RemoteException {
+		this.clientLocks[client.slot].readLock().lock();
+		try {
+			checkClient(client);
+			try {
+				if (this.mainInterruptLock.tryLock(1L, TimeUnit.SECONDS)) {
+					try {
+						this.rniInterrupted = true;
+						this.rEngine.rniStop(1);
+						return true;
+					}
+					catch (final Throwable e) {
+						LOGGER.log(Level.SEVERE, "An error occurred when trying to interrupt the R engine.", e);
+					}
+					finally {
+						this.mainInterruptLock.unlock();
+					}
+				}
+			}
+			catch (final InterruptedException e) {
+				Thread.interrupted();
+			}
+			return false;
+		}
+		finally {
+			this.clientLocks[client.slot].readLock().unlock();
+		}
 	}
 	
 	public RjsComObject runMainLoop(final Client client, final RjsComObject command) throws RemoteException {
-		this.mainLoopS2CLastCommands[client.slot].clear();
-		if (command == null) {
-			return internalMainCallbackFromClient(client, null);
-		}
-		else {
-			switch (command.getComType()) {
+		this.clientLocks[client.slot].readLock().lock();
+		boolean clientLock = true;
+		try {
+			checkClient(client);
+			
+			this.mainLoopS2CLastCommands[client.slot].clear();
+			
+			switch ((command != null) ? command.getComType() : RjsComObject.T_MAIN_LIST) {
 			case T_PING:
 				return RjsStatus.OK_STATUS;
 			case RjsComObject.T_MAIN_LIST:
-				return internalMainCallbackFromClient(client, (MainCmdC2SList) command);
+				final MainCmdC2SList mainC2SCmdList = (MainCmdC2SList) command;
+				if (client.slot > 0 && mainC2SCmdList != null) {
+					MainCmdItem item = mainC2SCmdList.getItems();
+					while (item != null) {
+						item.slot = client.slot;
+						item = item.next;
+					}
+				}
+				this.mainExchangeLock.lock();
+				this.clientLocks[client.slot].readLock().unlock();
+				clientLock = false;
+				try {
+					return internalMainCallbackFromClient(client.slot, mainC2SCmdList);
+				}
+				finally {
+					this.mainExchangeLock.unlock();
+				}
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;
 			default:
 				throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
 			}
 		}
+		finally {
+			if (clientLock) {
+				this.clientLocks[client.slot].readLock().unlock();
+			}
+		}
 	}
 	
 	
 	public RjsComObject runAsync(final Client client, final RjsComObject command) throws RemoteException {
-		if (command == null) {
-			throw new IllegalArgumentException("Missing command.");
+		this.clientLocks[client.slot].readLock().lock();
+		try {
+			checkClient(client);
+			
+			if (command == null) {
+				throw new IllegalArgumentException("Missing command.");
+			}
+			switch (command.getComType()) {
+			case T_PING:
+				return internalPing();
+			case RjsComObject.T_FILE_EXCHANGE:
+				return command;
+			default:
+				throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
+			}
 		}
-		switch (command.getComType()) {
-		case T_PING:
-			return internalPing();
-		case RjsComObject.T_FILE_EXCHANGE:
-			return command;
-		default:
-			throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
+		finally {
+			this.clientLocks[client.slot].readLock().unlock();
 		}
 	}
 	
@@ -611,114 +688,106 @@ public class RosudaJRIServer extends RJ
 		return new RjsStatus(RjsStatus.WARNING, S_STOPPED);
 	}
 	
-	private RjsComObject internalMainCallbackFromClient(final Client client, final MainCmdC2SList mainC2SCmdList) throws RemoteException {
-		if (client.slot > 0 && mainC2SCmdList != null) {
-			MainCmdItem item = mainC2SCmdList.getItems();
-			while (item != null) {
-				item.slot = client.slot;
-				item = item.next;
-			}
+	private RjsComObject internalMainCallbackFromClient(final byte slot, final MainCmdC2SList mainC2SCmdList) throws RemoteException {
+//		System.out.println("fromClient 1: " + mainC2SCmdList);
+//		System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
+//		System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
+		
+		if (slot == 0 && this.mainLoopClient0State != CLIENT_OK) {
+			return new RjsStatus(RjsStatus.WARNING, S_DISCONNECTED);
 		}
-		synchronized (this.mainLoopLock) {
-//			System.out.println("fromClient 1: " + mainC2SCmdList);
-//			System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
-//			System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
-			
-			checkClient(client);
-			if (client.slot == 0 && this.mainLoopClient0State != CLIENT_OK) {
-				return new RjsStatus(RjsStatus.WARNING, S_DISCONNECTED);
-			}
-			if (this.mainLoopState == ENGINE_WAIT_FOR_CLIENT) {
-				if (mainC2SCmdList == null && this.mainLoopS2CNextCommandsFirst[client.slot] == null) {
-					if (client.slot == 0) {
-						if (this.mainLoopS2CAnswerFail == 0) { // retry
-							this.mainLoopS2CAnswerFail++;
-							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
-							LOGGER.log(Level.WARNING, "Unanswered request - retry: " + this.mainLoopS2CNextCommandsLast[0]);
-							// continue ANSWER
-						}
-						else { // fail
-							this.mainLoopC2SCommandFirst = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
-							this.mainLoopC2SCommandFirst.setAnswer(new RjsStatus(RjsStatus.ERROR, 0));
-							this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = null;
-							LOGGER.log(Level.SEVERE, "Unanswered request - skip: " + this.mainLoopC2SCommandFirst);
-							// continue in R
-						}
+		if (this.mainLoopState == ENGINE_WAIT_FOR_CLIENT) {
+			if (mainC2SCmdList == null && this.mainLoopS2CNextCommandsFirst[slot] == null) {
+				if (slot == 0) {
+					if (this.mainLoopS2CAnswerFail == 0) { // retry
+						this.mainLoopS2CAnswerFail++;
+						this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
+						LOGGER.log(Level.WARNING, "Unanswered request - retry: " + this.mainLoopS2CNextCommandsLast[0]);
+						// continue ANSWER
 					}
-					else {
-						return new RjsStatus(RjsStatus.INFO, RjsStatus.CANCEL);
+					else { // fail
+						this.mainLoopC2SCommandFirst = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
+						this.mainLoopC2SCommandFirst.setAnswer(new RjsStatus(RjsStatus.ERROR, 0));
+						this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = null;
+						LOGGER.log(Level.SEVERE, "Unanswered request - skip: " + this.mainLoopC2SCommandFirst);
+						// continue in R
 					}
-				}
-				else { // ok
-					this.mainLoopS2CAnswerFail = 0;
-				}
-			}
-			if (mainC2SCmdList != null) {
-				this.rniInterrupted = false;
-				if (this.mainLoopC2SCommandFirst == null) {
-					this.mainLoopC2SCommandFirst = mainC2SCmdList.getItems();
 				}
 				else {
-					MainCmdItem cmd = this.mainLoopC2SCommandFirst;
-					while (cmd.next != null) {
-						cmd = cmd.next;
-					}
-					cmd.next = mainC2SCmdList.getItems();
+					return new RjsStatus(RjsStatus.ERROR, RjsStatus.ERROR);
 				}
 			}
-			
+			else { // ok
+				this.mainLoopS2CAnswerFail = 0;
+			}
+		}
+		if (mainC2SCmdList != null) {
+			this.rniInterrupted = false;
+			if (this.mainLoopC2SCommandFirst == null) {
+				this.mainLoopC2SCommandFirst = mainC2SCmdList.getItems();
+			}
+			else {
+				MainCmdItem cmd = this.mainLoopC2SCommandFirst;
+				while (cmd.next != null) {
+					cmd = cmd.next;
+				}
+				cmd.next = mainC2SCmdList.getItems();
+			}
+		}
+		
 //			System.out.println("fromClient 2: " + mainC2SCmdList);
 //			System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
 //			System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
-			
-			this.mainLoopLock.notifyAll();
+		
+		this.mainExchangeR.signalAll();
+		if (slot == 0) {
 			this.mainLoopClient0State = CLIENT_OK_WAIT;
-			while (this.mainLoopS2CNextCommandsFirst[client.slot] == null
+		}
+		while (this.mainLoopS2CNextCommandsFirst[slot] == null
 //					&& (this.mainLoopState != ENGINE_STOPPED)
-					&& (this.mainLoopState == ENGINE_RUN_IN_R || this.mainLoopC2SCommandFirst != null)
-					&& ((client.slot > 0)
-							|| ( (this.mainLoopClient0State == CLIENT_OK_WAIT)
-								&& (this.mainLoopStdOutSize == 0)
-								&& (this.mainLoopBusyAtClient == this.mainLoopBusyAtServer) )
-					)) {
-				this.mainLoopClientListen++;
-				try {
-					this.mainLoopLock.wait(); // run in R
-				}
-				catch (final InterruptedException e) {
-					Thread.interrupted();
-				}
-				finally {
-					this.mainLoopClientListen--;
-				}
+				&& (this.mainLoopState == ENGINE_RUN_IN_R || this.mainLoopC2SCommandFirst != null)
+				&& ((slot > 0)
+						|| ( (this.mainLoopClient0State == CLIENT_OK_WAIT)
+							&& (this.mainLoopStdOutSize == 0)
+							&& (this.mainLoopBusyAtClient == this.mainLoopBusyAtServer) )
+				)) {
+			this.mainLoopClientListen++;
+			try {
+				this.mainExchangeClient.await(); // run in R
 			}
-			if (this.mainLoopClient0State == CLIENT_OK_WAIT) {
-				this.mainLoopClient0State = CLIENT_OK;
+			catch (final InterruptedException e) {
+				Thread.interrupted();
 			}
-			
+			finally {
+				this.mainLoopClientListen--;
+			}
+		}
+		if (slot == 0 && this.mainLoopClient0State == CLIENT_OK_WAIT) {
+			this.mainLoopClient0State = CLIENT_OK;
+		}
+		
 //			System.out.println("fromClient 3: " + mainC2SCmdList);
 //			System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
 //			System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
-			
-			// answer
-			if (client.slot > 0 || this.mainLoopClient0State == CLIENT_OK) {
-				if (this.mainLoopStdOutSize > 0) {
-					internalClearStdOutBuffer();
-					this.mainLoopStdOutSize = 0;
-				}
-				if (this.mainLoopState == ENGINE_STOPPED && this.mainLoopS2CNextCommandsFirst[client.slot] == null) {
-					return new RjsStatus(RjsStatus.INFO, S_STOPPED);
-				}
-				this.mainLoopBusyAtClient = this.mainLoopBusyAtServer;
-				this.mainLoopS2CLastCommands[client.slot].setBusy(this.mainLoopBusyAtClient);
-				this.mainLoopS2CLastCommands[client.slot].setObjects(this.mainLoopS2CNextCommandsFirst[client.slot]);
-				this.mainLoopS2CNextCommandsFirst[client.slot] = null;
-				return this.mainLoopS2CLastCommands[client.slot];
+		
+		// answer
+		if (slot > 0 || this.mainLoopClient0State == CLIENT_OK) {
+			if (this.mainLoopStdOutSize > 0) {
+				internalClearStdOutBuffer();
+				this.mainLoopStdOutSize = 0;
 			}
-			else {
-				this.mainLoopClient0State = CLIENT_NONE;
-				return new RjsStatus(RjsStatus.CANCEL, S_DISCONNECTED); 
+			if (this.mainLoopState == ENGINE_STOPPED && this.mainLoopS2CNextCommandsFirst[slot] == null) {
+				return new RjsStatus(RjsStatus.INFO, S_STOPPED);
 			}
+			this.mainLoopBusyAtClient = this.mainLoopBusyAtServer;
+			this.mainLoopS2CLastCommands[slot].setBusy(this.mainLoopBusyAtClient);
+			this.mainLoopS2CLastCommands[slot].setObjects(this.mainLoopS2CNextCommandsFirst[slot]);
+			this.mainLoopS2CNextCommandsFirst[slot] = null;
+			return this.mainLoopS2CLastCommands[slot];
+		}
+		else {
+			this.mainLoopClient0State = CLIENT_NONE;
+			return new RjsStatus(RjsStatus.CANCEL, S_DISCONNECTED); 
 		}
 	}
 	
@@ -726,7 +795,8 @@ public class RosudaJRIServer extends RJ
 		MainCmdItem item = initialItem;
 		boolean initial = true;
 		while (true) {
-			synchronized (this.mainLoopLock) {
+			this.mainExchangeLock.lock();
+			try {
 //				System.out.println("fromR 1: " + item);
 //				System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
 //				System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
@@ -744,7 +814,7 @@ public class RosudaJRIServer extends RJ
 					}
 				}
 				
-				this.mainLoopLock.notifyAll();
+				this.mainExchangeClient.signalAll();
 				
 				if (initial) {
 					if (initialItem == null || !initialItem.waitForClient()) {
@@ -769,22 +839,32 @@ public class RosudaJRIServer extends RJ
 							while (this.mainLoopC2SCommandFirst == null || this.mainLoopServerStack > stackId) {
 								int i = 0;
 								final ServerRuntimePlugin[] plugins = this.pluginsList;
+								this.mainExchangeLock.unlock();
+								this.mainInterruptLock.lock();
 								try {
 									for (; i < plugins.length; i++) {
 										plugins[i].rjIdle();
 									}
 									
 									this.rEngine.rniIdle();
-									
-									this.mainLoopLock.wait(50);
-								}
-								catch (final InterruptedException e) {
-									Thread.interrupted();
 								}
 								catch (final Throwable e) {
 									if (i < plugins.length) {
 										handlePluginError(plugins[i], e);
 									}
+								}
+								finally {
+									this.mainInterruptLock.unlock();
+									this.mainExchangeLock.lock();
+								}
+								if (this.mainLoopC2SCommandFirst != null && this.mainLoopServerStack <= stackId) {
+									break;
+								}
+								try {
+									this.mainExchangeR.awaitNanos(50000000L);
+								}
+								catch (final InterruptedException e) {
+									Thread.interrupted();
 								}
 							}
 						}
@@ -792,7 +872,7 @@ public class RosudaJRIServer extends RJ
 							// TODO log warning
 							while (this.mainLoopC2SCommandFirst == null || this.mainLoopServerStack > stackId) {
 								try {
-									this.mainLoopLock.wait(this.mainLoopServerStack > stackId ? 100 : 50);
+									this.mainExchangeR.awaitNanos(50000000L);
 								}
 								catch (final InterruptedException e) {
 									Thread.interrupted();
@@ -826,6 +906,9 @@ public class RosudaJRIServer extends RJ
 						continue;
 					}
 				}
+			}
+			finally {
+				this.mainExchangeLock.unlock();
 			}
 			
 			// initial != null && initial.waitForClient()
@@ -1695,7 +1778,8 @@ public class RosudaJRIServer extends RJ
 //		catch (final InterruptedException e) {
 //		}
 		if (type == 0) {
-			synchronized (this.mainLoopLock) {
+			this.mainExchangeLock.lock();
+			try {
 				// first
 				if (this.mainLoopStdOutSize == 0) {
 					this.mainLoopStdOutSingle = text;
@@ -1720,9 +1804,12 @@ public class RosudaJRIServer extends RJ
 				}
 				
 				if (this.mainLoopClientListen > 0) {
-					this.mainLoopLock.notifyAll();
+					this.mainExchangeClient.signalAll();
 				}
 				return;
+			}
+			finally {
+				this.mainExchangeLock.unlock();
 			}
 		}
 		else {
@@ -1763,21 +1850,26 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	private void internalRStopped() {
-		synchronized (this.mainLoopLock) {
+		this.mainExchangeLock.lock();
+		try {
 			if (this.mainLoopState == ENGINE_STOPPED) {
 				return;
 			}
 			this.mainLoopState = ENGINE_STOPPED;
 			
-			this.mainLoopLock.notifyAll();
+			this.mainExchangeClient.signalAll();
 			while (this.mainLoopS2CNextCommandsFirst != null || this.mainLoopStdOutSize > 0) {
 				try {
-					this.mainLoopLock.wait(100);
-				} catch (final InterruptedException e) {
+					this.mainExchangeR.awaitNanos(100000000L);
+				}
+				catch (final InterruptedException e) {
 					Thread.interrupted();
 				}
-				this.mainLoopLock.notifyAll();
+				this.mainExchangeClient.signalAll();
 			}
+		}
+		finally {
+			this.mainExchangeLock.unlock();
 		}
 		
 		final ServerRuntimePlugin[] plugins;

@@ -32,6 +32,7 @@ import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
 import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
+import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.ServerInfo;
@@ -212,12 +213,14 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 					case RjsStatus.OK:
 						break COM_TYPE;
 					case RjsStatus.INFO:
-						if (status.getCode() == RjsStatus.CANCEL) {
+						break COM_TYPE;
+					case RjsStatus.ERROR:
+						if (status.getCode() == RjsStatus.ERROR) {
 							break WAIT_FOR_ANSWER;
 						}
-						break COM_TYPE;
+						throw new RjsException(status.getCode(), status.getMessage());
 					default:
-						throw new RjException(status.getMessage());
+						break COM_TYPE;
 					}
 				case RjsComObject.T_MAIN_LIST:
 					final MainCmdS2CList list = (MainCmdS2CList) receivedCom;
