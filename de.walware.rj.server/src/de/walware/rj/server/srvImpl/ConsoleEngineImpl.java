@@ -13,6 +13,7 @@ package de.walware.rj.server.srvImpl;
 
 import java.rmi.RemoteException;
 import java.rmi.server.Unreferenced;
+import java.util.Map;
 
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.RjsComObject;
@@ -37,6 +38,14 @@ public final class ConsoleEngineImpl implements ConsoleEngine, Unreferenced {
 	
 	public Server getPublic() throws RemoteException {
 		return this.publicServer;
+	}
+	
+	public Map<String, Object> getPlatformData() {
+		return this.internalEngine.getPlatformData();
+	}
+	
+	public void setProperties(final Map<String, ? extends Object> properties) throws RemoteException {
+		this.internalEngine.setProperties(this.client, properties);
 	}
 	
 	public boolean interrupt() throws RemoteException {

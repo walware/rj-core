@@ -13,6 +13,7 @@ package de.walware.rj.server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 
 /**
@@ -28,6 +29,29 @@ public interface ConsoleEngine extends Remote {
 	 * @throws RemoteException
 	 */
 	Server getPublic() throws RemoteException;
+	
+	/**
+	 * Returns a collection of platform data.
+	 * Current default items:
+	 * <ul>
+	 *     <li><code>os.type</code> - {@link String}</li>
+	 *     <li><code>file.sep</code> - {@link String}</li>
+	 *     <li><code>path.sep</code> - {@link String}</li>
+	 *     <li><code>version.string</code> - {@link String}</li>
+	 * </ul>
+	 * 
+	 * @return the map with all available data
+	 * @throws RemoteException
+	 */
+	Map<String, Object> getPlatformData() throws RemoteException;
+	
+	/**
+	 * Sets RJ server properties
+	 * 
+	 * @param properties map with properties to update
+	 * @throws RemoteException
+	 */
+	void setProperties(Map<String, ? extends Object> properties) throws RemoteException;
 	
 	/**
 	 * Tries to interrupt the current computation.

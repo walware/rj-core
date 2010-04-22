@@ -26,8 +26,10 @@ import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -247,6 +249,9 @@ public class RosudaJRIServer extends RJ
 	private RjsGraphic graphicLast;
 	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
 	
+	private Map<String, String> platformDataCommands;
+	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
+	
 	
 	public RosudaJRIServer() {
 		this.mainLoopState = ENGINE_NOT_STARTED;
@@ -259,6 +264,12 @@ public class RosudaJRIServer extends RJ
 	public void init(final String name, final Server publicServer) throws Exception {
 		this.name = name;
 		this.publicServer = publicServer;
+		
+		this.platformDataCommands = new HashMap<String, String>();
+		this.platformDataCommands.put("os.type", ".Platform$OS.type");
+		this.platformDataCommands.put("file.sep", ".Platform$file.sep");
+		this.platformDataCommands.put("path.sep", ".Platform$path.sep");
+		this.platformDataCommands.put("version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
 	}
 	
 	public void addPlugin(final ServerRuntimePlugin plugin) {
@@ -294,13 +305,13 @@ public class RosudaJRIServer extends RJ
 	
 	private void handlePluginError(final ServerRuntimePlugin plugin, final Throwable error) {
 		// log and disable
-		LOGGER.log(Level.SEVERE, "[Plugins] An error occured in plug-in '"+plugin.getSymbolicName()+"', plug-in will be disabled.", error);
+		LOGGER.log(Level.SEVERE, "[Plugins] An error occurred in plug-in '"+plugin.getSymbolicName()+"', plug-in will be disabled.", error);
 		removePlugin(plugin);
 		try {
 			plugin.rjStop(V_ERROR);
 		}
 		catch (final Throwable stopError) {
-			LOGGER.log(Level.WARNING, "[Plugins] An error occured when trying to disable plug-in '"+plugin.getSymbolicName()+"'.", error);
+			LOGGER.log(Level.WARNING, "[Plugins] An error occurred when trying to disable plug-in '"+plugin.getSymbolicName()+"'.", error);
 		}
 	}
 	
@@ -425,7 +436,7 @@ public class RosudaJRIServer extends RJ
 		this.clientLocks[client.slot].readLock().lock();
 		try {
 			checkClient(client);
-			setProperties(client.slot, properties, false);
+			setProperties(client.slot, properties, properties.containsKey("rj.com.init"));
 		}
 		finally {
 			this.clientLocks[client.slot].readLock().unlock();
@@ -444,13 +455,12 @@ public class RosudaJRIServer extends RJ
 			}
 		}
 		if (init) {
-			{	final Object id = properties.get(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID);
-				if (id instanceof Integer) {
-					this.mainLoopS2CLastCommands[slot].setId(((Integer) id).intValue());
-				}
-				else {
-					this.mainLoopS2CLastCommands[slot].setId(0);
-				}
+			final Object id = properties.get(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID);
+			if (id instanceof Integer) {
+				this.mainLoopS2CLastCommands[slot].setId(((Integer) id).intValue());
+			}
+			else {
+				this.mainLoopS2CLastCommands[slot].setId(0);
 			}
 		}
 	}
@@ -601,6 +611,35 @@ public class RosudaJRIServer extends RJ
 			return;
 		}
 		
+		loadPlatformData();
+	}
+	
+	private void loadPlatformData() {
+		try {
+			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
+				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA, 0, dataEntry.getValue()));
+				if (dataCmd != null && dataCmd.isOK()) {
+					final RObject data = dataCmd.getData();
+					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
+						switch (data.getData().getStoreType()) {
+						case RStore.CHARACTER:
+							if (data.getLength() == 1) {
+								this.platformDataValues.put(dataEntry.getKey(), data.getData().get(0));
+								continue;
+							}
+						}
+					}
+				}
+				LOGGER.log(Level.WARNING, "The platform data item '" + dataEntry.getKey() + "' could not be created.");
+			}
+		}
+		catch (final Throwable e) {
+			LOGGER.log(Level.SEVERE, "An error occurred when loading platform data.", e);
+		}
+	}
+	
+	public Map<String, Object> getPlatformData() {
+		return this.platformDataValues;
 	}
 	
 	private String[] checkArgs(final String[] args) {

@@ -23,6 +23,7 @@ public interface InternalEngine {
 	
 	int getState();
 	Client getCurrentClient();
+	Map<String, Object> getPlatformData();
 	
 	Object start(Client client, Map<String, ? extends Object> properties) throws RemoteException;
 	Object connect(Client client, Map<String, ? extends Object> properties) throws RemoteException;
