@@ -28,6 +28,7 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	public static final String C_SAVE_HISTORY = "saveHistory";
 	public static final String C_SHOW_HISTORY = "showHistory";
 	public static final String C_ADDTO_HISTORY = "addtoHistory";
+	public static final String C_SHOW_HELP = "showHelp";
 	
 	public static final int O_NEW = 8;
 	
