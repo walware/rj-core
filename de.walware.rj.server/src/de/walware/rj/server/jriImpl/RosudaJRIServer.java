@@ -167,6 +167,7 @@ public class RosudaJRIServer extends RJ
 	private Server publicServer;
 	private JRClassLoader rClassLoader;
 	private Rengine rEngine;
+	private List<String> rArgs;
 	
 	private final ReentrantLock mainExchangeLock = new ReentrantLock();
 	private final Condition mainExchangeClient = this.mainExchangeLock.newCondition();
@@ -612,6 +613,13 @@ public class RosudaJRIServer extends RJ
 		}
 		
 		loadPlatformData();
+		
+		final String osType = (String) this.platformDataValues.get("os.type");
+		if (osType != null && osType.startsWith("windows")) {
+			if (this.rArgs.contains("--internet2")) {
+				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0L);
+			}
+		}
 	}
 	
 	private void loadPlatformData() {
@@ -654,10 +662,16 @@ public class RosudaJRIServer extends RJ
 				checked.add(arg);
 			}
 		}
+		final String[] array;
 		if (!saveState) {
-			checked.add("--no-save");
+			array = checked.toArray(new String[checked.size()+1]);
+			array[array.length-1] = "--no-save";
 		}
-		return checked.toArray(new String[checked.size()]);
+		else {
+			array = checked.toArray(new String[checked.size()]);
+		}
+		this.rArgs = checked;
+		return array;
 	}
 	
 	public ConsoleEngine connect(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
