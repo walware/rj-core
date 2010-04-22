@@ -30,7 +30,7 @@ public class RListImpl extends AbstractRObject
 	private int length;
 	
 	private String className1;
-	protected RCharacterDataImpl namesAttribute;
+	private RCharacterDataImpl namesAttribute;
 	
 	
 	public RListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
@@ -54,20 +54,19 @@ public class RListImpl extends AbstractRObject
 	}
 	
 	public RListImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		doReadExternal(in, flags, factory);
+		readExternal(in, flags, factory);
 	}
 	
-	public final void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
 		doReadExternal(in, flags, factory);
 	}
-	protected int doReadExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	protected final int doReadExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
 		//-- options
 		final int options = in.readInt();
 		//-- special attributes
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				in.readUTF() : ((getRObjectType() == RObject.TYPE_DATAFRAME) ?
 						RObject.CLASSNAME_DATAFRAME : RObject.CLASSNAME_LIST);
-		
 		this.length = in.readInt();
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
@@ -75,7 +74,7 @@ public class RListImpl extends AbstractRObject
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = readNames(in, flags);
+			this.namesAttribute = (RCharacterDataImpl) factory.readNames(in, flags);
 			//-- data
 			this.components = new RObject[this.length];
 			for (int i = 0; i < this.length; i++) {
@@ -88,13 +87,12 @@ public class RListImpl extends AbstractRObject
 		}
 		return options;
 	}
-	protected RCharacterDataImpl readNames(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		return new RCharacterDataImpl(in);
-	}
 	
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
+		doWriteExternal(out, 0, flags, factory);
+	}
+	protected final void doWriteExternal(final ObjectOutput out, int options, final int flags, final RObjectFactory factory) throws IOException {
 		//-- options
-		int options = 0;
 		final boolean customClass = !((getRObjectType() == TYPE_DATAFRAME) ?
 				this.className1.equals(RObject.CLASSNAME_DATAFRAME) : this.className1.equals(RObject.CLASSNAME_LIST));
 		if (customClass) {
@@ -102,7 +100,7 @@ public class RListImpl extends AbstractRObject
 		}
 		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
-			options |= RObjectFactory.F_WITH_ATTR;
+			options |= RObjectFactory.O_WITH_ATTR;
 		}
 		if (this.components == null) {
 			options |= RObjectFactory.O_NO_CHILDREN;
@@ -112,11 +110,10 @@ public class RListImpl extends AbstractRObject
 		if (customClass) {
 			out.writeUTF(this.className1);
 		}
-		
 		out.writeInt(this.length);
 		
 		if (this.components != null) {
-			this.namesAttribute.writeExternal(out);
+			factory.writeNames(this.namesAttribute, out, flags);
 			//-- data
 			for (int i = 0; i < this.length; i++) {
 				factory.writeObject(this.components[i], out, flags);
@@ -147,7 +144,10 @@ public class RListImpl extends AbstractRObject
 	}
 	
 	public final String getName(final int idx) {
-		return this.namesAttribute.getChar(idx);
+		if (this.namesAttribute != null) {
+			return this.namesAttribute.getChar(idx);
+		}
+		return null;
 	}
 	
 	public final RObject get(final int idx) {
@@ -155,9 +155,11 @@ public class RListImpl extends AbstractRObject
 	}
 	
 	public final RObject get(final String name) {
-		final int idx = this.namesAttribute.indexOf(name);
-		if (idx >= 0) {
-			return this.components[idx];
+		if (this.namesAttribute != null) {
+			final int idx = this.namesAttribute.indexOf(name);
+			if (idx >= 0) {
+				return this.components[idx];
+			}
 		}
 		return null;
 	}
@@ -225,7 +227,7 @@ public class RListImpl extends AbstractRObject
 		if (this.components != null) {
 			sb.append("\n\tdata: ");
 			for (int i = 0; i < this.length; i++) {
-				if (this.namesAttribute.isNA(i)) {
+				if (this.namesAttribute == null || this.namesAttribute.isNA(i)) {
 					sb.append("\n[[").append(i).append("]]\n");
 				}
 				else {

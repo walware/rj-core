@@ -48,12 +48,17 @@ public interface RVector<DataType extends RStore> extends RObject {
 	int getLength();
 	
 	/**
-	 * Returns the names for the indexes. This corresponds to the R names attribute (<code>names</code>) respectively the 
-	 * R function <code>names(object)</code>.
+	 * Returns the names for the indexes of the vector. This corresponds to the values of the
+	 * R attribute (<code>names</code>) respectively the R function <code>names(object)</code>.
 	 * 
-	 * @return a R list with the names or <code>null</code>
+	 * The returned character data has the same length the vector. If the R element does not have 
+	 * names, the names are invalid, or names are disabled, the method returns <code>null</code>.
+	 * 
+	 * @return a data store with the names of the indexes or <code>null</code>
+	 * @since 0.5
 	 */
-	RCharacterStore getNames();
+	RStore getNames();
+	
 	
 	DataType getData();
 	

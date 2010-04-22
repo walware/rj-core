@@ -111,4 +111,17 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 		}
 	}
 	
+	@Override
+	public RStore readNames(final ObjectInput in, final int flags)
+			throws IOException, ClassNotFoundException {
+		final byte type = in.readByte();
+		if (type == RStore.CHARACTER) {
+			return new JRICharacterDataImpl(in);
+		}
+		if (type == 0) {
+			return null;
+		}
+		throw new IOException();
+	}
+	
 }

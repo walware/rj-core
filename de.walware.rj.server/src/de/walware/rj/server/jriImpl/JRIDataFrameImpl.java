@@ -16,7 +16,6 @@ import java.io.ObjectInput;
 
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
-import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RDataFrameImpl;
 
 
@@ -31,15 +30,5 @@ public class JRIDataFrameImpl extends RDataFrameImpl {
 		super(in, flags, factory);
 	}
 	
-	
-	@Override
-	protected RCharacterDataImpl readNames(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		return new JRICharacterDataImpl(in);
-	}
-	
-	
-	public String[] getJRINamesArray() {
-		return ((JRICharacterDataImpl) this.namesAttribute).getJRIValueArray();
-	}
 	
 }

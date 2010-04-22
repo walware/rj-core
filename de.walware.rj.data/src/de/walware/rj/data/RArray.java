@@ -53,14 +53,35 @@ public interface RArray<DataType extends RStore> extends RObject {
 	 */
 	RIntegerStore getDim();
 	
-//	/**
-//	 * Returns the names for the dimensions and its indexes. This corresponds to 
-//	 * the R dimension names attribute (<code>dimnames</code>) respectively the 
-//	 * R function <code>dimnames(object)</code>.
-//	 * 
-//	 * @return a R list with the dimension names or <code>null</code>
-//	 */
-//	SimpleRList<RCharacterStore> getDimNames();
+	/**
+	 * Returns the names for the dimensions of the array. This corresponds to 
+	 * the names of the R attribute <code>dimnames</code> respectively of the R function 
+	 * <code>dimnames(object)</code>. That means it is equivalent to the R command
+	 * <code>names(dimnames(object))</code>. The names for the indexes in each dimension,
+	 * the values of the R attribute <code>dimnames</code>, are accessible by {@link #getNames(int)}.
+	 * 
+	 * The returned character data has the same length as the dimension data {@link #getDim()}. 
+	 * If the R element does not have names, the names are invalid, or names are disabled, the 
+	 * method returns <code>null</code>.
+	 * 
+	 * @return a charater data store with the names of the dimensions or <code>null</code>
+	 * @since 0.5
+	 */
+	RCharacterStore getDimNames();
+	
+	/**
+	 * Returns the names for the indexes in the given dimension of the array. This corresponds to 
+	 * the values of the R attribute <code>dimnames</code> respectively of the R function 
+	 * <code>dimnames(object)</code>. The names for the dimensions itself are accessible by
+	 * {@link #getDimNames()}.
+	 * 
+	 * @param dim the dimension index
+	 * @return a data store with the names of the indexes in the given dimensions or <code>null</code>
+	 * @throws IndexOutOfBoundsException if dim &lt; 0 or dim &ge; getDim().getLength()
+	 * @since 0.5
+	 */
+	RStore getNames(int dim);
+	
 	
 	DataType getData();
 	

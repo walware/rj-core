@@ -19,7 +19,7 @@ import java.io.ObjectOutput;
 public interface RObjectFactory {
 	
 	/** Flag to fetch only the structure but not the data (store) of the objects */
-	public static final int F_ONLY_STRUCT = 0x1;
+	int F_ONLY_STRUCT = 0x1;
 	
 	/** XXX: Not yet implemented */
 	int F_WITH_ATTR = 0x2;
@@ -30,6 +30,8 @@ public interface RObjectFactory {
 	int O_CLASS_NAME = 0x4;
 	
 	int O_NO_CHILDREN = 0x8;
+	
+	int O_WITH_NAMES = 0x10;
 	
 	
 //	RArgument createArgument(String name, String defaultSource);
@@ -58,5 +60,8 @@ public interface RObjectFactory {
 	
 	void writeAttributeList(RList list, ObjectOutput out, int flags) throws IOException;
 	RList readAttributeList(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
+	
+	void writeNames(RStore names, ObjectOutput out, int flags) throws IOException;
+	RStore readNames(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
 	
 }

@@ -157,4 +157,17 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		return array;
 	}
 	
+	
+	public void appendTo(final StringBuilder sb) {
+		sb.append('[');
+		if (this.length > 0) {
+			for (int i = 0; i < this.length; i++) {
+				sb.append(this.intValues[i]);
+				sb.append(", ");
+			}
+			sb.delete(sb.length()-2, sb.length());
+		}
+		sb.append(']');
+	}
+	
 }

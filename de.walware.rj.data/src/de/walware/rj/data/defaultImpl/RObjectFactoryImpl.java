@@ -321,15 +321,20 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	/*-- DataFrame --*/
 	
 	public RDataFrame createDataFrame(final RStore[] colDatas, final String[] colNames) {
+		return createDataFrame(colDatas, colNames, null);
+	}
+	
+	public RDataFrame createDataFrame(final RStore[] colDatas, final String[] colNames, final String[] rowNames) {
 		final RObject[] colVectors = new RObject[colDatas.length];
 		for (int i = 0; i < colVectors.length; i++) {
 			colVectors[i] = createVector(colDatas[i]);
 		}
-		return createDataFrame(colVectors, colNames);
+		return createDataFrame(colVectors, colNames, rowNames);
 	}
 	
-	public RDataFrame createDataFrame(final RObject[] colVectors, final String[] colNames) {
-		return new RDataFrameImpl(colVectors, RObject.CLASSNAME_DATAFRAME, colNames, null);
+	public RDataFrame createDataFrame(final RObject[] colVectors,
+			final String[] colNames, final String[] rowNames) {
+		return new RDataFrameImpl(colVectors, RObject.CLASSNAME_DATAFRAME, colNames, rowNames);
 	}
 	
 	
@@ -538,13 +543,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	public void writeStore(final RStore data, final ObjectOutput out, final int flags) throws IOException {
 		if ((flags & F_ONLY_STRUCT) == 0) {
 			out.writeByte(data.getStoreType());
-			if (data instanceof Externalizable) {
-				((Externalizable) data).writeExternal(out);
-				return;
-			}
-			else {
-				throw new IOException();
-			}
+			((Externalizable) data).writeExternal(out);
 		}
 		else {
 			final byte storeType = data.getStoreType();
@@ -562,11 +561,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	public void writeAttributeList(final RList list, final ObjectOutput out, final int flags) throws IOException {
-		if (list instanceof ExternalizableRObject) {
-			((ExternalizableRObject) list).writeExternal(out, flags, this);
-			return;
-		}
-		throw new UnsupportedOperationException();
+		((ExternalizableRObject) list).writeExternal(out, flags, this);
 	}
 	
 	protected final int[] readDim(final ObjectInput in) throws IOException {
@@ -584,6 +579,31 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		for (int i = 0; i < length; i++) {
 			out.writeInt(dim[i]);
 		}
+	}
+	
+	public RStore readNames(final ObjectInput in, final int flags)
+			throws IOException, ClassNotFoundException {
+		final byte type = in.readByte();
+		if (type == RStore.CHARACTER) {
+			return new RCharacterDataImpl(in);
+		}
+		if (type == 0) {
+			return null;
+		}
+		throw new IOException();
+	}
+	
+	public void writeNames(final RStore names, final ObjectOutput out, final int flags)
+			throws IOException {
+		if (names != null) {
+			final byte type = names.getStoreType();
+			if (type == RStore.CHARACTER) {
+				out.writeByte(type);
+				((Externalizable) names).writeExternal(out);
+				return;
+			}
+		}
+		out.writeByte(0);
 	}
 	
 }

@@ -26,7 +26,7 @@ public class RDataFrameImpl extends RListImpl
 		implements RDataFrame, ExternalizableRObject {
 	
 	
-	private AbstractRData rownamesAttribute;
+	private RStore rownamesAttribute;
 	private int rowCount;
 	
 	
@@ -60,16 +60,25 @@ public class RDataFrameImpl extends RListImpl
 	}
 	
 	@Override
-	public int doReadExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
 		final int options = super.doReadExternal(in, flags, factory);
 		this.rowCount = in.readInt();
-		return options;
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			this.rownamesAttribute = factory.readNames(in, flags);
+		}
 	}
 	
 	@Override
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		super.writeExternal(out, flags, factory);
+		int options = 0;
+		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.rownamesAttribute != null) {
+			options |= RObjectFactory.O_WITH_NAMES;
+		}
+		super.doWriteExternal(out, options, flags, factory);
 		out.writeInt(this.rowCount);
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			factory.writeNames(this.rownamesAttribute, out, flags);
+		}
 	}
 	
 	
@@ -92,7 +101,13 @@ public class RDataFrameImpl extends RListImpl
 	}
 	
 	public RStore getColumn(final int idx) {
-		return get(idx).getData();
+		final RObject obj = get(idx);
+		return (obj != null) ? obj.getData() : null;
+	}
+	
+	public RStore getColumn(final String name) {
+		final RObject obj = get(name);
+		return (obj != null) ? obj.getData() : null;
 	}
 	
 //	public void setColumn(final int idx, final RStore column) {
@@ -144,6 +159,7 @@ public class RDataFrameImpl extends RListImpl
 //		this.namesAttribute.insertChar(idx, name);
 //	}
 //
+	
 	
 	public int getRowCount() {
 		return this.rowCount;

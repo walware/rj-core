@@ -12,10 +12,9 @@
 package de.walware.rj.data.defaultImpl;
 
 import de.walware.rj.data.RCharacterStore;
-import de.walware.rj.data.SimpleRList;
 
 
-public class SimpleRListImpl<T> implements SimpleRList<T> {
+public class SimpleRListImpl<T> {
 	
 	
 	private final RCharacterStore names;

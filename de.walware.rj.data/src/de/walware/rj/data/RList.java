@@ -30,7 +30,7 @@ package de.walware.rj.data;
  * <p>
  * Indexes are zero-based (as usual in Java) and not one-base like in R.</p>
  */
-public interface RList extends RObject, SimpleRList<RObject> {
+public interface RList extends RObject {
 	
 	/**
 	 * Returns the length of the object. The length of a {@link RObject#TYPE_LIST list}
@@ -48,29 +48,31 @@ public interface RList extends RObject, SimpleRList<RObject> {
 	RCharacterStore getNames();
 	
 	/**
-	 * Returns the name of the item at the given index (zero-based).
+	 * Returns the name of the item at the specified index.
 	 * <p>
 	 * This is equivalent to <code>getNames().getChar(idx)</code>.</p>
 	 * 
-	 * @param idx the index of the item
+	 * @param idx the index (zero-based) of the item
 	 * @return the slot names
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; length
 	 */
 	String getName(int idx);
 	
 	/**
-	 * Returns the item at the given index (zero-based).
+	 * Returns the item at the specified index.
 	 * 
-	 * @param idx the index of the item
+	 * @param idx the index (zero-based) of the item
 	 * @return the item
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; length
 	 */
 	RObject get(int idx);
 	
 	/**
-	 * Returns the item with the given name. If multiple items has that name,
+	 * Returns the item with the specified name. If multiple items have that name,
 	 * the first item with the given name is picked.
 	 * 
 	 * @param name the name of the item
-	 * @return the item
+	 * @return the item or <code>null</code> (if no item with the specified name exists)
 	 */
 	RObject get(String name);
 	

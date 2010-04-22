@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
@@ -30,7 +29,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	private int length;
 	
 	private String className1;
-	private RCharacterDataImpl namesAttribute;
+	private RStore namesAttribute;
 	
 	
 	public RVectorImpl(final DataType data, final String className1) {
@@ -49,7 +48,8 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (data == null || className1 == null) {
 			throw new NullPointerException();
 		}
-		if (initialNames != null && data.getLength() >= 0 && initialNames.length != data.getLength()) {
+		if ((initialNames != null && initialNames.length != length)
+				|| (data.getLength() >= 0 && data.getLength() != length) ) {
 			throw new IllegalArgumentException();
 		}
 		this.data = data;
@@ -72,10 +72,12 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			this.className1 = in.readUTF();
 		}
-		//-- data
 		this.length = in.readInt();
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			this.namesAttribute = factory.readNames(in, flags);
+		}
+		//-- data
 		this.data = (DataType) factory.readStore(in, flags);
-		
 		if (!customClass) {
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
@@ -92,6 +94,9 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
+		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.namesAttribute != null) {
+			options |= RObjectFactory.O_WITH_NAMES;
+		}
 		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
@@ -102,10 +107,13 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 			out.writeUTF(this.className1);
 		}
 		out.writeInt(this.length);
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			factory.writeNames(this.namesAttribute, out, flags);
+		}
 		//-- data
 		factory.writeStore(this.data, out, flags);
 		// attributes
-		if (attributes != null) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			factory.writeAttributeList(attributes, out, flags);
 		}
 	}
@@ -123,16 +131,18 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		return this.length;
 	}
 	
-	public RCharacterStore getNames() {
+	public RStore getNames() {
 		return this.namesAttribute;
 	}
 	
-	public void setData(final DataType data) {
-		this.data = data;
-	}
 	
 	public DataType getData() {
 		return this.data;
+	}
+	
+	
+	public void setData(final DataType data) {
+		this.data = data;
 	}
 	
 	public void insert(final int idx) {

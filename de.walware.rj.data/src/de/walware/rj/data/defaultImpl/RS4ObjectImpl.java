@@ -27,7 +27,7 @@ public class RS4ObjectImpl extends AbstractRObject
 	
 	
 	private String className;
-	private int hasDataSlot;
+	private int dataSlotIdx;
 	private RCharacterDataImpl slotNames;
 	private RObject[] slotValues;
 	
@@ -39,7 +39,7 @@ public class RS4ObjectImpl extends AbstractRObject
 		this.className = className;
 		this.slotNames = new RCharacterDataImpl(slotNames);
 		
-		this.hasDataSlot = this.slotNames.indexOf(".Data");
+		this.dataSlotIdx = this.slotNames.indexOf(".Data");
 		this.slotValues = slotValues;
 	}
 	
@@ -49,7 +49,7 @@ public class RS4ObjectImpl extends AbstractRObject
 	
 	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
 		this.className = in.readUTF();
-		this.hasDataSlot = in.readInt();
+		this.dataSlotIdx = in.readInt();
 		this.slotNames = new RCharacterDataImpl(in);
 		final int length = this.slotNames.getLength();
 		this.slotValues = new RObject[length];
@@ -61,7 +61,7 @@ public class RS4ObjectImpl extends AbstractRObject
 	
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
 		out.writeUTF(this.className);
-		out.writeInt(this.hasDataSlot);
+		out.writeInt(this.dataSlotIdx);
 		this.slotNames.writeExternal(out);
 		final int length = this.slotNames.getLength();
 		for (int i = 0; i < length; i++) {
@@ -83,22 +83,21 @@ public class RS4ObjectImpl extends AbstractRObject
 	}
 	
 	public boolean hasDataSlot() {
-		return (this.hasDataSlot >= 0);
+		return (this.dataSlotIdx >= 0);
 	}
 	
 	public RObject getDataSlot() {
-		return (this.hasDataSlot >= 0) ? this.slotValues[this.hasDataSlot] : null;
+		return (this.dataSlotIdx >= 0) ? this.slotValues[this.dataSlotIdx] : null;
 	}
 	
 	public byte getDataType() {
-		return (this.hasDataSlot >= 0 && this.slotValues[this.hasDataSlot] != null) ?
-				this.slotValues[this.hasDataSlot].getData().getStoreType() : 0;
+		return (this.dataSlotIdx >= 0 && this.slotValues[this.dataSlotIdx] != null) ?
+				this.slotValues[this.dataSlotIdx].getData().getStoreType() : 0;
 	}
 	
 	public RStore getData() {
-		return (this.hasDataSlot >= 0 && this.slotValues[this.hasDataSlot] != null) ?
-				this.slotValues[this.hasDataSlot].getData() :
-				null;
+		return (this.dataSlotIdx >= 0 && this.slotValues[this.dataSlotIdx] != null) ?
+				this.slotValues[this.dataSlotIdx].getData() : null;
 	}
 	
 	public RCharacterStore getNames() {
@@ -114,14 +113,9 @@ public class RS4ObjectImpl extends AbstractRObject
 	}
 	
 	public RObject get(final String name) {
-		if (this.hasDataSlot >= 0 && name.equals(".Data")) {
-			return this.slotValues[this.hasDataSlot];
-		}
-		else {
-			final int i = this.slotNames.indexOf(name);
-			if (i >= 0) {
-				return this.slotValues[i];
-			}
+		final int idx = this.slotNames.indexOf(name);
+		if (idx >= 0) {
+			return this.slotValues[idx];
 		}
 		throw new IllegalArgumentException();
 	}
@@ -151,8 +145,8 @@ public class RS4ObjectImpl extends AbstractRObject
 	}
 	
 	public boolean set(final String name, final RObject component) {
-		if (this.hasDataSlot >= 0 && name.equals(".Data")) {
-			this.slotValues[this.hasDataSlot] = component;
+		if (this.dataSlotIdx >= 0 && name.equals(".Data")) {
+			this.slotValues[this.dataSlotIdx] = component;
 			return true;
 		}
 		else {

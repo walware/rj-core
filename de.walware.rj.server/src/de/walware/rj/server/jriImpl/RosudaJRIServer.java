@@ -55,6 +55,7 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
 import de.walware.rj.data.RStore;
+import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RComplexDataBImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
@@ -65,6 +66,7 @@ import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 import de.walware.rj.data.defaultImpl.ROtherImpl;
 import de.walware.rj.data.defaultImpl.RReferenceImpl;
 import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
+import de.walware.rj.data.defaultImpl.SimpleRListImpl;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
@@ -1372,140 +1374,47 @@ public class RosudaJRIServer extends RJ
 	 * @return long R pointer
 	 */ 
 	private long rniAssignDataObject(final RObject obj) {
-		final RStore data;
+		RStore names;
 		final long objP;
-		CREATE_P: switch(obj.getRObjectType()) {
+		switch(obj.getRObjectType()) {
 		case RObject.TYPE_NULL:
+		case RObject.TYPE_MISSING:
 			return this.rniP_NULL;
-		case RObject.TYPE_REFERENCE:
-			return ((RReference) obj).getHandle();
 		case RObject.TYPE_VECTOR:
-			data = obj.getData();
-			switch (data.getStoreType()) {
-			case RStore.LOGICAL:
-				objP = this.rEngine.rniPutBoolArrayI(
-						((JRILogicalDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				break CREATE_P;
-			case RStore.INTEGER:
-				objP = this.rEngine.rniPutIntArray(
-						((JRIIntegerDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				break CREATE_P;
-			case RStore.NUMERIC:
-				objP = this.rEngine.rniPutDoubleArray(
-						((JRINumericDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				break CREATE_P;
-//			case RStore.COMPLEX
-			case RStore.CHARACTER:
-				objP = this.rEngine.rniPutStringArray(
-						((JRICharacterDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				break CREATE_P;
-			case RStore.RAW:
-				objP = this.rEngine.rniPutRawArray(
-						((JRIRawDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				break CREATE_P;
-			case RStore.FACTOR: {
-				final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
-				objP = this.rEngine.rniPutIntArray(factor.getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "levels",
-						this.rEngine.rniPutStringArray(factor.getJRILevelsArray()));
-				this.rEngine.rniSetAttr(objP, "class",
-						factor.isOrdered() ? this.rniP_orderedClassString : this.rniP_factorClassString);
-				break CREATE_P; }
-			default:
-				throw new UnsupportedOperationException();
-			}
+			objP = rniAssignDataStore(obj.getData());
+			return objP;
 		case RObject.TYPE_ARRAY:
-			data = obj.getData();
-			switch (data.getStoreType()) {
-			case RStore.LOGICAL:
-				objP = this.rEngine.rniPutBoolArrayI(
-						((JRILogicalDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P;
-			case RStore.INTEGER:
-				objP = this.rEngine.rniPutIntArray(
-						((JRIIntegerDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P;
-			case RStore.NUMERIC:
-				objP = this.rEngine.rniPutDoubleArray(
-						((JRINumericDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P;
-//			case RStore.COMPLEX
-			case RStore.CHARACTER:
-				objP = this.rEngine.rniPutStringArray(
-						((JRICharacterDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P;
-			case RStore.RAW:
-				objP = this.rEngine.rniPutRawArray(
-						((JRIRawDataImpl) data).getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P;
-			case RStore.FACTOR: {
-				final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
-				objP = this.rEngine.rniPutIntArray(factor.getJRIValueArray());
-				this.rEngine.rniProtect(objP);
-				this.rniProtectedCounter++;
-				this.rEngine.rniSetAttr(objP, "levels",
-						this.rEngine.rniPutStringArray(factor.getJRILevelsArray()));
-				this.rEngine.rniSetAttr(objP, "class",
-						factor.isOrdered() ? this.rniP_orderedClassString : this.rniP_factorClassString);
-				this.rEngine.rniSetAttr(objP, "dim",
-						this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-				break CREATE_P; }
-			default:
-				throw new UnsupportedOperationException();
-			}
+			objP = rniAssignDataStore(obj.getData());
+			this.rEngine.rniSetAttr(objP, "dim",
+					this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
+			return objP;
 		case RObject.TYPE_DATAFRAME: {
 			final JRIDataFrameImpl list = (JRIDataFrameImpl) obj;
 			final int length = list.getLength();
 			final long[] itemPs = new long[length];
 			for (int i = 0; i < length; i++) {
-				itemPs[i] = rniAssignDataObject(list.get(i));
+				itemPs[i] = rniAssignDataStore(list.getColumn(i));
 			}
 			objP = this.rEngine.rniPutVector(itemPs);
 			this.rEngine.rniProtect(objP);
 			this.rniProtectedCounter++;
-			this.rEngine.rniSetAttr(objP, "names",
-					this.rEngine.rniPutStringArray(list.getJRINamesArray()));
-			final int[] rownames = new int[list.getRowCount()];
-			for (int i = 0; i < rownames.length; ) {
-				rownames[i] = ++i;
+			names = list.getNames();
+			if (names != null) {
+				this.rEngine.rniSetAttr(objP, "names", rniAssignDataStore(names));
 			}
-			this.rEngine.rniSetAttr(objP, "row.names",
-					this.rEngine.rniPutIntArray(rownames));
-			this.rEngine.rniSetAttr(objP, "class",
-					this.rniP_dataframeClassString);
-			break CREATE_P; }
+			names = list.getRowNames();
+			if (names != null) {
+				this.rEngine.rniSetAttr(objP, "row.names", rniAssignDataStore(names));
+			}
+			else {
+				final int[] rownames = new int[list.getRowCount()];
+				for (int i = 0; i < rownames.length; ) {
+					rownames[i] = ++i;
+				}
+				this.rEngine.rniSetAttr(objP, "row.names", this.rEngine.rniPutIntArray(rownames));
+			}
+			this.rEngine.rniSetAttr(objP, "class", this.rniP_dataframeClassString);
+			return objP; }
 		case RObject.TYPE_LIST: {
 			final JRIListImpl list = (JRIListImpl) obj;
 			final int length = list.getLength();
@@ -1516,15 +1425,65 @@ public class RosudaJRIServer extends RJ
 			objP = this.rEngine.rniPutVector(itemPs);
 			this.rEngine.rniProtect(objP);
 			this.rniProtectedCounter++;
-			this.rEngine.rniSetAttr(objP, "names",
-					this.rEngine.rniPutStringArray(list.getJRINamesArray()));
-			break CREATE_P; }
-		
+			names = list.getNames();
+			if (names != null) {
+				this.rEngine.rniSetAttr(objP, "names", rniAssignDataStore(names));
+			}
+			return objP; }
+		case RObject.TYPE_REFERENCE:
+			return ((RReference) obj).getHandle();
 		default:
-			throw new UnsupportedOperationException("assign of type " + obj.getRObjectType() + " is not yet supported.");
+			throw new UnsupportedOperationException("Assignment for R objects of type " + obj.getRObjectType() + " is not yet supported.");
 		}
-		
-		return objP;
+	}
+	
+	private long rniAssignDataStore(final RStore data) {
+		long objP;
+		switch (data.getStoreType()) {
+		case RStore.LOGICAL:
+			objP = this.rEngine.rniPutBoolArrayI(
+					((JRILogicalDataImpl) data).getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP;
+		case RStore.INTEGER:
+			objP = this.rEngine.rniPutIntArray(
+					((JRIIntegerDataImpl) data).getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP;
+		case RStore.NUMERIC:
+			objP = this.rEngine.rniPutDoubleArray(
+					((JRINumericDataImpl) data).getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP;
+//		case RStore.COMPLEX
+		case RStore.CHARACTER:
+			objP = this.rEngine.rniPutStringArray(
+					((JRICharacterDataImpl) data).getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP;
+		case RStore.RAW:
+			objP = this.rEngine.rniPutRawArray(
+					((JRIRawDataImpl) data).getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP;
+		case RStore.FACTOR: {
+			final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
+			objP = this.rEngine.rniPutIntArray(factor.getJRIValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			this.rEngine.rniSetAttr(objP, "levels",
+					this.rEngine.rniPutStringArray(factor.getJRILevelsArray()));
+			this.rEngine.rniSetAttr(objP, "class",
+					factor.isOrdered() ? this.rniP_orderedClassString : this.rniP_factorClassString);
+			return objP; }
+		default:
+			throw new UnsupportedOperationException();
+		}
 	}
 	
 	/**
@@ -1573,7 +1532,7 @@ public class RosudaJRIServer extends RJ
 									className1, dim) :
 							new JRIArrayImpl<RLogicalStore>(
 									new JRILogicalDataImpl(this.rEngine.rniGetBoolArrayI(objP)),
-									className1, dim);
+									className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1632,7 +1591,7 @@ public class RosudaJRIServer extends RJ
 									className1, dim) :
 							new JRIArrayImpl<RIntegerStore>(
 									new JRIIntegerDataImpl(this.rEngine.rniGetIntArray(objP)),
-									className1, dim);
+									className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1670,7 +1629,7 @@ public class RosudaJRIServer extends RJ
 									className1, dim) :
 							new JRIArrayImpl<RNumericStore>(
 									new JRINumericDataImpl(this.rEngine.rniGetDoubleArray(objP)),
-									className1, dim);
+									className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1708,7 +1667,7 @@ public class RosudaJRIServer extends RJ
 								className1, dim) :
 						new JRIArrayImpl<RComplexStore>(
 								RComplexDataBImpl.createFromJRI(rniGetComplexRe(objP), rniGetComplexIm(objP)),
-								className1, dim);
+								className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1746,7 +1705,7 @@ public class RosudaJRIServer extends RJ
 									className1, dim) :
 							new JRIArrayImpl<RCharacterStore>(
 									new JRICharacterDataImpl(this.rEngine.rniGetStringArray(objP)),
-									className1, dim);
+									className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1784,7 +1743,7 @@ public class RosudaJRIServer extends RJ
 									className1, dim) :
 							new JRIArrayImpl<RRawStore>(
 									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
-									className1, dim);
+									className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
@@ -1812,31 +1771,41 @@ public class RosudaJRIServer extends RJ
 				}
 				
 				final long[] itemP = this.rEngine.rniGetVector(objP);
-				if (className1 != null &&
+				final RObject[] itemObjects = new RObject[itemP.length];
+				DATA_FRAME: if (itemNames != null && className1 != null &&
 						(className1.equals("data.frame") || this.rEngine.rniInherits(objP, "data.frame")) ) {
-					final String[] rowNames = ((flags & F_ONLY_STRUCT) != 0) ? null : rniGetRowNames(objP);
-					final RObject[] itemObjects = new RObject[itemP.length];
+					int length = -1;
 					for (int i = 0; i < itemP.length; i++) {
 						if (this.rniInterrupted) {
 							throw new CancellationException();
 						}
 						itemObjects[i] = rniCreateDataObject(itemP[i], flags, EVAL_MODE_FORCE);
+						if (itemObjects[i] == null || itemObjects[i].getRObjectType() != RObject.TYPE_VECTOR) {
+							break DATA_FRAME;
+						}
+						else if (length == -1) {
+							length = itemObjects[i].getLength();
+						}
+						else if (length != itemObjects[i].getLength()){
+							break DATA_FRAME;
+						}
+					}
+					final String[] rowNames = ((flags & F_ONLY_STRUCT) != 0) ? null : rniGetRowNames(objP);
+					if (rowNames != null && length != -1 && rowNames.length != length) {
+						break DATA_FRAME;
 					}
 					return new JRIDataFrameImpl(itemObjects, className1, itemNames, rowNames);
 				}
-				else {
-					if ((flags & F_ONLY_STRUCT) != 0 && itemP.length > this.rniListsMaxLength) {
-						return new JRIListImpl(itemP.length, className1, itemNames);
-					}
-					final RObject[] itemObjects = new RObject[itemP.length];
-					for (int i = 0; i < itemP.length; i++) {
-						if (this.rniInterrupted) {
-							throw new CancellationException();
-						}
-						itemObjects[i] = rniCreateDataObject(itemP[i], flags, EVAL_MODE_DEFAULT);
-					}
-					return new JRIListImpl(itemObjects, className1, itemNames);
+				if ((flags & F_ONLY_STRUCT) != 0 && itemP.length > this.rniListsMaxLength) {
+					return new JRIListImpl(itemP.length, className1, itemNames);
 				}
+				for (int i = 0; i < itemP.length; i++) {
+					if (this.rniInterrupted) {
+						throw new CancellationException();
+					}
+					itemObjects[i] = rniCreateDataObject(itemP[i], flags, EVAL_MODE_DEFAULT);
+				}
+				return new JRIListImpl(itemObjects, className1, itemNames);
 			}
 			case REXP.LISTSXP:   // pairlist
 			/*case REXP.LANGSXP: */{
@@ -2056,6 +2025,27 @@ public class RosudaJRIServer extends RJ
 		final long namesP = this.rEngine.rniGetAttr(objP, "names");
 		if (namesP != 0L) {
 			return this.rEngine.rniGetStringArray(namesP);
+		}
+		return null;
+	}
+	
+	private SimpleRListImpl<RStore> rniGetDimNames(final long objP, final int length) {
+		final long namesP = this.rEngine.rniGetAttr(objP, "dimnames");
+		if (namesP != 0L) {
+			final long[] names1P = this.rEngine.rniGetVector(namesP);
+			if (names1P != null && names1P.length == length) {
+				String[] s = rniGetNames(namesP);
+				final RCharacterStore names0 = (s != null) ? new RCharacterDataImpl(s) :
+					new RCharacterDataImpl(names1P.length);
+				final RCharacterStore[] names1 = new RCharacterStore[names1P.length];
+				for (int i = 0; i < names1P.length; i++) {
+					s = this.rEngine.rniGetStringArray(names1P[i]);
+					if (s != null) {
+						names1[i] = new RCharacterDataImpl(s);
+					}
+				}
+				return new SimpleRListImpl<RStore>(names0, names1);
+			}
 		}
 		return null;
 	}

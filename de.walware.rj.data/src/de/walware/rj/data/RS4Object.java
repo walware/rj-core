@@ -43,8 +43,11 @@ public interface RS4Object extends RList {
 	/**
 	 * Returns the length of the object. The length of an {@link RObject#TYPE_S4OBJECT S4 object}
 	 * is the count of slots.
+	 * <p>
+	 * An equivalent command in R is for example <code>length(slotNames(obj))</code>, but
+	 * not <code>length(obj)</code>.</p>
 	 * 
-	 * @return the length
+	 * @return the slot count
 	 */
 	int getLength();
 	
@@ -85,6 +88,7 @@ public interface RS4Object extends RList {
 	 * 
 	 * @param idx the index of the slot
 	 * @return the slot names
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; slot count
 	 */
 	String getName(int idx);
 	
@@ -93,13 +97,14 @@ public interface RS4Object extends RList {
 	 * 
 	 * @param idx the index of the slot
 	 * @return the value object of the slot
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; slot count
 	 */
 	RObject get(int idx);
 	
 	/**
 	 * Returns the value of the slot with the given name.
 	 * 
-	 * @param the name of the slot
+	 * @param name the name of the slot
 	 * @return the value of the slot with the given name
 	 * @throws IllegalArgumentException if the S4 type doesn't have a slot with the given name
 	 */

@@ -11,11 +11,10 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Arrays;
-import java.util.List;
 
 import de.walware.rj.data.RArray;
 import de.walware.rj.data.RCharacterStore;
@@ -51,11 +50,11 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 	
 	private String className1;
 	private RIntegerDataImpl dimAttribute;
-	private List<RCharacterStore> dimnamesAttribute;
+	private SimpleRListImpl<RStore> dimnamesAttribute;
 	
 	
 	public RArrayImpl(final DataType data, final String className1, final int[] dim) {
-		if (className1 == null || data == null || dim == null) {
+		if (data == null || className1 == null || dim == null) {
 			throw new NullPointerException();
 		}
 		if (data.getLength() >= 0) {
@@ -84,7 +83,14 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 			dim[i] = in.readInt();
 		}
 		this.dimAttribute = new RIntegerDataImpl(dim);
-//		this.namesAttribute = new RCharacterDataImpl(in);
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			final RCharacterDataImpl names0 = new RCharacterDataImpl(in);
+			final RStore[] names1 = new RStore[dimCount];
+			for (int i = 0; i < dimCount; i++) {
+				names1[i] = factory.readNames(in, flags);
+			}
+			this.dimnamesAttribute = new SimpleRListImpl<RStore>(names0, names1);
+		}
 		//-- data
 		this.data = (DataType) factory.readStore(in, flags);
 		
@@ -100,10 +106,13 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = 0;
-		final boolean customClass = !this.className1.equals((this.dimAttribute.length == 2) ?
+		final boolean customClass = !this.className1.equals((this.dimAttribute.getLength() == 2) ?
 				RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
+		}
+		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.dimnamesAttribute != null) {
+			options |= RObjectFactory.O_WITH_NAMES;
 		}
 		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
@@ -114,16 +123,17 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			out.writeUTF(this.className1);
 		}
-		final int dimCount = this.dimAttribute.length;
-		out.writeInt(dimCount);
-		for (int i = 0; i < dimCount; i++) {
-			out.writeInt(this.dimAttribute.intValues[i]);
+		this.dimAttribute.writeExternal(out);
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
+			((Externalizable) this.dimnamesAttribute.getNames()).writeExternal(out);
+			for (int i = 0; i < this.dimnamesAttribute.getLength(); i++) {
+				factory.writeNames(this.dimnamesAttribute.get(i), out, flags);
+			}
 		}
-//		this.namesAttribute.writeExternal(out);
 		//-- data
 		factory.writeStore(this.data, out, flags);
 		//-- attributes
-		if (attributes != null) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			factory.writeAttributeList(attributes, out, flags);
 		}
 	}
@@ -146,8 +156,8 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 			return length;
 		}
 		length = 1;
-		for (int i = 0; i < this.dimAttribute.length; i++) {
-			length *= this.dimAttribute.intValues[i];
+		for (int i = 0; i < this.dimAttribute.getLength(); i++) {
+			length *= this.dimAttribute.getInt(i);
 		}
 		return length;
 	}
@@ -156,9 +166,20 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 		return this.dimAttribute;
 	}
 	
-//	public StoreList<RCharacterStore> getDimNames() {
-//		return this.dimnamesAttribute;
-//	}
+	public RCharacterStore getDimNames() {
+		if (this.dimnamesAttribute != null) {
+			return this.dimnamesAttribute.getNames();
+		}
+		return null;
+	}
+	
+	public RStore getNames(final int dim) {
+		if (this.dimnamesAttribute != null) {
+			return this.dimnamesAttribute.get(dim);
+		}
+		return null;
+	}
+	
 	
 	public DataType getData() {
 		return this.data;
@@ -238,7 +259,8 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 		final StringBuilder sb = new StringBuilder();
 		sb.append("RObject type=array, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(getLength());
-		sb.append("\n\tdim=").append(Arrays.toString(this.dimAttribute.intValues));
+		sb.append("\n\tdim=");
+		this.dimAttribute.appendTo(sb);
 		sb.append("\n\tdata: ");
 		sb.append(this.data.toString());
 		return sb.toString();

@@ -16,7 +16,6 @@ import java.io.ObjectInput;
 
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
-import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RListImpl;
 
 
@@ -34,14 +33,8 @@ public class JRIListImpl extends RListImpl {
 	}
 	
 	
-	@Override
-	protected RCharacterDataImpl readNames(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		return new JRICharacterDataImpl(in);
-	}
-	
-	
 	public String[] getJRINamesArray() {
-		return ((JRICharacterDataImpl) this.namesAttribute).getJRIValueArray();
+		return ((JRICharacterDataImpl) getNames()).getJRIValueArray();
 	}
 	
 }
