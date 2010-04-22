@@ -20,6 +20,9 @@ package de.walware.rj.data;
  */
 public interface RFactorStore extends RIntegerStore {
 	
+	// TODO Docu && Constructors (-> 1-based codes)
+	// TODO getFactorName(code) for 1-based code
+	
 	boolean isOrdered();
 	
 	RCharacterStore getLevels();

@@ -105,11 +105,13 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	
-	public double getR(final int idx) {
+	@Override
+	public double getCplxRe(final int idx) {
 		return this.realValues[idx];
 	}
 	
-	public double getI(final int idx) {
+	@Override
+	public double getCplxIm(final int idx) {
 		return this.imaginaryValues[idx];
 	}
 	
@@ -129,14 +131,26 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	@Override
-	public void setCplx(final int idx, final double realValue, final double imaginaryValue) {
-		if (Double.isNaN(realValue) || Double.isNaN(imaginaryValue)) {
+	public void setNum(final int idx, final double real) {
+		if (Double.isNaN(real)) {
 			this.realValues[idx] = NaN_numeric_DOUBLE;
 			this.imaginaryValues[idx] = NaN_numeric_DOUBLE;
 		}
 		else {
-			this.realValues[idx] = realValue;
-			this.imaginaryValues[idx] = imaginaryValue;
+			this.realValues[idx] = real;
+			this.imaginaryValues[idx] = 0.0;
+		}
+	}
+	
+	@Override
+	public void setCplx(final int idx, final double real, final double imaginary) {
+		if (Double.isNaN(real) || Double.isNaN(imaginary)) {
+			this.realValues[idx] = NaN_numeric_DOUBLE;
+			this.imaginaryValues[idx] = NaN_numeric_DOUBLE;
+		}
+		else {
+			this.realValues[idx] = real;
+			this.imaginaryValues[idx] = imaginary;
 		}
 	}
 	

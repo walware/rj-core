@@ -74,8 +74,13 @@ public class RFactorDataImpl extends AbstractFactorData
 	
 	
 	@Override
+	public int getInt(final int idx) {
+		return this.codes[idx];
+	}
+	
+	@Override
 	public String getChar(final int idx) {
-		return (this.codes[idx] >= 0) ? this.codeLabels.getChar(this.codes[idx]): null;
+		return (this.codes[idx] > 0) ? this.codeLabels.getChar(this.codes[idx] - 1): null;
 	}
 	
 	@Override
@@ -85,6 +90,14 @@ public class RFactorDataImpl extends AbstractFactorData
 	
 	public boolean isMissing(final int idx) {
 		return (this.codes[idx] == NA_integer_INT);
+	}
+	
+	@Override
+	public void setInt(final int idx, final int integer) {
+		if (integer <= 0 || integer > this.codeLabels.length) {
+			throw new IllegalArgumentException();
+		}
+		this.codes[idx] = integer;
 	}
 	
 	@Override
@@ -191,7 +204,7 @@ public class RFactorDataImpl extends AbstractFactorData
 	public RCharacterStore toCharacterData() {
 		final String[] data = new String[this.length];
 		for (int i = 0; i < this.length; i++) {
-			data[i] = (this.codes[i] >= 0) ? this.codeLabels.getChar(this.codes[i]) : null;
+			data[i] = (this.codes[i] > 0) ? this.codeLabels.getChar(this.codes[i] - 1) : null;
 		}
 		return new RCharacterDataImpl(data);
 	}

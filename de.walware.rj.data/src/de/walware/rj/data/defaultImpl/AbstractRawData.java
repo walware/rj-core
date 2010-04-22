@@ -20,6 +20,11 @@ public abstract class AbstractRawData extends AbstractRData
 		implements RRawStore {
 	
 	
+	private static final char[] HEX_CHARS = new char[] {
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+	
+	
 	public final byte getStoreType() {
 		return RStore.RAW;
 	}
@@ -30,18 +35,21 @@ public abstract class AbstractRawData extends AbstractRData
 	
 	
 	@Override
-	public final int getInt(final int idx) {
-		return getRaw(idx);
-	}
-	
-	@Override
-	public final void setInt(final int idx, final int integer) {
-		setRaw(idx, (byte) integer);
+	public int getInt(final int idx) {
+		return (getRaw(idx) & 0xff);
 	}
 	
 	@Override
 	public final String getChar(final int idx) {
-		return Integer.toHexString(getRaw(idx));
+		final byte b = getRaw(idx);
+		return new String(new char[] {
+				HEX_CHARS[(b & 0xf0) >> 4], HEX_CHARS[(b & 0xf)] });
+	}
+	
+	
+	@Override
+	public void setInt(final int idx, final int integer) {
+		setRaw(idx, ((integer & 0xffffff00) == 0) ? (byte) integer : NA_byte_BYTE);
 	}
 	
 	

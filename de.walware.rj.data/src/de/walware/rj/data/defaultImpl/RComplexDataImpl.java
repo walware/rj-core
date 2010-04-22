@@ -122,20 +122,32 @@ public class RComplexDataImpl extends AbstractComplexData
 	}
 	
 	@Override
-	public void setCplx(final int idx, final double realValue, final double imaginaryValue) {
-		if (Double.isNaN(realValue) || Double.isNaN(imaginaryValue)) {
-			if (Double.isNaN(this.realValues[idx])) {
-				this.naIdxs = deleteIdx(this.naIdxs, idx);
-			}
+	public void setNum(final int idx, final double real) {
+		if (Double.isNaN(this.realValues[idx])) {
+			this.naIdxs = deleteIdx(this.naIdxs, idx);
+		}
+		if (Double.isNaN(real)) {
 			this.realValues[idx] = Double.NaN;
 			this.imaginaryValues[idx] = Double.NaN;
 		}
 		else {
-			if (Double.isNaN(this.realValues[idx])) {
-				this.naIdxs = deleteIdx(this.naIdxs, idx);
-			}
-			this.realValues[idx] = realValue;
-			this.imaginaryValues[idx] = imaginaryValue;
+			this.realValues[idx] = real;
+			this.imaginaryValues[idx] = 0.0;
+		}
+	}
+	
+	@Override
+	public void setCplx(final int idx, final double real, final double imaginary) {
+		if (Double.isNaN(this.realValues[idx])) {
+			this.naIdxs = deleteIdx(this.naIdxs, idx);
+		}
+		if (Double.isNaN(real) || Double.isNaN(imaginary)) {
+			this.realValues[idx] = Double.NaN;
+			this.imaginaryValues[idx] = Double.NaN;
+		}
+		else {
+			this.realValues[idx] = real;
+			this.imaginaryValues[idx] = imaginary;
 		}
 	}
 	

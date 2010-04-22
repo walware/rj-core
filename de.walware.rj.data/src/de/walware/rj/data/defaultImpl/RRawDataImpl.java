@@ -69,12 +69,22 @@ public class RRawDataImpl extends AbstractRawData
 	}
 	
 	@Override
+	public final int getInt(final int idx) {
+		return (this.byteValues[idx] & 0xff);
+	}
+	
+	@Override
 	public boolean isNA(final int idx) {
 		return false;
 	}
 	
 	public boolean isMissing(final int idx) {
 		return false;
+	}
+	
+	@Override
+	public final void setInt(final int idx, final int integer) {
+		this.byteValues[idx] = ((integer & 0xffffff00) == 0) ? (byte) integer : NA_byte_BYTE;
 	}
 	
 	@Override

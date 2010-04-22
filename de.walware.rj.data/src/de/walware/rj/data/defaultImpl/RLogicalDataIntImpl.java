@@ -74,7 +74,16 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		this.length = in.readInt();
 		this.boolValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
-			this.boolValues[i] = in.readByte();
+			final byte b = in.readByte();
+			if (b == TRUE_BYTE) {
+				this.boolValues[i] = TRUE_INT;
+			}
+			else if (b == NA_logical_BYTE) {
+				this.boolValues[i] = NA_integer_INT;
+			}
+			else {
+				this.boolValues[i] = FALSE_INT;
+			}
 		}
 	}
 	
