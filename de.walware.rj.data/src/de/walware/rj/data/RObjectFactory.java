@@ -21,15 +21,15 @@ public interface RObjectFactory {
 	/** Flag to fetch only the structure but not the data (store) of the objects */
 	public static final int F_ONLY_STRUCT = 0x1;
 	
-	/** XXX: Not yet fully implemented */
-	public static final int O_WITH_ATTR = 0x2;
-	public static final int F_WITH_ATTR = 0x2;
+	/** XXX: Not yet implemented */
+	int F_WITH_ATTR = 0x2;
 	
-	public static final int O_CLASS_NAME = 0x4;
-	public static final int F_CLASS_NAME = 0x4;
 	
-	public static final int O_NOCHILDREN = 0x8;
-	public static final int F_NOCHILDREN = 0x8;
+	int O_WITH_ATTR = 0x2;
+	
+	int O_CLASS_NAME = 0x4;
+	
+	int O_NO_CHILDREN = 0x8;
 	
 	
 //	RArgument createArgument(String name, String defaultSource);

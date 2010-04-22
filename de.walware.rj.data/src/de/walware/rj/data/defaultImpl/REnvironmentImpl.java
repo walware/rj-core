@@ -27,12 +27,13 @@ public class REnvironmentImpl extends AbstractRObject
 		implements REnvironment, ExternalizableRObject {
 	
 	
-	private String className1;
-	
 	private String id;
 	private long handle;
+	
 	private RObject[] components;
 	private int length;
+	
+	private String className1;
 	private RCharacterDataImpl namesAttribute;
 	
 	
@@ -63,7 +64,7 @@ public class REnvironmentImpl extends AbstractRObject
 		this.id = in.readUTF();
 		this.length = in.readInt();
 		
-		if ((options & RObjectFactory.O_NOCHILDREN) != 0) {
+		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
@@ -92,7 +93,7 @@ public class REnvironmentImpl extends AbstractRObject
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
 		if (this.components == null) {
-			options |= RObjectFactory.F_NOCHILDREN;
+			options |= RObjectFactory.O_NO_CHILDREN;
 		}
 		out.writeInt(options);
 		//-- special attributes
@@ -136,6 +137,7 @@ public class REnvironmentImpl extends AbstractRObject
 		return this.id;
 	}
 	
+	
 	public int getLength() {
 		return this.length;
 	}
@@ -148,12 +150,18 @@ public class REnvironmentImpl extends AbstractRObject
 		return this.namesAttribute.getChar(idx);
 	}
 	
-	public RStore getData() {
-		return null;
-	}
-	
 	public RObject get(final int idx) {
 		return this.components[idx];
+	}
+	
+	public RObject[] toArray() {
+		final RObject[] array = new RObject[this.length];
+		System.arraycopy(this.components, 0, array, 0, this.length);
+		return array;
+	}
+	
+	public RStore getData() {
+		return null;
 	}
 	
 	public boolean set(final int idx, final RObject component) {
@@ -212,6 +220,7 @@ public class REnvironmentImpl extends AbstractRObject
 		return (this.namesAttribute.indexOf(name) >= 0);
 	}
 	
+	
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
@@ -228,10 +237,6 @@ public class REnvironmentImpl extends AbstractRObject
 			sb.append("\n<NODATA/>");
 		}
 		return sb.toString();
-	}
-	
-	public RObject[] toArray() {
-		throw new UnsupportedOperationException();
 	}
 	
 }

@@ -387,7 +387,7 @@ public abstract class AbstractRData implements RStore {
 		if (isStructOnly()) {
 			sb.append("<struct only>");
 		}
-		else {
+		else if (this.length > 0) {
 			int end = (this.length <= 25) ? this.length : 10;
 			if (getStoreType() == CHARACTER) {
 				for (int i = 0; true;) {

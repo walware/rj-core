@@ -31,9 +31,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	
 	public static final byte EVAL_VOID = 0x01;
 	public static final byte EVAL_DATA = 0x02;
-	public static final byte EVAL_STRUCT = 0x03;
 	public static final byte RESOLVE_DATA = 0x12;
-	public static final byte RESOLVE_STRUCT = 0x13;
 	public static final byte ASSIGN_DATA = 0x22;
 	
 	private static final int OV_USEFACTORY =        0x00100000;
@@ -85,7 +83,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		this.type = type;
 		this.text = text;
 		this.rdata = null;
-		this.options = (OV_WITHTEXT | options);
+		this.options = (OV_WITHTEXT | (options & OM_CUSTOM));
 		this.depth = depth;
 		this.factoryId = (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
 	}
@@ -153,8 +151,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 			out.writeUTF(this.text);
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
-			final int flags = ((this.type & 0xf) == 0x3) ? RObjectFactory.F_ONLY_STRUCT : 0;
-			gDefaultFactory.writeObject(this.rdata, out, flags);
+			gDefaultFactory.writeObject(this.rdata, out, (this.options & 0xff));
 		}
 	}
 	
@@ -171,12 +168,11 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 			this.text = in.readUTF();
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
-			final int flags = ((this.type & 0xf) == 0x3) ? RObjectFactory.F_ONLY_STRUCT : 0;
 			if ((this.options & OV_USEFACTORY) != 0) {
-				this.rdata = getFactory(this.factoryId).readObject(in, flags);
+				this.rdata = getFactory(this.factoryId).readObject(in, (this.options & 0xff));
 			}
 			else {
-				this.rdata = gDefaultFactory.readObject(in, flags);
+				this.rdata = gDefaultFactory.readObject(in, (this.options & 0xff));
 			}
 		}
 	}
@@ -193,10 +189,14 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		if (status == RjsStatus.OK_STATUS) {
 			this.options = (this.options & OM_CLEARFORANSWER);
 			this.status = null;
+			this.text = null;
+			this.rdata = null;
 		}
 		else {
 			this.options = ((this.options & OM_CLEARFORANSWER) | OM_STATUSANSWER);
 			this.status = status;
+			this.text = null;
+			this.rdata = null;
 		}
 	}
 	
@@ -204,6 +204,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		this.options = (rdata != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_DATAANSWER) : (this.options & OM_CLEARFORANSWER);
 		this.status = null;
+		this.text = null;
 		this.rdata = rdata;
 	}
 	
@@ -266,14 +267,8 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 		case EVAL_DATA:
 			sb.append("EVAL_DATA");
 			break;
-		case EVAL_STRUCT:
-			sb.append("EVAL_STRUCT");
-			break;
 		case RESOLVE_DATA:
 			sb.append("RESOLVE_DATA");
-			break;
-		case RESOLVE_STRUCT:
-			sb.append("RESOLVE_STRUCT");
 			break;
 		case ASSIGN_DATA:
 			sb.append("ASSIGN_DATA");

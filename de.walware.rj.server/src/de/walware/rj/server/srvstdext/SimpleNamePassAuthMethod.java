@@ -19,9 +19,9 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;

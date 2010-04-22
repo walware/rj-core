@@ -70,7 +70,7 @@ public class RListImpl extends AbstractRObject
 		
 		this.length = in.readInt();
 		
-		if ((options & RObjectFactory.O_NOCHILDREN) != 0) {
+		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
@@ -98,14 +98,14 @@ public class RListImpl extends AbstractRObject
 		final boolean customClass = !((getRObjectType() == TYPE_DATAFRAME) ?
 				this.className1.equals(RObject.CLASSNAME_DATAFRAME) : this.className1.equals(RObject.CLASSNAME_LIST));
 		if (customClass) {
-			options |= RObjectFactory.F_CLASS_NAME;
+			options |= RObjectFactory.O_CLASS_NAME;
 		}
 		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.F_WITH_ATTR;
 		}
 		if (this.components == null) {
-			options |= RObjectFactory.F_NOCHILDREN;
+			options |= RObjectFactory.O_NO_CHILDREN;
 		}
 		out.writeInt(options);
 		//-- special attributes
@@ -150,10 +150,6 @@ public class RListImpl extends AbstractRObject
 		return this.namesAttribute.getChar(idx);
 	}
 	
-	public final RStore getData() {
-		return null;
-	}
-	
 	public final RObject get(final int idx) {
 		return this.components[idx];
 	}
@@ -165,6 +161,17 @@ public class RListImpl extends AbstractRObject
 		}
 		return null;
 	}
+	
+	public final RObject[] toArray() {
+		final RObject[] array = new RObject[this.length];
+		System.arraycopy(this.components, 0, array, 0, this.length);
+		return array;
+	}
+	
+	public final RStore getData() {
+		return null;
+	}
+	
 	
 	public boolean set(final int idx, final RObject component) {
 		this.components[idx] = component;
@@ -209,12 +216,6 @@ public class RListImpl extends AbstractRObject
 		this.namesAttribute.remove(idxs);
 	}
 	
-	
-	public RObject[] toArray() {
-		final RObject[] array = new RObject[this.length];
-		System.arraycopy(this.components, 0, array, 0, this.length);
-		return array;
-	}
 	
 	@Override
 	public String toString() {

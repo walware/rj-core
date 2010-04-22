@@ -67,7 +67,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		this.id = in.readUTF();
 		this.length = in.readInt();
 		
-		if ((options & RObjectFactory.O_NOCHILDREN) != 0) {
+		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
@@ -97,7 +97,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
 		if (this.components == null) {
-			options |= RObjectFactory.F_NOCHILDREN;
+			options |= RObjectFactory.O_NO_CHILDREN;
 		}
 		out.writeInt(options);
 		//-- special attributes

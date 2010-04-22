@@ -22,7 +22,7 @@ public class RjsException extends Exception {
 	private static final long serialVersionUID = 4433450430400305890L;
 	
 	
-	private int code;
+	private final int code;
 	
 	
 	public RjsException(final int code, final String message) {

@@ -13,6 +13,8 @@ package de.walware.rj.server;
 
 import java.io.File;
 import java.rmi.Remote;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import de.walware.rj.RjException;
 import de.walware.rj.data.RObjectFactory;
@@ -25,6 +27,9 @@ public class RjsComConfig {
 	
 	public static final String RJ_DATA_STRUCTS_LISTS_MAX_LENGTH_PROPERTY_ID = "rj.data.structs.lists.max_length";
 	public static final String RJ_DATA_STRUCTS_ENVS_MAX_LENGTH_PROPERTY_ID = "rj.data.structs.envs.max_length";
+	
+	
+	private static final Map<String, Object> PROPERTIES = new ConcurrentHashMap<String, Object>();
 	
 	
 	public static interface PathResolver {
@@ -81,5 +86,13 @@ public class RjsComConfig {
 		DataCmdItem.gDefaultFactory = factory;
 		DataCmdItem.gFactories.put(DataCmdItem.DEFAULT_FACTORY_ID, factory);
 	}
-
+	
+	public static final void setProperty(final String key, final Object value) {
+		PROPERTIES.put(key, value);
+	}
+	
+	public static final Object getProperty(final String key) {
+		return PROPERTIES.get(key);
+	}
+	
 }

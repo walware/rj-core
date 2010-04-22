@@ -77,6 +77,11 @@ public class RS4ObjectImpl extends AbstractRObject
 		return this.className;
 	}
 	
+	
+	public int getLength() {
+		return this.slotValues.length;
+	}
+	
 	public boolean hasDataSlot() {
 		return (this.hasDataSlot >= 0);
 	}
@@ -121,9 +126,12 @@ public class RS4ObjectImpl extends AbstractRObject
 		throw new IllegalArgumentException();
 	}
 	
-	public int getLength() {
-		return this.slotValues.length;
+	public final RObject[] toArray() {
+		final RObject[] array = new RObject[this.slotValues.length];
+		System.arraycopy(this.slotValues, 0, array, 0, this.slotValues.length);
+		return array;
 	}
+	
 	
 	public void insert(final int idx, final String name, final RObject component) {
 		throw new UnsupportedOperationException();
@@ -155,16 +163,6 @@ public class RS4ObjectImpl extends AbstractRObject
 			}
 		}
 		return false;
-	}
-	
-	public RObject[] toArray() {
-		return null;
-	}
-	
-	
-	@Override
-	public String toString() {
-		return super.toString();
 	}
 	
 }

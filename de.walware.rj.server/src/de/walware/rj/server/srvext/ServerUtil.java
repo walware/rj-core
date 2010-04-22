@@ -18,8 +18,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import de.walware.rj.RjInvalidConfigurationException;
@@ -34,7 +34,6 @@ public class ServerUtil {
 	
 	public static final String RJ_DATA_ID = "de.walware.rj.data";
 	public static final String RJ_SERVER_ID = "de.walware.rj.server";
-	public static final String RJ_SERVI_ID = "de.walware.rj.servi";
 	
 	public static final RjsStatus MISSING_ANSWER_STATUS = new RjsStatus(RjsStatus.ERROR, 121, "Server error (missing answer).");
 	
@@ -178,8 +177,10 @@ public class ServerUtil {
 				if (paths[i].length() > 0) {
 					final File dir = new File(paths[i]);
 					final String[] list = dir.list();
-					for (final String child : list) {
-						files.add(new PathEntry(dir, child));
+					if (list != null) {
+						for (final String child : list) {
+							files.add(new PathEntry(dir, child));
+						}
 					}
 				}
 			}

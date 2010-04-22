@@ -132,19 +132,17 @@ public class JRClassLoader extends URLClassLoader {
 		
 		initRLibs();
 		
+		this.rJavaPath = System.getProperty("rjava.path");
 		if (this.rJavaPath == null) {
-			this.rJavaPath = System.getProperty("rjava.path");
-			if (this.rJavaPath == null) {
-				this.rJavaPath = searchPackageInLibrary("rJava");
-			}
-			if (this.rJavaPath == null) {
-				final String message = "Path to rJava package not found. Use R_LIBS or java property 'rjava.path' to specify the location.";
-				LOGGER.log(Level.SEVERE, message);
-				throw new IllegalArgumentException(message);
-			}
+			this.rJavaPath = searchPackageInLibrary("rJava");
+		}
+		if (this.rJavaPath == null) {
+			final String message = "Path to rJava package not found. Use R_LIBS or java property 'rjava.path' to specify the location.";
+			LOGGER.log(Level.SEVERE, message);
+			throw new IllegalArgumentException(message);
 		}
 		
-		String rJavaClassPath = System.getProperty("rjava.class.path");
+		final String rJavaClassPath = System.getProperty("rjava.class.path");
 		if (rJavaClassPath != null) {
 			addClassPath(checkDirPathList(rJavaClassPath));
 		}
@@ -163,7 +161,7 @@ public class JRClassLoader extends URLClassLoader {
 			rJavaDynlibName = "rJava.so";
 			break;
 		}
-		UnixFile rJavaDynlibFile = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
+		final UnixFile rJavaDynlibFile = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
 		if (rJavaDynlibFile.exists()) {
 			this.libMap.put("rJava", rJavaDynlibFile);
 		}
@@ -184,7 +182,7 @@ public class JRClassLoader extends URLClassLoader {
 			jriDynlibName = "libjri.so";
 			break;
 		}
-		UnixFile jriDynlibFile = searchFile(new String[] {
+		final UnixFile jriDynlibFile = searchFile(new String[] {
 				jriLibPath + '/' + jriDynlibName,
 				jriLibPath + this.arch + '/' + jriDynlibName,
 		});
@@ -200,7 +198,7 @@ public class JRClassLoader extends URLClassLoader {
 			}
 		}
 		
-		UnixFile jriJarFile = searchFile(new String[] {
+		final UnixFile jriJarFile = searchFile(new String[] {
 				jriLibPath + "/JRI.jar",
 				this.rJavaPath + "/jri/JRI.jar",
 		});
