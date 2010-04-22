@@ -412,6 +412,8 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			return new RS4ObjectImpl(in, flags, this);
 		case RObject.TYPE_OTHER:
 			return new ROtherImpl(in, flags, this);
+		case RObject.TYPE_MISSING:
+			return RMissing.INSTANCE;
 		default:
 			throw new IOException("object type = " + type);
 		}
@@ -426,6 +428,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		out.writeByte(type);
 		switch (type) {
 		case RObject.TYPE_NULL:
+		case RObject.TYPE_MISSING:
 			return;
 		case RObject.TYPE_VECTOR:
 			if (robject instanceof ExternalizableRObject) {

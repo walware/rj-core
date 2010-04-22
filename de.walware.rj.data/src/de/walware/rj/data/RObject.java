@@ -27,7 +27,7 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RNull}.</p>
 	 */
-	byte TYPE_NULL =            0x00000001;
+	byte TYPE_NULL =            0x01;
 	
 	/**
 	 * Constant indicating an {@link RVector} object. An R object is of this type
@@ -36,7 +36,7 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RVector}.</p>
 	 */
-	byte TYPE_VECTOR =          0x00000002;
+	byte TYPE_VECTOR =          0x02;
 	
 	/**
 	 * Constant indicating an {@link RArray} object. An R object is of this type
@@ -45,7 +45,7 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RArray}.</p>
 	 */
-	byte TYPE_ARRAY =           0x00000003;
+	byte TYPE_ARRAY =           0x03;
 	
 	/**
 	 * Constant indicating an RDataFrame object. An R object is of this type
@@ -55,7 +55,7 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RDataFrame}.</p>
 	 */
-	byte TYPE_DATAFRAME =       0x00000006;
+	byte TYPE_DATAFRAME =       0x06;
 	
 	/**
 	 * Constant indicating an RList object. An R object is of this type if it is 
@@ -63,14 +63,14 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RList}.</p>
 	 */
-	byte TYPE_LIST =            0x00000007;
+	byte TYPE_LIST =            0x07;
 	
 	/**
 	 * Constant indicating an R environment object.
 	 * <p>
 	 * The object is an instance of {@link REnvironment}.</p>
 	 */
-	byte TYPE_ENV =             0x00000008;
+	byte TYPE_ENV =             0x08;
 	
 	/**
 	 * Constant indicating an S4 object. An R object is of this type if the R
@@ -80,26 +80,33 @@ public interface RObject {
 	 * <p>
 	 * The object is an instance of {@link RS4Object}.</p>
 	 */
-	byte TYPE_S4OBJECT =        0x0000000a;
+	byte TYPE_S4OBJECT =        0x0a;
 	
 	/**
 	 * Constant indicating an R function object.
 	 * <p>
 	 * The object is an instance of {@link RFunction}.</p>
 	 */
-	byte TYPE_FUNCTION =        0x0000000d;
+	byte TYPE_FUNCTION =        0x0d;
 	
 	/**
 	 * Constant indicating a reference to a R object.
 	 * <p>
 	 * The object is an instance of {@link RReference}.</p>
 	 */
-	byte TYPE_REFERENCE =       0x0000000e;
+	byte TYPE_REFERENCE =       0x0e;
 	
 	/**
 	 * Constant indicating an R object not matching one of the other types.
 	 */
-	byte TYPE_OTHER =           0x0000000f;
+	byte TYPE_OTHER =           0x0f;
+	
+	/**
+	 * Constant indicating an R object is missing (e.g. missing argument, missing slot value).
+	 * 
+	 * @since 0.5.0
+	 */
+	byte TYPE_MISSING =         0x11;
 	
 	
 	//-- Common class names --//
