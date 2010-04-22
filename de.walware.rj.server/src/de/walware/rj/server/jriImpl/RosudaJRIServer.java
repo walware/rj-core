@@ -47,6 +47,7 @@ import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RComplexStore;
+import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RLogicalStore;
@@ -54,6 +55,7 @@ import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
+import de.walware.rj.data.RS4Object;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
@@ -229,6 +231,8 @@ public class RosudaJRIServer extends RJ
 	private long rniP_nameSymbol;
 	private long rniP_realSymbol;
 	private long rniP_imaginarySymbol;
+	private long rniP_newSymbol;
+	private long rniP_ClassSymbol;
 	private long rniP_exprSymbol;
 	private long rniP_errorSymbol;
 	
@@ -511,6 +515,10 @@ public class RosudaJRIServer extends RJ
 		this.rEngine.rniPreserve(this.rniP_realSymbol);
 		this.rniP_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
 		this.rEngine.rniPreserve(this.rniP_imaginarySymbol);
+		this.rniP_newSymbol = this.rEngine.rniInstallSymbol("new");
+		this.rEngine.rniPreserve(this.rniP_newSymbol);
+		this.rniP_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
+		this.rEngine.rniPreserve(this.rniP_ClassSymbol);
 		this.rniP_exprSymbol = this.rEngine.rniInstallSymbol("expr");
 		this.rEngine.rniPreserve(this.rniP_exprSymbol);
 		this.rniP_errorSymbol = this.rEngine.rniInstallSymbol("error");
@@ -1380,10 +1388,11 @@ public class RosudaJRIServer extends RJ
 	 * 
 	 * @param obj an R object
 	 * @return long R pointer
+	 * @throws RjsException 
 	 */ 
-	private long rniAssignDataObject(final RObject obj) {
+	private long rniAssignDataObject(final RObject obj) throws RjsException {
 		RStore names;
-		final long objP;
+		long objP;
 		switch(obj.getRObjectType()) {
 		case RObject.TYPE_NULL:
 		case RObject.TYPE_MISSING:
@@ -1440,8 +1449,26 @@ public class RosudaJRIServer extends RJ
 			return objP; }
 		case RObject.TYPE_REFERENCE:
 			return ((RReference) obj).getHandle();
+		case RObject.TYPE_S4OBJECT: {
+			final RS4Object s4obj = (RS4Object) obj;
+			objP = this.rniP_NULL;
+			for (int i = s4obj.getLength()-1; i >= 0; i--) {
+				final RObject slotObj = s4obj.get(i);
+				if (slotObj != null && slotObj.getRObjectType() != RObject.TYPE_MISSING) {
+					objP = this.rEngine.rniCons(rniAssignDataObject(slotObj), objP,
+							this.rEngine.rniInstallSymbol(s4obj.getName(i)), false);
+					this.rEngine.rniProtect(objP);
+					this.rniProtectedCounter++;
+				}
+			}
+			objP = rniEvalExpr(this.rEngine.rniCons(this.rniP_newSymbol, this.rEngine.rniCons(
+					this.rEngine.rniPutString(s4obj.getRClassName()), objP, this.rniP_ClassSymbol, false),
+					0L, true), 0x1038);
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP; }
 		default:
-			throw new UnsupportedOperationException("Assignment for R objects of type " + obj.getRObjectType() + " is not yet supported.");
+			throw new RjsException(0x1037, "The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported.");
 		}
 	}
 	
