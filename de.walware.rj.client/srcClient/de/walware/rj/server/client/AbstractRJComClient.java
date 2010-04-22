@@ -27,7 +27,6 @@ import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
 import de.walware.rj.data.RObject;
-import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RReference;
 import de.walware.rj.server.BinExchange;
 import de.walware.rj.server.ComHandler;
@@ -655,8 +654,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, new DataCmdItem(((options & RObjectFactory.F_ONLY_STRUCT) == RObjectFactory.F_ONLY_STRUCT) ?
-					DataCmdItem.EVAL_STRUCT : DataCmdItem.EVAL_DATA, 0, checkedDepth, command, factoryId), monitor);
+			runMainLoop(null, new DataCmdItem(DataCmdItem.EVAL_DATA, options, checkedDepth, command, factoryId), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -680,8 +678,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			final long handle = reference.getHandle();
-			runMainLoop(null, new DataCmdItem(((options & RObjectFactory.F_ONLY_STRUCT) == RObjectFactory.F_ONLY_STRUCT) ?
-					DataCmdItem.RESOLVE_STRUCT : DataCmdItem.RESOLVE_DATA, 0, checkedDepth, Long.toString(handle), factoryId), monitor);
+			runMainLoop(null, new DataCmdItem(DataCmdItem.RESOLVE_DATA, options, checkedDepth, Long.toString(handle), factoryId), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
