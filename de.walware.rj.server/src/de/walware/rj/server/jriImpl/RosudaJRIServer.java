@@ -56,7 +56,6 @@ import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
-import de.walware.rj.data.defaultImpl.RComplexDataBImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
 import de.walware.rj.data.defaultImpl.RFunctionImpl;
@@ -228,6 +227,8 @@ public class RosudaJRIServer extends RJ
 	private long rniP_objectSymbol;
 	private long rniP_envSymbol;
 	private long rniP_nameSymbol;
+	private long rniP_realSymbol;
+	private long rniP_imaginarySymbol;
 	private long rniP_exprSymbol;
 	private long rniP_errorSymbol;
 	
@@ -235,6 +236,7 @@ public class RosudaJRIServer extends RJ
 	private long rniP_orderedClassString;
 	private long rniP_dataframeClassString;
 	private long rniP_lengthFun;
+	private long rniP_complexFun;
 	private long rniP_envNameFun;
 	private long rniP_headerFun;
 	private long rniP_s4classFun;
@@ -505,6 +507,10 @@ public class RosudaJRIServer extends RJ
 		this.rEngine.rniPreserve(this.rniP_envSymbol);
 		this.rniP_nameSymbol = this.rEngine.rniInstallSymbol("name");
 		this.rEngine.rniPreserve(this.rniP_nameSymbol);
+		this.rniP_realSymbol = this.rEngine.rniInstallSymbol("real");
+		this.rEngine.rniPreserve(this.rniP_realSymbol);
+		this.rniP_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
+		this.rEngine.rniPreserve(this.rniP_imaginarySymbol);
 		this.rniP_exprSymbol = this.rEngine.rniInstallSymbol("expr");
 		this.rEngine.rniPreserve(this.rniP_exprSymbol);
 		this.rniP_errorSymbol = this.rEngine.rniInstallSymbol("error");
@@ -521,6 +527,8 @@ public class RosudaJRIServer extends RJ
 		
 		this.rniP_lengthFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("length"), this.rniP_BaseEnv);
 		this.rEngine.rniPreserve(this.rniP_lengthFun);
+		this.rniP_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"), this.rniP_BaseEnv);
+		this.rEngine.rniPreserve(this.rniP_complexFun);
 		this.rniP_envNameFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("environmentName"), this.rniP_BaseEnv);
 		this.rEngine.rniPreserve(this.rniP_envNameFun);
 		this.rniP_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"), this.rniP_BaseEnv);
@@ -1458,7 +1466,22 @@ public class RosudaJRIServer extends RJ
 			this.rEngine.rniProtect(objP);
 			this.rniProtectedCounter++;
 			return objP;
-//		case RStore.COMPLEX
+		case RStore.COMPLEX: {
+			final JRIComplexDataImpl complex = (JRIComplexDataImpl) data;
+			objP = this.rEngine.rniPutDoubleArray(complex.getJRIRealValueArray());
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			final long iP = this.rEngine.rniPutDoubleArray(complex.getJRIImaginaryValueArray());
+			this.rEngine.rniProtect(iP);
+			this.rniProtectedCounter++;
+			objP = this.rEngine.rniEval(this.rEngine.rniCons(this.rniP_complexFun,
+					this.rEngine.rniCons(objP, this.rEngine.rniCons(iP, this.rniP_NULL,
+							this.rniP_imaginarySymbol, false), this.rniP_realSymbol, false),
+							0L, true),
+					this.rniP_BaseEnv);
+			this.rEngine.rniProtect(objP);
+			this.rniProtectedCounter++;
+			return objP; }
 		case RStore.CHARACTER:
 			objP = this.rEngine.rniPutStringArray(
 					((JRICharacterDataImpl) data).getJRIValueArray());
@@ -1666,7 +1689,7 @@ public class RosudaJRIServer extends RJ
 								RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
 								className1, dim) :
 						new JRIArrayImpl<RComplexStore>(
-								RComplexDataBImpl.createFromJRI(rniGetComplexRe(objP), rniGetComplexIm(objP)),
+								new JRIComplexDataImpl(rniGetComplexRe(objP), rniGetComplexIm(objP)),
 								className1, dim, rniGetDimNames(objP, dim.length));
 				}
 				else {
@@ -1675,7 +1698,7 @@ public class RosudaJRIServer extends RJ
 									RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
 									rniGetLength(objP), className1, null) :
 							new JRIVectorImpl<RComplexStore>(
-									RComplexDataBImpl.createFromJRI(rniGetComplexRe(objP), rniGetComplexIm(objP)),
+									new JRIComplexDataImpl(rniGetComplexRe(objP), rniGetComplexIm(objP)),
 									className1, rniGetNames(objP));
 				}
 			}

@@ -16,8 +16,6 @@ import java.io.ObjectInput;
 
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
-import de.walware.rj.data.defaultImpl.RComplexDataBImpl;
-import de.walware.rj.data.defaultImpl.RComplexDataImpl;
 import de.walware.rj.data.defaultImpl.REnvironmentImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
 import de.walware.rj.data.defaultImpl.RFunctionImpl;
@@ -77,7 +75,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			case RStore.NUMERIC:
 				return new JRINumericDataImpl(in);
 			case RStore.COMPLEX:
-				return RComplexDataBImpl.isBforNASupported() ? new RComplexDataBImpl(in) : new RComplexDataImpl(in);
+				return new JRIComplexDataImpl(in);
 			case RStore.CHARACTER:
 				return new JRICharacterDataImpl(in);
 			case RStore.RAW:

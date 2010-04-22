@@ -97,7 +97,8 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		//-- options
 		int options = 0;
 		final boolean customClass = this.className1 != null
-				&& !this.className1.equals((this.dimAttribute.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
+				&& !this.className1.equals((this.dimAttribute.length == 2) ?
+						RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
@@ -118,7 +119,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		for (int i = 0; i < dimCount; i++) {
 			out.writeInt(this.dimAttribute[i]);
 		}
-		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0) {
+		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			((Externalizable) this.dimnamesAttribute.getNames()).writeExternal(out);
 			for (int i = 0; i < dimCount; i++) {
 				factory.writeNames(this.dimnamesAttribute.get(i), out, flags);
@@ -127,7 +128,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		//-- data
 		factory.writeStore(this.data, out, flags);
 		//-- attributes
-		if (attributes != null) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			factory.writeAttributeList(attributes, out, flags);
 		}
 	}
@@ -180,80 +181,13 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
-	protected int[] getDataInsertIdxs(final int dim, final int idx) {
-		if (dim >= this.dimAttribute.length || idx >= this.dimAttribute[dim]) {
-			throw new IllegalArgumentException();
-		}
-		final int size = this.data.getLength() / this.dimAttribute[dim];
-		final int[] dataIdxs = new int[size];
-		int step = 1;
-		int stepCount = 1;
-		for (int currentDimI = 0; currentDimI < this.dimAttribute.length; currentDimI++) {
-			final int currentDimLength = this.dimAttribute[currentDimI];
-			if (currentDimI == dim) {
-				final int add = step*idx;
-				for (int i = 0; i < size; i++) {
-					dataIdxs[i] += add;
-				}
-			}
-			else {
-				if (currentDimI > 0) {
-					int temp = 0;
-					for (int i = 0; i < size; ) {
-						final int add = step*temp;
-						for (int j = 0; j < stepCount && i < size; i++,j++) {
-							dataIdxs[i] += add;
-						}
-						temp++;
-						if (temp == currentDimLength) {
-							temp = 0;
-						}
-					}
-				}
-				stepCount *= currentDimLength;
-			}
-			step *= currentDimLength;
-		}
-		return dataIdxs;
-	}
-	
-//	public void setDim(final int[] dim) {
-//		checkDim(getLength(), dim);
-//		this.dimAttribute = dim;
-//	}
-//	
-//	public void setDimNames(final List<RCharacterStore> list) {
-//	}
-	
-//	public void insert(final int dim, final int idx) {
-//		((RDataResizeExtension) this.data).insertNA(getDataInsertIdxs(dim, idx));
-//		this.dimAttribute[dim]++;
-//		if (this.dimnamesAttribute != null) {
-//			final RVector<RCharacterStore> names = (RVector<RCharacterStore>) this.dimnamesAttribute.get(dim);
-//			if (names != null) {
-//				names.insert(idx);
-//			}
-//		}
-//	}
-//	
-//	public void remove(final int dim, final int idx) {
-//		((RDataResizeExtension) this.data).remove(RDataUtil.getDataIdxs(this.dimAttribute, dim, idx));
-//		this.dimAttribute[dim]--;
-//		if (this.dimnamesAttribute != null) {
-//			final RVector<RCharacterStore> names = (RVector<RCharacterStore>) this.dimnamesAttribute.get(dim);
-//			if (names != null) {
-//				names.remove(idx);
-//			}
-//		}
-//	}
-	
-	
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("RObject type=array, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(getLength());
-		sb.append("\n\tdim=").append(Arrays.toString(this.dimAttribute));
+		sb.append("\n\tdim=");
+		sb.append(Arrays.toString(this.dimAttribute));
 		sb.append("\n\tdata: ");
 		sb.append(this.data.toString());
 		return sb.toString();

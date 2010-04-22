@@ -22,24 +22,6 @@ import de.walware.rj.data.RStore;
 public class RComplexDataBImpl extends AbstractComplexData
 		implements RDataResizeExtension, Externalizable {
 	
-	// TODO refactor to JRIComplex
-	public static RComplexDataBImpl createFromJRI(final double[] realValues, final double[] imaginaryValues) {
-		assert (realValues.length == imaginaryValues.length);
-		for (int i = 0; i < imaginaryValues.length; i++) {
-			if (Double.isNaN(imaginaryValues[i])) {
-				if (Double.doubleToRawLongBits(imaginaryValues[i]) == NA_numeric_LONG) {
-					realValues[i] = NA_numeric_DOUBLE;
-					imaginaryValues[i] = NA_numeric_DOUBLE;
-				}
-				else {
-					realValues[i] = NaN_numeric_DOUBLE;
-					imaginaryValues[i] = NaN_numeric_DOUBLE;
-				}
-			}
-		}
-		return new RComplexDataBImpl(realValues, imaginaryValues);
-	}
-	
 	
 	protected double[] realValues;
 	protected double[] imaginaryValues;
@@ -70,7 +52,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 		}
 	}
 	
-	private RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues) {
+	protected RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues) {
 		this.realValues = realValues;
 		this.imaginaryValues = imaginaryValues;
 		this.length = realValues.length;
