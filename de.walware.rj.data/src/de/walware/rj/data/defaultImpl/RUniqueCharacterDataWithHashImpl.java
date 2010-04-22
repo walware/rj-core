@@ -51,7 +51,7 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	
 	
 	@Override
-	public int indexOf(final String name) {
+	public int indexOf(final String name, final int fromIdx) {
 		return this.map.get(name);
 	}
 	
@@ -73,6 +73,12 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	public void remove(final int idx) {
 		this.map.remove(getChar(idx));
 		super.remove(idx);
+	}
+	
+	
+	@Override
+	public boolean contains(final String value) {
+		return (value != null && this.map.containsKey(value));
 	}
 	
 }

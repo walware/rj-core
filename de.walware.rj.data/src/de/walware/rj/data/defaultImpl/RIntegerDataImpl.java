@@ -158,6 +158,23 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	}
 	
 	
+	@Override
+	public final int indexOf(final int value, int fromIdx) {
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		if (value != NA_integer_INT) {
+			while (fromIdx < this.length) {
+				if (this.intValues[fromIdx] == value) {
+					return fromIdx;
+				}
+				fromIdx++;
+			}
+		}
+		return -1;
+	}
+	
+	
 	public void appendTo(final StringBuilder sb) {
 		sb.append('[');
 		if (this.length > 0) {

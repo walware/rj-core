@@ -76,4 +76,18 @@ public abstract class AbstractIntegerData extends AbstractRData
 		return true;
 	}
 	
+	
+	@Override
+	public int indexOf(final String value, final int fromIdx) {
+		if (value == null) {
+			throw new NullPointerException();
+		}
+		try {
+			return indexOf(Integer.parseInt(value), fromIdx);
+		}
+		catch (final NumberFormatException e) {
+			return -1;
+		}
+	}
+	
 }

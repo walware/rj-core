@@ -102,32 +102,24 @@ public class RCharacterDataImpl extends AbstractCharacterData
 		return this.charValues[idx];
 	}
 	
-	public int indexOf(final String value) {
-		for (int i = 0; i < this.length; i++) {
-			if (this.charValues[i] != null && this.charValues[i].equals(value)) {
-				return i;
+	
+	@Override
+	public int indexOf(final String value, int fromIdx) {
+		if (value == null) {
+			throw new NullPointerException();
+		}
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		while (fromIdx < this.length) {
+			if (this.charValues[fromIdx] != null && this.charValues[fromIdx].equals(value)) {
+				return fromIdx;
 			}
+			fromIdx++;
 		}
 		return -1;
 	}
 	
-	public int indexOf(final String value, final int idx) {
-		for (int i = (idx >= 0) ? idx : 0; i < this.length; i++) {
-			if (this.charValues[i] != null && this.charValues[i].equals(value)) {
-				return i;
-			}
-		}
-		return -1;
-	}
-	
-	public boolean contains(final String value) {
-		for (int i = 0; i < this.length; i++) {
-			if (this.charValues[i] != null && this.charValues[i].equals(value)) {
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	@Override
 	public boolean isNA(final int idx) {

@@ -32,18 +32,6 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 		throw new UnsupportedOperationException();
 	}
 	
-	public int indexOf(final String value) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public int indexOf(final String value, final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public boolean contains(final String value) {
-		throw new UnsupportedOperationException();
-	}
-	
 	public String get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
@@ -55,6 +43,11 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 	@Override
 	public boolean allEqual(final RStore other) {
 		return (other.getStoreType() == CHARACTER && other.getLength() == -1);
+	}
+	
+	@Override
+	public int indexOf(final String value, final int fromIdx) {
+		throw new UnsupportedOperationException();
 	}
 	
 }

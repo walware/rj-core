@@ -384,6 +384,58 @@ public abstract class AbstractRData implements RStore {
 	protected abstract boolean isStructOnly();
 	
 	
+	public boolean contains(final String value) {
+		return (indexOf(value) >= 0);
+	}
+	
+	public final int indexOf(final String value) {
+		return indexOf(value, 0);
+	}
+	
+	public int indexOf(final String value, int fromIdx) {
+		if (value == null) {
+			throw new NullPointerException();
+		}
+		if (isStructOnly()) {
+			throw new UnsupportedOperationException();
+		}
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		while (fromIdx < this.length) {
+			if (!isNA(fromIdx) && value.equals(this.getChar(fromIdx))) {
+				return fromIdx;
+			}
+			fromIdx++;
+		}
+		return -1;
+	}
+	
+	public boolean contains(final int value) {
+		return (indexOf(value) >= 0);
+	}
+	
+	public final int indexOf(final int value) {
+		return indexOf(value, 0);
+	}
+	
+	public int indexOf(final int value, int fromIdx) {
+		if (isStructOnly()) {
+			throw new UnsupportedOperationException();
+		}
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		while (fromIdx < this.length) {
+			if (!isNA(fromIdx) && value == this.getInt(fromIdx)) {
+				return fromIdx;
+			}
+			fromIdx++;
+		}
+		return -1;
+	}
+	
+	
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();

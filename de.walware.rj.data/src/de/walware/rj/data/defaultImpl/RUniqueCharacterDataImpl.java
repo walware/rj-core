@@ -32,16 +32,6 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	
 	@Override
-	public int indexOf(final String value) {
-		for (int i = 0; i < this.charValues.length; i++) {
-			if (this.charValues[i].equals(value)) {
-				return i;
-			}
-		}
-		return -1;
-	}
-	
-	@Override
 	public void setChar(final int idx, final String value) {
 		if (indexOf(value) >= 0) {
 			if (indexOf(value) == idx) {

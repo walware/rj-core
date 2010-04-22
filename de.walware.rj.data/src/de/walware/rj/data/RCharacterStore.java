@@ -21,10 +21,6 @@ package de.walware.rj.data;
 public interface RCharacterStore extends RStore {
 	
 	
-	int indexOf(String value);
-	int indexOf(String value, int fromIdx);
-	boolean contains(final String value);
-	
 	String get(int idx);
 	String[] toArray();
 	

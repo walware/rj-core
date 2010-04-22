@@ -41,4 +41,10 @@ public abstract class AbstractCharacterData extends AbstractRData
 		return true;
 	}
 	
+	
+	@Override
+	public int indexOf(final int value, final int fromIdx) {
+		return indexOf(Integer.toString(value), fromIdx);
+	}
+	
 }

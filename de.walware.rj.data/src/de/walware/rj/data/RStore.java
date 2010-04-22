@@ -416,4 +416,56 @@ public interface RStore {
 	
 	boolean allEqual(RStore other);
 	
+	
+	/**
+	 * Returns if the store contains the specified character value.
+	 * 
+	 * @param value the value to search for
+	 * @return <code>true</code> if the store contains the value, otherwise false
+	 */
+	boolean contains(final String value);
+	
+	/**
+	 * Returns the index of the first item in the store equal to the of the specified character value.
+	 * 
+	 * @param value the value to search for
+	 * @return index (zero-base) of first equal value, otherwise <code>-1</code>
+	 */
+	int indexOf(String value);
+	
+	/**
+	 * Returns the index of the first item in the store equal to the of the specified character value,
+	 * starting from the specified index.
+	 * 
+	 * @param value the value to search for
+	 * @param fromIdx index (zero-based) from which to start the search
+	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
+	 */
+	int indexOf(String value, int fromIdx);
+	
+	/**
+	 * Returns if the store contains the specified integer value.
+	 * 
+	 * @param value the value to search for
+	 * @return <code>true</code> if the store contains the value, otherwise false
+	 */
+	boolean contains(final int value);
+	
+	/**
+	 * Returns the index of the first item in the store equal to the of the specified integer value.
+	 * 
+	 * @param value the value to search for
+	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
+	 */
+	int indexOf(int value);
+	
+	/**
+	 * Returns if the store contains the specified integer value.
+	 * 
+	 * @param value the value to search for
+	 * @param fromIdx index (zero-based) from which to start the search
+	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
+	 */
+	int indexOf(int value, int fromIdx);
+	
 }
