@@ -19,6 +19,7 @@ import java.io.ObjectInput;
 import java.io.OutputStream;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -41,6 +42,7 @@ import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsPing;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.services.RPlatform;
 import de.walware.rj.services.RService;
 
 
@@ -109,6 +111,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private boolean consoleReadCallbackRequired;
 	private ConsoleReadCmdItem consoleReadCallback;
 	
+	private final Object platformLock = new Object();
+	private Map<String, Object> platformData;
+	private RPlatform platformObj;
+	
 	private int dataLevelRequest = 0;
 	private int dataLevelAnswer = 0;
 	private final DataCmdItem[] dataAnswer = new DataCmdItem[16];
@@ -156,6 +162,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	public void setClosed(final boolean closed) {
 		this.closed = closed;
+	}
+	
+	public void setRjsProperties(final Map<String, ? extends Object> properties) throws CoreException {
+		try {
+			this.rjConsoleServer.setProperties(properties);
+		}
+		catch (final RemoteException e) {
+			throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID, "An error occurred when setting server properties.", e));
+		}
 	}
 	
 	
@@ -627,6 +642,26 @@ public abstract class AbstractRJComClient implements ComHandler {
 		return (this.consoleReadCallback != null);
 	}
 	
+	
+	public final RPlatform getRPlatform() {
+		synchronized (this.platformLock) {
+			if (this.platformObj == null) {
+				try {
+					if (this.platformData == null) {
+						this.platformData = this.rjConsoleServer.getPlatformData();
+					}
+					this.platformObj = new RPlatform((String) this.platformData.get("os.type"),
+							(String) this.platformData.get("file.sep"), (String) this.platformData.get("path.sep"),
+							(String) this.platformData.get("version.string") );
+				}
+				catch (final RemoteException e) {
+					log(new Status(IStatus.ERROR, RJ_CLIENT_ID,
+							"An error occured when loading data for RPlatform information.", e));
+				}
+			}
+			return this.platformObj;
+		}
+	}
 	
 	public final void evalVoid(final String command, final IProgressMonitor monitor) throws CoreException {
 		final int level = newDataLevel();
