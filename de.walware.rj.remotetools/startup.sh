@@ -71,10 +71,16 @@ done
 ###############################################################################
 # Required system specific settings
 # 
-# Set the path to home of R and Java
+# Set the path to home of R and Java.
+# If parts of the R installation (e.g. the documentation) are located in not
+# sub-directories of R home, it is often required to set additional variables
+# specifying the several installation locations (see example).
 # 
 # Example:
 #     R_HOME=/usr/lib/R
+#     R_DOC_DIR=/usr/share/doc/R
+#     R_SHARE_DIR=/usr/share/R
+#     R_INCLUDE_DIR=/usr/include/R
 #     R_LIBS_SITE=/usr/local/lib/site-library
 #     JAVA_HOME=/usr/lib/jvm/java-6-sun
 #     BITS=64
@@ -299,6 +305,9 @@ export R_HOME
 export R_LIBS
 export R_LIBS_USER
 export R_LIBS_SITE
+export R_DOC_DIR
+export R_SHARE_DIR
+export R_INCLUDE_DIR
 export LC_ALL
 
 cd "$WD"
