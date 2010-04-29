@@ -12,7 +12,8 @@
 package de.walware.rj.server;
 
 import java.io.IOException;
-import java.io.ObjectOutput;
+
+import de.walware.rj.data.RJIO;
 
 
 public abstract class MainCmdItem {
@@ -118,7 +119,7 @@ public abstract class MainCmdItem {
 	public abstract RjsStatus getStatus();
 	public abstract String getDataText();
 	
-	public abstract void writeExternal(ObjectOutput out) throws IOException;
+	public abstract void writeExternal(RJIO io) throws IOException;
 	
 	public abstract boolean testEquals(MainCmdItem other);
 	

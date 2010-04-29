@@ -12,11 +12,10 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RDataFrame;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
@@ -55,29 +54,29 @@ public class RDataFrameImpl extends RListImpl
 		}
 	}
 	
-	public RDataFrameImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		super(in, flags, factory);
+	public RDataFrameImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		super(io, factory);
 	}
 	
 	@Override
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		final int options = super.doReadExternal(in, flags, factory);
-		this.rowCount = in.readInt();
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		final int options = super.doReadExternal(io, factory);
+		this.rowCount = io.in.readInt();
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			this.rownamesAttribute = factory.readNames(in, flags);
+			this.rownamesAttribute = factory.readNames(io);
 		}
 	}
 	
 	@Override
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		int options = 0;
-		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.rownamesAttribute != null) {
+		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.rownamesAttribute != null) {
 			options |= RObjectFactory.O_WITH_NAMES;
 		}
-		super.doWriteExternal(out, options, flags, factory);
-		out.writeInt(this.rowCount);
+		super.doWriteExternal(io, options, factory);
+		io.out.writeInt(this.rowCount);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			factory.writeNames(this.rownamesAttribute, out, flags);
+			factory.writeNames(this.rownamesAttribute, io);
 		}
 	}
 	

@@ -14,6 +14,8 @@ package de.walware.rj.data.defaultImpl;
 import java.io.IOException;
 import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
+
 
 public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
@@ -26,7 +28,11 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 		super(source, reuse);
 	}
 	
-	public RUniqueCharacterDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public RUniqueCharacterDataImpl(final RJIO io) throws IOException {
+		super(io);
+	}
+	
+	public RUniqueCharacterDataImpl(final ObjectInput in) throws IOException {
 		super(in);
 	}
 	

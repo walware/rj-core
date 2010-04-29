@@ -12,8 +12,8 @@
 package de.walware.rj.server;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+
+import de.walware.rj.data.RJIO;
 
 
 /**
@@ -33,13 +33,13 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleMessageCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.text = in.readUTF();
+	public ConsoleMessageCmdItem(final RJIO io) throws IOException, ClassNotFoundException {
+		this.text = io.readString();
 	}
 	
 	@Override
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeUTF(this.text);
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeString(this.text);
 	}
 	
 	

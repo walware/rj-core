@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
+
 
 /**
  * Server-to-Client list with {@link MainCmdItem}s.
@@ -52,10 +54,12 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		out.writeBoolean(this.isBusy);
 		
 		MainCmdItem item = this.first;
-		while (item != null) {
-			out.writeByte(item.getCmdType());
-			item.writeExternal(out);
-			item = item.next;
+		if (item != null) {
+			final RJIO io = RJIO.get(out);
+			do {
+				out.writeByte(item.getCmdType());
+				item.writeExternal(io);
+			} while ((item = item.next) != null);
 		}
 		out.writeByte(MainCmdItem.T_NONE);
 	}
@@ -68,7 +72,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		}
 		
 		this.isBusy = in.readBoolean();
-		
+		final RJIO io;
 		{	// first
 			final byte type = in.readByte();
 			switch (type) {
@@ -76,19 +80,24 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 				this.first = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				this.first = new ConsoleReadCmdItem(in);
+				io = RJIO.get(in);
+				this.first = new ConsoleReadCmdItem(io);
 				break;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				this.first = new ConsoleWriteOutCmdItem(in);
+				io = RJIO.get(in);
+				this.first = new ConsoleWriteOutCmdItem(io);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				this.first = new ConsoleMessageCmdItem(in);
+				io = RJIO.get(in);
+				this.first = new ConsoleMessageCmdItem(io);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
-				this.first = new ExtUICmdItem(in);
+				io = RJIO.get(in);
+				this.first = new ExtUICmdItem(io);
 				break;
 			case MainCmdItem.T_DATA_ITEM:
-				this.first = new DataCmdItem(in);
+				io = RJIO.get(in);
+				this.first = new DataCmdItem(io);
 				break;
 			default:
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
@@ -102,19 +111,19 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_NONE:
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				item = item.next = new ConsoleReadCmdItem(in);
+				item = item.next = new ConsoleReadCmdItem(io);
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				item = item.next = new ConsoleWriteOutCmdItem(in);
+				item = item.next = new ConsoleWriteOutCmdItem(io);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				item = item.next = new ConsoleMessageCmdItem(in);
+				item = item.next = new ConsoleMessageCmdItem(io);
 				continue;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
-				item = item.next = new ExtUICmdItem(in);
+				item = item.next = new ExtUICmdItem(io);
 				continue;
 			case MainCmdItem.T_DATA_ITEM:
-				item = item.next = new DataCmdItem(in);
+				item = item.next = new DataCmdItem(io);
 				continue;
 			default:
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);

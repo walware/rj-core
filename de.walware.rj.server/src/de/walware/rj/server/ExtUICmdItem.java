@@ -11,16 +11,15 @@
 
 package de.walware.rj.server;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+
+import de.walware.rj.data.RJIO;
 
 
 /**
  * Command item for main loop UI interaction.
  */
-public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
+public final class ExtUICmdItem extends MainCmdItem {
 	
 	public static final String C_CHOOSE_FILE = "chooseFile";
 	public static final String C_OPENIN_EDITOR = "openinEditor";
@@ -71,34 +70,30 @@ public final class ExtUICmdItem extends MainCmdItem implements Externalizable {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ExtUICmdItem(final ObjectInput in) throws IOException {
-		readExternal(in);
+	public ExtUICmdItem(final RJIO io) throws IOException {
+		this.command = io.readString();
+		this.options = io.in.readInt();
+		this.requestId = io.in.readByte();
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status = new RjsStatus(io.in);
+			return;
+		}
+		if ((this.options & OV_WITHTEXT) != 0) {
+			this.text = io.readString();
+		}
 	}
 	
 	@Override
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeUTF(this.command);
-		out.writeInt(this.options);
-		out.writeByte(this.requestId);
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeString(this.command);
+		io.out.writeInt(this.options);
+		io.out.writeByte(this.requestId);
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status.writeExternal(out);
+			this.status.writeExternal(io.out);
 			return;
 		}
 		if ((this.options & OV_WITHTEXT) != 0) {
-			out.writeUTF(this.text);
-		}
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException {
-		this.command = in.readUTF();
-		this.options = in.readInt();
-		this.requestId = in.readByte();
-		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(in);
-			return;
-		}
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = in.readUTF();
+			io.writeString(this.text);
 		}
 	}
 	

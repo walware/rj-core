@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 
 
@@ -24,8 +24,8 @@ public class JRICharacterDataImpl extends RCharacterDataImpl {
 		super(values);
 	}
 	
-	public JRICharacterDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRICharacterDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	

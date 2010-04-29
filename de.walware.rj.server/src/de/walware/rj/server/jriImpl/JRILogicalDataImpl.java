@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RLogicalDataIntImpl;
 
 
@@ -24,8 +24,8 @@ public class JRILogicalDataImpl extends RLogicalDataIntImpl {
 		super(value);
 	}
 	
-	public JRILogicalDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRILogicalDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	

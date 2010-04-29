@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
 
@@ -25,14 +25,14 @@ public class JRIFactorDataImpl extends RFactorDataImpl {
 		super(values, isOrdered, levelLabels);
 	}
 	
-	public JRIFactorDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRIFactorDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	
 	@Override
-	protected RCharacterDataImpl readLabels(final ObjectInput in) throws IOException, ClassNotFoundException {
-		return new JRICharacterDataImpl(in);
+	protected RCharacterDataImpl readLabels(final RJIO io) throws IOException {
+		return new JRICharacterDataImpl(io);
 	}
 	
 	

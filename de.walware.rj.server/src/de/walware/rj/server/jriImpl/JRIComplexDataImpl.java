@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RComplexDataBImpl;
 
 
@@ -36,8 +36,8 @@ public class JRIComplexDataImpl extends RComplexDataBImpl {
 		}
 	}
 	
-	public JRIComplexDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRIComplexDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	

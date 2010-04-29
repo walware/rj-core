@@ -17,9 +17,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
+import de.walware.rj.data.RJIO;
+
 
 public class RNumericDataImpl extends AbstractNumericData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	private double[] realValues;
@@ -51,8 +53,25 @@ public class RNumericDataImpl extends AbstractNumericData
 	}
 	
 	
-	public RNumericDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RNumericDataImpl(final RJIO io) throws IOException {
+		readExternal(io);
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		final ObjectInput in = io.in;
+		this.length = in.readInt();
+		this.naIdxs = new int[0];
+		this.realValues = new double[this.length];
+		for (int i = 0; i < this.length; i++) {
+			final long l = in.readLong();
+			if (l == NA_numeric_LONG) {
+				this.realValues[i] = Double.NaN;
+				this.naIdxs = addIdx(this.naIdxs, i);
+			}
+			else {
+				this.realValues[i] = Double.longBitsToDouble(l);
+			}
+		}
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -67,6 +86,24 @@ public class RNumericDataImpl extends AbstractNumericData
 			}
 			else {
 				this.realValues[i] = Double.longBitsToDouble(l);
+			}
+		}
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		final ObjectOutput out = io.out;
+		out.writeInt(this.length);
+		for (int i = 0; i < this.length; i++) {
+			if (Double.isNaN(this.realValues[i])) {
+				if (Arrays.binarySearch(this.naIdxs, i) >= 0) {
+					out.writeLong(NA_numeric_LONG);
+				}
+				else {
+					out.writeLong(NaN_numeric_LONG);
+				}
+			}
+			else {
+				out.writeLong(Double.doubleToLongBits(this.realValues[i]));
 			}
 		}
 	}

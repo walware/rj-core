@@ -17,9 +17,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
+import de.walware.rj.data.RJIO;
+
 
 public class RCharacterDataImpl extends AbstractCharacterData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	protected String[] charValues;
@@ -60,32 +62,50 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	}
 	
 	
+	public RCharacterDataImpl(final RJIO io) throws IOException {
+		readExternal(io);
+	}
+	
 	public RCharacterDataImpl(final ObjectInput in) throws IOException {
 		readExternal(in);
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		this.charValues = io.readStringArray();
+		this.length = this.charValues.length;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.charValues = new String[this.length];
 		for (int i = 0; i < this.length; i++) {
-			if (in.readBoolean()) {
-				this.charValues[i] = in.readUTF();
+			final int l = in.readInt();
+			if (l >= 0) {
+				final char[] c = new char[l];
+				for (int j = 0; j < l; j++) {
+					c[j] = in.readChar();
+				}
+				this.charValues[i] = new String(c);
 			}
-			else {
-				this.charValues[i] = null;
-			}
+//			else {
+//				this.charValues[i] = null;
+//			}
 		}
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeStringArray(this.charValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
-			if (this.charValues[i] == null) {
-				out.writeBoolean(false);
+			if (this.charValues[i] != null) {
+				out.writeInt(this.charValues[i].length());
+				out.writeChars(this.charValues[i]);
 			}
 			else {
-				out.writeBoolean(true);
-				out.writeUTF(this.charValues[i]);
+				out.writeInt(-1);
 			}
 		}
 	}

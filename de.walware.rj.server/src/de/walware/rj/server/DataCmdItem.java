@@ -18,6 +18,7 @@ import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
@@ -133,48 +134,58 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	/**
 	 * Constructor for deserialization
 	 */
-	public DataCmdItem(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public DataCmdItem(final RJIO io) throws IOException {
+		readExternal(io);
 	}
 	
 	@Override
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		out.writeByte(this.type);
-		out.writeInt(this.options);
+	public void writeExternal(final RJIO io) throws IOException {
+		io.out.writeByte(this.type);
+		io.out.writeInt(this.options);
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status.writeExternal(out);
+			this.status.writeExternal(io.out);
 			return;
 		}
-		out.writeByte(this.depth);
-		out.writeUTF(this.factoryId);
+		io.out.writeByte(this.depth);
+		io.writeString(this.factoryId);
 		if ((this.options & OV_WITHTEXT) != 0) {
-			out.writeUTF(this.text);
+			io.writeString(this.text);
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
-			gDefaultFactory.writeObject(this.rdata, out, (this.options & 0xff));
+			io.flags = (this.options & 0xff);
+			gDefaultFactory.writeObject(this.rdata, io);
 		}
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		this.type = in.readByte();
-		this.options = in.readInt();
+	public void writeExternal(final ObjectOutput out) throws IOException {
+		writeExternal(RJIO.get(out));
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		this.type = io.in.readByte();
+		this.options = io.in.readInt();
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(in);
+			this.status = new RjsStatus(io.in);
 			return;
 		}
-		this.depth = in.readByte();
-		this.factoryId = in.readUTF();
+		this.depth = io.in.readByte();
+		this.factoryId = io.readString();
 		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = in.readUTF();
+			this.text = io.readString();
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
+			io.flags = (this.options & 0xff);
 			if ((this.options & OV_USEFACTORY) != 0) {
-				this.rdata = getFactory(this.factoryId).readObject(in, (this.options & 0xff));
+				this.rdata = getFactory(this.factoryId).readObject(io);
 			}
 			else {
-				this.rdata = gDefaultFactory.readObject(in, (this.options & 0xff));
+				this.rdata = gDefaultFactory.readObject(io);
 			}
 		}
+	}
+	
+	public void readExternal(final ObjectInput in) throws IOException {
+		readExternal(RJIO.get(in));
 	}
 	
 	

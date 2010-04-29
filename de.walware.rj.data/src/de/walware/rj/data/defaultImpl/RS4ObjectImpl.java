@@ -12,10 +12,9 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RS4Object;
@@ -27,6 +26,7 @@ public class RS4ObjectImpl extends AbstractRObject
 	
 	
 	private String className;
+	
 	private int dataSlotIdx;
 	private RCharacterDataImpl slotNames;
 	private RObject[] slotValues;
@@ -43,29 +43,28 @@ public class RS4ObjectImpl extends AbstractRObject
 		this.slotValues = slotValues;
 	}
 	
-	public RS4ObjectImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public RS4ObjectImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		this.className = in.readUTF();
-		this.dataSlotIdx = in.readInt();
-		this.slotNames = new RCharacterDataImpl(in);
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		this.className = io.readString();
+		this.dataSlotIdx = io.in.readInt();
+		this.slotNames = new RCharacterDataImpl(io);
 		final int length = this.slotNames.getLength();
 		this.slotValues = new RObject[length];
 		for (int i = 0; i < length; i++) {
-			this.slotValues[i] = factory.readObject(in, flags);
+			this.slotValues[i] = factory.readObject(io);
 		}
 	}
 	
-	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		out.writeUTF(this.className);
-		out.writeInt(this.dataSlotIdx);
-		this.slotNames.writeExternal(out);
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		io.writeString(this.className);
+		io.out.writeInt(this.dataSlotIdx);
+		this.slotNames.writeExternal(io);
 		final int length = this.slotNames.getLength();
 		for (int i = 0; i < length; i++) {
-			factory.writeObject(this.slotValues[i], out, flags);
+			factory.writeObject(this.slotValues[i], io);
 		}
 	}
 	

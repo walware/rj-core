@@ -12,11 +12,10 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RFunction;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 
@@ -38,18 +37,18 @@ public class RFunctionImpl extends AbstractRObject
 		this.headerSource = header;
 	}
 	
-	public RFunctionImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public RFunctionImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		/*final int options =*/ in.readInt();
-		this.headerSource = in.readUTF();
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		/*final int options =*/ io.in.readInt();
+		this.headerSource = io.readString();
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		out.writeInt(/*options*/ 0);
-		out.writeUTF((this.headerSource != null) ? this.headerSource : "");
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		io.out.writeInt(/*options*/ 0);
+		io.writeString(this.headerSource);
 	}
 	
 	
@@ -57,12 +56,13 @@ public class RFunctionImpl extends AbstractRObject
 		return TYPE_FUNCTION;
 	}
 	
-	public int getLength() {
-		return 1;
-	}
-	
 	public String getRClassName() {
 		return "function";
+	}
+	
+	
+	public int getLength() {
+		return 0;
 	}
 	
 	public String getHeaderSource() {

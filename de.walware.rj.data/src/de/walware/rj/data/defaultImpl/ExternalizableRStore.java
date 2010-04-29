@@ -9,33 +9,18 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
-import de.walware.rj.data.defaultImpl.RNumericDataBImpl;
 
 
-public class JRINumericDataImpl extends RNumericDataBImpl {
+public interface ExternalizableRStore {
 	
 	
-	public JRINumericDataImpl(final double[] values) {
-		super(values);
-	}
+	public void readExternal(final RJIO io) throws IOException;
 	
-	public JRINumericDataImpl(final RJIO io) throws IOException {
-		super(io);
-	}
-	
-	
-	public double[] getJRIValueArray() {
-		if (this.realValues.length == this.length) {
-			return this.realValues;
-		}
-		final double[] array = new double[this.length];
-		System.arraycopy(this.realValues, 0, array, 0, this.length);
-		return array;
-	}
+	public void writeExternal(final RJIO io) throws IOException;
 	
 }

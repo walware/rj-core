@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RIntegerDataImpl;
 
 
@@ -24,8 +24,8 @@ public class JRIIntegerDataImpl extends RIntegerDataImpl {
 		super(values);
 	}
 	
-	public JRIIntegerDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRIIntegerDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	

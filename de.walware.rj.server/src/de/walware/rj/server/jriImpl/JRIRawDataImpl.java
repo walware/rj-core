@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RRawDataImpl;
 
 
@@ -24,8 +24,8 @@ public class JRIRawDataImpl extends RRawDataImpl {
 		super(values);
 	}
 	
-	public JRIRawDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public JRIRawDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
 	

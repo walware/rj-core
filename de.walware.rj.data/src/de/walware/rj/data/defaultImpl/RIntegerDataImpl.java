@@ -16,9 +16,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
+
 
 public class RIntegerDataImpl extends AbstractIntegerData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	protected int[] intValues;
@@ -50,8 +52,13 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	}
 	
 	
-	public RIntegerDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RIntegerDataImpl(final RJIO io) throws IOException {
+		readExternal(io);
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		this.intValues = io.readIntArray();
+		this.length = this.intValues.length;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -60,6 +67,10 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		for (int i = 0; i < this.length; i++) {
 			this.intValues[i] = in.readInt();
 		}
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeIntArray(this.intValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {

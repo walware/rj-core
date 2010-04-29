@@ -12,9 +12,9 @@
 package de.walware.rj.server;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Arrays;
+
+import de.walware.rj.data.RJIO;
 
 
 /**
@@ -72,26 +72,26 @@ public abstract class GDCmdItem extends MainCmdItem {
 		/**
 		 * Constructor for deserialization
 		 */
-		public Answer(final ObjectInput in) throws IOException, ClassNotFoundException {
-			this.options = in.readInt();
-			this.devId = in.readInt();
-			this.requestId = in.readByte();
-			final int length = in.readInt();
+		public Answer(final RJIO io) throws IOException, ClassNotFoundException {
+			this.options = io.in.readInt();
+			this.devId = io.in.readInt();
+			this.requestId = io.in.readByte();
+			final int length = io.in.readInt();
 			this.data = new double[length];
 			for (int i = 0; i < length; i++) {
-				this.data[i] = in.readDouble();
+				this.data[i] = io.in.readDouble();
 			}
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(this.requestId);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(this.requestId);
 			final int length = this.data.length;
-			out.writeInt(length);
+			io.out.writeInt(length);
 			for (int i = 0; i < length; i++) {
-				out.writeDouble(this.data[i]);
+				io.out.writeDouble(this.data[i]);
 			}
 		}
 		
@@ -144,13 +144,13 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_NEW_PAGE);
-			out.writeDouble(this.w);
-			out.writeDouble(this.h);
-			out.writeBoolean(this.active);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_NEW_PAGE);
+			io.out.writeDouble(this.w);
+			io.out.writeDouble(this.h);
+			io.out.writeBoolean(this.active);
 		}
 		
 		
@@ -197,10 +197,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_CLOSE_DEVICE);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_CLOSE_DEVICE);
 		}
 		
 		
@@ -246,11 +246,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_GET_SIZE);
-			out.writeByte(this.requestId);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_GET_SIZE);
+			io.out.writeByte(this.requestId);
 		}
 		
 		
@@ -297,10 +297,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_SET_ACTIVE_OFF);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_SET_ACTIVE_OFF);
 		}
 		
 		
@@ -346,10 +346,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_SET_ACTIVE_ON);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_SET_ACTIVE_ON);
 		}
 		
 		
@@ -399,11 +399,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_SET_MODE);
-			out.writeByte(this.mode);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_SET_MODE);
+			io.out.writeByte(this.mode);
 		}
 		
 		
@@ -455,12 +455,12 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_GET_FONTMETRIC);
-			out.writeByte(this.requestId);
-			out.writeInt(this.c);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_GET_FONTMETRIC);
+			io.out.writeByte(this.requestId);
+			io.out.writeInt(this.c);
 		}
 		
 		
@@ -511,12 +511,12 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(C_GET_STRINGWIDTH);
-			out.writeByte(this.requestId);
-			out.writeUTF(this.text);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(C_GET_STRINGWIDTH);
+			io.out.writeByte(this.requestId);
+			io.writeString(this.text);
 		}
 		
 		
@@ -574,14 +574,14 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(SET_CLIP);
-			out.writeDouble(this.x0);
-			out.writeDouble(this.y0);
-			out.writeDouble(this.x1);
-			out.writeDouble(this.y1);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(SET_CLIP);
+			io.out.writeDouble(this.x0);
+			io.out.writeDouble(this.y0);
+			io.out.writeDouble(this.x1);
+			io.out.writeDouble(this.y1);
 		}
 		
 		
@@ -632,11 +632,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(SET_COLOR);
-			out.writeInt(this.cc);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(SET_COLOR);
+			io.out.writeInt(this.cc);
 		}
 		
 		
@@ -687,11 +687,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(SET_FILL);
-			out.writeInt(this.cc);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(SET_FILL);
+			io.out.writeInt(this.cc);
 		}
 		
 		
@@ -745,12 +745,12 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(SET_LINE);
-			out.writeInt(this.type);
-			out.writeDouble(this.width);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(SET_LINE);
+			io.out.writeInt(this.type);
+			io.out.writeDouble(this.width);
 		}
 		
 		
@@ -811,15 +811,15 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(SET_FONT);
-			out.writeUTF(this.family);
-			out.writeInt(this.face);
-			out.writeDouble(this.pointSize);
-			out.writeDouble(this.cex);
-			out.writeDouble(this.lineHeight);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(SET_FONT);
+			io.writeString(this.family);
+			io.out.writeInt(this.face);
+			io.out.writeDouble(this.pointSize);
+			io.out.writeDouble(this.cex);
+			io.out.writeDouble(this.lineHeight);
 		}
 		
 		
@@ -877,14 +877,14 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_LINE);
-			out.writeDouble(this.x0);
-			out.writeDouble(this.y0);
-			out.writeDouble(this.x1);
-			out.writeDouble(this.y1);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_LINE);
+			io.out.writeDouble(this.x0);
+			io.out.writeDouble(this.y0);
+			io.out.writeDouble(this.x1);
+			io.out.writeDouble(this.y1);
 		}
 		
 		
@@ -942,14 +942,14 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_RECTANGLE);
-			out.writeDouble(this.x0);
-			out.writeDouble(this.y0);
-			out.writeDouble(this.x1);
-			out.writeDouble(this.y1);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_RECTANGLE);
+			io.out.writeDouble(this.x0);
+			io.out.writeDouble(this.y0);
+			io.out.writeDouble(this.x1);
+			io.out.writeDouble(this.y1);
 		}
 		
 		
@@ -1003,17 +1003,17 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_POLYLINE);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_POLYLINE);
 			final int n = this.x.length;
-			out.writeInt(n);
+			io.out.writeInt(n);
 			for (int i = 0; i < n; i++) {
-				out.writeDouble(this.x[i]);
+				io.out.writeDouble(this.x[i]);
 			}
 			for (int i = 0; i < n; i++) {
-				out.writeDouble(this.y[i]);
+				io.out.writeDouble(this.y[i]);
 			}
 		}
 		
@@ -1068,17 +1068,17 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_POLYGON);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_POLYGON);
 			final int n = this.x.length;
-			out.writeInt(n);
+			io.out.writeInt(n);
 			for (int i = 0; i < n; i++) {
-				out.writeDouble(this.x[i]);
+				io.out.writeDouble(this.x[i]);
 			}
 			for (int i = 0; i < n; i++) {
-				out.writeDouble(this.y[i]);
+				io.out.writeDouble(this.y[i]);
 			}
 		}
 		
@@ -1135,13 +1135,13 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_CIRCLE);
-			out.writeDouble(this.x);
-			out.writeDouble(this.y);
-			out.writeDouble(this.r);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_CIRCLE);
+			io.out.writeDouble(this.x);
+			io.out.writeDouble(this.y);
+			io.out.writeDouble(this.r);
 		}
 		
 		
@@ -1202,15 +1202,15 @@ public abstract class GDCmdItem extends MainCmdItem {
 		}
 		
 		@Override
-		public void writeExternal(final ObjectOutput out) throws IOException {
-			out.writeInt(this.options);
-			out.writeInt(this.devId);
-			out.writeByte(DRAW_TEXT);
-			out.writeDouble(this.x);
-			out.writeDouble(this.y);
-			out.writeDouble(this.hAdj);
-			out.writeDouble(this.rDeg);
-			out.writeUTF(this.text);
+		public void writeExternal(final RJIO io) throws IOException {
+			io.out.writeInt(this.options);
+			io.out.writeInt(this.devId);
+			io.out.writeByte(DRAW_TEXT);
+			io.out.writeDouble(this.x);
+			io.out.writeDouble(this.y);
+			io.out.writeDouble(this.hAdj);
+			io.out.writeDouble(this.rDeg);
+			io.writeString(this.text);
 		}
 		
 		

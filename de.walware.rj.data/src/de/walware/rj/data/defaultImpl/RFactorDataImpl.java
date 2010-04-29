@@ -18,11 +18,12 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
 
 public class RFactorDataImpl extends AbstractFactorData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	protected int[] codes;
@@ -51,21 +52,40 @@ public class RFactorDataImpl extends AbstractFactorData
 		this.isOrdered = isOrdered;
 	}
 	
-	public RFactorDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RFactorDataImpl(final RJIO io) throws IOException {
+		readExternal(io);
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io) throws IOException {
+		this.isOrdered = io.in.readBoolean();
+		this.length = io.in.readInt();
+		this.codes = new int[this.length];
+		for (int i = 0; i < this.length; i++) {
+			this.codes[i] = io.in.readInt();
+		}
+		this.codeLabels = readLabels(io);
+	}
+	protected RCharacterDataImpl readLabels(final RJIO io) throws IOException {
+		return new RUniqueCharacterDataImpl(io);
+	}
+	
+	public void readExternal(final ObjectInput in) throws IOException {
 		this.isOrdered = in.readBoolean();
 		this.length = in.readInt();
 		this.codes = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
 			this.codes[i] = in.readInt();
 		}
-		this.codeLabels = readLabels(in);
+		this.codeLabels = new RUniqueCharacterDataImpl(in);
 	}
-	protected RCharacterDataImpl readLabels(final ObjectInput in) throws IOException, ClassNotFoundException {
-		return new RUniqueCharacterDataImpl(in);
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		io.out.writeBoolean(this.isOrdered);
+		io.out.writeInt(this.length);
+		for (int i = 0; i < this.length; i++) {
+			io.out.writeInt(this.codes[i]);
+		}
+		this.codeLabels.writeExternal(io);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {

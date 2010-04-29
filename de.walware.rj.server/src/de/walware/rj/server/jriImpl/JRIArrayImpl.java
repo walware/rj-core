@@ -11,21 +11,20 @@
 
 package de.walware.rj.server.jriImpl;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Arrays;
 
 import de.walware.rj.data.RArray;
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RIntegerStore;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.AbstractRObject;
 import de.walware.rj.data.defaultImpl.ExternalizableRObject;
+import de.walware.rj.data.defaultImpl.ExternalizableRStore;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.SimpleRListImpl;
 
@@ -55,45 +54,41 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		this.data = data;
 	}
 	
-	public JRIArrayImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public JRIArrayImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = in.readInt();
+		final int options = io.in.readInt();
 		final boolean customClass = ((options & RObjectFactory.O_CLASS_NAME) != 0);
 		//-- special attributes
 		if (customClass) {
-			this.className1 = in.readUTF();
+			this.className1 = io.readString();
 		}
-		final int dimCount = in.readInt();
-		final int[] dim = new int[dimCount];
-		for (int i = 0; i < dimCount; i++) {
-			dim[i] = in.readInt();
-		}
+		final int[] dim = io.readIntArray();
 		this.dimAttribute = dim;
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			final RCharacterDataImpl names0 = new RCharacterDataImpl(in);
-			final RStore[] names1 = new RStore[dimCount];
-			for (int i = 0; i < dimCount; i++) {
-				names1[i] = factory.readNames(in, flags);
+			final RCharacterDataImpl names0 = new RCharacterDataImpl(io);
+			final RStore[] names1 = new RStore[dim.length];
+			for (int i = 0; i < dim.length; i++) {
+				names1[i] = factory.readNames(io);
 			}
 			this.dimnamesAttribute = new SimpleRListImpl<RStore>(names0, names1);
 		}
 		//-- data
-		this.data = (DataType) factory.readStore(in, flags);
+		this.data = (DataType) factory.readStore(io);
 		
 		if (!customClass) {
-			this.className1 = (dimCount == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY;
+			this.className1 = (dim.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY;
 		}
 		//-- attributes
 		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
-			setAttributes(factory.readAttributeList(in, flags));
+			setAttributes(factory.readAttributeList(io));
 		}
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = 0;
 		final boolean customClass = this.className1 != null
@@ -102,34 +97,30 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		if ((flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.dimnamesAttribute != null) {
+		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.dimnamesAttribute != null) {
 			options |= RObjectFactory.O_WITH_NAMES;
 		}
-		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
-		out.writeInt(options);
+		io.out.writeInt(options);
 		//-- special attributes
 		if (customClass) {
-			out.writeUTF(this.className1);
+			io.writeString(this.className1);
 		}
-		final int dimCount = this.dimAttribute.length;
-		out.writeInt(dimCount);
-		for (int i = 0; i < dimCount; i++) {
-			out.writeInt(this.dimAttribute[i]);
-		}
+		io.writeIntArray(this.dimAttribute, this.dimAttribute.length);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			((Externalizable) this.dimnamesAttribute.getNames()).writeExternal(out);
-			for (int i = 0; i < dimCount; i++) {
-				factory.writeNames(this.dimnamesAttribute.get(i), out, flags);
+			((ExternalizableRStore) this.dimnamesAttribute.getNames()).writeExternal(io);
+			for (int i = 0; i < this.dimAttribute.length; i++) {
+				factory.writeNames(this.dimnamesAttribute.get(i), io);
 			}
 		}
 		//-- data
-		factory.writeStore(this.data, out, flags);
+		factory.writeStore(this.data, io);
 		//-- attributes
 		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
-			factory.writeAttributeList(attributes, out, flags);
+			factory.writeAttributeList(attributes, io);
 		}
 	}
 	

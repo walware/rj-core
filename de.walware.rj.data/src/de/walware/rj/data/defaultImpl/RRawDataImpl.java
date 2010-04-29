@@ -16,12 +16,12 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
 
 public class RRawDataImpl extends AbstractRawData
-		implements RDataResizeExtension, Externalizable {
-	
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	protected byte[] byteValues;
@@ -42,14 +42,23 @@ public class RRawDataImpl extends AbstractRawData
 		this.length = this.byteValues.length;
 	}
 	
-	public RRawDataImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RRawDataImpl(final RJIO io) throws IOException {
+		readExternal(io);
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io) throws IOException {
+		this.byteValues = io.readByteArray();
+		this.length = this.byteValues.length;
+	}
+	
+	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.byteValues = new byte[this.length];
 		in.readFully(this.byteValues, 0, this.length);
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeByteArray(this.byteValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {

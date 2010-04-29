@@ -16,12 +16,14 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
+
 
 /**
  * Based on byte array, default value is FALSE
  */
 public class RLogicalDataByteImpl extends AbstractLogicalData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	public static final byte TRUE = TRUE_BYTE;
@@ -87,23 +89,30 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	}
 	
 	
-	public RLogicalDataByteImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RLogicalDataByteImpl(final RJIO io) throws IOException {
+		readExternal(io);
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		this.length = io.in.readInt();
+		this.boolValues = new byte[this.length];
+		io.in.readFully(this.boolValues, 0, this.length);
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.length = in.readInt();
 		this.boolValues = new byte[this.length];
-		for (int i = 0; i < this.length; i++) {
-			this.boolValues[i] = in.readByte();
-		}
+		in.readFully(this.boolValues, 0, this.length);
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		io.out.writeInt(this.length);
+		io.out.write(this.boolValues, 0, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
-		for (int i = 0; i < this.length; i++) {
-			out.writeByte(this.boolValues[i]);
-		}
+		out.write(this.boolValues, 0, this.length);
 	}
 	
 	

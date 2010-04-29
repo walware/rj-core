@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.defaultImpl.RDataFrameImpl;
@@ -26,8 +26,8 @@ public class JRIDataFrameImpl extends RDataFrameImpl {
 		super(columns, className1, initialNames, initialRownames, false);
 	}
 	
-	public JRIDataFrameImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		super(in, flags, factory);
+	public JRIDataFrameImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		super(io, factory);
 	}
 	
 	

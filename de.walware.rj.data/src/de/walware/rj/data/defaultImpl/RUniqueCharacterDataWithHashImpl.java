@@ -12,8 +12,9 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.util.HashMap;
+
+import de.walware.rj.data.RJIO;
 
 
 public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
@@ -34,8 +35,8 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 		initMap();
 	}
 	
-	public RUniqueCharacterDataWithHashImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super(in);
+	public RUniqueCharacterDataWithHashImpl(final RJIO io) throws IOException {
+		super(io);
 		this.map = new HashMap<String, Integer>();
 		initMap();
 	}

@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.defaultImpl.RListImpl;
@@ -28,8 +28,8 @@ public class JRIListImpl extends RListImpl {
 	public JRIListImpl(final int length, final String className1, final String[] initialNames) {
 		super(null, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, length);
 	}
-	public JRIListImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		super(in, flags, factory);
+	public JRIListImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		super(io, factory);
 	}
 	
 	

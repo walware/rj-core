@@ -12,17 +12,16 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObjectFactory;
 
 
 public interface ExternalizableRObject {
 	
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException;
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException;
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException;
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException;
 	
 }

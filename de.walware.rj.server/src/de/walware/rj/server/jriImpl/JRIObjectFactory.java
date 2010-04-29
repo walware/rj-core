@@ -12,8 +12,8 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.REnvironmentImpl;
@@ -31,31 +31,31 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	
 	
 	@Override
-	public RObject readObject(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		final byte type = in.readByte();
+	public RObject readObject(final RJIO io) throws IOException {
+		final byte type = io.in.readByte();
 		switch (type) {
 		case -1:
 			return null;
 		case RObject.TYPE_NULL:
 			return RNull.INSTANCE;
 		case RObject.TYPE_VECTOR: {
-			return new RVectorImpl(in, flags, this); }
+			return new RVectorImpl(io, this); }
 		case RObject.TYPE_ARRAY:
-			return new JRIArrayImpl(in, flags, this);
+			return new JRIArrayImpl(io, this);
 		case RObject.TYPE_LIST:
-			return new JRIListImpl(in, flags, this);
+			return new JRIListImpl(io, this);
 		case RObject.TYPE_DATAFRAME:
-			return new JRIDataFrameImpl(in, flags, this);
+			return new JRIDataFrameImpl(io, this);
 		case RObject.TYPE_ENV:
-			return new REnvironmentImpl(in, flags, this);
+			return new REnvironmentImpl(io, this);
 		case RObject.TYPE_FUNCTION:
-			return new RFunctionImpl(in, flags, this);
+			return new RFunctionImpl(io, this);
 		case RObject.TYPE_REFERENCE:
-			return new RReferenceImpl(in, flags, this);
+			return new RReferenceImpl(io, this);
 		case RObject.TYPE_S4OBJECT:
-			return new RS4ObjectImpl(in, flags, this);
+			return new RS4ObjectImpl(io, this);
 		case RObject.TYPE_OTHER:
-			return new ROtherImpl(in, flags, this);
+			return new ROtherImpl(io, this);
 		case RObject.TYPE_MISSING:
 			return RMissing.INSTANCE;
 		default:
@@ -64,30 +64,30 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readStore(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		if ((flags & F_ONLY_STRUCT) == 0) {
-			final byte storeType = in.readByte();
+	public RStore readStore(final RJIO io) throws IOException {
+		if ((io.flags & F_ONLY_STRUCT) == 0) {
+			final byte storeType = io.in.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
-				return new JRILogicalDataImpl(in);
+				return new JRILogicalDataImpl(io);
 			case RStore.INTEGER:
-				return new JRIIntegerDataImpl(in);
+				return new JRIIntegerDataImpl(io);
 			case RStore.NUMERIC:
-				return new JRINumericDataImpl(in);
+				return new JRINumericDataImpl(io);
 			case RStore.COMPLEX:
-				return new JRIComplexDataImpl(in);
+				return new JRIComplexDataImpl(io);
 			case RStore.CHARACTER:
-				return new JRICharacterDataImpl(in);
+				return new JRICharacterDataImpl(io);
 			case RStore.RAW:
-				return new JRIRawDataImpl(in);
+				return new JRIRawDataImpl(io);
 			case RStore.FACTOR:
-				return new JRIFactorDataImpl(in);
+				return new JRIFactorDataImpl(io);
 			default:
 				throw new IOException("store type = " + storeType);
 			}
 		}
 		else {
-			final byte storeType = in.readByte();
+			final byte storeType = io.in.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
 				return LOGI_STRUCT_DUMMY;
@@ -102,7 +102,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			case RStore.RAW:
 				return RAW_STRUCT_DUMMY;
 			case RStore.FACTOR:
-				return new RFactorDataStruct(-1, in.readBoolean(), in.readInt());
+				return new RFactorDataStruct(-1, io.in.readBoolean(), io.in.readInt());
 			default:
 				throw new IOException("store type = " + storeType);
 			}
@@ -110,11 +110,10 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readNames(final ObjectInput in, final int flags)
-			throws IOException, ClassNotFoundException {
-		final byte type = in.readByte();
+	public RStore readNames(final RJIO io) throws IOException {
+		final byte type = io.in.readByte();
 		if (type == RStore.CHARACTER) {
-			return new JRICharacterDataImpl(in);
+			return new JRICharacterDataImpl(io);
 		}
 		if (type == 0) {
 			return null;

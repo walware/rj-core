@@ -12,8 +12,7 @@
 package de.walware.rj.data;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+
 
 
 public interface RObjectFactory {
@@ -52,16 +51,16 @@ public interface RObjectFactory {
 	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
 	
-	void writeObject(RObject object, ObjectOutput out, int flags) throws IOException;
-	RObject readObject(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
+	void writeObject(RObject object, RJIO io) throws IOException;
+	RObject readObject(RJIO io) throws IOException;
 	
-	void writeStore(RStore data, ObjectOutput out, int flags) throws IOException;
-	RStore readStore(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
+	void writeStore(RStore data, RJIO io) throws IOException;
+	RStore readStore(RJIO io) throws IOException;
 	
-	void writeAttributeList(RList list, ObjectOutput out, int flags) throws IOException;
-	RList readAttributeList(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
+	void writeAttributeList(RList list, RJIO io) throws IOException;
+	RList readAttributeList(RJIO io) throws IOException;
 	
-	void writeNames(RStore names, ObjectOutput out, int flags) throws IOException;
-	RStore readNames(ObjectInput in, int flags) throws IOException, ClassNotFoundException;
+	void writeNames(RStore names, RJIO io) throws IOException;
+	RStore readNames(RJIO io) throws IOException;
 	
 }

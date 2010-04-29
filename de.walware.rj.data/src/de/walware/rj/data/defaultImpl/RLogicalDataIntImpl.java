@@ -11,17 +11,18 @@
 
 package de.walware.rj.data.defaultImpl;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+
+import de.walware.rj.data.RJIO;
 
 
 /**
  * Based on int array
  */
 public class RLogicalDataIntImpl extends AbstractLogicalData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore {
 	
 	
 	protected int[] boolValues;
@@ -59,18 +60,12 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		this.boolValues = values;
 	}
 	
-	/**
-	 * Constructor for deserialization
-	 * 
-	 * @param in the input stream providing the serizalized object
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 */
-	public RLogicalDataIntImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RLogicalDataIntImpl(final RJIO io) throws IOException {
+		readExternal(io);
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io) throws IOException {
+		final ObjectInput in = io.in;
 		this.length = in.readInt();
 		this.boolValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
@@ -87,7 +82,8 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		}
 	}
 	
-	public void writeExternal(final ObjectOutput out) throws IOException {
+	public void writeExternal(final RJIO io) throws IOException {
+		final ObjectOutput out = io.out;
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
 			switch (this.boolValues[i]) {

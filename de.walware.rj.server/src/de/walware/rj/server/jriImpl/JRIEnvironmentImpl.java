@@ -12,11 +12,10 @@
 package de.walware.rj.server.jriImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.REnvironment;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
@@ -52,39 +51,39 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		this.className1 = className1;
 	}
 	
-	public JRIEnvironmentImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public JRIEnvironmentImpl(final RJIO io, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = in.readInt();
+		final int options = io.in.readInt();
 		//-- special attributes
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
-				in.readUTF() : RObject.CLASSNAME_ENV;
+				io.readString() : RObject.CLASSNAME_ENV;
 		//-- data
-		this.handle = in.readLong();
-		this.id = in.readUTF();
-		this.length = in.readInt();
+		this.handle = io.in.readLong();
+		this.id = io.readString();
+		this.length = io.in.readInt();
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(in);
+			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(io);
 			this.components = new RObject[this.length];
 			for (int i = 0; i < this.length; i++) {
-				this.components[i] = factory.readObject(in, flags);
+				this.components[i] = factory.readObject(io);
 			}
 		}
 		//-- attributes
 		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
-			setAttributes(factory.readAttributeList(in, flags));
+			setAttributes(factory.readAttributeList(io));
 		}
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = 0;
 		final boolean customClass = this.className1 != null
@@ -92,33 +91,33 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
 		if (this.components == null) {
 			options |= RObjectFactory.O_NO_CHILDREN;
 		}
-		out.writeInt(options);
+		io.out.writeInt(options);
 		//-- special attributes
 		if (customClass) {
-			out.writeUTF(this.className1);
+			io.writeString(this.className1);
 		}
 		
-		out.writeLong(this.handle);
-		out.writeUTF(this.id);
-		out.writeInt(this.length);
+		io.out.writeLong(this.handle);
+		io.writeString(this.id);
+		io.out.writeInt(this.length);
 		
 		if (this.components != null) {
-			this.namesAttribute.writeExternal(out);
+			this.namesAttribute.writeExternal(io);
 			//-- data
 			for (int i = 0; i < this.length; i++) {
-				factory.writeObject(this.components[i], out, flags);
+				factory.writeObject(this.components[i], io);
 			}
 		}
 		//-- attributes
 		if (attributes != null) {
-			factory.writeAttributeList(attributes, out, flags);
+			factory.writeAttributeList(attributes, io);
 		}
 	}
 	

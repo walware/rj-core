@@ -16,9 +16,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
+
 
 public class RNumericDataBImpl extends AbstractNumericData
-		implements RDataResizeExtension, Externalizable {
+		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
 	
 	protected double[] realValues;
@@ -50,8 +52,23 @@ public class RNumericDataBImpl extends AbstractNumericData
 	}
 	
 	
-	public RNumericDataBImpl(final ObjectInput in) throws IOException, ClassNotFoundException {
-		readExternal(in);
+	public RNumericDataBImpl(final RJIO io) throws IOException {
+		readExternal(io);
+	}
+	
+	public void readExternal(final RJIO io) throws IOException {
+		final ObjectInput in = io.in;
+		this.length = in.readInt();
+		this.realValues = new double[this.length];
+		for (int i = 0; i < this.length; i++) {
+			final long l = io.in.readLong();
+			if (l == NA_numeric_LONG) {
+				this.realValues[i] = NA_numeric_DOUBLE;
+			}
+			else {
+				this.realValues[i] = Double.longBitsToDouble(l);
+			}
+		}
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -65,6 +82,14 @@ public class RNumericDataBImpl extends AbstractNumericData
 			else {
 				this.realValues[i] = Double.longBitsToDouble(l);
 			}
+		}
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		final ObjectOutput out = io.out;
+		out.writeInt(this.length);
+		for (int i = 0; i < this.length; i++) {
+			out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
 		}
 	}
 	

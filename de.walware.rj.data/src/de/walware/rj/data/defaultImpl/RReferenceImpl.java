@@ -12,9 +12,8 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
@@ -35,20 +34,20 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 		this.baseClassName = baseClass;
 	}
 	
-	public RReferenceImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public RReferenceImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		this.handle = in.readLong();
-		this.type = in.readInt();
-		this.baseClassName = in.readUTF();
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		this.handle = io.in.readLong();
+		this.type = io.in.readInt();
+		this.baseClassName = io.readString();
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		out.writeLong(this.handle);
-		out.writeInt(this.type);
-		out.writeUTF(this.baseClassName);
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		io.out.writeLong(this.handle);
+		io.out.writeInt(this.type);
+		io.writeString(this.baseClassName);
 	}
 	
 	

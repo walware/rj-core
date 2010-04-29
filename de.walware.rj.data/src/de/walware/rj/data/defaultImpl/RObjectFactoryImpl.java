@@ -11,10 +11,8 @@
 
 package de.walware.rj.data.defaultImpl;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RArray;
 import de.walware.rj.data.RCharacterStore;
@@ -22,6 +20,7 @@ import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
@@ -466,31 +465,31 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Streaming --*/
 	
-	public RObject readObject(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		final byte type = in.readByte();
+	public RObject readObject(final RJIO io) throws IOException {
+		final byte type = io.in.readByte();
 		switch (type) {
 		case -1:
 			return null;
 		case RObject.TYPE_NULL:
 			return RNull.INSTANCE;
 		case RObject.TYPE_VECTOR: {
-			return new RVectorImpl(in, flags, this); }
+			return new RVectorImpl(io, this); }
 		case RObject.TYPE_ARRAY:
-			return new RArrayImpl(in, flags, this);
+			return new RArrayImpl(io, this);
 		case RObject.TYPE_LIST:
-			return new RListImpl(in, flags, this);
+			return new RListImpl(io, this);
 		case RObject.TYPE_DATAFRAME:
-			return new RDataFrameImpl(in, flags, this);
+			return new RDataFrameImpl(io, this);
 		case RObject.TYPE_ENV:
-			return new REnvironmentImpl(in, flags, this);
+			return new REnvironmentImpl(io, this);
 		case RObject.TYPE_FUNCTION:
-			return new RFunctionImpl(in, flags, this);
+			return new RFunctionImpl(io, this);
 		case RObject.TYPE_REFERENCE:
-			return new RReferenceImpl(in, flags, this);
+			return new RReferenceImpl(io, this);
 		case RObject.TYPE_S4OBJECT:
-			return new RS4ObjectImpl(in, flags, this);
+			return new RS4ObjectImpl(io, this);
 		case RObject.TYPE_OTHER:
-			return new ROtherImpl(in, flags, this);
+			return new ROtherImpl(io, this);
 		case RObject.TYPE_MISSING:
 			return RMissing.INSTANCE;
 		default:
@@ -498,68 +497,68 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
-	public void writeObject(final RObject robject, final ObjectOutput out, final int flags) throws IOException {
+	public void writeObject(final RObject robject, final RJIO io) throws IOException {
 		if (robject == null) {
-			out.writeByte(-1);
+			io.out.writeByte(-1);
 			return;
 		}
 		final byte type = robject.getRObjectType();
-		out.writeByte(type);
+		io.out.writeByte(type);
 		switch (type) {
 		case RObject.TYPE_NULL:
 		case RObject.TYPE_MISSING:
 			return;
 		case RObject.TYPE_VECTOR:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_ARRAY:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_LIST:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_DATAFRAME:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_ENV:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_FUNCTION:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_REFERENCE:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_S4OBJECT:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
 		case RObject.TYPE_OTHER:
 			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(out, flags, this);
+				((ExternalizableRObject) robject).writeExternal(io, this);
 				return;
 			}
 			throw new UnsupportedOperationException();
@@ -568,30 +567,30 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
-	public RStore readStore(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		if ((flags & F_ONLY_STRUCT) == 0) {
-			final byte storeType = in.readByte();
+	public RStore readStore(final RJIO io) throws IOException {
+		if ((io.flags & F_ONLY_STRUCT) == 0) {
+			final byte storeType = io.in.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
-				return new RLogicalDataByteImpl(in);
+				return new RLogicalDataByteImpl(io);
 			case RStore.INTEGER:
-				return new RIntegerDataImpl(in);
+				return new RIntegerDataImpl(io);
 			case RStore.NUMERIC:
-				return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(in) : new RNumericDataImpl(in);
+				return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(io) : new RNumericDataImpl(io);
 			case RStore.COMPLEX:
-				return RComplexDataBImpl.isBforNASupported() ? new RComplexDataBImpl(in) : new RComplexDataImpl(in);
+				return RComplexDataBImpl.isBforNASupported() ? new RComplexDataBImpl(io) : new RComplexDataImpl(io);
 			case RStore.CHARACTER:
-				return new RCharacterDataImpl(in);
+				return new RCharacterDataImpl(io);
 			case RStore.RAW:
-				return new RRawDataImpl(in);
+				return new RRawDataImpl(io);
 			case RStore.FACTOR:
-				return new RFactorDataImpl(in);
+				return new RFactorDataImpl(io);
 			default:
 				throw new IOException("store type = " + storeType);
 			}
 		}
 		else {
-			final byte storeType = in.readByte();
+			final byte storeType = io.in.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
 				return LOGI_STRUCT_DUMMY;
@@ -606,35 +605,35 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			case RStore.RAW:
 				return RAW_STRUCT_DUMMY;
 			case RStore.FACTOR:
-				return new RFactorDataStruct(-1, in.readBoolean(), in.readInt());
+				return new RFactorDataStruct(-1, io.in.readBoolean(), io.in.readInt());
 			default:
 				throw new IOException("store type = " + storeType);
 			}
 		}
 	}
 	
-	public void writeStore(final RStore data, final ObjectOutput out, final int flags) throws IOException {
-		if ((flags & F_ONLY_STRUCT) == 0) {
-			out.writeByte(data.getStoreType());
-			((Externalizable) data).writeExternal(out);
+	public void writeStore(final RStore data, final RJIO io) throws IOException {
+		if ((io.flags & F_ONLY_STRUCT) == 0) {
+			io.out.writeByte(data.getStoreType());
+			((ExternalizableRStore) data).writeExternal(io);
 		}
 		else {
 			final byte storeType = data.getStoreType();
-			out.writeByte(storeType);
+			io.out.writeByte(storeType);
 			if (storeType == RStore.FACTOR) {
 				final RFactorStore factor = (RFactorStore) data;
-				out.writeBoolean(factor.isOrdered());
-				out.writeInt(factor.getLevelCount());
+				io.out.writeBoolean(factor.isOrdered());
+				io.out.writeInt(factor.getLevelCount());
 			}
 		}
 	}
 	
-	public RList readAttributeList(final ObjectInput in, final int flags) throws IOException, ClassNotFoundException {
-		return new RListImpl(in, flags, this);
+	public RList readAttributeList(final RJIO io) throws IOException {
+		return new RListImpl(io, this);
 	}
 	
-	public void writeAttributeList(final RList list, final ObjectOutput out, final int flags) throws IOException {
-		((ExternalizableRObject) list).writeExternal(out, flags, this);
+	public void writeAttributeList(final RList list, final RJIO io) throws IOException {
+		((ExternalizableRObject) list).writeExternal(io, this);
 	}
 	
 	protected final int[] readDim(final ObjectInput in) throws IOException {
@@ -646,19 +645,18 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return dim;
 	}
 	
-	protected final void writeDim(final int[] dim, final ObjectOutput out) throws IOException {
+	protected final void writeDim(final int[] dim, final RJIO io) throws IOException {
 		final int length = dim.length;
-		out.writeInt(length);
+		io.out.writeInt(length);
 		for (int i = 0; i < length; i++) {
-			out.writeInt(dim[i]);
+			io.out.writeInt(dim[i]);
 		}
 	}
 	
-	public RStore readNames(final ObjectInput in, final int flags)
-			throws IOException, ClassNotFoundException {
-		final byte type = in.readByte();
+	public RStore readNames(final RJIO io) throws IOException {
+		final byte type = io.in.readByte();
 		if (type == RStore.CHARACTER) {
-			return new RCharacterDataImpl(in);
+			return new RCharacterDataImpl(io);
 		}
 		if (type == 0) {
 			return null;
@@ -666,17 +664,16 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		throw new IOException();
 	}
 	
-	public void writeNames(final RStore names, final ObjectOutput out, final int flags)
-			throws IOException {
+	public void writeNames(final RStore names, final RJIO io) throws IOException {
 		if (names != null) {
 			final byte type = names.getStoreType();
 			if (type == RStore.CHARACTER) {
-				out.writeByte(type);
-				((Externalizable) names).writeExternal(out);
+				io.out.writeByte(type);
+				((ExternalizableRStore) names).writeExternal(io);
 				return;
 			}
 		}
-		out.writeByte(0);
+		io.out.writeByte(0);
 	}
 	
 }

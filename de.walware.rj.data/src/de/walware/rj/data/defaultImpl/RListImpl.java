@@ -12,10 +12,9 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
@@ -53,75 +52,75 @@ public class RListImpl extends AbstractRObject
 		this.namesAttribute = initialNames;
 	}
 	
-	public RListImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public RListImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		doReadExternal(in, flags, factory);
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		doReadExternal(io, factory);
 	}
-	protected final int doReadExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	protected final int doReadExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = in.readInt();
+		final int options = io.in.readInt();
 		//-- special attributes
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
-				in.readUTF() : ((getRObjectType() == RObject.TYPE_DATAFRAME) ?
+				io.readString() : ((getRObjectType() == RObject.TYPE_DATAFRAME) ?
 						RObject.CLASSNAME_DATAFRAME : RObject.CLASSNAME_LIST);
-		this.length = in.readInt();
+		final int length = this.length = io.in.readInt();
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = (RCharacterDataImpl) factory.readNames(in, flags);
+			this.namesAttribute = (RCharacterDataImpl) factory.readNames(io);
 			//-- data
-			this.components = new RObject[this.length];
-			for (int i = 0; i < this.length; i++) {
-				this.components[i] = factory.readObject(in, flags);
+			this.components = new RObject[length];
+			for (int i = 0; i < length; i++) {
+				this.components[i] = factory.readObject(io);
 			}
 		}
 		//-- attributes
 		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
-			setAttributes(factory.readAttributeList(in, flags));
+			setAttributes(factory.readAttributeList(io));
 		}
 		return options;
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		doWriteExternal(out, 0, flags, factory);
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		doWriteExternal(io, 0, factory);
 	}
-	protected final void doWriteExternal(final ObjectOutput out, int options, final int flags, final RObjectFactory factory) throws IOException {
+	protected final void doWriteExternal(final RJIO io, int options, final RObjectFactory factory) throws IOException {
 		//-- options
 		final boolean customClass = !((getRObjectType() == TYPE_DATAFRAME) ?
 				this.className1.equals(RObject.CLASSNAME_DATAFRAME) : this.className1.equals(RObject.CLASSNAME_LIST));
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
 		if (this.components == null) {
 			options |= RObjectFactory.O_NO_CHILDREN;
 		}
-		out.writeInt(options);
+		io.out.writeInt(options);
 		//-- special attributes
 		if (customClass) {
-			out.writeUTF(this.className1);
+			io.writeString(this.className1);
 		}
-		out.writeInt(this.length);
+		io.out.writeInt(this.length);
 		
 		if (this.components != null) {
-			factory.writeNames(this.namesAttribute, out, flags);
+			factory.writeNames(this.namesAttribute, io);
 			//-- data
 			for (int i = 0; i < this.length; i++) {
-				factory.writeObject(this.components[i], out, flags);
+				factory.writeObject(this.components[i], io);
 			}
 		}
 		//-- attributes
 		if (attributes != null) {
-			factory.writeAttributeList(attributes, out, flags);
+			factory.writeAttributeList(attributes, io);
 		}
 	}
 	

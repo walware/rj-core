@@ -12,9 +12,8 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
@@ -42,27 +41,27 @@ public class ROtherImpl extends AbstractRObject
 		setAttributes(attributes);
 	}
 	
-	public ROtherImpl(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
-		readExternal(in, flags, factory);
+	public ROtherImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+		readExternal(io, factory);
 	}
 	
-	public void readExternal(final ObjectInput in, final int flags, final RObjectFactory factory) throws IOException, ClassNotFoundException {
+	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = in.readInt();
+		final int options = io.in.readInt();
 		//-- special attributes
-		this.className1 = in.readUTF();
+		this.className1 = io.readString();
 		//-- attributes
 		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
-			setAttributes(factory.readAttributeList(in, flags));
+			setAttributes(factory.readAttributeList(io));
 		}
 	}
 	
-	public void writeExternal(final ObjectOutput out, final int flags, final RObjectFactory factory) throws IOException {
-		final RList attributes = ((flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
-		out.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
-		out.writeUTF(this.className1);
+	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
+		io.out.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
+		io.writeString(this.className1);
 		if (attributes != null) {
-			factory.writeAttributeList(attributes, out, flags);
+			factory.writeAttributeList(attributes, io);
 		}
 	}
 	
