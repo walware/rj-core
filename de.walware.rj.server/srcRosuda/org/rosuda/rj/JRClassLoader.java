@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 
 public class JRClassLoader extends URLClassLoader {
@@ -46,6 +45,7 @@ public class JRClassLoader extends URLClassLoader {
 		}
 	}
 	
+	
 	private static final Logger LOGGER = Logger.getLogger("org.rosuda.rjava");
 	public static boolean verbose = false;
 	
@@ -56,28 +56,138 @@ public class JRClassLoader extends URLClassLoader {
 		}
 	}
 	
+	
 	private static final Pattern PATH_SPLITTER = Pattern.compile(Pattern.quote(File.pathSeparator));
 	
 	
+	/**
+	 * Light extension of File that handles file separators and updates
+	 */
 	private static class UnixFile extends java.io.File {
 		
 		private static final long serialVersionUID = 6120112960030467453L;
 		
-		long lastModStamp;
+		/**
+		 * cached "last time modified" stamp
+		 */ 
+		private long lastModStamp;
 		public Object cache;
 		
+		/**
+		 * Constructor. Modifies the path so that the proper path separator is used (most useful on windows)
+		 */
 		public UnixFile(final String fn) {
 			super((separatorChar != '/') ? fn.replace('/', separatorChar) : fn);
 			this.lastModStamp = 0;
 		}
 		
+		/**
+		 * @return whether the file modified since last time the update method was called
+		 */
 		public boolean hasChanged() {
 			final long curMod = lastModified();
 			return (curMod != this.lastModStamp);
 		}
 		
+		/**
+		 * Cache the result of the lastModified stamp
+		 */
 		public void update() {
 			this.lastModStamp = lastModified();
+		}
+		
+	}
+	
+	/**
+	 * Specialization of UnixFile that deals with jar files
+	 */
+	private static class UnixJarFile extends UnixFile {
+		
+		private static final long serialVersionUID = -956832260008070610L;
+		
+		/**
+		 * The cached jar file
+		 */
+		private ZipFile zfile ;
+		
+		/**
+		 * common prefix for all URLs within this jar file
+		 */
+		private String urlPrefix ;
+		
+		public UnixJarFile( String filename ){
+			super( filename );
+		}
+		
+		@Override
+		public void update(){
+			try {
+				if (this.zfile != null){
+					this.zfile.close();
+				}
+				this.zfile = new ZipFile( this ) ;
+			} catch (Exception tryCloseX) {}
+			/* time stamp */
+			super.update( ) ; 
+		}
+		
+		/**
+		 * Get an input stream for a resource contained in the jar file
+		 * 
+		 * @param name file name of the resource within the jar file
+		 * @return an input stream representing the resouce if it exists or null
+		 */ 
+		public InputStream getResourceAsStream( String name ){
+			if (this.zfile==null || hasChanged()) {
+				update(); 
+			}
+			try {
+				if (this.zfile == null) {
+					return null;
+				}
+				ZipEntry e = this.zfile.getEntry(name);
+				if (e != null) {
+					return this.zfile.getInputStream(e);
+				}
+			} catch (Exception e) {
+				if (verbose) {
+					LOGGER.log(Level.WARNING, "Failed to create resource stream for JAR file.", e);
+				}
+			}
+			return null;
+		}
+		
+		public URL getResource(String name) {
+			if(this.zfile == null  || this.zfile.getEntry(name) == null) {
+				return null;
+			}
+			
+			URL u = null;
+			if (this.urlPrefix == null) {
+				try{
+					this.urlPrefix = "jar:" + toURL().toString() + "!";
+				} catch(java.net.MalformedURLException ex) {
+				}
+			}
+			
+			try{
+				u = new URL( this.urlPrefix + name ) ;
+			} catch( java.net.MalformedURLException ex ){
+			}
+			return u ;
+		}
+		
+	}
+	
+	/**
+	 * Specialization of UnixFile representing a directory
+	 */ 
+	private static class UnixDirectory extends UnixFile {
+		
+		private static final long serialVersionUID = -5697105404215366546L;
+		
+		public UnixDirectory( String dirname ){
+			super( dirname ) ;
 		}
 		
 	}
@@ -97,14 +207,29 @@ public class JRClassLoader extends URLClassLoader {
 	private final String arch;
 	
 	
+	/** 
+	 * Path of rJava
+	 */
 	private String rJavaPath;
+	
+	/**
+	 * Map of native libraries (name, path)
+	 */
 	private final HashMap<String, UnixFile> libMap;
+	
+	/**
+	 * The class path list for alternative class loading
+	 */ 
 	private final Vector<UnixFile> classPath;
 	
 	private final Set<String> defaultLibPath;
 	
-	private final boolean useSystem = true;
-	private final boolean useSecond = false;
+	/**
+	 * Should the system class loader be used to resolve classes as well as this class loader
+	 */
+	private final boolean useSystem = !"false".equalsIgnoreCase(System.getProperty("rjava.classloader.system")); // default true
+	
+	private final boolean useSecond = "true".equalsIgnoreCase(System.getProperty("rjava.classloader.alternative")); // default false
 	
 	
 	protected JRClassLoader() {
@@ -112,6 +237,11 @@ public class JRClassLoader extends URLClassLoader {
 		this.libMap = new HashMap<String, UnixFile>();
 		this.classPath = new Vector<UnixFile>();
 		this.defaultLibPath = new LinkedHashSet<String>();
+		
+		if (verbose) {
+			LOGGER.log(Level.CONFIG, "System URL classloader: " + (this.useSystem ? "enabled" : "disabled"));
+			LOGGER.log(Level.CONFIG, "Alternative classloader: " + (this.useSecond ? "enabled" : "disabled"));
+		}
 		
 		this.r_home = checkDirPath(System.getenv("R_HOME"));
 		this.r_arch = System.getenv("R_ARCH");
@@ -147,6 +277,7 @@ public class JRClassLoader extends URLClassLoader {
 			addClassPath(checkDirPathList(rJavaClassPath));
 		}
 		
+		// rJava library
 		String rJavaLibPath = System.getProperty("rjava.rjavalibs");
 		if (rJavaLibPath == null) {
 			rJavaLibPath = this.rJavaPath + "/java";
@@ -166,6 +297,7 @@ public class JRClassLoader extends URLClassLoader {
 			this.libMap.put("rJava", rJavaDynlibFile);
 		}
 		
+		// jri library
 		String jriLibPath = System.getProperty("rjava.jrilibs");
 		if (jriLibPath == null) {
 			jriLibPath = this.rJavaPath + "/jri";
@@ -330,67 +462,6 @@ public class JRClassLoader extends URLClassLoader {
 		return cls.replace('.', '/');
 	}
 	
-	private InputStream findClassInJAR(final UnixFile jar, final String cl) {
-		final String cfn = classNameToFile(cl) + ".class";
-		
-		if (jar.cache == null || jar.hasChanged()) {
-			try {
-				if (jar.cache != null) {
-					((ZipFile) jar.cache).close();
-				}
-			} catch (final Exception tryCloseX) {
-			}
-			jar.update();
-			try {
-				jar.cache = new ZipFile(jar);
-			} catch (final Exception zipCacheX) {
-			}
-			if (verbose) {
-				LOGGER.log(Level.INFO, "Creating cache for " + jar);
-			}
-		}
-		try {
-			final ZipFile zf = (ZipFile) jar.cache;
-			if (zf == null) {
-				return null;
-			}
-			final ZipEntry e = zf.getEntry(cfn);
-			if (e != null) {
-				return zf.getInputStream(e);
-			}
-		} catch (final Exception e) {
-			if (verbose) {
-				LOGGER.log(Level.WARNING, "Exception/find "+cl+" in "+jar+".", e);
-			}
-		}
-		return null;
-	}
-	
-	private URL findInJARURL(final String jar, final String fn) {
-		try {
-			final ZipInputStream ins = new ZipInputStream(new FileInputStream(jar));
-			
-			ZipEntry e;
-			while ((e = ins.getNextEntry()) != null) {
-				if (e.getName().equals(fn)) {
-					ins.close();
-					try {
-						return new URL("jar:"
-								+ (new UnixFile(jar)).toURI().toURL().toString() + "!"
-								+ fn);
-					} catch (final Exception ex) {
-					}
-					break;
-				}
-			}
-		} catch (final Exception e) {
-			if (verbose) {
-				LOGGER.log(Level.WARNING, "Exception/find "+fn+" in "+jar+".", e);
-			}
-		}
-		return null;
-	}
-	
 	@Override
 	protected Class<?> findClass(final String name) throws ClassNotFoundException {
 		if (verbose) {
@@ -434,12 +505,10 @@ public class JRClassLoader extends URLClassLoader {
 				}
 				try {
 					ins = null;
-					if (cp.isFile()) {
-						ins = findClassInJAR(cp, name);
-					}
-					if (ins == null && cp.isDirectory()) {
-						final UnixFile class_f = new UnixFile(cp.getPath() + "/"
-								+ classNameToFile(name) + ".class");
+					if (cp instanceof UnixJarFile) {
+						ins = ((UnixJarFile) cp).getResourceAsStream( classNameToFile(name) + ".class" );
+					} else if (cp instanceof UnixDirectory) {
+						UnixFile class_f = new UnixFile(cp.getPath()+"/"+classNameToFile(name)+".class");
 						if (class_f.isFile()) {
 							ins = new FileInputStream(class_f);
 						}
@@ -514,22 +583,21 @@ public class JRClassLoader extends URLClassLoader {
 				final UnixFile cp = e.nextElement();
 				
 				try {
-					if (cp.isFile()) {
-						final URL u = findInJARURL(cp.getPath(), name);
+					if (cp instanceof UnixJarFile) {
+						URL u = ((UnixJarFile) cp).getResource(name) ;
 						if (u != null) {
 							if (verbose) {
 								System.out.println(" - found in a JAR file, URL " + u);
 							}
 							return u;
 						}
-					}
-					if (cp.isDirectory()) {
-						final UnixFile res_f = new UnixFile(cp.getPath() + "/" + name);
+					} else if (cp instanceof UnixDirectory) {
+						UnixFile res_f = new UnixFile(cp.getPath() + "/" + name);
 						if (res_f.isFile()) {
 							if (verbose) {
-								System.out.println(" - find as a file: " + res_f);
+								System.out.println(" - find as a file: "+res_f);
 							}
-							return res_f.toURI().toURL();
+							return res_f.toURL();
 						}
 					}
 				} catch (final Exception iox) {
@@ -562,14 +630,24 @@ public class JRClassLoader extends URLClassLoader {
 			}
 		}
 		if (this.useSecond) {
-			if (!this.classPath.contains(f)) {
-				this.classPath.add(f);
-				System.setProperty("java.class.path", System.getProperty("java.class.path")
-						+ File.pathSeparator + f.getPath());
+			UnixFile g = null;
+			if (f.isFile() && f.getName().endsWith(".jar")) {
+				g = new UnixJarFile(f.getPath());
+			} else if (f.isDirectory()) {
+				g = new UnixDirectory(f.getPath());
+			}
+			
+			if (g != null && !this.classPath.contains(g)) {
+				this.classPath.add(g);
+				System.setProperty("java.class.path",
+						System.getProperty("java.class.path")+File.pathSeparator+g.getPath());
 			}
 		}
 	}
 	
+	/**
+	 * Adds multiple entries to the class path
+	 */
 	public void addClassPath(final String[] cp) {
 		int i = 0;
 		while (i < cp.length) {
@@ -583,6 +661,9 @@ public class JRClassLoader extends URLClassLoader {
 		}
 	}
 	
+	/**
+	 * @return the array of class paths used by this class loader
+	 */
 	public String[] getClassPath() {
 		final List<String> list = new ArrayList<String>();
 		if (this.useSystem) {

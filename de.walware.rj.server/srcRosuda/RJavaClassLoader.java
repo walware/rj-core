@@ -28,6 +28,9 @@ public class RJavaClassLoader extends JRClassLoader {
 	
 	public static RJavaClassLoader primaryLoader = null;
 	
+	/**
+	 * Returns the singleton instance of RJavaClassLoader
+	 */ 
 	public static RJavaClassLoader getPrimaryLoader() {
 		return primaryLoader;
 	}
@@ -57,17 +60,23 @@ public class RJavaClassLoader extends JRClassLoader {
 	
 	//----- tools -----
 	
-	class RJavaObjectInputStream extends ObjectInputStream {
+	static class RJavaObjectInputStream extends ObjectInputStream {
 		public RJavaObjectInputStream(final InputStream in) throws IOException {
 			super(in);
 		}
 		@Override
 		protected Class resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
-			return Class.forName(desc.getName(), false, getPrimaryLoader());
+			return Class.forName(desc.getName(), false, RJavaClassLoader.getPrimaryLoader());
 		}
 	}
 	
-	/** Serialize an object to a byte array. (code by CB) */
+	/** 
+	 * Serialize an object to a byte array. (code by CB)
+	 *
+	 * @param object object to serialize
+	 * @return byte array that represents the object
+	 * @throws Exception 
+	 */
 	public static byte[] toByte(final Object object) throws Exception {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		final ObjectOutputStream oos = new ObjectOutputStream(os);
@@ -76,7 +85,13 @@ public class RJavaClassLoader extends JRClassLoader {
 		return os.toByteArray();
 	}
 	
-	/** Deserialize an object from a byte array. (code by CB) */
+	/** 
+	 * Deserialize an object from a byte array. (code by CB)
+	 *
+	 * @param byteArray
+	 * @return the object that is represented by the byte array
+	 * @throws Exception 
+	 */
 	public Object toObject(final byte[] byteArray) throws Exception {
 		final InputStream is = new ByteArrayInputStream(byteArray);
 		final RJavaObjectInputStream ois = new RJavaObjectInputStream(is);
@@ -85,8 +100,11 @@ public class RJavaClassLoader extends JRClassLoader {
 		return o;
 	}
 	
-	public static Object toObjectPL(final byte[] byteArray) throws Exception {
-		return getPrimaryLoader().toObject(byteArray);
+	/**
+	 * converts the byte array into an Object using the primary RJavaClassLoader
+	 */
+	public static Object toObjectPL(final byte[] byteArray) throws Exception{
+		return RJavaClassLoader.getPrimaryLoader().toObject(byteArray);
 	}
 	
 }
