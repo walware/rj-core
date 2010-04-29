@@ -27,6 +27,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
+import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RReference;
 import de.walware.rj.server.BinExchange;
@@ -104,8 +105,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	private IProgressMonitor progressMonitor;
 	
+	private final RJIO mainIO = new RJIO();
 	private MainCmdItem mainC2SFirst;
-	private final MainCmdC2SList mainC2SList = new MainCmdC2SList();
+	private final MainCmdC2SList mainC2SList = new MainCmdC2SList(this.mainIO);
 	private boolean mainRunGC;
 	
 	private boolean consoleReadCallbackRequired;
@@ -178,41 +180,41 @@ public abstract class AbstractRJComClient implements ComHandler {
 		boolean runGC = false;
 		updateBusy(in.readBoolean());
 		
-		int num = -1;
-		while (true) {	// first
-			num++;
+		this.mainIO.in = in;
+		while (true) {
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
 				this.mainRunGC = runGC;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				this.consoleReadCallback = new ConsoleReadCmdItem(in);
-				updatePrompt(this.consoleReadCallback.getDataText(), (this.consoleReadCallback.getCmdOption() & 0xf) == RjsComObject.V_TRUE);
+				this.consoleReadCallback = new ConsoleReadCmdItem(this.mainIO);
+				updatePrompt(this.consoleReadCallback.getDataText(),
+						(this.consoleReadCallback.getCmdOption() & 0xf) == RjsComObject.V_TRUE);
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
 				runGC = true;
-				writeStdOutput(in.readUTF());
+				writeStdOutput(this.mainIO.readString());
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_ERR_ITEM:
 				runGC = true;
-				writeErrOutput(in.readUTF());
+				writeErrOutput(this.mainIO.readString());
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				runGC = true;
-				showMessage(in.readUTF());
+				showMessage(this.mainIO.readString());
 				continue;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				runGC = true;
-				processUICallback(in);
+				processUICallback(this.mainIO);
 				continue;
 			case MainCmdItem.T_GRAPH_ITEM:
 				runGC = true;
-				processGDCmd(in);
+				processGDCmd(this.mainIO);
 				continue;
 			case MainCmdItem.T_DATA_ITEM:
 				runGC = true;
-				processDataCmd(in);
+				processDataCmd(this.mainIO);
 				continue;
 			default:
 				throw new IOException("Unknown cmdtype id: " + type);
@@ -221,8 +223,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
-	public final boolean processUICallback(final ObjectInput in) throws IOException {
-		final ExtUICmdItem item = new ExtUICmdItem(in);
+	public final boolean processUICallback(final RJIO io) throws IOException {
+		final ExtUICmdItem item = new ExtUICmdItem(io);
 		try {
 			handleUICallback(item, this.progressMonitor);
 		}
@@ -250,24 +252,24 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
-	public final void processGDCmd(final ObjectInput in) throws IOException {
+	public final void processGDCmd(final RJIO io) throws IOException {
 		byte requestId = 0;
-		final int options = in.readInt();
-		final int devId = in.readInt();
+		final int options = io.in.readInt();
+		final int devId = io.in.readInt();
 		try {
 			int n; 
-			switch (in.readByte()) {
+			switch (io.in.readByte()) {
 			case GDCmdItem.C_NEW_PAGE:
 				addGraphic(devId,
-						in.readDouble(),
-						in.readDouble(),
-						in.readBoolean());
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readBoolean());
 				return;
 			case GDCmdItem.C_CLOSE_DEVICE:
 				removeGraphic(devId);
 				return;
 			case GDCmdItem.C_GET_SIZE:
-				addC2SCmd(new GDCmdItem.Answer(requestId = in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
 						devId, getGraphic(devId).computeSize() ));
 				return;
 			case GDCmdItem.C_SET_ACTIVE_OFF:
@@ -277,87 +279,87 @@ public abstract class AbstractRJComClient implements ComHandler {
 				getGraphic(devId).setActive(true);
 				return;
 			case GDCmdItem.C_SET_MODE:
-				getGraphic(devId).setMode(in.readByte());
+				getGraphic(devId).setMode(io.in.readByte());
 				return;
 			case GDCmdItem.C_GET_FONTMETRIC:
-				addC2SCmd(new GDCmdItem.Answer(requestId = in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
 						devId, getGraphic(devId).computeFontMetric(
-								in.readInt() )));
+								io.in.readInt() )));
 				return;
 			case GDCmdItem.C_GET_STRINGWIDTH:
-				addC2SCmd(new GDCmdItem.Answer(requestId = in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
 						devId, getGraphic(devId).computeStringWidth(
-								in.readUTF() )));
+								io.readString() )));
 				return;
 				
 			case GDCmdItem.SET_CLIP:
 				getGraphic(devId).addSetClip(
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble() );
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble() );
 				return;
 			case GDCmdItem.SET_COLOR:
 				getGraphic(devId).addSetColor(
-						in.readInt() );
+						io.in.readInt() );
 				return;
 			case GDCmdItem.SET_FILL:
 				getGraphic(devId).addSetFill(
-						in.readInt() );
+						io.in.readInt() );
 				return;
 			case GDCmdItem.SET_LINE:
 				getGraphic(devId).addSetLine(
-						in.readInt(),
-						in.readDouble() );
+						io.in.readInt(),
+						io.in.readDouble() );
 				return;
 			case GDCmdItem.SET_FONT:
 				getGraphic(devId).addSetFont(
-						in.readUTF(),
-						in.readInt(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble() );
+						io.readString(),
+						io.in.readInt(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble() );
 				return;
 				
 			case GDCmdItem.DRAW_LINE:
 				getGraphic(devId).addDrawLine(
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble() );
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble() );
 				return;
 			case GDCmdItem.DRAW_RECTANGLE:
 				getGraphic(devId).addDrawRect(
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble() );
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble() );
 				return;
 			case GDCmdItem.DRAW_POLYLINE:
-				n = in.readInt();
+				n = io.in.readInt();
 				getGraphic(devId).addDrawPolyline(
-						readDouble(in, n),
-						readDouble(in, n) );
+						readDouble(io.in, n),
+						readDouble(io.in, n) );
 				return;
 			case GDCmdItem.DRAW_POLYGON:
-				n = in.readInt();
+				n = io.in.readInt();
 				getGraphic(devId).addDrawPolygon(
-						readDouble(in, n),
-						readDouble(in, n) );
+						readDouble(io.in, n),
+						readDouble(io.in, n) );
 				return;
 			case GDCmdItem.DRAW_CIRCLE:
 				getGraphic(devId).addDrawCircle(
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble() );
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble() );
 				return;
 			case GDCmdItem.DRAW_TEXT:
 				getGraphic(devId).addDrawText(
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readDouble(),
-						in.readUTF() );
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.in.readDouble(),
+						io.readString() );
 				return;
 			default:
 				throw new UnsupportedOperationException("Unknown GD command.");
@@ -368,7 +370,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		catch (final Exception e) {
 			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing graphic command.", e));
-			if ((options & GDCmdItem.OV_WAITFORCLIENT) != 0) {
+			if ((options & MainCmdItem.OV_WAITFORCLIENT) != 0) {
 				if (requestId > 0) {
 					addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus()));
 				}
@@ -383,9 +385,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
-	public final void processDataCmd(final ObjectInput in) throws IOException {
+	public final void processDataCmd(final RJIO io) throws IOException {
 		try {
-			final DataCmdItem item = new DataCmdItem(in);
+			final DataCmdItem item = new DataCmdItem(io);
 			if (this.dataLevelRequest > 0) {
 				this.dataAnswer[this.dataLevelRequest] = item;
 				this.dataLevelAnswer = this.dataLevelRequest;
