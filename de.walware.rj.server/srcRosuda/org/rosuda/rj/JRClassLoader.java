@@ -115,20 +115,20 @@ public class JRClassLoader extends URLClassLoader {
 		 */
 		private String urlPrefix ;
 		
-		public UnixJarFile( String filename ){
-			super( filename );
+		public UnixJarFile(final String filename) {
+			super(filename);
 		}
 		
 		@Override
-		public void update(){
+		public void update() {
 			try {
-				if (this.zfile != null){
+				if (this.zfile != null) {
 					this.zfile.close();
 				}
-				this.zfile = new ZipFile( this ) ;
-			} catch (Exception tryCloseX) {}
+				this.zfile = new ZipFile(this) ;
+			} catch (final Exception tryCloseX) {}
 			/* time stamp */
-			super.update( ) ; 
+			super.update() ; 
 		}
 		
 		/**
@@ -137,7 +137,7 @@ public class JRClassLoader extends URLClassLoader {
 		 * @param name file name of the resource within the jar file
 		 * @return an input stream representing the resouce if it exists or null
 		 */ 
-		public InputStream getResourceAsStream( String name ){
+		public InputStream getResourceAsStream(final String name) {
 			if (this.zfile==null || hasChanged()) {
 				update(); 
 			}
@@ -145,11 +145,11 @@ public class JRClassLoader extends URLClassLoader {
 				if (this.zfile == null) {
 					return null;
 				}
-				ZipEntry e = this.zfile.getEntry(name);
+				final ZipEntry e = this.zfile.getEntry(name);
 				if (e != null) {
 					return this.zfile.getInputStream(e);
 				}
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				if (verbose) {
 					LOGGER.log(Level.WARNING, "Failed to create resource stream for JAR file.", e);
 				}
@@ -157,7 +157,7 @@ public class JRClassLoader extends URLClassLoader {
 			return null;
 		}
 		
-		public URL getResource(String name) {
+		public URL getResource(final String name) {
 			if(this.zfile == null  || this.zfile.getEntry(name) == null) {
 				return null;
 			}
@@ -166,13 +166,13 @@ public class JRClassLoader extends URLClassLoader {
 			if (this.urlPrefix == null) {
 				try{
 					this.urlPrefix = "jar:" + toURL().toString() + "!";
-				} catch(java.net.MalformedURLException ex) {
+				} catch(final java.net.MalformedURLException ex) {
 				}
 			}
 			
 			try{
-				u = new URL( this.urlPrefix + name ) ;
-			} catch( java.net.MalformedURLException ex ){
+				u = new URL(this.urlPrefix + name) ;
+			} catch (final java.net.MalformedURLException ex) {
 			}
 			return u ;
 		}
@@ -186,8 +186,8 @@ public class JRClassLoader extends URLClassLoader {
 		
 		private static final long serialVersionUID = -5697105404215366546L;
 		
-		public UnixDirectory( String dirname ){
-			super( dirname ) ;
+		public UnixDirectory(final String dirname) {
+			super(dirname);
 		}
 		
 	}
@@ -506,9 +506,9 @@ public class JRClassLoader extends URLClassLoader {
 				try {
 					ins = null;
 					if (cp instanceof UnixJarFile) {
-						ins = ((UnixJarFile) cp).getResourceAsStream( classNameToFile(name) + ".class" );
+						ins = ((UnixJarFile) cp).getResourceAsStream(classNameToFile(name) + ".class");
 					} else if (cp instanceof UnixDirectory) {
-						UnixFile class_f = new UnixFile(cp.getPath()+"/"+classNameToFile(name)+".class");
+						final UnixFile class_f = new UnixFile(cp.getPath()+"/"+classNameToFile(name)+".class");
 						if (class_f.isFile()) {
 							ins = new FileInputStream(class_f);
 						}
@@ -584,7 +584,7 @@ public class JRClassLoader extends URLClassLoader {
 				
 				try {
 					if (cp instanceof UnixJarFile) {
-						URL u = ((UnixJarFile) cp).getResource(name) ;
+						final URL u = ((UnixJarFile) cp).getResource(name) ;
 						if (u != null) {
 							if (verbose) {
 								System.out.println(" - found in a JAR file, URL " + u);
@@ -592,7 +592,7 @@ public class JRClassLoader extends URLClassLoader {
 							return u;
 						}
 					} else if (cp instanceof UnixDirectory) {
-						UnixFile res_f = new UnixFile(cp.getPath() + "/" + name);
+						final UnixFile res_f = new UnixFile(cp.getPath() + "/" + name);
 						if (res_f.isFile()) {
 							if (verbose) {
 								System.out.println(" - find as a file: "+res_f);

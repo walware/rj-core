@@ -240,7 +240,7 @@ public class ServerUtil {
 		return sb.substring(0, sb.length()-1);
 	}
 	
-	public static void delDir(final File dir) {
+	public static boolean delDir(final File dir) {
 		final String[] children = dir.list();
 		for (final String child : children) {
 			final File file = new File(dir, child);
@@ -251,7 +251,7 @@ public class ServerUtil {
 				file.delete();
 			}
 		}
-		dir.delete();
+		return dir.delete();
 	}
 	
 	public static void cleanDir(final File dir, final String exclude) {

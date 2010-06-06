@@ -233,7 +233,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 			this.serverC2SList.clear();
 			if (answer == null || !answer.isOK()) {
 				final RjsStatus status = (answer != null) ? answer.getStatus() : MISSING_ANSWER_STATUS;
-				throw new RjException("R commands failed ("+status.getMessage()+").");
+				throw new RjException("R commands failed: "+status.getMessage()+".");
 			}
 			return answer.getData();
 		}
