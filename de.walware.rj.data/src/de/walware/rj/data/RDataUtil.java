@@ -192,6 +192,20 @@ public class RDataUtil {
 		return (RVector<?>) obj;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static RVector<RCharacterStore> checkRCharVector(final RObject obj) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R value.");
+		}
+		if (obj.getRObjectType() != RObject.TYPE_VECTOR) {
+			throw new UnexpectedRDataException("Unexpected R value type: " + getObjectTypeName(obj.getRObjectType()));
+		}
+		if (obj.getData().getStoreType() != RStore.CHARACTER) {
+			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(obj.getData()));
+		}
+		return (RVector<RCharacterStore>) obj;
+	}
+	
 	public static RArray<?> checkRArray(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R value.");
@@ -243,10 +257,7 @@ public class RDataUtil {
 	}
 	
 	
-	public static String checkSingleChar(final RObject obj) throws UnexpectedRDataException {
-		if (obj == null) {
-			throw new UnexpectedRDataException("Missing R value.");
-		}
+	public static Boolean checkSingleLogi(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -254,16 +265,19 @@ public class RDataUtil {
 		if (data == null) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
 		}
-		if (data.getStoreType() != RStore.CHARACTER) {
+		if (data.getStoreType() != RStore.LOGICAL) {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
 			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
 		}
-		return data.getChar(0);
+		if (data.isNA(0)) {
+			return null;
+		}
+		return Boolean.valueOf(data.getLogi(0));
 	}
 	
-	public static String checkSingleCharValue(final RObject obj) throws UnexpectedRDataException {
+	public static boolean checkSingleLogiValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -271,7 +285,7 @@ public class RDataUtil {
 		if (data == null) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
 		}
-		if (data.getStoreType() != RStore.CHARACTER) {
+		if (data.getStoreType() != RStore.LOGICAL) {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
@@ -280,7 +294,7 @@ public class RDataUtil {
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
 		}
-		return data.getChar(0);
+		return data.getLogi(0);
 	}
 	
 	public static Integer checkSingleInt(final RObject obj) throws UnexpectedRDataException {
@@ -323,7 +337,7 @@ public class RDataUtil {
 		return data.getInt(0);
 	}
 	
-	public static Boolean checkSingleLogi(final RObject obj) throws UnexpectedRDataException {
+	public static Double checkSingleNum(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -331,7 +345,7 @@ public class RDataUtil {
 		if (data == null) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
 		}
-		if (data.getStoreType() != RStore.LOGICAL) {
+		if (data.getStoreType() != RStore.NUMERIC) {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
@@ -340,10 +354,10 @@ public class RDataUtil {
 		if (data.isNA(0)) {
 			return null;
 		}
-		return Boolean.valueOf(data.getLogi(0));
+		return Double.valueOf(data.getNum(0));
 	}
 	
-	public static boolean checkSingleLogiValue(final RObject obj) throws UnexpectedRDataException {
+	public static double checkSingleNumValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -351,7 +365,7 @@ public class RDataUtil {
 		if (data == null) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
 		}
-		if (data.getStoreType() != RStore.LOGICAL) {
+		if (data.getStoreType() != RStore.NUMERIC) {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
@@ -360,7 +374,44 @@ public class RDataUtil {
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
 		}
-		return data.getLogi(0);
+		return data.getNum(0);
+	}
+	
+	public static String checkSingleChar(final RObject obj) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		final RStore data = obj.getData();
+		if (data == null) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
+		}
+		if (data.getStoreType() != RStore.CHARACTER) {
+			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
+		}
+		if (data.getLength() != 1) {
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+		}
+		return data.getChar(0);
+	}
+	
+	public static String checkSingleCharValue(final RObject obj) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		final RStore data = obj.getData();
+		if (data == null) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + " (without R data)");
+		}
+		if (data.getStoreType() != RStore.CHARACTER) {
+			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
+		}
+		if (data.getLength() != 1) {
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+		}
+		if (data.isNA(0)) {
+			throw new UnexpectedRDataException("Unexpected R data value: NA");
+		}
+		return data.getChar(0);
 	}
 	
 }
