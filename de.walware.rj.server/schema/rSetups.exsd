@@ -1,0 +1,296 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Schema file written by PDE -->
+<schema targetNamespace="de.walware.rj.server" xmlns="http://www.w3.org/2001/XMLSchema">
+<annotation>
+      <appInfo>
+         <meta.schema plugin="de.walware.rj.server" id="rSetups" name="R Setups (Installations and Libraries)"/>
+      </appInfo>
+      <documentation>
+         This extension-point allows the definition and supply of R setups by Eclipse plug-ins. The definitions can be used to setup a correct environment to start R. In StatET they appear as preconfigured R environments.
+&lt;p&gt;An R setup (&lt;code&gt;setup&lt;/code&gt;) is identified by an unique id. It is composed of the base R installation and optional additional R library locations.
+An installation element (&lt;code&gt;base&lt;/code&gt;) provides the valid R home location for one or multiple platforms. Via the library locations (&lt;code&gt;library&lt;/code&gt;) it is possible to supply additional libraries with R packages to the R library path.&lt;/p&gt;
+&lt;p&gt;
+To separate platform dependent resources (base or library locations), Eclipse offers two options:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(A) Fragments and specification of platform filter: A plug-in and for each platform, which should be supported, one fragment must be created. In the plug-in, the resource location is specified as usual as a directory name, but it does not provide the resources. Each fragment is assigned to one platform by the Eclipse bundle manifest headers &lt;code&gt;Eclipse-PlatformFilter&lt;/code&gt; for the variables &apos;osgi.os&apos; and &apos;osgi.arch&apos; and provides the platform dependent resources in the directory specified in the plug-in.&lt;/li&gt;
+&lt;li&gt;(B) Platform specific directories: The resource location is specified as operation system dependend in the plug-in by prefixing &lt;code&gt;$os$/&lt;/code&gt; to the directory name. When loading the resources, &lt;code&gt;$os$&lt;/code&gt; is resolved to &lt;code&gt;os/&amp;lt;osgi.os&amp;gt;/&amp;lt;osgi.arch&amp;gt;&lt;/code&gt;, whereas &lt;code&gt;&amp;lt;osgi.os&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;osgi.arch&amp;gt;&lt;/code&gt; are replace by the known constants defining the platform.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+Both methods can also be combined. The method (A) allows separate installation and updates, while the handling with method (B) is more compact. Known constants for the operation systems (&apos;osgi.os&apos;) and system architectures (&apos;osgi.arch&apos;) can be found in the class &lt;code&gt;org.eclipse.core.runtime.Platform&lt;/code&gt;.
+&lt;p&gt;
+Additional hints for bundles providing base or library elements:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;When integrating the plug-in or fragment in a feature set, it is recommend to enable &lt;code&gt;unpack&lt;/code&gt; option for that bundle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+The existence and documentation of this extension-point does not give any advise if it is legal to distribute R together with other software in your individual situation.&lt;/p&gt;
+      </documentation>
+   </annotation>
+
+   <element name="extension">
+      <annotation>
+         <appInfo>
+            <meta.element />
+         </appInfo>
+      </annotation>
+      <complexType>
+         <choice minOccurs="1" maxOccurs="unbounded">
+            <element ref="setup"/>
+            <element ref="base"/>
+            <element ref="library"/>
+         </choice>
+         <attribute name="point" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="id" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="setup">
+      <annotation>
+         <documentation>
+            The element presents a single R setup.
+It is identified by its unique id. To make it useful for a platform, it is necessary to register at least the base element for that R setup and platform.
+         </documentation>
+      </annotation>
+      <complexType>
+         <attribute name="id" type="string" use="required">
+            <annotation>
+               <documentation>
+                  A unique id for the R setup.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string" use="required">
+            <annotation>
+               <documentation>
+                  A name for the R setup.
+&lt;p&gt;
+The name is used in GUIs, so that the user can identify the R setup&lt;/p&gt;
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="version" type="string">
+            <annotation>
+               <documentation>
+                  The version string for the R version. This property is only for information like the name.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="inheritBase" type="string">
+            <annotation>
+               <documentation>
+                  The id of an R setup, the base elements (R installations) are inherited from.
+&lt;p&gt;
+Using this attribute enables to reuse the base installations with other R libraries. It is recommend to inheret only from R setups controlled by you or defined cleary with version number.&lt;/p&gt;
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="base">
+      <annotation>
+         <documentation>
+            The element provides a R base installation with a valid R home location (correponding to the environment variable &lt;code&gt;R_HOME&lt;/code&gt;).
+&lt;p&gt;
+It is invalid to register multiple base installation for the same R setup. See general description how to provide installations for several platforms.&lt;/p&gt;
+         </documentation>
+      </annotation>
+      <complexType>
+         <attribute name="setupId" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The id of the R setup.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="location" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The R home directory location of the base installation.
+The sub-directories are &lt;code&gt;bin&lt;/code&gt;, &lt;code&gt;doc&lt;/code&gt;, ...
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="resource"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="library">
+      <annotation>
+         <documentation>
+            The element provides an R library with R packages.
+         </documentation>
+      </annotation>
+      <complexType>
+         <attribute name="setupId" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The id of the R setup.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="group">
+            <annotation>
+               <documentation>
+                  The id of the group the library should be registered in. The ids correspond to the environment variables for the groups:&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;R_LIBS_SITE&lt;/code&gt; - R site library&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;R_LIBS&lt;/code&gt; - Additional R library&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;R_LIBS_USER&lt;/code&gt; - R user library&lt;/li&gt;
+&lt;/ul&gt;
+If not specified, &lt;code&gt;R_LIBS&lt;/code&gt; is used.
+               </documentation>
+            </annotation>
+            <simpleType>
+               <restriction base="string">
+                  <enumeration value="R_LIBS_SITE">
+                  </enumeration>
+                  <enumeration value="R_LIBS">
+                  </enumeration>
+                  <enumeration value="R_LIBS_USER">
+                  </enumeration>
+               </restriction>
+            </simpleType>
+         </attribute>
+         <attribute name="location" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The directory location of the R library.
+The sub-directories represent the R packages.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="resource"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="since"/>
+      </appInfo>
+      <documentation>
+         0.5.0
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="examples"/>
+      </appInfo>
+      <documentation>
+         &lt;i&gt;Definition of an R setup, its base installation and an add-on:&lt;/i&gt;&lt;br/&gt;
+&lt;br/&gt;
+&lt;i&gt;1)&lt;/i&gt; General definition of the R setup and definition of the location for the base installation, suppporting one or multiple platforms by using method (A). Both declared in the &lt;code&gt;plugin.xml&lt;/code&gt;:
+&lt;pre&gt;
+&lt;extension point=&quot;de.walware.rj.rSetups&quot;&gt; 
+   &lt;setup id=&quot;myapp.RSetup&quot;
+         name=&quot;Integrated R Engine&quot;
+         version=&quot;2.10.1&quot;&gt;
+   &lt;/setup&gt;
+   &lt;base 
+         setupId=&quot;myapp.RSetup&quot;
+         location=&quot;rhome/&quot;&gt;
+   &lt;/base&gt;
+&lt;/extension&gt;
+&lt;/pre&gt;
+The R home directories can be provided directly in the same plug-in (only a single platform is possible) or by platform specified fragments. The directory named &lt;code&gt;rhome&lt;/code&gt; is always located at the root of the plug-in or fragment.
+&lt;br/&gt;
+When using method (A) with fragments to support multiple platforms, a platform filter for 32-bit Windows in the &lt;code&gt;MANIFEST.MF&lt;/code&gt; file of the fragment would be:
+&lt;pre&gt;
+Eclipse-PlatformFilter: (&amp; (osgi.os=win32) (osgi.arch=x86))
+&lt;/pre&gt;
+
+&lt;br/&gt;
+&lt;i&gt;2)&lt;/i&gt; An application plug-in which provides an special analysis methods, can plug-in its R package to the R setup for several platforms by using method (B). Library declared in the &lt;code&gt;plugin.xml&lt;/code&gt;:
+&lt;pre&gt;
+&lt;extension point=&quot;de.walware.rj.rSetups&quot;&gt; 
+   &lt;library 
+         setupId=&quot;myapp.RSetup&quot;
+         location=&quot;$os$/rpackages/&quot;&gt;
+   &lt;/library&gt;
+&lt;/extension&gt;
+&lt;/pre&gt;
+
+The directory structure for the platfrom specific R libraries would look like:
+&lt;pre&gt;
+&lt;plug-in root&gt;
+  + os
+    + linux
+      + x86
+        + rpackages
+          - package1
+          - package2
+      + x86_64
+        + rpackages
+          - package1
+          - package2
+    + win32
+      + x86
+        + rpackages
+          - package1
+          - package2
+      + x86_64
+        + rpackages
+          - package1
+          - package2
+&lt;/pre&gt;
+
+      </documentation>
+   </annotation>
+
+
+
+   <annotation>
+      <appInfo>
+         <meta.section type="copyright"/>
+      </appInfo>
+      <documentation>
+         Copyright (c) 2010 WalWare/RJ-Project (www.walware.de/goto/opensource)
+and others. All rights reserved. This program and the accompanying materials
+are made available under the terms of the GNU Lesser General Public License
+v2.1 or newer, which accompanies this distribution, and is available at
+http://www.gnu.org/licenses/lgpl.html
+      </documentation>
+   </annotation>
+
+</schema>

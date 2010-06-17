@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Server
-Bundle-SymbolicName: de.walware.rj.server
+Bundle-SymbolicName: de.walware.rj.server;singleton:=true
 Bundle-Version: 0.5.0.qualifier
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Require-Bundle: de.walware.rj.data;bundle-version="[0.5.0,0.6.0)"
@@ -13,6 +13,7 @@ Import-Package: org.osgi.framework;resolution:=optional,
  org.eclipse.swt.widgets;resolution:=optional,
  org.rosuda.JRI;resolution:=optional
 Export-Package: de.walware.rj,
+ de.walware.rj.rsetups,
  de.walware.rj.server,
  de.walware.rj.server.srvImpl;x-friends:="de.walware.rj.servi",
  de.walware.rj.server.srvext,
