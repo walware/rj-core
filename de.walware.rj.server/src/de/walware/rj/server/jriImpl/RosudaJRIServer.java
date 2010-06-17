@@ -22,6 +22,7 @@ import static de.walware.rj.server.Server.S_DISCONNECTED;
 import static de.walware.rj.server.Server.S_NOT_STARTED;
 import static de.walware.rj.server.Server.S_STOPPED;
 
+import java.lang.reflect.Field;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -623,6 +624,30 @@ public class RosudaJRIServer extends RJ
 		
 		this.rniP_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
 		this.rEngine.rniPreserve(this.rniP_evalDummyExpr);
+		
+		if (LOGGER.isLoggable(Level.FINER)) {
+			final StringBuilder sb = new StringBuilder("Pointers:");
+			
+			final Field[] fields = getClass().getDeclaredFields();
+			for (final Field field : fields) {
+				final String name = field.getName();
+				if (name.startsWith("rniP_") && Long.TYPE.equals(field.getType())) {
+					sb.append("\n\t");
+					sb.append(name.substring(5));
+					sb.append(" = ");
+					try {
+						final long p = field.getLong(this);
+						sb.append("0x");
+						sb.append(Long.toHexString(p));
+					}
+					catch (final Exception e) {
+						sb.append(e.getMessage());
+					}
+				}
+			}
+			
+			LOGGER.log(Level.FINER, sb.toString());
+		}
 		
 		if (this.rniP_tryCatchFun <= 0L && this.rniP_tryCatchFun >= -4L) {
 			LOGGER.log(Level.SEVERE, "Failed to initialize engine: Base functions are missing (check 'Renviron').");
@@ -1347,7 +1372,10 @@ public class RosudaJRIServer extends RJ
 				this.rniP_evalTryCatch_errorExpr, this.rniP_exprSymbol, false), 0, true);
 		final long objP = this.rEngine.rniEval(exprP, 0L);
 		if (objP <= 0L && objP > -4L) {
-			throw new IllegalStateException("JRI returns error code " + objP);
+			if (this.rniInterrupted) {
+				throw new CancellationException();
+			}
+			throw new IllegalStateException("JRI returned error code " + objP + " (pointer = 0x" + Long.toHexString(exprP) + ")");
 		}
 		this.rEngine.rniProtect(objP);
 		this.rniProtectedCounter++;
@@ -2125,8 +2153,13 @@ public class RosudaJRIServer extends RJ
 		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(this.rniP_ReFun,
 				this.rEngine.rniCons(objP, this.rniP_NULL, this.rniP_zSymbol, false), 0L, true),
 				this.rniP_BaseEnv);
-		if ((numP > 0L || numP < -4L)
-				&& (num = this.rEngine.rniGetDoubleArray(numP)) != null) {
+		if (numP <= 0L && numP > -4L) {
+			if (this.rniInterrupted) {
+				throw new CancellationException();
+			}
+			throw new IllegalStateException("JRI returned error code " + numP);
+		}
+		if ((num = this.rEngine.rniGetDoubleArray(numP)) != null) {
 			return num;
 		}
 		throw new IllegalStateException();
@@ -2137,8 +2170,13 @@ public class RosudaJRIServer extends RJ
 		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(this.rniP_ImFun,
 				this.rEngine.rniCons(objP, this.rniP_NULL, this.rniP_zSymbol, false), 0L, true),
 				this.rniP_BaseEnv);
-		if ((numP > 0L || numP < -4L)
-				&& (num = this.rEngine.rniGetDoubleArray(numP)) != null) {
+		if (numP <= 0L && numP > -4L) {
+			if (this.rniInterrupted) {
+				throw new CancellationException();
+			}
+			throw new IllegalStateException("JRI returned error code " + numP);
+		}
+		if ((num = this.rEngine.rniGetDoubleArray(numP)) != null) {
 			return num;
 		}
 		throw new IllegalStateException();

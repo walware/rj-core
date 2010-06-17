@@ -69,7 +69,7 @@ public class AbstractServerControl {
 	
 	public static void initVerbose() {
 		LOGGER.setLevel(Level.ALL); // default is Level.INFO
-		System.setProperty("java.rmi.server.logCalls", "true");
+//		System.setProperty("java.rmi.server.logCalls", "true");
 //		RemoteServer.setLog(System.err);
 		ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(true);
 		
