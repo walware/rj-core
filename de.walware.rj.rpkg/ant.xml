@@ -1,0 +1,14 @@
+<project name="RJ_RPackage" basedir=".">
+	
+	<property name="eproject" value="de.walware.rj.rpkg"/>
+	<property name="target.dir" value="pkg/inst/java"/>
+	
+	<target name="epack">
+		<jar jarfile="${basedir}/${target.dir}/rj.jar">
+			<fileset dir="src"/>
+			<fileset dir="bin"/>
+		</jar>
+		<eclipse.refreshLocal resource="${eproject}/${target.dir}"/>
+	</target>
+	
+</project>
