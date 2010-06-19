@@ -232,7 +232,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			throw e;
 		}
 		catch (final Exception e) {
-			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when exec RJ UI command '" + item.getCommand() + "'.", e)); 
+			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when exec RJ UI command '" + item.getDataText() + "'.", e)); 
 			if (item.waitForClient()) {
 				item.setAnswer(new RjsStatus(RjsStatus.ERROR, 0, "Client error processing current command."));
 			}
@@ -245,7 +245,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	protected void handleUICallback(final ExtUICmdItem item, final IProgressMonitor monitor) throws Exception {
-		log(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "Unhandled RJ UI command '" + item.getCommand() + "'.", null)); 
+		log(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "Unhandled RJ UI command '" + item.getDataText() + "'.", null)); 
 		if (item.waitForClient()) {
 			item.setAnswer(new RjsStatus(RjsStatus.ERROR, 0, "Client error processing current command."));
 		}
