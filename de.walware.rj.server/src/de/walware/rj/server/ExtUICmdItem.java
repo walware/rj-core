@@ -12,6 +12,7 @@
 package de.walware.rj.server;
 
 import java.io.IOException;
+import java.util.Map;
 
 import de.walware.rj.data.RJIO;
 
@@ -22,23 +23,19 @@ import de.walware.rj.data.RJIO;
 public final class ExtUICmdItem extends MainCmdItem {
 	
 	public static final String C_CHOOSE_FILE = "chooseFile";
-	public static final String C_OPENIN_EDITOR = "openinEditor";
 	public static final String C_LOAD_HISTORY = "loadHistory";
 	public static final String C_SAVE_HISTORY = "saveHistory";
 	public static final String C_SHOW_HISTORY = "showHistory";
 	public static final String C_ADDTO_HISTORY = "addtoHistory";
-	public static final String C_SHOW_HELP = "showHelp";
 	
-	public static final int O_NEW = 8;
-	
-	private static final int OV_WITHTEXT =          0x10000000;
+	private static final int OV_WITHMAP =          0x10000000;
 	private static final int OV_WITHSTATUS =        0x40000000;
-	private static final int OM_TEXTANSWER =        OV_WITHTEXT;
+	private static final int OM_MAPANSWER =        OV_WITHMAP;
 	private static final int OM_STATUSANSWER =      OV_WITHSTATUS;
 	
 	
 	private String command;
-	private String text;
+	private Map<String, Object> map;
 	
 	private RjsStatus status;
 	
@@ -50,14 +47,14 @@ public final class ExtUICmdItem extends MainCmdItem {
 				(options | OM_WAITFORCLIENT) : (options);
 	}
 	
-	public ExtUICmdItem(final String command, final int options, final String text, final boolean waitForClient) {
+	public ExtUICmdItem(final String command, final int options, final Map<String, Object> args, final boolean waitForClient) {
 		assert (command != null);
 		this.command = command;
 		this.options = (waitForClient) ?
 				(options | OM_WAITFORCLIENT) : (options);
-		if (text != null) {
-			this.options |= OV_WITHTEXT;
-			this.text = text;
+		if (args != null) {
+			this.options |= OV_WITHMAP;
+			this.map = args;
 		}
 	}
 	
@@ -78,8 +75,8 @@ public final class ExtUICmdItem extends MainCmdItem {
 			this.status = new RjsStatus(io.in);
 			return;
 		}
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = io.readString();
+		if ((this.options & OV_WITHMAP) != 0) {
+			this.map = io.readStringKeyHashMap();
 		}
 	}
 	
@@ -92,8 +89,8 @@ public final class ExtUICmdItem extends MainCmdItem {
 			this.status.writeExternal(io.out);
 			return;
 		}
-		if ((this.options & OV_WITHTEXT) != 0) {
-			io.writeString(this.text);
+		if ((this.options & OV_WITHMAP) != 0) {
+			io.writeStringKeyMap(this.map);
 		}
 	}
 	
@@ -115,17 +112,13 @@ public final class ExtUICmdItem extends MainCmdItem {
 		}
 	}
 	
-	public void setAnswer(final String text) {
-		this.options = (text != null) ? 
-				((this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER) : (this.options & OM_CLEARFORANSWER);
+	public void setAnswer(final Map<String, Object> answer) {
+		this.options = (answer != null) ? 
+				((this.options & OM_CLEARFORANSWER) | OM_MAPANSWER) : (this.options & OM_CLEARFORANSWER);
 		this.status = null;
-		this.text = text;
+		this.map = answer;
 	}
 	
-	
-	public String getCommand() {
-		return this.command;
-	}
 	
 	@Override
 	public boolean isOK() {
@@ -139,7 +132,11 @@ public final class ExtUICmdItem extends MainCmdItem {
 	
 	@Override
 	public String getDataText() {
-		return this.text;
+		return this.command;
+	}
+	
+	public Map<String, Object> getDataMap() {
+		return this.map;
 	}
 	
 	
@@ -149,14 +146,14 @@ public final class ExtUICmdItem extends MainCmdItem {
 			return false;
 		}
 		final ExtUICmdItem otherItem = (ExtUICmdItem) other;
-		if (!getCommand().equals(otherItem.getCommand())) {
+		if (!getDataText().equals(otherItem.getDataText())) {
 			return false;
 		}
 		if (this.options != otherItem.options) {
 			return false;
 		}
-		if (((this.options & OV_WITHTEXT) != 0)
-				&& !getDataText().equals(otherItem.getDataText())) {
+		if (((this.options & OV_WITHMAP) != 0)
+				&& !getDataMap().equals(otherItem.getDataMap())) {
 			return false;
 		}
 		return true;
@@ -170,9 +167,9 @@ public final class ExtUICmdItem extends MainCmdItem {
 		sb.append(", options=0x");
 		sb.append(Integer.toHexString(this.options));
 		sb.append(")");
-		if ((this.options & OV_WITHTEXT) != 0) {
+		if ((this.options & OV_WITHMAP) != 0) {
 			sb.append("\n<TEXT>\n");
-			sb.append(this.text);
+			sb.append(this.map.toString());
 			sb.append("\n</TEXT>");
 		}
 		else {

@@ -27,6 +27,7 @@ import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2265,10 +2266,10 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	public String rChooseFile(final Rengine engine, final int newFile) {
-		final MainCmdItem cmd = internalMainFromR(new ExtUICmdItem(ExtUICmdItem.C_CHOOSE_FILE,
-				(newFile == 1) ? ExtUICmdItem.O_NEW : 0, true));
-		if (cmd.isOK()) {
-			return cmd.getDataText();
+		final Map<String, Object> answer = execUICommand(ExtUICmdItem.C_CHOOSE_FILE,
+				Collections.singletonMap("newResource", (Object) (newFile == 1)), true);
+		if (answer != null) {
+			return (String) answer.get("filename");
 		}
 		else {
 			return null;
@@ -2276,11 +2277,13 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	public void rLoadHistory(final Rengine engine, final String filename) {
-		execUICommand(ExtUICmdItem.C_LOAD_HISTORY, filename, true);
+		execUICommand(ExtUICmdItem.C_LOAD_HISTORY,
+				Collections.singletonMap("filename", (Object) filename), true);
 	}
 	
 	public void rSaveHistory(final Rengine engine, final String filename) {
-		execUICommand(ExtUICmdItem.C_SAVE_HISTORY, filename, true);
+		execUICommand(ExtUICmdItem.C_SAVE_HISTORY,
+				Collections.singletonMap("filename", (Object) filename), true);
 	}
 	
 	private void internalRStopped() {
@@ -2333,14 +2336,13 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	@Override
-	public String execUICommand(final String command, final String arg, final boolean wait) {
+	public Map<String, Object> execUICommand(final String command, final Map<String, Object> args, final boolean wait) {
 		if (command == null) {
 			throw new NullPointerException("command");
 		}
-		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, arg, wait));
-		if (wait && answer instanceof ExtUICmdItem
-				&& answer.isOK()) {
-			return answer.getDataText();
+		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, args, wait));
+		if (wait && answer instanceof ExtUICmdItem && answer.isOK()) {
+			return ((ExtUICmdItem) answer).getDataMap();
 		}
 		return null;
 	}

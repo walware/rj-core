@@ -11,6 +11,8 @@
 
 package de.walware.rj.server;
 
+import java.util.Map;
+
 
 /**
  * Interface from R to Java side of the RJ server
@@ -38,7 +40,7 @@ public class RJ {
 		instance = null;
 	}
 	
-	public String execUICommand(final String command, final String arg, final boolean wait) {
+	public Map<String, Object> execUICommand(final String command, final Map<String, Object> args, final boolean wait) {
 		throw new UnsupportedOperationException();
 	}
 	

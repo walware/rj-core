@@ -17,6 +17,9 @@ import java.io.ObjectOutput;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.IntBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 
 /**
@@ -193,6 +196,19 @@ public final class RJIO {
 				out.writeInt(Integer.MIN_VALUE);
 				continue;
 			}
+		}
+	}
+	
+	public void writeStringKeyMap(final Map<String, Object> map) throws IOException {
+		final ObjectOutput out = this.out;
+		if (map == null) {
+			out.writeInt(-1);
+			return;
+		}
+		out.writeInt(map.size());
+		for (final Entry<String, Object> entry : map.entrySet()) {
+			writeString(entry.getKey());
+			out.writeObject(entry.getValue());
 		}
 	}
 	
@@ -453,6 +469,24 @@ public final class RJIO {
 			}
 		}
 		return array;
+	}
+	
+	public HashMap<String, Object> readStringKeyHashMap() throws IOException {
+		final ObjectInput in = this.in;
+		final int length = in.readInt();
+		if (length < 0) {
+			return null;
+		}
+		try {
+			final HashMap<String, Object> map = new HashMap<String, Object>(length);
+			for (int i = 0; i < length; i++) {
+				map.put(readString(), in.readObject());
+			}
+			return map;
+		}
+		catch (final ClassNotFoundException e) {
+			throw new IOException(e.getMessage());
+		}
 	}
 	
 }
