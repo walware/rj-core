@@ -340,7 +340,7 @@ public final class RJIO {
 				this.cb.get(ca, cr, icount);
 				cr += icount;
 				if (position - bcount != 0) {
-					this.ca[cr++] = (char) (
+					ca[cr++] = (char) (
 							((this.ba[bcount] & 0xff) << 8) |
 							((in.read() & 0xff)) );
 				}
