@@ -20,7 +20,10 @@ import de.walware.rj.data.RStore;
 public abstract class AbstractRData implements RStore {
 	
 	
-	protected static final long NA_numeric_LONG = 0x7ff80000000007A2L;
+	protected static final long NA_numeric_LONG = 0x7ff80000000007a2L;
+	protected static final long NA_numeric_LONG_MASK = 0x7ff00000ffffffffL;
+	protected static final long NA_numeric_LONG_MATCH = 0x7ff00000000007a2L;
+	protected static final int NA_numeric_INT_MATCH = 0x000007a2;
 	protected static final double NA_numeric_DOUBLE = Double.longBitsToDouble(NA_numeric_LONG);
 	protected static final long NaN_numeric_LONG = Double.doubleToLongBits(Double.NaN);
 	protected static final double NaN_numeric_DOUBLE = Double.NaN;

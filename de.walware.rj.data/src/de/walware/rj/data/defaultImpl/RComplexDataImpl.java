@@ -70,7 +70,7 @@ public class RComplexDataImpl extends AbstractComplexData
 		this.imaginaryValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
 			final long l = in.readLong();
-			if (l == NA_numeric_LONG) {
+			if ((l & NA_numeric_LONG_MASK) == NA_numeric_LONG_MATCH) {
 				this.realValues[i] = Double.NaN;
 				this.naIdxs = addIdx(this.naIdxs, i);
 			}
@@ -88,7 +88,7 @@ public class RComplexDataImpl extends AbstractComplexData
 		this.imaginaryValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
 			final long l = in.readLong();
-			if (l == NA_numeric_LONG) {
+			if ((l & NA_numeric_LONG_MASK) == NA_numeric_LONG_MATCH) {
 				this.realValues[i] = Double.NaN;
 				this.naIdxs = addIdx(this.naIdxs, i);
 			}
@@ -112,7 +112,7 @@ public class RComplexDataImpl extends AbstractComplexData
 				}
 			}
 			else {
-				out.writeLong(Double.doubleToLongBits(this.realValues[i]));
+				out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
 			}
 			out.writeLong(Double.doubleToRawLongBits(this.imaginaryValues[i]));
 		}
@@ -130,7 +130,7 @@ public class RComplexDataImpl extends AbstractComplexData
 				}
 			}
 			else {
-				out.writeLong(Double.doubleToLongBits(this.realValues[i]));
+				out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
 			}
 			out.writeLong(Double.doubleToRawLongBits(this.imaginaryValues[i]));
 		}

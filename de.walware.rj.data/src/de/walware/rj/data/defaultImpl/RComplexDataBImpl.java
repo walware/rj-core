@@ -69,13 +69,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 		this.realValues = new double[this.length];
 		this.imaginaryValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
-			final long l = in.readLong();
-			if (l == NA_numeric_LONG) {
-				this.realValues[i] = NA_numeric_DOUBLE;
-			}
-			else {
-				this.realValues[i] = Double.longBitsToDouble(l);
-			}
+			this.realValues[i] = Double.longBitsToDouble(in.readLong());
 			this.imaginaryValues[i] = Double.longBitsToDouble(in.readLong());
 		}
 	}
@@ -85,13 +79,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 		this.realValues = new double[this.length];
 		this.imaginaryValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
-			final long l = in.readLong();
-			if (l == NA_numeric_LONG) {
-				this.realValues[i] = NA_numeric_DOUBLE;
-			}
-			else {
-				this.realValues[i] = Double.longBitsToDouble(l);
-			}
+			this.realValues[i] = Double.longBitsToDouble(in.readLong());
 			this.imaginaryValues[i] = Double.longBitsToDouble(in.readLong());
 		}
 	}
@@ -133,12 +121,12 @@ public class RComplexDataBImpl extends AbstractComplexData
 	@Override
 	public boolean isNA(final int idx) {
 		return (Double.isNaN(this.realValues[idx])
-				&& Double.doubleToRawLongBits(this.realValues[idx]) == NA_numeric_LONG);
+				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) == NA_numeric_INT_MATCH);
 	}
 	
 	public boolean isNaN(final int idx) {
 		return (Double.isNaN(this.realValues[idx])
-				&& Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_LONG);
+				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_INT_MATCH);
 	}
 	
 	public boolean isMissing(final int idx) {

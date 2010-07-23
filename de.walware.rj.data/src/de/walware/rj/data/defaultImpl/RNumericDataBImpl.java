@@ -57,40 +57,20 @@ public class RNumericDataBImpl extends AbstractNumericData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		final ObjectInput in = io.in;
-		this.length = in.readInt();
-		this.realValues = new double[this.length];
-		for (int i = 0; i < this.length; i++) {
-			final long l = io.in.readLong();
-			if (l == NA_numeric_LONG) {
-				this.realValues[i] = NA_numeric_DOUBLE;
-			}
-			else {
-				this.realValues[i] = Double.longBitsToDouble(l);
-			}
-		}
+		this.realValues = io.readDoubleArray();
+		this.length = this.realValues.length;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.length = in.readInt();
 		this.realValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
-			final long l = in.readLong();
-			if (l == NA_numeric_LONG) {
-				this.realValues[i] = NA_numeric_DOUBLE;
-			}
-			else {
-				this.realValues[i] = Double.longBitsToDouble(l);
-			}
+			this.realValues[i] = Double.longBitsToDouble(in.readLong());
 		}
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		final ObjectOutput out = io.out;
-		out.writeInt(this.length);
-		for (int i = 0; i < this.length; i++) {
-			out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
-		}
+		io.writeDoubleArray(this.realValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
@@ -115,12 +95,12 @@ public class RNumericDataBImpl extends AbstractNumericData
 	@Override
 	public boolean isNA(final int idx) {
 		return (Double.isNaN(this.realValues[idx])
-				&& Double.doubleToRawLongBits(this.realValues[idx]) == NA_numeric_LONG);
+				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) == NA_numeric_INT_MATCH);
 	}
 	
 	public boolean isNaN(final int idx) {
 		return (Double.isNaN(this.realValues[idx])
-				&& Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_LONG);
+				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_INT_MATCH);
 	}
 	
 	public boolean isMissing(final int idx) {
@@ -177,7 +157,7 @@ public class RNumericDataBImpl extends AbstractNumericData
 			throw new IndexOutOfBoundsException();
 		}
 		return (!Double.isNaN(this.realValues[idx])
-				|| Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_LONG) ?
+				|| (int) Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_INT_MATCH) ?
 			 Double.valueOf(this.realValues[idx]) : null;
 	}
 	
@@ -186,7 +166,7 @@ public class RNumericDataBImpl extends AbstractNumericData
 		final Double[] array = new Double[this.length];
 		for (int i = 0; i < this.length; i++) {
 			if (!Double.isNaN(this.realValues[i])
-					|| Double.doubleToRawLongBits(this.realValues[i]) != NA_numeric_LONG) {
+					|| (int) Double.doubleToRawLongBits(this.realValues[i]) != NA_numeric_INT_MATCH) {
 				array[i] = Double.valueOf(this.realValues[i]);
 			}
 		}

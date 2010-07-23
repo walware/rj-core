@@ -24,7 +24,7 @@ public class JRIComplexDataImpl extends RComplexDataBImpl {
 		super(realValues, imaginaryValues);
 		for (int i = 0; i < imaginaryValues.length; i++) {
 			if (Double.isNaN(imaginaryValues[i])) {
-				if (Double.doubleToRawLongBits(imaginaryValues[i]) == NA_numeric_LONG) {
+				if ((int) Double.doubleToRawLongBits(imaginaryValues[i]) == NA_numeric_INT_MATCH) {
 					realValues[i] = NA_numeric_DOUBLE;
 					imaginaryValues[i] = NA_numeric_DOUBLE;
 				}

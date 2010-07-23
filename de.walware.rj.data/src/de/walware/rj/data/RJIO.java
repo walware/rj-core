@@ -16,6 +16,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,8 +57,10 @@ public final class RJIO {
 	private static final int CB_LENGTH = BB_LENGTH / 2;
 	private static final int CA_LENGTH = BB_LENGTH * 4;
 	private static final int IB_LENGTH = BB_LENGTH / 4;
+	private static final int DB_LENGTH = BB_LENGTH / 8;
 	
 	private static final int[] EMPTY_INT_ARRAY = new int[0];
+	private static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	
 	
@@ -66,6 +69,7 @@ public final class RJIO {
 	private final CharBuffer cb;
 	private final char[] ca;
 	private final IntBuffer ib;
+	private final DoubleBuffer db;
 	
 	public ObjectInput in;
 	
@@ -85,6 +89,7 @@ public final class RJIO {
 		this.cb = this.bb.asCharBuffer();
 		this.ca = new char[CA_LENGTH];
 		this.ib = this.bb.asIntBuffer();
+		this.db = this.bb.asDoubleBuffer();
 	}
 	
 	
@@ -104,7 +109,7 @@ public final class RJIO {
 				this.bb.clear();
 				this.bb.get(this.ba, 0, bcount);
 			}
-			this.out.write(this.ba, 0, bcount);
+			out.write(this.ba, 0, bcount);
 		}
 		else {
 			int iw = 0;
@@ -117,8 +122,43 @@ public final class RJIO {
 					this.bb.clear();
 					this.bb.get(this.ba, 0, bcount);
 				}
-				this.out.write(this.ba, 0, bcount);
+				out.write(this.ba, 0, bcount);
 				iw += icount;
+			}
+		}
+	}
+	
+	public void writeDoubleArray(final double[] array, final int length) throws IOException {
+		final ObjectOutput out = this.out;
+		out.writeInt(length);
+		if (length <= 16) {
+			for (int i = 0; i < length; i++) {
+				out.writeLong(Double.doubleToRawLongBits(array[i]));
+			}
+		}
+		else if (length <= DB_LENGTH) {
+			final int bcount = (length << 3);
+			this.db.clear();
+			this.db.put(array, 0, length);
+			if (!this.bb.hasArray()) {
+				this.bb.clear();
+				this.bb.get(this.ba, 0, bcount);
+			}
+			out.write(this.ba, 0, bcount);
+		}
+		else {
+			int dw = 0;
+			while (dw < length) {
+				final int dcount = Math.min(length - dw, DB_LENGTH);
+				final int bcount = (dcount << 3);
+				this.db.clear();
+				this.db.put(array, dw, dcount);
+				if (!this.bb.hasArray()) {
+					this.bb.clear();
+					this.bb.get(this.ba, 0, bcount);
+				}
+				out.write(this.ba, 0, bcount);
+				dw += dcount;
 			}
 		}
 	}
@@ -311,6 +351,145 @@ public final class RJIO {
 				}
 				this.ib.clear();
 				this.ib.get(array, ir, bToComplete >> 2);
+			}
+			return array;
+		}
+	}
+	
+	public double[] readDoubleArray() throws IOException {
+		final ObjectInput in = this.in;
+		final int length = in.readInt();
+		if (length <= 32) {
+			switch (length) {
+			case 0:
+				return EMPTY_DOUBLE_ARRAY;
+			case 1:
+				return new double[] {
+						Double.longBitsToDouble(in.readLong()) };
+			case 2:
+				return new double[] {
+						Double.longBitsToDouble(in.readLong()),
+						Double.longBitsToDouble(in.readLong()) };
+			default:
+				final int bn = length << 3;
+				in.readFully(this.ba, 0, bn);
+				final double[] array = new double[length];
+				for (int db = 0; db < bn; db += 8) {
+					array[db >> 3] = Double.longBitsToDouble(
+							((long) (this.ba[db] & 0xff) << 56) |
+							((long) (this.ba[db+1] & 0xff) << 48) |
+							((long) (this.ba[db+2] & 0xff) << 40) |
+							((long) (this.ba[db+3] & 0xff) << 32) |
+							((long) (this.ba[db+4] & 0xff) << 24) |
+							((this.ba[db+5] & 0xff) << 16) |
+							((this.ba[db+6] & 0xff) << 8) |
+							((this.ba[db+7] & 0xff)) );
+				}
+				return array;
+			}
+		}
+		else if (length <= DB_LENGTH) {
+			final int bn = length << 3;
+			in.readFully(this.ba, 0, bn);
+			if (!this.bb.hasArray()) {
+				this.bb.clear();
+				this.bb.put(this.ba, 0, bn);
+			}
+			final double[] array = new double[length];
+			this.db.clear();
+			this.db.get(array, 0, length);
+			return array;
+		}
+		else {
+			final double[] array = new double[length];
+			int dr = 0;
+			int position = 0;
+			final int bToComplete;
+			while (true) {
+				position += in.read(this.ba, position, BA_LENGTH-position);
+				if (position >= BB_PART) {
+					final int dcount = (position >> 3);
+					final int bcount = (dcount << 3);
+					if (!this.bb.hasArray()) {
+						this.bb.clear();
+						this.bb.put(this.ba, 0, bcount);
+					}
+					this.db.clear();
+					this.db.get(array, dr, dcount);
+					dr += dcount;
+					switch (position - bcount) {
+					case 0:
+						position = 0;
+						break;
+					case 1:
+						this.ba[0] = this.ba[bcount];
+						position = 1;
+						break;
+					case 2:
+						this.ba[0] = this.ba[bcount];
+						this.ba[1] = this.ba[bcount+1];
+						position = 2;
+						break;
+					case 3:
+						this.ba[0] = this.ba[bcount];
+						this.ba[1] = this.ba[bcount+1];
+						this.ba[2] = this.ba[bcount+2];
+						position = 3;
+						break;
+					case 4:
+						this.ba[0] = this.ba[bcount];
+						this.ba[1] = this.ba[bcount+1];
+						this.ba[2] = this.ba[bcount+2];
+						this.ba[3] = this.ba[bcount+3];
+						position = 4;
+						break;
+					case 5:
+						this.ba[0] = this.ba[bcount];
+						this.ba[1] = this.ba[bcount+1];
+						this.ba[2] = this.ba[bcount+2];
+						this.ba[3] = this.ba[bcount+3];
+						this.ba[4] = this.ba[bcount+4];
+						position = 5;
+						break;
+					case 6:
+						array[dr++] = Double.longBitsToDouble(
+								((long) (this.ba[bcount] & 0xff) << 56) |
+								((long) (this.ba[bcount+1] & 0xff) << 48) |
+								((long) (this.ba[bcount+2] & 0xff) << 40) |
+								((long) (this.ba[bcount+3] & 0xff) << 32) |
+								((long) (this.ba[bcount+4] & 0xff) << 24) |
+								((this.ba[bcount+5] & 0xff) << 16) |
+								((in.read() & 0xff) << 8) |
+								((in.read() & 0xff)) );
+						position = 0;
+						break;
+					case 7:
+						array[dr++] = Double.longBitsToDouble(
+								((long) (this.ba[bcount] & 0xff) << 56) |
+								((long) (this.ba[bcount+1] & 0xff) << 48) |
+								((long) (this.ba[bcount+2] & 0xff) << 40) |
+								((long) (this.ba[bcount+3] & 0xff) << 32) |
+								((long) (this.ba[bcount+4] & 0xff) << 24) |
+								((this.ba[bcount+5] & 0xff) << 16) |
+								((this.ba[bcount+6] & 0xff) << 8) |
+								((in.read() & 0xff)) );
+						position = 0;
+						break;
+					}
+					if (length - dr <= DB_LENGTH) {
+						bToComplete = ((length - dr) << 3);
+						break;
+					}
+				}
+			}
+			if (bToComplete > 0) {
+				in.readFully(this.ba, position, bToComplete-position);
+				if (!this.bb.hasArray()) {
+					this.bb.clear();
+					this.bb.put(this.ba, 0, bToComplete);
+				}
+				this.db.clear();
+				this.db.get(array, dr, bToComplete >> 3);
 			}
 			return array;
 		}
