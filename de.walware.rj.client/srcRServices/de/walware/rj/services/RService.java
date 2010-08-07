@@ -58,6 +58,22 @@ import de.walware.rj.graphic.RGraphic;
  */
 public interface RService {
 	
+	
+	/**
+	 * Value for depth parameters indicating that the depth is not limited.
+	 * 
+	 * @since 0.5.0
+	 */
+	int DEPTH_INFINITE = -1;
+	
+	/**
+	 * Value for depth parameters indicating that the depth is limited to the specified object itself.
+	 * 
+	 * @since 0.5.0
+	 */
+	int DEPTH_ONE = 1;
+	
+	
 	RPlatform getPlatform();
 	
 	/**
@@ -107,6 +123,9 @@ public interface RService {
 	 * @return the evaluated value as R data object
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
+	 * 
+	 * @see #DEPTH_INFINITE
+	 * @see #DEPTH_ONE
 	 */
 	RObject evalData(String expression, String factoryId, int options, int depth, IProgressMonitor monitor) throws CoreException;
 	
