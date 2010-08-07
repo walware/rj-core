@@ -36,11 +36,11 @@ public class RComplexDataStruct extends AbstractComplexData {
 		throw new UnsupportedOperationException();
 	}
 	
-	public Object get(final int idx) {
+	public Complex get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public Object[] toArray() {
+	public Complex[] toArray() {
 		throw new UnsupportedOperationException();
 	}
 	

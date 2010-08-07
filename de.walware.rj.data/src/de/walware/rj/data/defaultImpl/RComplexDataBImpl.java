@@ -210,11 +210,16 @@ public class RComplexDataBImpl extends AbstractComplexData
 		this.length -= idxs.length;
 	}
 	
-	public Object get(final int idx) {
-		throw new UnsupportedOperationException();
+	public Complex get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (!Double.isNaN(this.realValues[idx])
+				|| Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_LONG) ?
+			new Complex(this.realValues[idx], this.imaginaryValues[idx]) : null;
 	}
 	
-	public Object[] toArray() {
+	public Complex[] toArray() {
 		throw new UnsupportedOperationException();
 	}
 	

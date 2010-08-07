@@ -21,9 +21,60 @@ package de.walware.rj.data;
 public interface RComplexStore extends RStore {
 	
 	
-	/** Type not yet defined */
-	Object get(int idx);
-	/** Type not yet defined */
-	Object[] toArray();
+	final class Complex {
+		
+		
+		private final double realValue;
+		private final double imaginaryValue;
+		
+		
+		public Complex(final double real, final double imaginary) {
+			this.realValue = real;
+			this.imaginaryValue = imaginary;
+		}
+		
+		
+		public double getRe() {
+			return this.realValue;
+		}
+		
+		public double getIm() {
+			return this.imaginaryValue;
+		}
+		
+		
+		@Override
+		public int hashCode() {
+			final long realBits = Double.doubleToLongBits(this.realValue);
+			final long imaginaryBits = Double.doubleToLongBits(this.imaginaryValue) + 1;
+			return (int) ((realBits ^ (realBits >>> 32)) | (imaginaryBits ^ (imaginaryBits >>> 32)));
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof Complex)) {
+				return false;
+			}
+			final Complex other = (Complex) obj;
+			return (this.realValue == other.realValue && this.imaginaryValue == other.imaginaryValue);
+		}
+		
+		@Override
+		public String toString() {
+			final StringBuilder sb = new StringBuilder(32);
+			sb.append(Double.toString(this.realValue));
+			if (this.imaginaryValue >= 0.0) {
+				sb.append('+');
+			}
+			sb.append(Double.toString(this.imaginaryValue));
+			sb.append('i');
+			return sb.toString();
+		}
+		
+	}
+	
+	
+	Complex get(int idx);
+	Complex[] toArray();
 	
 }

@@ -17,6 +17,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
+import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
@@ -252,11 +253,16 @@ public class RComplexDataImpl extends AbstractComplexData
 		this.naIdxs = updateIdxRemoved(this.naIdxs, idxs);
 	}
 	
-	public Object get(final int idx) {
-		throw new UnsupportedOperationException();
+	public RComplexStore.Complex get(final int idx) {
+		if (idx < 0 || idx >= this.length) {
+			throw new IndexOutOfBoundsException();
+		}
+		return (!Double.isNaN(this.realValues[idx])
+				|| Arrays.binarySearch(this.naIdxs, idx) < 0) ?
+			new Complex(this.realValues[idx], this.imaginaryValues[idx]) : null;
 	}
 	
-	public Object[] toArray() {
+	public RComplexStore.Complex[] toArray() {
 		throw new UnsupportedOperationException();
 	}
 	
