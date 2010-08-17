@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RNumericDataStruct extends AbstractNumericData {
 	
 	
-	public RNumericDataStruct(final int length) {
-		this.length = length;
+	public RNumericDataStruct() {
+		this.length = -1;
 	}
 	
 	

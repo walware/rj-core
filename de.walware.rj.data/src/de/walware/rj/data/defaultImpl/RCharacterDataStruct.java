@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RCharacterDataStruct extends AbstractCharacterData {
 	
 	
-	public RCharacterDataStruct(final int length) {
-		this.length = length;
+	public RCharacterDataStruct() {
+		this.length = -1;
 	}
 	
 	

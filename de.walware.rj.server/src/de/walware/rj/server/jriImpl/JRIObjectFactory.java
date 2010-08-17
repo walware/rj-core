@@ -102,7 +102,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			case RStore.RAW:
 				return RAW_STRUCT_DUMMY;
 			case RStore.FACTOR:
-				return new RFactorDataStruct(-1, io.in.readBoolean(), io.in.readInt());
+				return new RFactorDataStruct(io.in.readBoolean(), io.in.readInt());
 			default:
 				throw new IOException("store type = " + storeType);
 			}

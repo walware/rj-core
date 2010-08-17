@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RComplexDataStruct extends AbstractComplexData {
 	
 	
-	public RComplexDataStruct(final int length) {
-		this.length = length;
+	public RComplexDataStruct() {
+		this.length = -1;
 	}
 	
 	

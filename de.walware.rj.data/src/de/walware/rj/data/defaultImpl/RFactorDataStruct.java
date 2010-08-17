@@ -19,11 +19,21 @@ import de.walware.rj.data.RStore;
 public class RFactorDataStruct extends AbstractFactorData {
 	
 	
+	public static RFactorDataStruct addLevels(final RFactorStore store, final RCharacterStore levels) {
+		return new RFactorDataStruct(store.isOrdered(), levels.getLength()) {
+			@Override
+			public RCharacterStore getLevels() {
+				return levels;
+			}
+		};
+	}
+	
+	
 	private final int levelCount;
 	
 	
-	public RFactorDataStruct(final int length, final boolean isOrdered, final int levelCount) {
-		this.length = length;
+	public RFactorDataStruct(final boolean isOrdered, final int levelCount) {
+		this.length = -1;
 		this.isOrdered = isOrdered;
 		this.levelCount = levelCount;
 	}
@@ -74,7 +84,7 @@ public class RFactorDataStruct extends AbstractFactorData {
 	}
 	
 	public RCharacterStore toCharacterData() {
-		return new RCharacterDataStruct(this.length);
+		return new RCharacterDataStruct();
 	}
 	
 	public boolean allEqual(final RStore other) {

@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RIntegerDataStruct extends AbstractIntegerData {
 	
 	
-	public RIntegerDataStruct(final int length) {
-		this.length = length;
+	public RIntegerDataStruct() {
+		this.length = -1;
 	}
 	
 	

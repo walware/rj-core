@@ -36,12 +36,12 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	public static final RObjectFactoryImpl INSTANCE = new RObjectFactoryImpl();
 	
-	public static final RNumericStore NUM_STRUCT_DUMMY = new RNumericDataStruct(-1);
-	public static final RComplexDataStruct CPLX_STRUCT_DUMMY = new RComplexDataStruct(-1);
-	public static final RIntegerDataStruct INT_STRUCT_DUMMY = new RIntegerDataStruct(-1);
-	public static final RLogicalDataStruct LOGI_STRUCT_DUMMY = new RLogicalDataStruct(-1);
-	public static final RRawDataStruct RAW_STRUCT_DUMMY = new RRawDataStruct(-1);
-	public static final RCharacterDataStruct CHR_STRUCT_DUMMY = new RCharacterDataStruct(-1);
+	public static final RNumericStore NUM_STRUCT_DUMMY = new RNumericDataStruct();
+	public static final RComplexDataStruct CPLX_STRUCT_DUMMY = new RComplexDataStruct();
+	public static final RIntegerDataStruct INT_STRUCT_DUMMY = new RIntegerDataStruct();
+	public static final RLogicalDataStruct LOGI_STRUCT_DUMMY = new RLogicalDataStruct();
+	public static final RRawDataStruct RAW_STRUCT_DUMMY = new RRawDataStruct();
+	public static final RCharacterDataStruct CHR_STRUCT_DUMMY = new RCharacterDataStruct();
 	
 	
 	private static int getArrayLength(final int[] dim) {
@@ -605,7 +605,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			case RStore.RAW:
 				return RAW_STRUCT_DUMMY;
 			case RStore.FACTOR:
-				return new RFactorDataStruct(-1, io.in.readBoolean(), io.in.readInt());
+				return new RFactorDataStruct(io.in.readBoolean(), io.in.readInt());
 			default:
 				throw new IOException("store type = " + storeType);
 			}

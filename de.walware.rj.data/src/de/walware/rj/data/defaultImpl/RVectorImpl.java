@@ -59,6 +59,19 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
+	public RVectorImpl(final DataType data, final String className1, final RStore initialNames) {
+		if (data == null || className1 == null) {
+			throw new NullPointerException();
+		}
+		if ((initialNames != null && initialNames.getLength() != data.getLength())) {
+			throw new IllegalArgumentException();
+		}
+		this.data = data;
+		this.length = data.getLength();
+		this.className1 = className1;
+		this.namesAttribute = initialNames;
+	}
+	
 	public RVectorImpl(final RJIO io, final RObjectFactory factory) throws IOException {
 		readExternal(io, factory);
 	}

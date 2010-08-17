@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RRawDataStruct extends AbstractRawData {
 	
 	
-	public RRawDataStruct(final int length) {
-		this.length = length;
+	public RRawDataStruct() {
+		this.length = -1;
 	}
 	
 	

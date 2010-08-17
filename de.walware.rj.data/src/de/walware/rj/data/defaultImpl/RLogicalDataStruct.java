@@ -17,8 +17,8 @@ import de.walware.rj.data.RStore;
 public class RLogicalDataStruct extends AbstractLogicalData {
 	
 	
-	public RLogicalDataStruct(final int length) {
-		this.length = length;
+	public RLogicalDataStruct() {
+		this.length = -1;
 	}
 	
 	

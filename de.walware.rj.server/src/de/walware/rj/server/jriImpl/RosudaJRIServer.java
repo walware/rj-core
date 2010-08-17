@@ -1646,7 +1646,7 @@ public class RosudaJRIServer extends RJ
 					if (levels != null) {
 						final boolean isOrdered = className1.equals("ordered") || this.rEngine.rniInherits(objP, "ordered");
 						final RFactorStore factorData = ((flags & F_ONLY_STRUCT) != 0) ?
-								new RFactorDataStruct(rniGetLength(objP), isOrdered, levels.length) :
+								new RFactorDataStruct(isOrdered, levels.length) :
 								new RFactorDataImpl(this.rEngine.rniGetIntArray(objP), isOrdered, levels);
 						return ((flags & F_ONLY_STRUCT) != 0) ?
 								new JRIVectorImpl<RIntegerStore>(
