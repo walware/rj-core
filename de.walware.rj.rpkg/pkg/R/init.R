@@ -32,3 +32,24 @@
 	invisible()
 }
 
+
+#' Environment for temporary R objects
+.rj.tmp <- new.env()
+
+#' Returns the next available id (a element name with the specified prefix)
+#' 
+#' @param prefix prefix of the element name, usually a key for a element type
+#' @param envir optional environment, default is \code{.rj.tmp}
+#' @return the id
+#' @returnType char
+.rj.nextId <- function(prefix, envir = .rj.tmp) {
+	i <- 1L; 
+	repeat {
+		name <- paste(prefix, i, sep = ""); 
+		if (!exists(name, envir = envir, inherits = FALSE)) {
+			assign(name, NULL, envir = envir); 
+			return(name); 
+		}
+		i <- i + 1L; 
+	}
+}
