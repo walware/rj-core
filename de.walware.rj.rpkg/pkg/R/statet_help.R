@@ -19,28 +19,26 @@
 #' @param ... for compatibility
 #' @returnType character
 #' @return URL in rhelp schema
-.getRHelpUrl <- function (topic, package, ..., paths) {
-	if (!missing(package)) {
-		if (is.name(y <- substitute(package))) {
-			package <- as.character(y)
-		}
+.getRHelpUrl <- function(helpObj) {
+	if (inherits(helpObj, "packageInfo")) {
+		return (paste("rhelp:///page", helpObj$name, "", sep = "/"))
 	}
-	if (inherits(paths, "packageInfo")) {
-		return (paste("rhelp:///page", package, "", sep = "/"))
-	}
-	if (inherits(paths, "help_files_with_topic")) {
-		if (missing(topic)) {
+	if (inherits(helpObj, "help_files_with_topic")) {
+		topic <- attr(helpObj, "topic")
+		if (is.null(topic)) {
 			topic <- "help"
 			package <- "utils"
 		}
-		else {
-			topic <- attr(paths, "topic")
+		package = attr(helpObj, "call")[["package"]]
+		if (is.name(y <- substitute(package))) {
+			package <- as.character(y)
 		}
-		if (missing(package)) {
-			return (paste("rhelp:///topic", topic, sep = "/"))
-		}
-		else {
+		if (is.character(package)
+				&& length(package) == 1 && !is.na(package)) {
 			return (paste("rhelp:///page", package, topic, sep = "/"))
+		}
+		else {
+			return (paste("rhelp:///topic", topic, sep = "/"))
 		}
 	}
 	stop("Unexpected help information.")
@@ -139,34 +137,44 @@
 #' 
 #' @seealso help
 #' @export
-statet_help <- function(..., help_type = "html", live = FALSE) {
+statet_help <- function(..., help_type = "html",
+		live = FALSE) {
+	this.call <- match.call()
 	if (help_type != "html") {
-		return (.rj.originals$help(..., help_type = "html"))
+		helpObj <- .rj.originals$help(..., help_type = help_type)
+		attr(helpObj, "call") <- this.call
+		return (helpObj)
 	}
 	if (getRversion() < "2.10.0") {
-		paths <- .rj.originals$help(..., chmhelp = FALSE, htmlhelp = TRUE)
-		help.statet <- paths
+		helpObj <- .rj.originals$help(..., chmhelp = FALSE, htmlhelp = TRUE)
+		attr(helpObj, "call") <- this.call
+		help.statet <- helpObj
 	}
 	else {
-		paths <- .rj.originals$help(..., help_type = "html")
-		if (length(paths) == 0) {
-			return (paths); #visible
+		helpObj <- .rj.originals$help(..., help_type = "html")
+		attr(helpObj, "call") <- this.call
+		if (length(helpObj) == 0) {
+			return (helpObj) #visible
 		}
 		if (live) {
-			help.statet <- .getLiveHelp(paths)
+			help.statet <- .getLiveHelp(helpObj)
 			if (!is.null(help.statet)) {
 				help.statet <- paste(help.statet, collapse = "\n")
 				help.statet <- paste("html:///", help.statet, sep = "")
 			}
 		}
+		else if (inherits(helpObj, "help_files_with_topic")
+				&& this.call[[1]] != "statet_help") {
+			return (helpObj) # visible
+		}
 		else {
-			help.statet <- .getRHelpUrl(..., paths = paths);
+			help.statet <- .getRHelpUrl(helpObj)
 		}
 	}
 	if (is.character(help.statet) && !is.na(help.statet)) {
 		.showHelp(help.statet)
 	}
-	invisible(paths)
+	invisible(helpObj)
 }
 
 #' Shows the R help start page in StatET. This is a console command for R help in StatET
@@ -182,11 +190,24 @@ statet_help.start <- function(...) {
 	invisible()
 }
 
+statet_print.help <- function(x, ...) {
+	type <- attr(x, "type")
+	if (length(x) == 0
+			|| (!is.null(type) && type != "html") ) {
+		return (.rj.originals$print.help_files_with_topic(x, ...))
+	}
+	help.statet <- .getRHelpUrl(x)
+	if (is.character(help.statet)
+			&& length(help.statet) == 1 && !is.na(help.statet)) {
+		.showHelp(help.statet)
+	}
+	invisible(x)
+}
 
 #' Reassigns R help functions with versions for R help in StatET.
 #' 
 #' @export
-.statet.reassign_help <- function(){
+.statet.reassign_help <- function() {
 	utilsEnv <- as.environment("package:utils")
 	rjEnv <- as.environment("package:rj")
 	
@@ -195,10 +216,7 @@ statet_help.start <- function(...) {
 	assign("help", statet_help, utilsEnv)
 	lockBinding("help", utilsEnv)
 	
-	unlockBinding("?", utilsEnv)
-	assignInNamespace("?", statet_help, ns = "utils", envir = utilsEnv)
-	assign("?", statet_help, utilsEnv)
-	lockBinding("?", utilsEnv)
+	assignInNamespace("print.help_files_with_topic", statet_print.help, ns = "utils", envir = utilsEnv)
 	
 	unlockBinding("help.start", utilsEnv)
 	assignInNamespace("help.start", statet_help.start, ns = "utils", envir = utilsEnv)

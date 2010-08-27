@@ -11,10 +11,10 @@
 	
 	.rj.jInstance <<- .jcall("de/walware/rj/server/RJ", "Lde/walware/rj/server/RJ;", "get")
 	
-	utilsEnv <- as.environment("package:utils")
+	utilsEnv <- getNamespace("utils")
 	assign("help", envir = .rj.originals, value = get("help", envir = utilsEnv))
-	assign("?", envir = .rj.originals, value = get("?", envir = utilsEnv))
 	assign("help.start", envir = .rj.originals, value = get("help.start", envir = utilsEnv))
+	assign("print.help_files_with_topic", envir = .rj.originals, value = get("print.help_files_with_topic", envir = utilsEnv))
 	
 	invisible(TRUE)
 }
