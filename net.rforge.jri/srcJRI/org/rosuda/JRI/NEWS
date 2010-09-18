@@ -1,6 +1,37 @@
  NEWS/ChangeLog for JRI
 --------------------------
 
+0.5-3	(under development)
+    o	fixed changed by the Win64 support which broke some other OSes by
+	using sign extension when converting to long storage.
+
+    o	avoid the use of the sign of pointers for signaling. Note
+	that rniEval() now returns 0 on error and not -1 or -2. The
+	old behavior was undocumented (and dangerous) and thus should
+	not be relied upon. (fixes #172)
+
+0.5-2	2010-04-28
+    o	fixed handling of NAs in strings - they are now correctly
+	converted to <null>s on the Java side.
+
+	IMPORTANT: previously NAs would come as the string "NA"
+	from R which is incorrect since it is not distinguishable from
+	a literal "NA" string. Code that deals with NAs must be prepared
+	to receive nulls in string arrays (note that nulls where
+	correctly converted to NA string, it's just that incoming
+	string were not converted).
+
+	(Thanks to Stephan Wahlbrink for pointing out the inconsistency)
+
+    o	multiple fixes to Windows support: common command line
+	arguments are now correctly processed, sub-architectures are
+	supported, Win64 is now also supported
+
+0.5-1	2010-03-16
+   o	API 1.10: rniAssign now returns boolean to denote success/failure
+
+   o	numerous bug fixes and additions
+
 0.5-0	2009-08-22
     o	API 1.9: added rniPreserve, rniRelease, rniParentEnv, rniFindVar,
 	         rniListEnv, rniSpecialObject, rniPrintValue,
@@ -21,6 +52,7 @@
 	failing to load the JRI library (UnsatisfiedLinkException).
 	This can be used by GUIs to display a more meaningful message
 	instead of abort. The jriLoaded flag is false in that case.
+
 
 0.4-2
     o	declare string encoding as UTF-8 and convert incoming strings

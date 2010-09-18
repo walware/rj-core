@@ -10,6 +10,6 @@ $(RHOME)/src/gnuwin32/libR.a:
 
 run.bat: jri.dll
 	echo "set PATH=%PATH%;$(RHOME)\\bin;$(RHOME)\\lib" > run.bat
-	echo "$(JAVA_PROG) -cp .;examples;src/JRI.jar rtest \$$*" >> run.bat
+	echo "$(JAVA_PROG) -cp .;examples;JRI.jar;src/JRI.jar rtest \$$*" >> run.bat
 
 include Makefile.all

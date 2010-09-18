@@ -12,6 +12,8 @@ public class Rengine extends Thread {
 	 */
 	public static boolean jriLoaded;
 
+    boolean loopHasLock = false;
+    
     static {
         try {
             System.loadLibrary("jri");
@@ -50,7 +52,7 @@ public class Rengine extends Thread {
 	/**	API version of the Rengine itself; see also rniGetVersion() for binary version. It's a good idea for the calling program to check the versions of both and abort if they don't match. This should be done using {@link #versionCheck}
 		@return version number as <code>long</code> in the form <code>0xMMmm</code> */
     public static long getVersion() {
-        return 0x0109;
+        return 0x010a;
     }
 
     /** check API version of this class and the native binary. This is usually a good idea to ensure consistency.
@@ -60,7 +62,7 @@ public class Rengine extends Thread {
 	}
 	
     /** debug flag. Set to value &gt;0 to enable debugging messages. The verbosity increases with increasing number */
-    public static int DEBUG=0;
+    public static int DEBUG = 0;
 	
 	/** this value specifies the time (in ms) to spend sleeping between checks for R shutdown requests if R event loop is not used. The default is 200ms. Higher values lower the CPU usage but may make R less responsive to shutdown attempts (in theory it should not matter because {@link #stop()} uses interrupt to awake from the idle sleep immediately, but some implementation may not honor that).
 	@since JRI 0.3
@@ -176,7 +178,7 @@ public class Rengine extends Thread {
     /** RNI: evaluate R expression (do NOT use directly unless you know exactly what you're doing, where possible use {@link #eval} instead). Note that no synchronization is performed!
 	@param exp reference to the expression to evaluate
 	@param rho environment to use for evaluation (or 0 for global environemnt)
-	@return result of the evaluation */
+	@return result of the evaluation or 0 if an error occurred */
     public synchronized native long rniEval(long exp, long rho);
 
 	/** RNI: protect an R object (c.f. PROTECT macro in C)
@@ -410,8 +412,11 @@ public class Rengine extends Thread {
     /** RNI: assign a value to an environment
 	@param name name
 	@param exp value
-	@param rho environment (use 0 for the global environment) */
-    public synchronized native void rniAssign(String name, long exp, long rho);
+	@param rho environment (use 0 for the global environment)
+	@return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
+        @since API 1.10, JRI 0.5-1 (existed before but returned <code>void</code>)
+    */
+    public synchronized native boolean rniAssign(String name, long exp, long rho);
     
     /** RNI: get the SEXP type
 	@param exp reference to a SEXP
@@ -457,17 +462,21 @@ public class Rengine extends Thread {
 	@return content entered by the user. Returning <code>null</code> corresponds to an EOF and usually causes R to exit (as in <code>q()</doce>). */
     public String jriReadConsole(String prompt, int addToHistory)
     {
-		if (DEBUG>1)
-			System.out.println("Rengine.jreReadConsole BEGIN "+Thread.currentThread());
-        Rsync.unlock();
-        String s=(callback==null)?null:callback.rReadConsole(this, prompt, addToHistory);
-        if (!Rsync.safeLock()) {
-            String es="\n>>JRI Warning: jriReadConsole detected a possible deadlock ["+Rsync+"]["+Thread.currentThread()+"]. Proceeding without lock, but this is inherently unsafe.\n";
+	if (DEBUG>1)
+	    System.out.println("Rengine.jreReadConsole BEGIN "+Thread.currentThread());
+        if (loopHasLock) {
+	    Rsync.unlock();
+	    loopHasLock = false;
+	}
+        String s = (callback == null) ? null : callback.rReadConsole(this, prompt, addToHistory);
+        loopHasLock = Rsync.safeLock();
+	if (!loopHasLock) {
+            String es = "\n>>JRI Warning: jriReadConsole detected a possible deadlock ["+Rsync+"]["+Thread.currentThread()+"]. Proceeding without lock, but this is inherently unsafe.\n";
             jriWriteConsole(es, 1);
             System.err.print(es);
         }
-		if (DEBUG>1)
-			System.out.println("Rengine.jreReadConsole END "+Thread.currentThread());
+	if (DEBUG>1)
+	    System.out.println("Rengine.jreReadConsole END "+Thread.currentThread());
         return s;
     }
 
@@ -524,8 +533,8 @@ public class Rengine extends Thread {
 		@param convert if set to <code>true</code> the resulting REXP will contain native representation of the contents, otherwise an empty REXP will be returned. Depending on the back-end an empty REXP may or may not be used to convert the result at a later point.
 		@return resulting expression or <code>null</code> if something wnet wrong */
     public synchronized REXP eval(String s, boolean convert) {
-		if (DEBUG>0)
-			System.out.println("Rengine.eval("+s+"): BEGIN "+Thread.currentThread());
+	if (DEBUG>0)
+	    System.out.println("Rengine.eval("+s+"): BEGIN "+Thread.currentThread());
         boolean obtainedLock=Rsync.safeLock();
         try {
             /* --- so far, we ignore this, because it can happen when a callback needs an eval which is ok ...
@@ -535,11 +544,11 @@ public class Rengine extends Thread {
                 System.err.print(es);
             }
              */
-            long pr=rniParse(s, 1);
-            if (pr>0) {
-                long er=rniEval(pr, 0);
-                if (er>0) {
-                    REXP x=new REXP(this, er, convert);
+            long pr = rniParse(s, 1);
+            if (pr != 0) {
+                long er = rniEval(pr, 0);
+                if (er != 0) {
+                    REXP x = new REXP(this, er, convert);
                     if (DEBUG>0) System.out.println("Rengine.eval("+s+"): END (OK)"+Thread.currentThread());
                     return x;
                 }
@@ -570,11 +579,11 @@ public class Rengine extends Thread {
         if (lockStatus==1) return null; // 1=locked by someone else
         boolean obtainedLock=(lockStatus==0);
         try {
-            long pr=rniParse(s, 1);
-            if (pr>0) {
-                long er=rniEval(pr, 0);
-                if (er>0) {
-                    REXP x=new REXP(this, er, convert);
+            long pr = rniParse(s, 1);
+            if (pr != 0) {
+                long er = rniEval(pr, 0);
+                if (er != 0) {
+                    REXP x = new REXP(this, er, convert);
                     return x;
                 }
             }
@@ -607,127 +616,148 @@ public class Rengine extends Thread {
 
     /** attempt to shut down R. This method is asynchronous. */
     public void end() {
-        alive=false;
+        alive = false;
         interrupt();
     }
     
     /** The implementation of the R thread. This method should not be called directly. */	
     public void run() {
+	if (DEBUG > 0)
+	    System.out.println("Starting R...");
+	loopHasLock = Rsync.safeLock(); // force all code to wait until R is ready
+	try {
+	    if (setupR(args) == 0) {
+		if (!runLoop && loopHasLock) { // without event loop we can unlock now since we woin't do anything
+		    Rsync.unlock();
+		    loopHasLock = false;
+		}
+		while (alive) {
+		    try {
+			if (runLoop) {                        
+			    if (DEBUG > 0)
+				System.out.println("***> launching main loop:");
+			    loopRunning = true;
+			    rniRunMainLoop();
+			    // actually R never returns from runMainLoop ...
+			    loopRunning = false;
+			    if (DEBUG > 0)
+				System.out.println("***> main loop finished:");
+			    runLoop = false;
+			    died = true;
+			    return;
+			}
+			sleep(idleDelay);
+			if (runLoop) rniIdle();
+		    } catch (InterruptedException ie) {
+			interrupted();
+		    }
+		}
+		died=true;
 		if (DEBUG>0)
-			System.out.println("Starting R...");
-        if (setupR(args)==0) {
-            while (alive) {
-                try {
-                    if (runLoop) {                        
-						if (DEBUG>0)
-							System.out.println("***> launching main loop:");
-                        loopRunning=true;
-                        rniRunMainLoop();
-						// actually R never returns from runMainLoop ...
-                        loopRunning=false;
-						if (DEBUG>0)
-							System.out.println("***> main loop finished:");
-                        runLoop=false;
-						died=true;
-						return;
-                    }
-                    sleep(idleDelay);
-                    if (runLoop) rniIdle();
-                } catch (InterruptedException ie) {
-                    interrupted();
-                }
-            }
-            died=true;
-			if (DEBUG>0)
-				System.out.println("Terminating R thread.");
-        } else {
-			System.err.println("Unable to start R");
-        }
+		    System.out.println("Terminating R thread.");
+	    } else {
+		System.err.println("Unable to start R");
+	    }
+	} finally {
+	    if (loopHasLock) Rsync.unlock();
+	}
     }
 	
 	/** assign a string value to a symbol in R. The symbol is created if it doesn't exist already.
-        @param sym symbol name.  The symbol name is used as-is, i.e. as if it was quoted in R code (for example assigning to "foo$bar" has the same effect as `foo$bar`&lt;- and NOT foo$bar&lt;-).
-		@param ct contents
-		@since JRI 0.3
-        */
-    public void assign(String sym, String ct) {
-       	long x1 = rniPutString(ct);
-       	rniAssign(sym,x1,0);
+         *  @param sym symbol name.  The symbol name is used as-is, i.e. as if it was quoted in R code (for example assigning to "foo$bar" has the same effect as `foo$bar`&lt;- and NOT foo$bar&lt;-).
+	 *  @param ct contents
+	 *  @return <code>true</code> if successful, <code>false</code> otherwise
+	 *  @since JRI 0.3 (return value changed to boolean in JRI 0.5-1)
+	 */
+    public boolean assign(String sym, String ct) {
+	boolean obtainedLock = Rsync.safeLock();
+	try {
+	    long x1 = rniPutString(ct);
+	    return rniAssign(sym,x1,0);
+	} finally {
+	    if (obtainedLock) Rsync.unlock();
+	}
     }
 
     /** assign a content of a REXP to a symbol in R. The symbol is created if it doesn't exist already.
         @param sym symbol name. The symbol name is used as-is, i.e. as if it was quoted in R code (for example assigning to "foo$bar" has the same effect as `foo$bar`&lt;- and NOT foo$bar&lt;-).
         @param r contents as <code>REXP</code>. currently only raw references and basic types (int, double, int[], double[], boolean[]) are supported.
-		@since JRI 0.3
+	@return <code>true</code> if successful, <code>false</code> otherwise (usually locked binding or unsupported REXP)
+	@since JRI 0.3 (return value changed to boolean in JRI 0.5-1)
         */
-    public void assign(String sym, REXP r) {
-	if (r.Xt == REXP.XT_NONE) {
-	    rniAssign(sym, r.xp, 0);
-	    return;
-	}
-    	if (r.Xt == REXP.XT_INT || r.Xt == REXP.XT_ARRAY_INT) {
+    public boolean assign(String sym, REXP r) {
+	boolean obtainedLock = Rsync.safeLock();
+	try {
+	    if (r.Xt == REXP.XT_NONE) {
+		return rniAssign(sym, r.xp, 0);
+	    }
+	    if (r.Xt == REXP.XT_INT || r.Xt == REXP.XT_ARRAY_INT) {
     		int[] cont = r.rtype == REXP.XT_INT?new int[]{((Integer)r.cont).intValue()}:(int[])r.cont;
     		long x1 = rniPutIntArray(cont);
-    		rniAssign(sym,x1,0);
-		return;
-    	}
-    	if (r.Xt == REXP.XT_DOUBLE || r.Xt == REXP.XT_ARRAY_DOUBLE) {
+    		return rniAssign(sym,x1,0);
+	    }
+	    if (r.Xt == REXP.XT_DOUBLE || r.Xt == REXP.XT_ARRAY_DOUBLE) {
     		double[] cont = r.rtype == REXP.XT_DOUBLE?new double[]{((Double)r.cont).intValue()}:(double[])r.cont;
     		long x1 = rniPutDoubleArray(cont);
-    		rniAssign(sym,x1,0);
-		return;
-    	}
-	if (r.Xt == REXP.XT_ARRAY_BOOL_INT) {
-	    long x1 = rniPutBoolArrayI((int[])r.cont);
-	    rniAssign(sym,x1,0);
-	    return;
+    		return rniAssign(sym,x1,0);
+	    }
+	    if (r.Xt == REXP.XT_ARRAY_BOOL_INT) {
+		long x1 = rniPutBoolArrayI((int[])r.cont);
+		return rniAssign(sym,x1,0);
+	    }
+	    if (r.Xt == REXP.XT_STR || r.Xt == REXP.XT_ARRAY_STR) {
+		String[] cont = r.rtype == REXP.XT_STR?new String[]{(String)r.cont}:(String[])r.cont;
+		long x1 = rniPutStringArray(cont);
+		return rniAssign(sym,x1,0);
+	    }
+	} finally {
+	    if (obtainedLock) Rsync.unlock();
 	}
-		if (r.Xt == REXP.XT_STR || r.Xt == REXP.XT_ARRAY_STR) {
-			String[] cont = r.rtype == REXP.XT_STR?new String[]{(String)r.cont}:(String[])r.cont;
-			long x1 = rniPutStringArray(cont);
-			rniAssign(sym,x1,0);
-			return;
-		}
+	return false;
     }
 
     /** assign values of an array of doubles to a symbol in R (creating an integer vector).<br>
         equals to calling {@link #assign(String, REXP)}.
 		@param sym symbol name
 		@param val double array to assign
-		@since JRI 0.3
+		@return <code>true</code> if successful, <code>false</code> otherwise
+		@since JRI 0.3 (return value changed to boolean in JRI 0.5-1)
 	*/
-    public void assign(String sym, double[] val)  {
-        assign(sym,new REXP(val));
+    public boolean assign(String sym, double[] val)  {
+        return assign(sym,new REXP(val));
     }
 
     /** assign values of an array of integers to a symbol in R (creating a numeric vector).<br>
         equals to calling {@link #assign(String, REXP)}.
 		@param sym symbol name
 		@param val integer array to assign
-		@since JRI 0.3
+		@return <code>true</code> if successful, <code>false</code> otherwise
+		@since JRI 0.3 (return value changed to boolean in JRI 0.5-1)
 		*/
-	public void assign(String sym, int[] val) {
-        assign(sym,new REXP(val));
+    public boolean assign(String sym, int[] val) {
+        return assign(sym,new REXP(val));
     }
 
     /** assign values of an array of booleans to a symbol in R (creating a logical vector).<br>
         equals to calling {@link #assign(String, REXP)}.
 		@param sym symbol name
 		@param val boolean array to assign
-		@since JRI 0.3-2
+		@return <code>true</code> if successful, <code>false</code> otherwise
+		@since JRI 0.3-2 (return value changed to boolean in JRI 0.5-1)
 		*/
-    public void assign(String sym, boolean[] val) {
-        assign(sym,new REXP(val));
+    public boolean assign(String sym, boolean[] val) {
+        return assign(sym,new REXP(val));
     }
 
     /** assign values of an array of strings to a symbol in R (creating a character vector).<br>
         equals to calling {@link #assign(String, REXP)}.
 		@param sym symbol name
 		@param val string array to assign
-		@since JRI 0.3
+		@return <code>true</code> if successful, <code>false</code> otherwise
+		@since JRI 0.3 (return value changed to boolean in JRI 0.5-1)
 		*/
-	public void assign(String sym, String[] val) {
-        assign(sym,new REXP(val));
+    public boolean assign(String sym, String[] val) {
+        return assign(sym,new REXP(val));
     }
 
     /** creates a <code>jobjRef</code> reference in R via rJava.<br><b>Important:</b> rJava must be loaded and intialized in R (e.g. via <code>eval("{library(rJava);.jinit()}",false)</code>, otherwise this will fail. Requires rJava 0.4-13 or higher!
@@ -736,20 +766,25 @@ public class Rengine extends Thread {
 	@since JRI 0.3-7
     */
     public REXP createRJavaRef(Object o) {
-	if (o == null) return null;
-	String klass = o.getClass().getName();
-	long l = rniEval(
-			 rniLCons(
-				  rniInstallSymbol(".jmkref"),
-				  rniLCons(
-					   rniJavaToXref(o),
-					   rniLCons(
-						    rniPutString(klass), 0
-						    )
-					   )
-				  )
-			 , 0);
-	if (l == 0) return null;
-	return new REXP(this, l, false);	
+	    if (o == null) return null;
+	    String klass = o.getClass().getName();
+	    boolean obtainedLock = Rsync.safeLock();
+	    try {
+		    long l = rniEval(
+				     rniLCons(
+					      rniInstallSymbol(".jmkref"),
+					      rniLCons(
+						       rniJavaToXref(o),
+						       rniLCons(
+								rniPutString(klass), 0
+								)
+						       )
+					      )
+				     , 0);
+		    if (l <= 0 && l > -4) return null; /* for safety failure codes are only -3 .. 0 to not clash with 64-bit pointers */
+		    return new REXP(this, l, false);
+	    } finally {
+		    if (obtainedLock) Rsync.unlock();
+	    }
     }
 }
