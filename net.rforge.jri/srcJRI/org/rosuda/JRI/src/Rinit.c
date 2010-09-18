@@ -34,6 +34,8 @@ int initR(int argc, char **argv) {
 #ifdef RIF_HAS_RSIGHAND
     R_SignalHandlers=0;
 #endif
+    R_Interactive = 1;
+    SaveAction = SA_SAVEASK;
     {
       int stat=Rf_initialize_R(argc, argv);
       if (stat<0) {
@@ -54,8 +56,10 @@ int initR(int argc, char **argv) {
 
     R_Outputfile = NULL;
     R_Consolefile = NULL;
-    R_Interactive = 1;
-    SaveAction = SA_SAVEASK;
+    if (!R_Interactive) {
+        R_Interactive = 1;
+        SaveAction = SA_SAVEASK;
+    }
 
     /* ptr_R_Suicide = Re_Suicide; */
     /* ptr_R_CleanUp = Re_CleanUp; */

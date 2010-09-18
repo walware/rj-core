@@ -9,3 +9,4 @@ Packaged as OSGi bundle (for development)
 Adapted for advanced usability of RJ (www.walware.de/goto/opensource) and other
 client applications
   - Support for canceling current R task on Linux
+  - Support for no-save/save startup arguments of R on Linux
