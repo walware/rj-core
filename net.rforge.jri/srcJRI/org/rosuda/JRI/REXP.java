@@ -10,7 +10,6 @@ import java.util.Vector;
  * accessed only using {@link #xp} reference and RNI methods.
  */
 public class REXP {
-
 	/** xpression type: NULL */
 	public static final int XT_NULL = 0;
 
@@ -636,10 +635,9 @@ public class REXP {
 					break;
 				}
 			}
-			;
 			sb.append(")");
 		}
-		;
+
 		if (Xt == XT_ARRAY_INT) {
 			int[] d = (int[]) cont;
 			sb.append("(");
@@ -653,10 +651,9 @@ public class REXP {
 					break;
 				}
 			}
-			;
 			sb.append(")");
 		}
-		;
+
 		if (Xt == XT_ARRAY_BOOL) {
 			RBool[] d = (RBool[]) cont;
 			sb.append("(");
@@ -665,10 +662,24 @@ public class REXP {
 				if (i < d.length - 1)
 					sb.append(", ");
 			}
-			;
 			sb.append(")");
 		}
-		;
+
+		if (Xt == XT_ARRAY_STR) {
+			String[] d = (String[]) cont;
+			sb.append("(");
+			for (int i = 0; i < d.length; i++) {
+				sb.append((d[i] == null) ? "NA" : ("\"" + d[i] + "\""));
+				if (i < d.length - 1)
+					sb.append(", ");
+				if (i == 10 && d.length > 14) {
+					sb.append("... (" + (d.length - 10) + " more values follow)");
+					break;
+				}
+			}
+			sb.append(")");
+		}
+		
 		if (Xt == XT_VECTOR) {
 			Vector v = (Vector) cont;
 			sb.append("(");
@@ -677,20 +688,23 @@ public class REXP {
 				if (i < v.size() - 1)
 					sb.append(", ");
 			}
-			;
 			sb.append(")");
 		}
-		;
+
 		if (Xt == XT_STR) {
-			sb.append("\"");
-			sb.append((String) cont);
-			sb.append("\"");
+			if (cont == null)
+				sb.append("NA");
+			else {
+				sb.append("\"");
+				sb.append((String) cont);
+				sb.append("\"");
+			}
 		}
-		;
+
 		if (Xt == XT_SYM) {
 			sb.append((String) cont);
 		}
-		;
+
 		if (Xt == XT_LIST || Xt == XT_LANG) {
 			RList l = (RList) cont;
 			sb.append(l.head);
@@ -700,16 +714,16 @@ public class REXP {
 			sb.append(l.body); 
 			sb.append(")");
 		}
-		;
+
 		if (Xt == XT_NONE) {
 			sb.append("{"+rtype+"}");
 		}
-		;
+
 		if (Xt == XT_UNKNOWN)
 			sb.append((Integer) cont);
 		sb.append("]");
 		return sb.toString();
-	};
+	}
 
 	public static String quoteString(String s) {
 		// this code uses API introdiced in 1.4 so it needs to be re-written for

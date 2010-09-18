@@ -62,7 +62,7 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR
               int i=0;
               argv=(char**) malloc(sizeof(char*)*(len+2));
               argv[0]=fallbackArgv[0];
-              while (i<len) {
+              while (i < len) {
                   jobject o=(*env)->GetObjectArrayElement(env, a, i);
                   i++;
                   if (o) {
@@ -71,8 +71,7 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR
                       if (!c)
                           argv[i]="";
                       else {
-                          argv[i]=(char*) malloc(strlen(c)+1);
-                          strcpy(argv[i],c);
+			  argv[i] = strdup(c);
                           (*env)->ReleaseStringUTFChars(env, o, c);
                       }
                   } else
@@ -113,39 +112,66 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniParse
       return SEXP2L(pstr);
 }
 
+/** 
+ * Evaluates one expression or a list of expressions
+ *
+ * @param exp long reflection of the expression to evaluate
+ * @param rho long reflection of the environment where to evaluate
+ * 
+ * @return 0 if an evaluation error ocurred or exp is 0
+ */
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniEval
   (JNIEnv *env, jobject this, jlong exp, jlong rho)
 {
-      SEXP es, exps=L2SEXP(exp);
-      int er=0;
-      int i=0,l;
+      SEXP es = R_NilValue, exps = L2SEXP(exp);
+      SEXP eval_env = L2SEXP(rho);
+      int er = 0;
+      int i = 0, l;
 
-      if (exp<1) return -1;
+      /* invalid (NULL) expression (parse error, ... ) */
+      if (!exp) return 0;
 
-      if (TYPEOF(exps)==EXPRSXP) { /* if the object is a list of exps, eval them one by one */
-          l=LENGTH(exps);
-          while (i<l) {
-              es=R_tryEval(VECTOR_ELT(exps,i), R_GlobalEnv, &er);
+      if (TYPEOF(exps) == EXPRSXP) { 
+      	  /* if the object is a list of exps, eval them one by one */
+          l = LENGTH(exps);
+          while (i < l) {
+              es = R_tryEval(VECTOR_ELT(exps,i), eval_env, &er);
+              
+              /* an error occured, no need to continue */
+              if (er) return 0;
               i++;
           }
       } else
-          es=R_tryEval(exps, R_GlobalEnv, &er);
-
+          es = R_tryEval(exps, eval_env, &er);
+      
+      /* er is just a flag - on error return 0 */
+      if (er) return 0;
+      
       return SEXP2L(es);
 }
 
-JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniAssign
+struct safeAssign_s {
+    SEXP sym, val, rho;
+};
+
+static void safeAssign(void *data) {
+    struct safeAssign_s *s = (struct safeAssign_s*) data;
+    defineVar(s->sym, s->val, s->rho);
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniAssign
 (JNIEnv *env, jobject this, jstring symName, jlong valL, jlong rhoL)
 {
-    SEXP sym, val, rho;
-    
-    sym = jri_installString(env, symName);
-    if (!sym || sym==R_NilValue) return;
+    struct safeAssign_s s;
+  
+    s.sym = jri_installString(env, symName);
+    if (!s.sym || s.sym == R_NilValue) return JNI_FALSE;
 
-    rho=(rhoL==0)?R_GlobalEnv:L2SEXP(rhoL);
-    val=(valL==0)?R_NilValue:L2SEXP(valL);
+    s.rho = rhoL ? L2SEXP(rhoL) : R_GlobalEnv;
+    s.val = valL ? L2SEXP(valL) : R_NilValue;
    
-    defineVar(sym, val, rho);
+    /* we have to use R_ToplevelExec because defineVar may fail on locked bindings */
+    return R_ToplevelExec(safeAssign, (void*) &s) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniProtect

@@ -1,6 +1,8 @@
 # helper tools and libs for building and running rJava for Windows
 # Author: Simon Urbanek
 
+include $(R_HOME)/etc$(R_ARCH)/Makeconf
+
 TARGETS=libjvm.dll.a findjava.exe
 
 # libjvm.dll.a    - wrapper lib for jvm.dll from Java
@@ -8,8 +10,14 @@ TARGETS=libjvm.dll.a findjava.exe
 
 all: $(TARGETS)
 
-libjvm.dll.a: jvm.def
-	dlltool --input-def jvm.def --kill-at --as as --dllname jvm.dll --output-lib libjvm.dll.a
+ifeq ($(strip $(shell $(R_HOME)/bin/R --slave -e 'cat(.Machine$$sizeof.pointer)')),8)
+JVMDEF=jvm64.def
+else
+JVMDEF=jvm.def
+endif
+
+libjvm.dll.a: $(JVMDEF)
+	$(DLLTOOL) --input-def $^ --kill-at --dllname jvm.dll --output-lib $@
 
 # compile findjava.exe from source - no magic here, no special libs necessary
 findjava.o: findjava.c
