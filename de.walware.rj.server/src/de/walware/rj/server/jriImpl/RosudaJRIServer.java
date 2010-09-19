@@ -112,6 +112,8 @@ public class RosudaJRIServer extends RJ
 	private static final int CLIENT_OK_WAIT = 2;
 	private static final int CLIENT_CANCEL = 3;
 	
+	private static final long STALE_SPAN = 5L * 60L * 1000000000L;
+	
 	private static final int KILO = 1024;
 	private static final int MEGA = 1048576;
 	private static final int GIGA = 1073741824;
@@ -242,6 +244,7 @@ public class RosudaJRIServer extends RJ
 	private ConsoleEngine client0Engine;
 	private ConsoleEngine client0ExpRef;
 	private ConsoleEngine client0PrevExpRef;
+	private volatile long client0LastPing;
 	
 	private byte currentSlot;
 	
@@ -369,8 +372,19 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	
+	private void connectClient0(Client client, ConsoleEngine consoleEngine, ConsoleEngine export) {
+		this.client0 = client;
+		this.client0Engine = consoleEngine;
+		this.client0ExpRef = export;
+		DefaultServerImpl.addClient(export);
+		this.client0LastPing = System.nanoTime();
+		this.serverState = S_CONNECTED;
+	}
+	
 	private void disconnectClient0() {
-		this.serverState = S_DISCONNECTED;
+		if (this.serverState >= S_CONNECTED && this.serverState < S_STOPPED) {
+			this.serverState = S_DISCONNECTED;
+		}
 		if (this.client0PrevExpRef != null) {
 			try {
 				UnicastRemoteObject.unexportObject(this.client0PrevExpRef, true);
@@ -410,7 +424,12 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	public int getState() {
-		return this.serverState;
+		final int state = this.serverState;
+		if (state == Server.S_CONNECTED
+				&& (System.nanoTime() - this.client0LastPing) > STALE_SPAN) {
+			return Server.S_CONNECTED_STALE;
+		}
+		return state;
 	}
 	
 	public synchronized ConsoleEngine start(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
@@ -466,11 +485,7 @@ public class RosudaJRIServer extends RJ
 				
 				LOGGER.log(Level.INFO, "R engine started successfully. New Client-State: 'Connected'.");
 				
-				this.client0 = client;
-				this.client0Engine = consoleEngine;
-				this.client0ExpRef = export;
-				DefaultServerImpl.addClient(export);
-				this.serverState = S_CONNECTED;
+				connectClient0(client, consoleEngine, export);
 				return export;
 			}
 			catch (final Throwable e) {
@@ -849,11 +864,7 @@ public class RosudaJRIServer extends RJ
 					
 					setProperties(client.slot, properties, true);
 					
-					this.client0 = client;
-					this.client0Engine = consoleEngine;
-					this.client0ExpRef = export;
-					DefaultServerImpl.addClient(export);
-					this.serverState = S_CONNECTED;
+					connectClient0(client, consoleEngine, export);
 					return export;
 				default:
 					throw new IllegalStateException("R engine is not running.");
@@ -996,6 +1007,9 @@ public class RosudaJRIServer extends RJ
 			}
 			switch (command.getComType()) {
 			case T_PING:
+				if (client.slot == 0) {
+					this.client0LastPing = System.nanoTime();
+				}
 				return internalPing();
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;

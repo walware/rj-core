@@ -12,7 +12,6 @@
 package de.walware.rj.server.srvImpl;
 
 import java.rmi.RemoteException;
-import java.rmi.server.Unreferenced;
 import java.util.Map;
 
 import de.walware.rj.server.ConsoleEngine;
@@ -21,7 +20,7 @@ import de.walware.rj.server.Server;
 import de.walware.rj.server.srvext.Client;
 
 
-public final class ConsoleEngineImpl implements ConsoleEngine, Unreferenced {
+public final class ConsoleEngineImpl implements ConsoleEngine {
 	
 	
 	private final Server publicServer;
@@ -66,14 +65,6 @@ public final class ConsoleEngineImpl implements ConsoleEngine, Unreferenced {
 	
 	public boolean isClosed() throws RemoteException {
 		return (this.internalEngine.getCurrentClient() != this.client);
-	}
-	
-	public void unreferenced() {
-		try {
-			if (this.internalEngine.getCurrentClient() == this.client) {
-				this.internalEngine.disconnect(this.client);
-			}
-		} catch (final Exception e) {}
 	}
 	
 }

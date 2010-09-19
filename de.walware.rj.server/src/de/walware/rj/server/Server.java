@@ -35,12 +35,18 @@ public interface Server extends Remote {
 	public static final int S_CONNECTED = 		0x00014;
 	
 	/**
-	 * Status code indicating, that the client was disconnected.
+	 * Status code indicating, that the R engine is started and the client is connected but
+	 * not active during the last minutes.
+	 */
+	public static final int S_CONNECTED_STALE = 0x00016;
+	
+	/**
+	 * Status code indicating, that the R engine is started and the client was disconnected.
 	 */
 	public static final int S_DISCONNECTED = 	0x00018;
 	
 	/**
-	 * Status code indicating, that the client-server connection was lost.
+	 * Status code indicating, that R engine is started and the client-server connection was lost.
 	 */
 	public static final int S_LOST = 			0x00019;
 	
