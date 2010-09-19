@@ -20,6 +20,10 @@ import java.io.OutputStream;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -70,6 +74,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 		return new int[] { 0, 5, 0 };
 	}
 	
+	private static final ScheduledExecutorService RJHelper_EXECUTOR =
+			Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("RJHelper"));
+	
+	
 	private class LazyGraphicFactory implements RClientGraphicFactory {
 		
 		
@@ -98,6 +106,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		
 		public void closeGraphic(final RClientGraphic graphic) {
+		}
+		
+	}
+	
+	private class KeepAliveRunnable implements Runnable {
+		
+		public void run() {
+			AbstractRJComClient.this.runAsyncPing();
 		}
 		
 	}
@@ -131,6 +147,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private ConsoleEngine rjConsoleServer;
 	
 	private boolean closed;
+	private ScheduledFuture<?> keepAliveJob;
 	private String closedMessage = "Connection to R engine is closed.";
 	
 	
@@ -138,9 +155,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 		this.graphicFactory = new LazyGraphicFactory();
 	}
 	
-	
+	@Deprecated
 	public final void setServer(final ConsoleEngine rjServer) {
+		setServer(rjServer, 1);
+	}
+	
+	public final void setServer(final ConsoleEngine rjServer, final int client) {
 		this.rjConsoleServer = rjServer;
+		if (client == 0) {
+			this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
+		}
 	}
 	
 	public final ConsoleEngine getConsoleServer() {
@@ -163,7 +187,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	public void setClosed(final boolean closed) {
-		this.closed = closed;
+		if (this.closed != closed) {
+			this.closed = closed;
+			if (closed) {
+				final ScheduledFuture<?> job = this.keepAliveJob;
+				if (job != null) {
+					this.keepAliveJob = null;
+					job.cancel(true);
+				}
+			}
+		}
 	}
 	
 	public void setRjsProperties(final Map<String, ? extends Object> properties) throws CoreException {
@@ -424,15 +457,29 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	protected abstract void handleStatus(Status status, IProgressMonitor monitor);
 	
+	protected void scheduleConnectionCheck() {
+	}
+	
 	
 	public final boolean runAsyncPing() {
 		try {
-			return (RjsStatus.OK_STATUS.equals(this.rjConsoleServer.runAsync(RjsPing.INSTANCE)));
+			final RjsComObject answer = this.rjConsoleServer.runAsync(RjsPing.INSTANCE);
+			if (answer instanceof RjsStatus) {
+				final RjsStatus status = (RjsStatus) answer;
+				if (status.getSeverity() == RjsStatus.OK) {
+					return true;
+				}
+				scheduleConnectionCheck();
+			}
+		}
+		catch (final ConnectException e) {
+			scheduleConnectionCheck();
 		}
 		catch (final RemoteException e) {
+			// TODO if (rmiregistry is available) scheduleCheck();
 			// no need to log here
-			return false;
 		}
+		return false;
 	}
 	
 	public final void runAsyncInterrupt() {
@@ -465,9 +512,12 @@ public abstract class AbstractRJComClient implements ComHandler {
 			}
 			handleServerStatus(status, monitor);
 		}
+		catch (final ConnectException e) {
+			handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_DISCONNECTED), monitor);
+		}
 		catch (final Exception e) {
 			// no need to log here
-			handleServerStatus(new RjsStatus(RjsComObject.V_INFO, Server.S_LOST), monitor);
+			handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_LOST), monitor);
 		}
 	}
 	
@@ -531,7 +581,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 					}
 					throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "Communication error.", e));
 				}
-				handleServerStatus(new RjsStatus(RjsComObject.V_INFO, Server.S_LOST), monitor);
+				handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_LOST), monitor);
 			}
 		}
 	}
