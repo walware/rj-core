@@ -41,7 +41,7 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
 }
 
 JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR
-  (JNIEnv *env, jobject this, jobjectArray a)
+  (JNIEnv *env, jobject this, jobjectArray a, jlong stackSize)
 {
       int initRes;
       char *fallbackArgv[]={"Rengine",0};
@@ -87,7 +87,7 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR
 	return 0;
       }
       
-      initRes=initR(argc, argv);
+      initRes=initR(argc, argv, (unsigned long) stackSize);
       /* we don't release the argv in case R still needs it later (even if it shouldn't), but it's not really a significant leak */
       
       return initRes;

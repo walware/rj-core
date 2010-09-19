@@ -61,6 +61,15 @@ public class Rengine extends Thread {
 		return (getVersion()==rniGetVersion());
 	}
 	
+	private static long toLong(String s, long defaultValue) {
+		if (s != null) {
+			try {
+				return Long.parseLong(s);
+			} catch (NumberFormatException e) {}
+		}
+		return defaultValue;
+	}
+	
     /** debug flag. Set to value &gt;0 to enable debugging messages. The verbosity increases with increasing number */
     public static int DEBUG = 0;
 	
@@ -106,7 +115,7 @@ public class Rengine extends Thread {
 	@param initialCallbacks an instance implementing the {@link org.rosuda.JRI.RMainLoopCallbacks RMainLoopCallbacks} interface that provides methods to be called by R
     */
     public Rengine(String[] args, boolean runMainLoop, RMainLoopCallbacks initialCallbacks) {
-        super();
+        super(null, null, "Rengine Thread", toLong(System.getProperty("jri.threadCStackSize"), 0));
         Rsync=new Mutex();
         died=false;
         alive=false;
@@ -135,14 +144,15 @@ public class Rengine extends Thread {
 	callback=null;
 	mainEngine=this;
 	mainRThread=Thread.currentThread();
-	rniSetupR(args);
+	rniSetupR(args, 0);
     }
 
     /** RNI: setup R with supplied parameters (should <b>not</b> be used directly!).
 	@param args arguments
+	@param stackSize C stack size or 0
 	@return result code
      */
-    native int rniSetupR(String[] args);
+    native int rniSetupR(String[] args, long stackSize);
     
     /** RNI: setup IPC with RJava. This method is used by rJava to pass the IPC information to the JRI engine for synchronization
 	@since experimental, not in the public API!
@@ -161,7 +171,7 @@ public class Rengine extends Thread {
     }
     
     synchronized int setupR(String[] args) {
-        int r=rniSetupR(args);
+        int r=rniSetupR(args, "yes".equals(System.getProperty("jri.initCStackLimit")) ? toLong(System.getProperty("jri.threadCStackSize"), 0) : 0);
         if (r==0) {
             alive=true; died=false;
         } else {

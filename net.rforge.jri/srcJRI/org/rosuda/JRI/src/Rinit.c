@@ -17,7 +17,8 @@
 extern SA_TYPE SaveAction;
 
 
-int initR(int argc, char **argv) {
+int initR(int argc, char **argv, unsigned long stacksize) {
+    int ref;
     structRstart rp;
     Rstart Rp = &rp;
     /* getenv("R_HOME","/Library/Frameworks/R.framework/Resources",1); */
@@ -47,8 +48,16 @@ int initR(int argc, char **argv) {
 #ifdef RIF_HAS_RSIGHAND
     R_SignalHandlers=0;
 #endif
-    /* disable stack checking, because threads will thow it off */
-    R_CStackLimit = (uintptr_t) -1;
+    if (!stacksize) {
+        /* disable stack checking, because threads will thow it off */
+        R_CStackLimit = (uintptr_t) -1;
+    } else {
+        int dir;
+        /* stack start: current position with tolerance for existing stack */
+        dir = ((uintptr_t) &ref < (uintptr_t) &dir) ? -1 : 1;
+        R_CStackStart = (uintptr_t) &ref + 8192 * dir;
+        R_CStackLimit = (uintptr_t) stacksize;
+    }
 
 #ifdef JGR_DEBUG
     printf("R primary initialization done. Setting up parameters.\n");
@@ -188,7 +197,7 @@ static void my_onintr(int sig)
 
 static char Rversion[25], RUser[MAX_PATH], RHome[MAX_PATH];
 
-int initR(int argc, char **argv)
+int initR(int argc, char **argv, unsigned long stacksize)
 {
     structRstart rp;
     Rstart Rp = &rp;
@@ -272,9 +281,11 @@ int initR(int argc, char **argv)
     R_SizeFromEnv(Rp);
     R_SetParams(Rp);
 
-    /* R_SetParams implicitly calls R_SetWin32 which sets the
-       stack start/limit which we need to override */
-    R_CStackLimit = (uintptr_t) -1;
+    if (!stacksize) {
+        /* R_SetParams implicitly calls R_SetWin32 which sets the
+           stack start/limit which we need to override */
+        R_CStackLimit = (uintptr_t) -1;
+    }
 
     FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 
