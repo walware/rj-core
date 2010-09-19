@@ -382,6 +382,12 @@ public class JRClassLoader extends URLClassLoader {
 		return null;
 	}
 	
+	
+	public int getOSType() {
+		return this.os;
+	}
+	
+	
 	private UnixFile searchFile(final String[] search) {
 		for (final String path : search) {
 			final UnixFile file = new UnixFile(path);

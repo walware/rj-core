@@ -112,6 +112,10 @@ public class RosudaJRIServer extends RJ
 	private static final int CLIENT_OK_WAIT = 2;
 	private static final int CLIENT_CANCEL = 3;
 	
+	private static final int KILO = 1024;
+	private static final int MEGA = 1048576;
+	private static final int GIGA = 1073741824;
+	
 	private static final Logger LOGGER = Logger.getLogger("de.walware.rj.server.jri");
 	
 	private static final int STDOUT_BUFFER_SIZE = 0x1FFF;
@@ -124,6 +128,40 @@ public class RosudaJRIServer extends RJ
 	private static final byte EVAL_MODE_DATASLOT = 2;
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
+	
+	
+	private static long s2long(final String s, final long defaultValue) {
+		if (s != null && s.length() > 0) {
+			final int multi;
+			switch (s.charAt(s.length()-1)) {
+			case 'G':
+				multi = GIGA;
+				break;
+			case 'M':
+				multi = MEGA;
+				break;
+			case 'K':
+				multi = KILO;
+				break;
+			case 'k':
+				multi = 1000;
+				break;
+			default:
+				multi = 1;
+				break;
+			}
+			try {
+				if (multi != 1) {
+					return Long.parseLong(s.substring(0, s.length()-1)) * multi;
+				}
+				else {
+					return Long.parseLong(s);
+				}
+			}
+			catch (NumberFormatException e) {}
+		}
+		return defaultValue;
+	}
 	
 	
 	static {
@@ -173,6 +211,8 @@ public class RosudaJRIServer extends RJ
 	private JRClassLoader rClassLoader;
 	private Rengine rEngine;
 	private List<String> rArgs;
+	private long rCSSize;
+	private long rMemSize;
 	
 	private final ReentrantLock mainExchangeLock = new ReentrantLock();
 	private final Condition mainExchangeClient = this.mainExchangeLock.newCondition();
@@ -265,6 +305,8 @@ public class RosudaJRIServer extends RJ
 	
 	
 	public RosudaJRIServer() {
+		this.rCSSize = s2long(System.getProperty("jri.threadCStackSize"), 16 * MEGA);
+		
 		this.mainLoopState = ENGINE_NOT_STARTED;
 		this.mainLoopClient0State = CLIENT_NONE;
 		
@@ -394,8 +436,14 @@ public class RosudaJRIServer extends RJ
 					throw new RjInitFailedException(message);
 				}
 				
+				final String[] args = checkArgs((String[]) properties.get("args"));
+				System.setProperty("jri.threadCStackSize", Long.toString(this.rCSSize));
+				if (System.getProperty("jri.initCStackLimit") == null) {
+					System.setProperty("jri.initCStackLimit", "yes");
+				}
+				
 				this.mainLoopState = ENGINE_RUN_IN_R;
-				final Rengine engine = new Rengine(checkArgs((String[]) properties.get("args")), true, new InitCallbacks());
+				final Rengine engine = new Rengine(args, true, new InitCallbacks());
 				
 				while (this.rEngine != engine) {
 					Thread.sleep(100);
@@ -658,10 +706,19 @@ public class RosudaJRIServer extends RJ
 		
 		loadPlatformData();
 		
-		final String osType = (String) this.platformDataValues.get("os.type");
-		if (osType != null && osType.startsWith("windows")) {
+		if (this.rClassLoader.getOSType() == JRClassLoader.OS_WIN) {
 			if (this.rArgs.contains("--internet2")) {
 				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0L);
+			}
+			if (this.rMemSize != 0) {
+				long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0L);
+				if (rniP != 0) {
+					long memSizeMB = this.rMemSize / MEGA;
+					double[] array = this.rEngine.rniGetDoubleArray(rniP);
+					if (array != null && array.length == 1 && memSizeMB > array[0]) {
+						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0L);
+					}
+				}
 			}
 		}
 	}
@@ -700,22 +757,30 @@ public class RosudaJRIServer extends RJ
 		for (final String arg : args) {
 			if (arg != null && arg.length() > 0) {
 				// add other checks here
-				if (arg.equals("--save") || arg.equals("--no-save") || arg.equals("--vanilla")) {
+				if (arg.equals("--interactive")) {
 					saveState = true;
+				}
+				else if (arg.startsWith("--max-cssize=")) {
+					long size = s2long(arg.substring(13), 0);
+					size = ((size + MEGA - 1) / MEGA) * MEGA;
+					if (size >= 4 * MEGA) {
+						this.rCSSize = size;
+					}
+				}
+				else if (arg.startsWith("--max-mem-size=")) {
+					long size = s2long(arg.substring(15), 0);
+					if (size > 0) {
+						this.rMemSize = size;
+					}
 				}
 				checked.add(arg);
 			}
 		}
-		final String[] array;
-		if (!saveState) {
-			array = checked.toArray(new String[checked.size()+1]);
-			array[array.length-1] = "--no-save";
-		}
-		else {
-			array = checked.toArray(new String[checked.size()]);
+		if (!saveState && this.rClassLoader.getOSType() != JRClassLoader.OS_WIN) {
+			checked.add(0, "--interactive");
 		}
 		this.rArgs = checked;
-		return array;
+		return checked.toArray(new String[checked.size()]);
 	}
 	
 	public ConsoleEngine connect(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
@@ -857,7 +922,7 @@ public class RosudaJRIServer extends RJ
 				if (this.mainInterruptLock.tryLock(1L, TimeUnit.SECONDS)) {
 					try {
 						this.rniInterrupted = true;
-						this.rEngine.rniStop(1);
+						this.rEngine.rniStop(0);
 						return true;
 					}
 					catch (final Throwable e) {
