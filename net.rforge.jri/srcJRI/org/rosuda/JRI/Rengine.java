@@ -404,9 +404,9 @@ public class Rengine extends Thread {
 		@return API version of the native library */
     public static native long rniGetVersion();
     
-    /** RNI: interrupt the R process (if possible)
-	@param flag currently ignored, must be set to 0
-	@return result code (currently unspecified) */
+    /** RNI: interrupt the R process (if possible). Note that R handles interrupt requests in (R-thread-)synchronous, co-operative fashion as it wants to make sure that the interrupted state is recoverable. If interrupting from another thread while using blocking ReadConsole REPL make sure you also interrupt your ReadConsole call after rniStop such that R can act on the signalled interrupt.
+	@param flag determines how to attempt to inform R about the interrput. For normal (safe) operation using flag signalling must be 0. Other options are 1 (SIGINT for compatibility with older JRI API) and 2 (<tt>Rf_onintr</tT> call - use <u>only</u> on the R thread and only if you know what it means). Values other than 0 are only supported since JRI 0.5-4.
+	@return result code (currently 0) */
     public native int rniStop(int flag);
     
     /** RNI: assign a value to an environment
