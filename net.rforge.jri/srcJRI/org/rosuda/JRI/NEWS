@@ -1,7 +1,13 @@
  NEWS/ChangeLog for JRI
 --------------------------
 
-0.5-3	(under development)
+0.5-4	2010-09-17
+    o	added more options to rniStop() on unix and changed the
+	default to use interrupt flags instead of signals since
+	signals cause problems in some JVM implmentations. The
+	previous behavior can be achieved by rniStop(1).
+
+0.5-3	2010-09-02
     o	fixed changed by the Win64 support which broke some other OSes by
 	using sign extension when converting to long storage.
 

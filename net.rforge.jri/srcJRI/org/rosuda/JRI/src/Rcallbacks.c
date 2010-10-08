@@ -12,6 +12,10 @@
 #ifndef Win32
 #include <R_ext/eventloop.h>
 #include <R_ext/GraphicsEngine.h>
+/* Before R 2.7.0 R_interrupts_pending was not included, though */
+#if R_VERSION < R_Version(2,7,0)
+LibExtern int R_interrupts_pending;
+#endif
 #endif
 
 #ifdef Win32
