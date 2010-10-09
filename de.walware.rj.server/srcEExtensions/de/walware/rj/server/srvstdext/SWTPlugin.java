@@ -35,6 +35,7 @@ public class SWTPlugin implements ServerRuntimePlugin {
 	
 	public void rjIdle() throws Exception {
 		if (this.display == null) {
+			Display.setAppName("R");
 			this.display = new Display();
 		}
 		this.display.readAndDispatch();

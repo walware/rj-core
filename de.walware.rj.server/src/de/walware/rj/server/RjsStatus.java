@@ -137,16 +137,16 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 		case OK:
 			sb.append("OK");
 			break;
-		case V_INFO:
+		case INFO:
 			sb.append("INFO");
 			break;
-		case V_WARNING:
+		case WARNING:
 			sb.append("WARNING");
 			break;
-		case V_ERROR:
+		case ERROR:
 			sb.append("ERROR");
 			break;
-		case V_CANCEL:
+		case CANCEL:
 			sb.append("CANCEL");
 			break;
 		default:

@@ -12,7 +12,6 @@
 package de.walware.rj.server.jriImpl;
 
 import static de.walware.rj.data.RObjectFactory.F_ONLY_STRUCT;
-import static de.walware.rj.server.RjsComObject.T_PING;
 import static de.walware.rj.server.RjsComObject.V_ERROR;
 import static de.walware.rj.server.RjsComObject.V_FALSE;
 import static de.walware.rj.server.RjsComObject.V_OK;
@@ -160,7 +159,7 @@ public class RosudaJRIServer extends RJ
 					return Long.parseLong(s);
 				}
 			}
-			catch (NumberFormatException e) {}
+			catch (final NumberFormatException e) {}
 		}
 		return defaultValue;
 	}
@@ -184,9 +183,17 @@ public class RosudaJRIServer extends RJ
 			initEngine(engine);
 			RosudaJRIServer.this.rFlushConsole(engine);
 		}
+		public void rBusy(final Rengine engine, final int which) {
+			initEngine(engine);
+			RosudaJRIServer.this.rBusy(engine, which);
+		}
 		public void rShowMessage(final Rengine engine, final String message) {
 			initEngine(engine);
 			RosudaJRIServer.this.rShowMessage(engine, message);
+		}
+		public String rChooseFile(final Rengine engine, final int newFile) {
+			initEngine(engine);
+			return RosudaJRIServer.this.rChooseFile(engine, newFile);
 		}
 		public void rLoadHistory(final Rengine engine, final String filename) {
 			initEngine(engine);
@@ -195,14 +202,6 @@ public class RosudaJRIServer extends RJ
 		public void rSaveHistory(final Rengine engine, final String filename) {
 			initEngine(engine);
 			RosudaJRIServer.this.rSaveHistory(engine, filename);
-		}
-		public String rChooseFile(final Rengine engine, final int newFile) {
-			initEngine(engine);
-			return RosudaJRIServer.this.rChooseFile(engine, newFile);
-		}
-		public void rBusy(final Rengine engine, final int which) {
-			initEngine(engine);
-			RosudaJRIServer.this.rBusy(engine, which);
 		}
 	}
 	
@@ -372,7 +371,8 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	
-	private void connectClient0(Client client, ConsoleEngine consoleEngine, ConsoleEngine export) {
+	private void connectClient0(final Client client,
+			final ConsoleEngine consoleEngine, final ConsoleEngine export) {
 		this.client0 = client;
 		this.client0Engine = consoleEngine;
 		this.client0ExpRef = export;
@@ -726,10 +726,10 @@ public class RosudaJRIServer extends RJ
 				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0L);
 			}
 			if (this.rMemSize != 0) {
-				long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0L);
+				final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0L);
 				if (rniP != 0) {
-					long memSizeMB = this.rMemSize / MEGA;
-					double[] array = this.rEngine.rniGetDoubleArray(rniP);
+					final long memSizeMB = this.rMemSize / MEGA;
+					final double[] array = this.rEngine.rniGetDoubleArray(rniP);
 					if (array != null && array.length == 1 && memSizeMB > array[0]) {
 						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0L);
 					}
@@ -963,7 +963,7 @@ public class RosudaJRIServer extends RJ
 			this.mainLoopS2CLastCommands[client.slot].clear();
 			
 			switch ((command != null) ? command.getComType() : RjsComObject.T_MAIN_LIST) {
-			case T_PING:
+			case RjsComObject.T_PING:
 				return RjsStatus.OK_STATUS;
 			case RjsComObject.T_MAIN_LIST:
 				final MainCmdC2SList mainC2SCmdList = (MainCmdC2SList) command;
@@ -1006,7 +1006,7 @@ public class RosudaJRIServer extends RJ
 				throw new IllegalArgumentException("Missing command.");
 			}
 			switch (command.getComType()) {
-			case T_PING:
+			case RjsComObject.T_PING:
 				if (client.slot == 0) {
 					this.client0LastPing = System.nanoTime();
 				}
