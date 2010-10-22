@@ -59,6 +59,15 @@ public class JRClassLoader extends URLClassLoader {
 	
 	private static final Pattern PATH_SPLITTER = Pattern.compile(Pattern.quote(File.pathSeparator));
 	
+	private static String getNonEmpty(String... strings) {
+		for (String string : strings) {
+			if (string != null && string.length() > 0) {
+				return string;
+			}
+		}
+		return null;
+	}
+	
 	
 	/**
 	 * Light extension of File that handles file separators and updates
@@ -204,7 +213,6 @@ public class JRClassLoader extends URLClassLoader {
 	private final List<String> r_libs_user;
 	
 	private final int os;
-	private final String arch;
 	
 	
 	/** 
@@ -244,7 +252,7 @@ public class JRClassLoader extends URLClassLoader {
 		}
 		
 		this.r_home = checkDirPath(System.getenv("R_HOME"));
-		this.r_arch = System.getenv("R_ARCH");
+		this.r_arch = getNonEmpty(System.getenv("R_ARCH"), System.getProperty("r.arch"));
 		this.r_libs_site = checkDirPathList(System.getenv("R_LIBS_SITE"));
 		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		this.r_libs_user = checkDirPathList(System.getenv("R_LIBS_USER"));
@@ -258,7 +266,6 @@ public class JRClassLoader extends URLClassLoader {
 		else {
 			this.os = OS_NIX;
 		}
-		this.arch = (this.r_arch != null) ? this.r_arch : System.getProperty("os.arch");
 		
 		initRLibs();
 		
@@ -314,10 +321,7 @@ public class JRClassLoader extends URLClassLoader {
 			jriDynlibName = "libjri.so";
 			break;
 		}
-		final UnixFile jriDynlibFile = searchFile(new String[] {
-				jriLibPath + '/' + jriDynlibName,
-				jriLibPath + this.arch + '/' + jriDynlibName,
-		});
+		final UnixFile jriDynlibFile = searchFile(getRArchNames(jriLibPath, jriDynlibName));
 		if (jriDynlibFile != null) {
 			this.libMap.put("jri", jriDynlibFile);
 			if (verbose) {
@@ -380,6 +384,20 @@ public class JRClassLoader extends URLClassLoader {
 			}
 		}
 		return null;
+	}
+	
+	private String[] getRArchNames(final String prefix, final String postfix) {
+		final String[] names;
+		int i = 0;
+		if (this.r_arch != null) {
+			names = new String[2];
+			names[i++] = prefix + this.r_arch + '/' + postfix;
+		}
+		else {
+			names = new String[1];
+		}
+		names[i++] = prefix + '/' + postfix;
+		return names;
 	}
 	
 	
