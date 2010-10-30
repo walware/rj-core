@@ -87,6 +87,7 @@ import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsGraphic;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
 import de.walware.rj.server.srvImpl.InternalEngine;
@@ -715,7 +716,7 @@ public class RosudaJRIServer extends RJ
 		
 		if (this.rniP_tryCatchFun <= 0L && this.rniP_tryCatchFun >= -4L) {
 			LOGGER.log(Level.SEVERE, "Failed to initialize engine: Base functions are missing (check 'Renviron').");
-			System.exit(4001);
+			AbstractServerControl.exit(162);
 			return;
 		}
 		

@@ -11,6 +11,7 @@
 
 package de.walware.rj.server;
 
+import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -66,7 +67,7 @@ public class RMIServerControl extends AbstractServerControl {
 	private static void cliInvalidArgs(final String message) {
 		System.err.println(message);
 		cliPrintHelp();
-		System.exit(EXIT_INVALID_ARGS);
+		exit(EXIT_ARGS_INVALID);
 	}
 	
 	private static void cliPrintHelp() {
@@ -96,24 +97,25 @@ public class RMIServerControl extends AbstractServerControl {
 			authMethod = createServerAuth(this.args.remove("auth"));
 		}
 		catch (final Exception e) {
-			System.exit(AbstractServerControl.EXIT_INIT_AUTHMETHOD_ERROR);
+			exit(AbstractServerControl.EXIT_INIT_AUTHMETHOD_ERROR);
 			throw new IllegalStateException();
 		}
 		final DefaultServerImpl server = new DefaultServerImpl(this.name, this, authMethod);
 		if (!initREngine(server)) {
-			System.exit(EXIT_INIT_RENGINE_ERROR | 1);
+			exit(EXIT_INIT_RENGINE_ERROR | 1);
 		}
 		
 		publishServer(server);
 	}
 	
 	public void clean() {
-		if (unbindDead()) {
-			System.exit(0);
+		final int dead = unbindDead();
+		if (dead == 0) {
+			exit(0);
 			return;
 		}
-		if (!this.args.containsKey("force")) {
-			System.exit(EXIT_REGITRY_SERVER_STILL_ACTIVE);
+		if (dead == EXIT_REGISTRY_SERVER_STILL_ACTIVE && !this.args.containsKey("force")) {
+			exit(EXIT_REGISTRY_SERVER_STILL_ACTIVE);
 		}
 		try {
 			Naming.unbind(this.name);
@@ -122,22 +124,25 @@ public class RMIServerControl extends AbstractServerControl {
 					this.logPrefix);
 		}
 		catch (final NotBoundException e) {
-			final LogRecord record = new LogRecord(Level.INFO,
-					"{0} server is not registered.");
-			record.setParameters(new Object[] { this.logPrefix });
+			exit(0);
+		}
+		catch (MalformedURLException e) {
+			final LogRecord record = new LogRecord(Level.SEVERE,
+					"{0} the server address ''{1}'' is invalid.");
+			record.setParameters(new Object[] { this.logPrefix, this.name });
 			record.setThrown(e);
 			LOGGER.log(record);
 			
-			System.exit(0);
+			exit(EXIT_REGISTRY_INVALID_ADDRESS);
 		}
-		catch (final Exception e) {
+		catch (final RemoteException e) {
 			final LogRecord record = new LogRecord(Level.SEVERE,
 					"{0} removing server from registry failed.");
 			record.setParameters(new Object[] { this.logPrefix });
 			record.setThrown(e);
 			LOGGER.log(record);
 			
-			System.exit(EXIT_INIT_PROBLEM);
+			exit(EXIT_REGISTRY_CONNECTING_ERROR);
 		}
 	}
 	
@@ -151,20 +156,26 @@ public class RMIServerControl extends AbstractServerControl {
 	}
 	
 	@Override
-	protected boolean unbindDead() {
+	protected int unbindDead() {
 		Remote remote;
 		try {
 			remote = Naming.lookup(this.name);
 		}
-		catch (final Exception lookupException) {
-			return true;
+		catch (final NotBoundException lookupException) {
+			return 0;
+		}
+		catch (final MalformedURLException lookupException) {
+			return EXIT_REGISTRY_INVALID_ADDRESS;
+		}
+		catch (final RemoteException lookupException) {
+			return EXIT_REGISTRY_CONNECTING_ERROR;
 		}
 		if (!(remote instanceof Server)) {
-			return false;
+			return 2;
 		}
 		try {
 			((Server) remote).getInfo();
-			return false;
+			return EXIT_REGISTRY_SERVER_STILL_ACTIVE;
 		}
 		catch (final RemoteException deadException) {
 			try {
@@ -172,10 +183,10 @@ public class RMIServerControl extends AbstractServerControl {
 				LOGGER.log(Level.INFO,
 						"{0} dead server removed from registry.",
 						this.logPrefix);
-				return true;
+				return 0;
 			}
 			catch (final Exception unbindException) {
-				return false;
+				return EXIT_REGISTRY_CLEAN_FAILED;
 			}
 		}
 	}

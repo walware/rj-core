@@ -37,13 +37,21 @@ import de.walware.rj.server.srvext.ServerUtil;
 public class AbstractServerControl {
 	
 	
-	protected static final int EXIT_INVALID_ARGS = 1000;
-	protected static final int EXIT_INIT_PROBLEM = 2000;
-	protected static final int EXIT_INIT_AUTHMETHOD_ERROR = 2010;
-	protected static final int EXIT_INIT_RENGINE_ERROR = 2020;
-	protected static final int EXIT_REGISTRY_PROBLEM = 3000;
-	protected static final int EXIT_REGITRY_SERVER_STILL_ACTIVE = 3011;
-	protected static final int EXIT_REGITRY_ALREADY_BOUND = 3012;
+	public static final int EXIT_ARGS_PROBLEM = 130;
+	public static final int EXIT_ARGS_MISSING = 131;
+	public static final int EXIT_ARGS_INVALID = 132;
+	public static final int EXIT_INIT_PROBLEM = 140;
+	public static final int EXIT_INIT_LOGGING_ERROR = 141;
+	public static final int EXIT_INIT_AUTHMETHOD_ERROR = 143;
+	public static final int EXIT_INIT_RENGINE_ERROR = 145;
+	public static final int EXIT_REGISTRY_PROBLEM = 150;
+	public static final int EXIT_REGISTRY_INVALID_ADDRESS = 151;
+	public static final int EXIT_REGISTRY_CONNECTING_ERROR = 151;
+	public static final int EXIT_REGISTRY_SERVER_STILL_ACTIVE = 152;
+	public static final int EXIT_REGISTRY_ALREADY_BOUND = 153;
+	public static final int EXIT_REGISTRY_CLEAN_FAILED = 155;
+	public static final int EXIT_REGISTRY_BIND_FAILED = 156;
+	public static final int EXIT_START_RENGINE_ERROR = 161;
 	
 	protected static final Logger LOGGER = Logger.getLogger("de.walware.rj.server");
 	
@@ -100,6 +108,12 @@ public class AbstractServerControl {
 		sb.append("env variables:");
 		ServerUtil.prettyPrint(System.getenv(), sb);
 		LOGGER.log(Level.CONFIG, sb.toString());
+	}
+	
+	public static void exit(int status) {
+		System.err.flush();
+		System.out.flush();
+		System.exit(status);
 	}
 	
 	
@@ -174,7 +188,7 @@ public class AbstractServerControl {
 				Naming.bind(this.name, stub);
 			}
 			catch (final AlreadyBoundException boundException) {
-				if (unbindDead()) {
+				if (unbindDead() == 0) {
 					Naming.bind(this.name, stub);
 				}
 				else {
@@ -200,19 +214,19 @@ public class AbstractServerControl {
 			LOGGER.log(record);
 			
 			if (e instanceof AlreadyBoundException) {
-				System.exit(EXIT_REGITRY_ALREADY_BOUND);
+				exit(EXIT_REGISTRY_ALREADY_BOUND);
 			}
 			
 			checkCleanup();
-			System.exit(EXIT_INIT_PROBLEM);
+			exit(EXIT_REGISTRY_BIND_FAILED);
 		}
 	}
 	
 	/**
 	 * @return <code>true</code> if it was removed, otherwise <code>false</code>
 	 */
-	protected boolean unbindDead() {
-		return false;
+	protected int unbindDead() {
+		return 1;
 	}
 	
 	public void checkCleanup() {

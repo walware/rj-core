@@ -334,12 +334,11 @@ then
 else
 	# First check if running or dead server is already bound
 	CLEAN_EXEC="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl clean $ADDRESS"
-	#echo $CLEAN_EXEC
 	$CLEAN_EXEC
 	CLEAN_EXIT=$?
 	if [ $CLEAN_EXIT -ne 0 ]
 	then
-		echo "Cleanup failed"
+		echo "Check and cleanup of old server failed (CODE=$CLEAN_EXIT), cancelling startup."
 		exit $CLEAN_EXIT
 	fi
 	
@@ -349,7 +348,7 @@ else
 	START_PID=$!
 	if [ $START_EXIT -eq 0 ]
 	then
-		echo "Started in background, PID=$START_PID"
+		echo "Started server in background (PID=$START_PID)."
 		exit 0
 	else
 		echo "Startup failed"
