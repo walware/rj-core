@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="de.walware.rj.client">
+        <wb-resource deploy-path="/" source-path="/srcClient"/>
+        <wb-resource deploy-path="/" source-path="/srcGraphic"/>
+        <wb-resource deploy-path="/" source-path="/srcRServices"/>
+    </wb-module>
+</project-modules>
