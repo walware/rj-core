@@ -199,10 +199,10 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 			this.serverC2SList.setObjects(sendItem);
 			sendCom = this.serverC2SList;
 			
-			RjsComObject receivedCom = this.runMainLoop(sendCom, null);
-			
-			sendCom = null;
 			WAIT_FOR_ANSWER: while (true) {
+				final RjsComObject receivedCom = this.runMainLoop(sendCom, null);
+				sendCom = null;
+				
 				COM_TYPE: switch (receivedCom.getComType()) {
 				case RjsComObject.T_PING:
 					sendCom = RjsStatus.OK_STATUS;
@@ -227,8 +227,6 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 					answer = (DataCmdItem) list.getItems();
 					break COM_TYPE;
 				}
-				receivedCom = this.runMainLoop(sendCom, null);
-				sendCom = null;
 			}
 			this.serverC2SList.clear();
 			if (answer == null || !answer.isOK()) {

@@ -157,7 +157,6 @@ public class AbstractServerControl {
 							Thread.sleep(1000);
 						}
 						catch (final InterruptedException e) {
-							Thread.interrupted();
 						}
 					}
 					checkCleanup();

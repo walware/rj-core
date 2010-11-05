@@ -113,7 +113,6 @@ public class ServerUtil {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static void prettyPrint(final Collection list, final StringBuilder sb) {
 		final String sep = System.getProperty("line.separator")+"\t";
 		for (final Object value : list) {
@@ -268,7 +267,6 @@ public class ServerUtil {
 				file.delete();
 			}
 		}
-		dir.delete();
 	}
 	
 }
