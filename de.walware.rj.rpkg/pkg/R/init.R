@@ -16,7 +16,7 @@
 	assign("help.start", envir = .rj.originals, value = get("help.start", envir = utilsEnv))
 	assign("print.help_files_with_topic", envir = .rj.originals, value = get("print.help_files_with_topic", envir = utilsEnv))
 	
-	invisible(TRUE)
+	return (invisible(TRUE))
 }
 
 .rj.jInstance <- NULL
@@ -29,7 +29,7 @@
 	if (is.null(.rj.jInstance)) {
 		stop("RJ not (successfully) initialized")
 	}
-	invisible()
+	return (invisible())
 }
 
 

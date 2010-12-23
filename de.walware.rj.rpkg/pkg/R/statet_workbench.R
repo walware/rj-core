@@ -10,7 +10,7 @@ statet_openInEditor <- function(filename) {
 	}
 	.rj_ui.execCommand("common/showFile", list(
 					filename = .jnew("java/lang/String", filename) ), TRUE)
-	invisible()
+	return (invisible())
 }
 
 #' Opens a new graphic device in the graphic view of StatET.

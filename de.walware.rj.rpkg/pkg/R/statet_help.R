@@ -174,7 +174,7 @@ statet_help <- function(..., help_type = "html",
 	if (is.character(help.statet) && !is.na(help.statet)) {
 		.showHelp(help.statet)
 	}
-	invisible(helpObj)
+	return (invisible(helpObj))
 }
 
 #' Shows the R help start page in StatET. This is a console command for R help in StatET
@@ -187,7 +187,7 @@ statet_help <- function(..., help_type = "html",
 #' @export
 statet_help.start <- function(...) {
 	.showHelp("rhelp:///")
-	invisible()
+	return (invisible())
 }
 
 statet_print.help <- function(x, ...) {
@@ -201,7 +201,7 @@ statet_print.help <- function(x, ...) {
 			&& length(help.statet) == 1 && !is.na(help.statet)) {
 		.showHelp(help.statet)
 	}
-	invisible(x)
+	return (invisible(x))
 }
 
 #' Reassigns R help functions with versions for R help in StatET.

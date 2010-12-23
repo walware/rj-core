@@ -40,7 +40,7 @@
 	}
 	.rj_ui.execCommand("loadHistory", list(
 					filename = .jnew("java/lang/String", filename)), TRUE)
-	invisible()
+	return (invisible())
 }
 .rj_ui.saveHistory <- function(filename = ".Rhistory") {
 	if (!is.character(filename) || length(filename) != 1) {
@@ -48,7 +48,7 @@
 	}
 	.rj_ui.execCommand("saveHistory", list(
 					filename = .jnew("java/lang/String", filename) ), TRUE)
-	invisible()
+	return (invisible())
 }
 .rj_ui.addtoHistory <- function(line) {
 	if (missing(line) || !is.character(line) || length(line) != 1) {
@@ -56,6 +56,6 @@
 	}
 	.rj_ui.execCommand("addtoHistory", list(
 					line = .jnew("java/lang/String", line) ), FALSE)
-	invisible()
+	return (invisible())
 }
 

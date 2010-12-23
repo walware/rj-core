@@ -12,7 +12,7 @@
 	if (as.default) {
 		options(device=".rj_gd.new")
 	}
-	invisible(TRUE)
+	return (invisible(TRUE))
 }
 
 #' Opens a new RJ graphic device.
@@ -27,9 +27,9 @@
 	id <- as.integer(dev.cur())
 	if (is.null(dev) || id < 2L
 			|| Sys.getenv("JAVAGD_CLASS_NAME") != "de/walware/rj/gd/JavaGD") {
-		invisible(dev)
+		return (invisible(dev))
 	}
 	.jcall(.rj.jInstance, "V", "initLastGraphic", (id - 1L), .jnull(class="java/lang/String"))
-	invisible(dev)
+	return (invisible(dev))
 }
 
