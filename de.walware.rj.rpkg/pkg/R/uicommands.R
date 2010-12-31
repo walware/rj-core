@@ -34,6 +34,11 @@
 	.jcall(.rj.jInstance, "Ljava/util/Map;", "execUICommand", commandId, jargs, TRUE)
 }
 
+.getAnswerValue <- function(answer, key) {
+	key <- .jnew("java/lang/String", key)
+	.jcall(answer, "Ljava/lang/Object;", "get", .jcast(key))
+}
+
 .rj_ui.loadHistory <- function(filename = ".Rhistory") {
 	if (!is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")

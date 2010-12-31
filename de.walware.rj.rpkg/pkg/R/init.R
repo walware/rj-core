@@ -16,6 +16,8 @@
 	assign("help.start", envir = .rj.originals, value = get("help.start", envir = utilsEnv))
 	assign("print.help_files_with_topic", envir = .rj.originals, value = get("print.help_files_with_topic", envir = utilsEnv))
 	
+	assign("file.choose", envir = .rj.originals, value = get("file.choose", envir = .BaseNamespaceEnv))
+	
 	return (invisible(TRUE))
 }
 
