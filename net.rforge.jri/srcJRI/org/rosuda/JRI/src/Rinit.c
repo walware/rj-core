@@ -129,7 +129,9 @@ extern __declspec(dllimport) uintptr_t R_CStackStart; /* Initial stack address *
 #ifdef _MSC_VER
 __declspec(dllimport) int UserBreak;
 #else
+#ifndef WIN64
 #define UserBreak     (*_imp__UserBreak)
+#endif
 extern int UserBreak;
 #endif
 
