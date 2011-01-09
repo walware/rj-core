@@ -1,6 +1,9 @@
  NEWS/ChangeLog for JRI
 --------------------------
 
+0.5-5	(under development)
+    o	some more Win64 fixes
+
 0.5-4	2010-09-17
     o	added more options to rniStop() on unix and changed the
 	default to use interrupt flags instead of signals since

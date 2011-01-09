@@ -32,7 +32,9 @@ LibExtern int R_interrupts_pending;
 #ifdef _MSC_VER
 __declspec(dllimport) int UserBreak;
 #else
+#ifndef WIN64
 #define UserBreak     (*_imp__UserBreak)
+#endif
 extern int UserBreak;
 #endif
 #else

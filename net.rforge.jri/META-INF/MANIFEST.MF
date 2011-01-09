@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JRI Library
-Bundle-SymbolicName: net.rforge.jri
-Bundle-Version: 0.5.3.qualifier
+Bundle-SymbolicName: net.rforge.jri-original
+Bundle-Version: 0.5.5.qualifier
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.rosuda.JRI
