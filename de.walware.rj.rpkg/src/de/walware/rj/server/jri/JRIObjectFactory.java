@@ -13,8 +13,14 @@ package de.walware.rj.server.jri;
 
 import java.io.IOException;
 
+import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RComplexStore;
+import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RLogicalStore;
+import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
+import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.REnvironmentImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
@@ -28,6 +34,37 @@ import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
 import de.walware.rj.data.defaultImpl.RVectorImpl;
 
 public class JRIObjectFactory extends RObjectFactoryImpl {
+	
+	
+	@Override
+	public RLogicalStore createLogiData(final boolean[] logiValues) {
+		return new JRILogicalDataImpl(logiValues);
+	}
+	
+	@Override
+	public RIntegerStore createIntData(final int[] intValues) {
+		return new JRIIntegerDataImpl(intValues);
+	}
+	
+	@Override
+	public RNumericStore createNumData(final double[] numValues) {
+		return new JRINumericDataImpl(numValues);
+	}
+	
+	@Override
+	public RComplexStore createCplxData(final double[] reValues, final double[] imValues) {
+		return new JRIComplexDataImpl(reValues, imValues);
+	}
+	
+	@Override
+	public RCharacterStore createCharData(final String[] charValues) {
+		return new JRICharacterDataImpl(charValues);
+	}
+	
+	@Override
+	public RRawStore createRawData(final byte[] rawValues) {
+		return new JRIRawDataImpl(rawValues);
+	}
 	
 	
 	@Override

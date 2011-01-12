@@ -47,9 +47,12 @@ import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RComplexStore;
+import de.walware.rj.data.RDataFrame;
+import de.walware.rj.data.RDataJConverter;
 import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
+import de.walware.rj.data.RList;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
@@ -172,37 +175,41 @@ public class JRIServer extends RJ
 	
 	
 	private class InitCallbacks implements RMainLoopCallbacks {
-		public String rReadConsole(final Rengine engine, final String prompt, final int addToHistory) {
-			initEngine(engine);
-			return JRIServer.this.rReadConsole(engine, prompt, addToHistory);
+		public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
+			initEngine(re);
+			return JRIServer.this.rReadConsole(re, prompt, addToHistory);
 		}
-		public void rWriteConsole(final Rengine engine, final String text, final int oType) {
-			initEngine(engine);
-			JRIServer.this.rWriteConsole(engine, text, oType);
+		public void rWriteConsole(final Rengine re, final String text, final int oType) {
+			initEngine(re);
+			JRIServer.this.rWriteConsole(re, text, oType);
 		}
-		public void rFlushConsole(final Rengine engine) {
-			initEngine(engine);
-			JRIServer.this.rFlushConsole(engine);
+		public void rFlushConsole(final Rengine re) {
+			initEngine(re);
+			JRIServer.this.rFlushConsole(re);
 		}
-		public void rBusy(final Rengine engine, final int which) {
-			initEngine(engine);
-			JRIServer.this.rBusy(engine, which);
+		public void rBusy(final Rengine re, final int which) {
+			initEngine(re);
+			JRIServer.this.rBusy(re, which);
 		}
-		public void rShowMessage(final Rengine engine, final String message) {
-			initEngine(engine);
-			JRIServer.this.rShowMessage(engine, message);
+		public void rShowMessage(final Rengine re, final String message) {
+			initEngine(re);
+			JRIServer.this.rShowMessage(re, message);
 		}
-		public String rChooseFile(final Rengine engine, final int newFile) {
-			initEngine(engine);
-			return JRIServer.this.rChooseFile(engine, newFile);
+		public String rChooseFile(final Rengine re, final int newFile) {
+			initEngine(re);
+			return JRIServer.this.rChooseFile(re, newFile);
 		}
-		public void rLoadHistory(final Rengine engine, final String filename) {
-			initEngine(engine);
-			JRIServer.this.rLoadHistory(engine, filename);
+		public void rLoadHistory(final Rengine re, final String filename) {
+			initEngine(re);
+			JRIServer.this.rLoadHistory(re, filename);
 		}
-		public void rSaveHistory(final Rengine engine, final String filename) {
-			initEngine(engine);
-			JRIServer.this.rSaveHistory(engine, filename);
+		public void rSaveHistory(final Rengine re, final String filename) {
+			initEngine(re);
+			JRIServer.this.rSaveHistory(re, filename);
+		}
+		public long rExecJCommand(final Rengine re, final String commandId, final long argsExpr, final int options) {
+			initEngine(re);
+			return JRIServer.this.rExecJCommand(re, commandId, argsExpr, options);
 		}
 	}
 	
@@ -466,12 +473,12 @@ public class JRIServer extends RJ
 				}
 				
 				this.mainLoopState = ENGINE_RUN_IN_R;
-				final Rengine engine = new Rengine(args, true, new InitCallbacks());
+				final Rengine re = new Rengine(args, true, new InitCallbacks());
 				
-				while (this.rEngine != engine) {
+				while (this.rEngine != re) {
 					Thread.sleep(100);
 				}
-				if (!engine.waitForR()) {
+				if (!re.waitForR()) {
 					internalRStopped();
 					throw new IllegalThreadStateException("R thread not started");
 				}
@@ -543,8 +550,8 @@ public class JRIServer extends RJ
 		}
 	}
 	
-	private void initEngine(final Rengine engine) {
-		this.rEngine = engine;
+	private void initEngine(final Rengine re) {
+		this.rEngine = re;
 		this.rEngine.setContextClassLoader(this.rClassLoader);
 		this.rEngine.addMainLoopCallbacks(JRIServer.this);
 		RjsComConfig.setDefaultRObjectFactory(new JRIObjectFactory());
@@ -1297,7 +1304,7 @@ public class JRIServer extends RJ
 		final byte previousSlot = this.currentSlot;
 		this.currentSlot = cmd.slot;
 		final boolean ownLock = this.rEngine.getRsync().safeLock();
-		final int prevMaxDepth = this.rniMaxDepth;
+		final int savedMaxDepth = this.rniMaxDepth;
 		{	final byte depth = cmd.getDepth();
 			this.rniMaxDepth = this.rniTemp + ((depth >= 1) ? depth : 128);
 		}
@@ -1379,7 +1386,7 @@ public class JRIServer extends RJ
 				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
 				this.rniProtectedCounter = savedProtectedCounter;
 			}
-			this.rniMaxDepth = prevMaxDepth;
+			this.rniMaxDepth = savedMaxDepth;
 			
 			if (this.rniInterrupted || this.rniEvalTempAssigned) {
 				this.mainInterruptLock.lock();
@@ -1518,7 +1525,7 @@ public class JRIServer extends RJ
 					this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
 			return objP;
 		case RObject.TYPE_DATAFRAME: {
-			final JRIDataFrameImpl list = (JRIDataFrameImpl) obj;
+			final RDataFrame list = (RDataFrame) obj;
 			final int length = list.getLength();
 			final long[] itemPs = new long[length];
 			for (int i = 0; i < length; i++) {
@@ -1545,7 +1552,7 @@ public class JRIServer extends RJ
 			this.rEngine.rniSetAttr(objP, "class", this.rniP_dataframeClassString);
 			return objP; }
 		case RObject.TYPE_LIST: {
-			final JRIListImpl list = (JRIListImpl) obj;
+			final RList list = (RList) obj;
 			final int length = list.getLength();
 			final long[] itemPs = new long[length];
 			for (int i = 0; i < length; i++) {
@@ -2280,7 +2287,7 @@ public class JRIServer extends RJ
 	}
 	
 	
-	public String rReadConsole(final Rengine engine, final String prompt, final int addToHistory) {
+	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 		final MainCmdItem cmd = internalMainFromR(new ConsoleReadCmdItem(
 				(addToHistory == 1) ? V_TRUE : V_FALSE, prompt));
 		if (cmd.isOK()) {
@@ -2289,7 +2296,7 @@ public class JRIServer extends RJ
 		return "\n";
 	}
 	
-	public void rWriteConsole(final Rengine engine, final String text, final int type) {
+	public void rWriteConsole(final Rengine re, final String text, final int type) {
 //		try {
 //			Thread.sleep(100);
 //		}
@@ -2335,20 +2342,20 @@ public class JRIServer extends RJ
 		}
 	}
 	
-	public void rFlushConsole(final Rengine engine) {
+	public void rFlushConsole(final Rengine re) {
 		internalMainFromR(null);
 	}
 	
-	public void rBusy(final Rengine engine, final int which) {
+	public void rBusy(final Rengine re, final int which) {
 		this.mainLoopBusyAtServer = (which == 1);
 		internalMainFromR(null);
 	}
 	
-	public void rShowMessage(final Rengine engine, final String message) {
+	public void rShowMessage(final Rengine re, final String message) {
 		internalMainFromR(new ConsoleMessageCmdItem(message));
 	}
 	
-	public String rChooseFile(final Rengine engine, final int newFile) {
+	public String rChooseFile(final Rengine re, final int newFile) {
 		final Map<String, Object> answer = execUICommand(ExtUICmdItem.C_CHOOSE_FILE,
 				Collections.singletonMap("newResource", (Object) (newFile == 1)), true);
 		if (answer != null) {
@@ -2359,14 +2366,91 @@ public class JRIServer extends RJ
 		}
 	}
 	
-	public void rLoadHistory(final Rengine engine, final String filename) {
+	public void rLoadHistory(final Rengine re, final String filename) {
 		execUICommand(ExtUICmdItem.C_LOAD_HISTORY,
 				Collections.singletonMap("filename", (Object) filename), true);
 	}
 	
-	public void rSaveHistory(final Rengine engine, final String filename) {
+	public void rSaveHistory(final Rengine re, final String filename) {
 		execUICommand(ExtUICmdItem.C_SAVE_HISTORY,
 				Collections.singletonMap("filename", (Object) filename), true);
+	}
+	
+	public long rExecJCommand(final Rengine re, String commandId, final long argsExpr, final int options) {
+		try {
+			RList args = null;
+			if (argsExpr != 0) {
+				final int savedMaxDepth = this.rniMaxDepth;
+				this.rniMaxDepth += 255;
+				final int savedProtectedCounter = this.rniProtectedCounter;
+				try {
+					this.rEngine.rniProtect(argsExpr);
+					this.rniProtectedCounter++;
+					final RObject rObject = rniCreateDataObject(argsExpr, 0, EVAL_MODE_DEFAULT);
+					if (rObject.getRObjectType() == RObject.TYPE_LIST) {
+						args = (RList) rObject;
+					}
+				}
+				finally {
+					if (this.rniProtectedCounter > savedProtectedCounter) {
+						this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
+						this.rniProtectedCounter = savedProtectedCounter;
+					}
+					this.rniMaxDepth = savedMaxDepth;
+				}
+			}
+			
+			final boolean wait = ((options | 1) != 0);
+			
+			final String commandGroup;
+			{	final int idx = commandId.indexOf(':');
+				commandGroup = (idx > 0) ? commandId.substring(0, idx) : null;
+				commandId = commandId.substring(idx+1);
+			}
+			if (commandGroup.equals("ui")) {
+				final RDataJConverter converter = new RDataJConverter();
+				converter.setKeepArray1(false);
+				converter.setRObjectFactory(new JRIObjectFactory());
+				
+				final Map<String, Object> javaArgs = new HashMap<String, Object>();
+				if (args != null) {
+					for (int i = 0; i < args.getLength(); i++) {
+						javaArgs.put(args.getName(i), converter.toJava(args.get(i)));
+					}
+				}
+				final Map<String, Object> answer = execUICommand(commandId, javaArgs, wait);
+				
+				final int savedMaxDepth = this.rniMaxDepth;
+				this.rniMaxDepth += 255;
+				final int savedProtectedCounter = this.rniProtectedCounter;
+				try {
+					if (answer != null) {
+						final String[] names = new String[answer.size()];
+						final RObject[] components = new RObject[answer.size()];
+						int i = 0;
+						for (final Entry<String, Object> entry : answer.entrySet()) {
+							names[i] = entry.getKey();
+							components[i] = converter.toRJ(entry.getValue());
+							i++;
+						}
+						final RList rAnswer = new JRIListImpl(components, null, names);
+						return rniAssignDataObject(rAnswer);
+					}
+				}
+				finally {
+					if (this.rniProtectedCounter > savedProtectedCounter) {
+						this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
+						this.rniProtectedCounter = savedProtectedCounter;
+					}
+					this.rniMaxDepth = savedMaxDepth;
+				}
+			}
+		}
+		catch (final Exception e) {
+			LOGGER.log(Level.WARNING, "An error occurred when executing java command.", e);
+		}
+		
+		return 0;
 	}
 	
 	private void internalRStopped() {

@@ -36,20 +36,19 @@ public interface RObjectFactory {
 //	RArgument createArgument(String name, String defaultSource);
 //	RFunction createFunction(RArgument[] argument);
 //	
-//	RLogicalData createLogicalData(boolean[] boolValues, int[] naIdxs);
-//	RLogicalData createLogicalData(int[] intValues, int trueCode, int naCode);
-//	RNumericData createRealData(double[] realValues, int[] naIdxs);
-//	RIntegerData createIntegerData(int[] intValues, int[] naIdxs);
-//	RComplexData createComplexData(double[] realValues, double[] imaginaryValues, int[] naIdxs);
-//	RCharacterData createCharacterData(String[] charValues);
-//	RFactor createFactor(int[] codes, String[] labels);
-//	RRawData createRawData(byte[] values);
-	
 	<DataType extends RStore> RVector<DataType> createVector(DataType data);
 	<DataType extends RStore> RArray<DataType> createArray(DataType data, int[] dim);
 	<DataType extends RStore> RArray<DataType> createMatrix(DataType data, int dim1, int dim2);
 	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
+	
+	RLogicalStore createLogiData(boolean[] logiValues);
+	RIntegerStore createIntData(int[] intValues);
+	RNumericStore createNumData(double[] numValues);
+	RComplexStore createCplxData(double[] reValues, double[] imValues);
+	RCharacterStore createCharData(String[] charValues);
+	RRawStore createRawData(byte[] values);
+	RFactorStore createFactorData(int[] codes, String[] levels);
 	
 	void writeObject(RObject object, RJIO io) throws IOException;
 	RObject readObject(RJIO io) throws IOException;

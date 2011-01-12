@@ -1,12 +1,16 @@
-import java.io.*;
+import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 
-import java.awt.*;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
-import org.rosuda.JRI.Rengine;
-import org.rosuda.JRI.REXP;
-import org.rosuda.JRI.RMainLoopCallbacks;
 import org.rosuda.JRI.RConsoleOutputStream;
+import org.rosuda.JRI.RMainLoopCallbacks;
+import org.rosuda.JRI.Rengine;
 
 class TextConsole2 implements RMainLoopCallbacks
 {
@@ -62,6 +66,12 @@ class TextConsole2 implements RMainLoopCallbacks
     
     public void   rSaveHistory  (Rengine re, String filename) {
     }			
+    
+    public long rExecJCommand(Rengine re, String commandId, long argsExpr, int options) {
+        System.out.println("rExecJCommand \""+commandId+"\"");
+        return 0;
+    }
+    
 }
 
 public class rtest2 {

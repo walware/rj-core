@@ -8,43 +8,34 @@
 #' @param wait if R must wait until the command is executed
 #'     (necessary if you need a return value)
 #' @returnType char
-.rj_ui.execCommand <- function(commandId, args, wait = TRUE) {
+.rj_ui.execCommand <- function(commandId, args = list(), wait = TRUE) {
 	if (missing(commandId)) {
-		stop("Missing param 'commandId'")
+		stop("Missing param: commandId")
 	}
-	.rj.checkInit()
-	if (missing(args)) {
-		jargs <- .jnull("java/util/Map")
+	if (!is.list(args)) {
+		stop("Illegal argument: args must be a list")
 	}
-	else if (is.list(args)) {
-		argNames <- names(args)
-		if (!is.character(argNames) || any(is.na(argNames))) {
-			stop("Arguments must be named")
-		}
-		jargs <- .jnew("java/util/HashMap", length(args))
-		jargs <- .jcast(jargs, new.class = "java/util/Map")
-		for (i in seq(along = args)) {
-			key <- .jnew("java/lang/String", argNames[i])
-			.jcall(jargs, "Ljava/lang/Object;", "put", .jcast(key), .jcast(args[[i]]))
+	if (length(args) > 0) {
+		args.names <- names(args)
+		if (is.null(args.names) || any(is.na(args.names))) {
+			stop("Illegal argument: args must be named")
 		}
 	}
-	else {
-		stop("Illegal argument: args")
+	
+	options <- 0L
+	if (wait) {
+		options <- options + 1L
 	}
-	.jcall(.rj.jInstance, "Ljava/util/Map;", "execUICommand", commandId, jargs, TRUE)
+	.Call("Re_ExecJCommand", paste("ui", commandId, sep=":"), args, options)
 }
 
-.getAnswerValue <- function(answer, key) {
-	key <- .jnew("java/lang/String", key)
-	.jcall(answer, "Ljava/lang/Object;", "get", .jcast(key))
-}
 
 .rj_ui.loadHistory <- function(filename = ".Rhistory") {
 	if (!is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")
 	}
 	.rj_ui.execCommand("loadHistory", list(
-					filename = .jnew("java/lang/String", filename)), TRUE)
+					filename = filename ), TRUE)
 	return (invisible())
 }
 .rj_ui.saveHistory <- function(filename = ".Rhistory") {
@@ -52,7 +43,7 @@
 		stop("Illegal argument: filename")
 	}
 	.rj_ui.execCommand("saveHistory", list(
-					filename = .jnew("java/lang/String", filename) ), TRUE)
+					filename = filename ), TRUE)
 	return (invisible())
 }
 .rj_ui.addtoHistory <- function(line) {
@@ -60,7 +51,7 @@
 		stop("Illegal argument: line")
 	}
 	.rj_ui.execCommand("addtoHistory", list(
-					line = .jnew("java/lang/String", line) ), FALSE)
+					line = line ), FALSE)
 	return (invisible())
 }
 

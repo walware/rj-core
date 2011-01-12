@@ -16,6 +16,7 @@ import java.io.IOException;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
+import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RListImpl;
 
 
@@ -25,9 +26,16 @@ public class JRIListImpl extends RListImpl {
 	public JRIListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
 		super(initialComponents, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, initialComponents.length);
 	}
+	
 	public JRIListImpl(final int length, final String className1, final String[] initialNames) {
 		super(null, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, length);
 	}
+	
+	@Override
+	protected RCharacterDataImpl createNamesStore(final String[] names) {
+		return new JRICharacterDataImpl(names, getLength());
+	}
+	
 	public JRIListImpl(final RJIO io, final RObjectFactory factory) throws IOException {
 		super(io, factory);
 	}

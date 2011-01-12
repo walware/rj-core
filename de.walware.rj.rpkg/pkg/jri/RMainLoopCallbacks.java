@@ -38,4 +38,19 @@ public interface RMainLoopCallbacks {
 	@param re calling engine
 	@param filename name of the history file */
     public void   rLoadHistory  (Rengine re, String filename);
+	
+	/**
+	 * Called to exec a Java command
+	 * <p>
+	 * 'ExecJCommand' provides a flexible, generic mechanism to execute Java commands using R. The
+	 * final meaning of the parameters are not (yet) specified and application dependent.</p>
+	 * 
+	 * @param re calling engine
+	 * @param commandId id to identify the command
+	 * @param argsExpr optional command arguments as SEXP pointer
+	 * @param options flags controlling the execution of the command
+	 * @return command return value as SEXP pointer or 0
+	 **/
+	long rExecJCommand(Rengine re, String commandId, long argsExpr, int options);
+	
 }

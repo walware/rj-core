@@ -1,14 +1,14 @@
-import java.io.*;
-import java.awt.Frame;
 import java.awt.FileDialog;
-
+import java.awt.Frame;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Enumeration;
 
-import org.rosuda.JRI.Rengine;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RList;
-import org.rosuda.JRI.RVector;
 import org.rosuda.JRI.RMainLoopCallbacks;
+import org.rosuda.JRI.RVector;
+import org.rosuda.JRI.Rengine;
 
 class TextConsole implements RMainLoopCallbacks
 {
@@ -53,6 +53,12 @@ class TextConsole implements RMainLoopCallbacks
     
     public void   rSaveHistory  (Rengine re, String filename) {
     }			
+    
+    public long rExecJCommand(Rengine re, String commandId, long argsExpr, int options) {
+        System.out.println("rExecJCommand \""+commandId+"\"");
+        return 0;
+    }
+    
 }
 
 public class rtest {

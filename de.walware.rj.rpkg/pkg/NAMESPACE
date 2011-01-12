@@ -1,5 +1,4 @@
-import(rJava)
-export(.rj.init, .rj.originals, .rj.checkInit, .rj.tmp, .rj.nextId)
+export(.rj.originals, .rj.checkRJavaInit, .rj.tmp, .rj.nextId)
 export(.rj_gd.init, .rj_gd.new)
 export(.rj_ui.loadHistory, .rj_ui.saveHistory, .rj_ui.addtoHistory)
 export(.statet.captureStr, .statet.checkPkg)

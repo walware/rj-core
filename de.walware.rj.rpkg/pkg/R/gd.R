@@ -5,9 +5,9 @@
 #' @param as.default set it as default graphic device
 #' @export
 .rj_gd.init <- function(as.default = TRUE) {
-	.rj.checkInit(jpackage = TRUE)
+	.rj.initRJava()
+	.rj.checkRJavaInit()
 	Sys.setenv("JAVAGD_CLASS_NAME"="de/walware/rj/gd/JavaGD")
-	library("rJava")
 	library("JavaGD")
 	if (as.default) {
 		options(device=".rj_gd.new")
@@ -29,7 +29,7 @@
 			|| Sys.getenv("JAVAGD_CLASS_NAME") != "de/walware/rj/gd/JavaGD") {
 		return (invisible(dev))
 	}
-	.jcall(.rj.jInstance, "V", "initLastGraphic", (id - 1L), .jnull(class="java/lang/String"))
+	.jcall(.rj.originals$rjInstance, "V", "initLastGraphic", (id - 1L), .jnull(class="java/lang/String"))
 	return (invisible(dev))
 }
 

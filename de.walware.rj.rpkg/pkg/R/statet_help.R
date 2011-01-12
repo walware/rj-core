@@ -129,7 +129,7 @@
 		stop("Illegal argument: url")
 	}
 	.rj_ui.execCommand("r/showHelp", list(
-					url = .jnew("java/lang/String", url) ), FALSE)
+					url= url ), wait= FALSE)
 }
 
 #' Shows R help in StatET. This is a console command for R help in StatET

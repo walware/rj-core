@@ -43,7 +43,11 @@ public class RListImpl extends AbstractRObject
 		if (initialNames == null && initialComponents != null) {
 			initialNames = new String[length];
 		}
-		this.namesAttribute = (initialNames != null) ? new RCharacterDataImpl(initialNames, length) : null;
+		this.namesAttribute = (initialNames != null) ? createNamesStore(initialNames) : null;
+	}
+	
+	protected RCharacterDataImpl createNamesStore(String[] names) {
+		return new RCharacterDataImpl(names, this.length);
 	}
 	
 	public RListImpl(final RObject[] initialComponents, final RCharacterDataImpl initialNames) {

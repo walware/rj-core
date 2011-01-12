@@ -20,6 +20,10 @@ import de.walware.rj.data.defaultImpl.RLogicalDataIntImpl;
 public class JRILogicalDataImpl extends RLogicalDataIntImpl {
 	
 	
+	public JRILogicalDataImpl(final boolean[] values) {
+		super(values, null);
+	}
+	
 	public JRILogicalDataImpl(final int[] value) {
 		super(value);
 	}

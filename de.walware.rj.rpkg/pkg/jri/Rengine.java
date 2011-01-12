@@ -1,6 +1,5 @@
 package org.rosuda.JRI;
 
-import java.lang.*;
 
 /** Rengine class is the interface between an instance of R and the Java VM. Due to the fact that R has no threading support, you can run only one instance of R withing a multi-threaded application. There are two ways to use R from Java: individual call and full event loop. See the Rengine {@link #Rengine constructor} for details. <p> <u>Important note:</u> All methods starting with <code>rni</code> (R Native Interface) are low-level native methods that should be avoided if a high-level methods exists. They do NOT attempt any synchronization, so it is the duty of the calling program to ensure that the invocation is safe (see {@link #getRsync()} for details). At some point in the future when the high-level API is complete they should become private. However, currently this high-level layer is not complete, so they are available for now.<p>All <code>rni</code> methods use <code>long</code> type to reference <code>SEXP</code>s on R side. Those reference should never be modified or used in arithmetics - the only reason for not using an extra interface class to wrap those references is that <code>rni</code> methods are all <i>native</i> methods and therefore it would be too expensive to handle the unwrapping on the C side.<p><code>jri</code> methods are called internally by R and invoke the corresponding method from the even loop handler. Those methods should usualy not be called directly.
 
@@ -526,7 +525,15 @@ public class Rengine extends Thread {
         if (callback!=null) callback.rFlushConsole(this);
     }
 	
-    
+	public long jriExecJCommand(final String commandId, final long argsExpr, final int options)
+	{
+		if (this.callback != null) {
+			return this.callback.rExecJCommand(this, commandId, argsExpr, options);
+		}
+		return 0;
+	}
+	
+	
     //============ "official" API =============
 
 

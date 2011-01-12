@@ -417,3 +417,42 @@ int Re_ShowFiles(int nfile, 		/* number of files */
 {
     return 1;
 }
+
+
+SEXP Re_ExecJCommand(SEXP commandId, SEXP args, SEXP options)
+{
+	JNIEnv *lenv = checkEnvironment();
+	jmethodID mid;
+	jstring s;
+	SEXP v = 0;
+	
+	jri_checkExceptions(lenv, 1);
+	mid = (*lenv)->GetMethodID(lenv, engineClass, "jriExecJCommand", "(Ljava/lang/String;JI)J");
+	jri_checkExceptions(lenv, 0);
+#ifdef JRI_DEBUG
+	printf("jriExecJCommand mid=%x\n", mid);
+#endif
+	if (!mid) {
+		error("can't find jriExecJCommand method");
+	}
+	
+	if (!isString(commandId) || length(commandId) != 1) {
+		error("comandId is not a single string");
+	}
+	if (!isInteger(options) || length(options) != 1) {
+		error("options is not a single integer");
+	}
+	{	const char *p;
+		p = CHAR(STRING_ELT(commandId, 0));
+		s = (*lenv)->NewStringUTF(lenv, p);
+	}
+	
+	if (s) {
+		v = L2SEXP( (*lenv)->CallLongMethod(lenv, engineObj, mid,
+				s, SEXP2L(args), (jint) INTEGER(options)[0]) );
+		jri_checkExceptions(lenv, 1);
+		(*lenv)->DeleteLocalRef(lenv, s);
+	}
+	
+	return (v) ? v : R_NilValue;
+}

@@ -9,18 +9,9 @@ statet_openInEditor <- function(filename) {
 		stop("Illegal argument: filename")
 	}
 	.rj_ui.execCommand("common/showFile", list(
-					filename = .jnew("java/lang/String", filename) ),
-			TRUE)
+					filename= filename ), wait= TRUE)
 	return (invisible())
 }
-
-#' Opens a new graphic device in the graphic view of StatET.
-#' 
-#' @param width initial width of the graphic in pixel
-#' @param height initial width of the graphic in pixel
-#' @param ps initial font size in points
-#' @export
-statet_gd <- .rj_gd.new
 
 #' Asks the user to choose a file using the StatET GUI.
 #' 
@@ -31,11 +22,18 @@ statet_chooseFile <- function(new = FALSE) {
 		stop("Illegal argument: new")
 	}
 	answer <- .rj_ui.execCommand("common/chooseFile", list(
-					newResource = .jfield("java/lang/Boolean", name = as.character(new), convert = FALSE) ),
-			TRUE)
-	if (is.jnull(answer)) { # operation cancelled
+					newResource= new ), wait= TRUE)
+	if (is.null(answer)) { # operation cancelled
 		return (invisible())
 	}
-	filename <- .getAnswerValue(answer, "filename")
-	return (.jstrVal(filename))
+	return (answer$filename)
 }
+
+#' Opens a new graphic device in the graphic view of StatET.
+#' 
+#' @param width initial width of the graphic in pixel
+#' @param height initial width of the graphic in pixel
+#' @param ps initial font size in points
+#' @export
+statet_gd <- .rj_gd.new
+

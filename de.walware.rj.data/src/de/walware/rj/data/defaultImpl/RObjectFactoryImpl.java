@@ -406,40 +406,48 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Data/RStore --*/
 	
-	public RLogicalStore createLogiData(final boolean[] logicals) {
-		return new RLogicalDataByteImpl(logicals);
+	public RLogicalStore createLogiData(final boolean[] logiValues) {
+		return new RLogicalDataByteImpl(logiValues);
 	}
 	
 	public RLogicalStore createLogiData(final int length) {
 		return new RLogicalDataByteImpl(length);
 	}
 	
-	public RIntegerStore createIntData(final int[] integers) {
-		return new RIntegerDataImpl(integers);
+	public RIntegerStore createIntData(final int[] intValues) {
+		return new RIntegerDataImpl(intValues);
 	}
 	
 	public RIntegerStore createIntData(final int length) {
 		return new RIntegerDataImpl(length);
 	}
 	
-	public RNumericStore createNumData(final double[] numerics) {
-		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(numerics) : new RNumericDataImpl(numerics);
+	public RNumericStore createNumData(final double[] numValues) {
+		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(numValues) : new RNumericDataImpl(numValues);
 	}
 	
 	public RNumericStore createNumData(final int length) {
 		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(length) : new RNumericDataImpl(length);
 	}
 	
+	public RComplexStore createCplxData(final double[] reValues, final double[] imValues) {
+		return RNumericDataBImpl.isBforNASupported() ? new RComplexDataBImpl(reValues, imValues, null) : new RComplexDataImpl(reValues, imValues, null);
+	}
+	
 	public RComplexStore createCplxData(final int length) {
 		return RNumericDataBImpl.isBforNASupported() ? new RComplexDataBImpl(length) : new RComplexDataImpl(length);
 	}
 	
-	public RCharacterStore createCharData(final String[] characters) {
-		return new RCharacterDataImpl(characters);
+	public RCharacterStore createCharData(final String[] charValues) {
+		return new RCharacterDataImpl(charValues);
 	}
 	
 	public RCharacterStore createCharData(final int length) {
 		return new RCharacterDataImpl(length);
+	}
+	
+	public RRawStore createRawData(final byte[] rawValues) {
+		return new RRawDataImpl(rawValues);
 	}
 	
 	public RRawStore createRawData(final int length) {

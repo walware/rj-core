@@ -24,6 +24,10 @@ public class JRICharacterDataImpl extends RCharacterDataImpl {
 		super(values);
 	}
 	
+	public JRICharacterDataImpl(final String[] values, final int length) {
+		super(values, length);
+	}
+	
 	public JRICharacterDataImpl(final RJIO io) throws IOException {
 		super(io);
 	}

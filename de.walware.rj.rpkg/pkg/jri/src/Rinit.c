@@ -1,8 +1,16 @@
 #include <R.h>
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include "Rinit.h"
 #include "Rcallbacks.h"
 #include "Rdecl.h"
+
+
+static const R_CallMethodDef callMethods[]  = {
+    {"Re_ExecJCommand", (DL_FUNC) &Re_ExecJCommand, 3},
+    {NULL, NULL, 0}
+};
+
 
 /*-------------------------------------------------------------------*
  * UNIX initialization (includes Darwin/Mac OS X)                    *
@@ -82,7 +90,7 @@ int initR(int argc, char **argv, unsigned long stacksize) {
     ptr_R_Busy = Re_Busy;
     ptr_R_ShowFiles = Re_ShowFiles;
     ptr_R_ChooseFile = Re_ChooseFile;
-	ptr_R_loadhistory = Re_loadhistory;
+    ptr_R_loadhistory = Re_loadhistory;
     ptr_R_savehistory = Re_savehistory;
 
 #ifdef JGR_DEBUG
@@ -90,7 +98,12 @@ int initR(int argc, char **argv, unsigned long stacksize) {
 #endif
 
     setup_Rmainloop();
-
+    
+    {   DllInfo *dllInfo = R_getEmbeddingDllInfo();
+        R_registerRoutines(dllInfo, NULL, callMethods, NULL, NULL);
+        R_useDynamicSymbols(dllInfo, FALSE);
+    }
+    
 #ifdef JGR_DEBUG
     printf("R initialized.\n");
 #endif
@@ -294,7 +307,12 @@ int initR(int argc, char **argv, unsigned long stacksize)
     signal(SIGBREAK, my_onintr);
     setup_term_ui();
     setup_Rmainloop();
-
+    
+    {   DllInfo *dllInfo = R_getEmbeddingDllInfo();
+        R_registerRoutines(dllInfo, NULL, callMethods, NULL, NULL);
+        R_useDynamicSymbols(dllInfo, FALSE);
+    }
+    
     return 0;
 }
 
