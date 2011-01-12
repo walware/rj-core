@@ -9,32 +9,32 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri;
 
 import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
-import de.walware.rj.data.defaultImpl.RNumericDataBImpl;
+import de.walware.rj.data.defaultImpl.RIntegerDataImpl;
 
 
-public class JRINumericDataImpl extends RNumericDataBImpl {
+public class JRIIntegerDataImpl extends RIntegerDataImpl {
 	
 	
-	public JRINumericDataImpl(final double[] values) {
+	public JRIIntegerDataImpl(final int[] values) {
 		super(values);
 	}
 	
-	public JRINumericDataImpl(final RJIO io) throws IOException {
+	public JRIIntegerDataImpl(final RJIO io) throws IOException {
 		super(io);
 	}
 	
 	
-	public double[] getJRIValueArray() {
-		if (this.realValues.length == this.length) {
-			return this.realValues;
+	public int[] getJRIValueArray() {
+		if (this.intValues.length == this.length) {
+			return this.intValues;
 		}
-		final double[] array = new double[this.length];
-		System.arraycopy(this.realValues, 0, array, 0, this.length);
+		final int[] array = new int[this.length];
+		System.arraycopy(this.intValues, 0, array, 0, this.length);
 		return array;
 	}
 	

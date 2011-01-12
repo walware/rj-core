@@ -9,44 +9,33 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri;
 
 import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
-import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
-import de.walware.rj.data.defaultImpl.RFactorDataImpl;
+import de.walware.rj.data.defaultImpl.RLogicalDataIntImpl;
 
 
-public class JRIFactorDataImpl extends RFactorDataImpl {
+public class JRILogicalDataImpl extends RLogicalDataIntImpl {
 	
 	
-	public JRIFactorDataImpl(final int[] values, final boolean isOrdered, final String[] levelLabels) {
-		super(values, isOrdered, levelLabels);
+	public JRILogicalDataImpl(final int[] value) {
+		super(value);
 	}
 	
-	public JRIFactorDataImpl(final RJIO io) throws IOException {
+	public JRILogicalDataImpl(final RJIO io) throws IOException {
 		super(io);
 	}
 	
 	
-	@Override
-	protected RCharacterDataImpl readLabels(final RJIO io) throws IOException {
-		return new JRICharacterDataImpl(io);
-	}
-	
-	
 	public int[] getJRIValueArray() {
-		if (this.codes.length == this.length) {
-			return this.codes;
+		if (this.boolValues.length == this.length) {
+			return this.boolValues;
 		}
 		final int[] array = new int[this.length];
-		System.arraycopy(this.codes, 0, array, 0, this.length);
+		System.arraycopy(this.boolValues, 0, array, 0, this.length);
 		return array;
-	}
-	
-	public String[] getJRILevelsArray() {
-		return ((JRICharacterDataImpl) this.codeLabels).getJRIValueArray();
 	}
 	
 }

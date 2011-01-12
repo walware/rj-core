@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import de.walware.rj.RjException;
 import de.walware.rj.RjInvalidConfigurationException;
 import de.walware.rj.server.Server;
-import de.walware.rj.server.jriImpl.RosudaJRILoader;
+import de.walware.rj.server.jri.loader.JRIServerLoader;
 import de.walware.rj.server.srvext.ServerAuthMethod;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
@@ -142,7 +142,7 @@ public class AbstractServerControl {
 	public boolean initREngine(final DefaultServerImpl server) {
 		InternalEngine engine = null;
 		try {
-			engine = new RosudaJRILoader().loadServer(this.name, this.args, server, new ServerRuntimePlugin() {
+			engine = new JRIServerLoader().loadServer(this.name, this.args, server, new ServerRuntimePlugin() {
 				
 				public String getSymbolicName() {
 					return "rmi";

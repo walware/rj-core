@@ -2,6 +2,6 @@
 <project-modules id="moduleCoreId" project-version="1.5.0">
     <wb-module deploy-name="de.walware.rj.server">
         <wb-resource deploy-path="/" source-path="/src"/>
-        <wb-resource deploy-path="/" source-path="/srcRosuda"/>
+        <wb-resource deploy-path="/" source-path="/srcJRI"/>
     </wb-module>
 </project-modules>

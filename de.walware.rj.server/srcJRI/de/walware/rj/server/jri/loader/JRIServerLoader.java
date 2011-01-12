@@ -9,7 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri.loader;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
-import org.rosuda.rj.JRIClassLoader;
-
 import de.walware.rj.server.Server;
 import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvext.ExtServer;
@@ -30,10 +28,10 @@ import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
 
 
-public final class RosudaJRILoader {
+public final class JRIServerLoader {
 	
 	
-	public RosudaJRILoader() {
+	public JRIServerLoader() {
 	}
 	
 	
@@ -79,7 +77,7 @@ public final class RosudaJRILoader {
 				final Class<?> rEngineClazz = loader.loadRJavaClass("org.rosuda.JRI.Rengine");
 				final Method versionMethod = rEngineClazz.getMethod("getVersion");
 				final long version = ((Long) versionMethod.invoke(null)).longValue();
-				String serverClazzName = "de.walware.rj.server.jriImpl.RosudaJRIServer";
+				String serverClazzName = "de.walware.rj.server.jri.JRIServer";
 				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass(serverClazzName);
 				loader.loadRJavaClass(serverClazzName + "$InitCallbacks");
 				
@@ -93,7 +91,7 @@ public final class RosudaJRILoader {
 			
 			final ExtServer localServer = (ExtServer) engine;
 			
-			localServer.init(name, publicServer);
+			localServer.init(name, publicServer, loader);
 			
 			// plugins
 			final List<String> plugins = ServerUtil.getArgValueList(args.get("plugins"));

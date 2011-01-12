@@ -10,13 +10,12 @@
  *    Stephan Wahlbrink - adjustments to RJ
  *******************************************************************************/
 
-package org.rosuda.rj;
+package de.walware.rj.server.jri.loader;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -30,8 +29,10 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import de.walware.rj.server.srvImpl.RJClassLoader;
 
-public class JRIClassLoader extends URLClassLoader {
+
+public class JRIClassLoader extends RJClassLoader {
 	
 	private static JRIClassLoader instance;
 	
@@ -46,7 +47,7 @@ public class JRIClassLoader extends URLClassLoader {
 	}
 	
 	
-	private static final Logger LOGGER = Logger.getLogger("org.rosuda.jri");
+	private static final Logger LOGGER = Logger.getLogger("de.walware.rj.server.jri");
 	public static boolean verbose = false;
 	
 	public static void setDebug(final int level) {
@@ -59,8 +60,8 @@ public class JRIClassLoader extends URLClassLoader {
 	
 	private static final Pattern PATH_SPLITTER = Pattern.compile(Pattern.quote(File.pathSeparator));
 	
-	private static String getNonEmpty(String... strings) {
-		for (String string : strings) {
+	private static String getNonEmpty(final String... strings) {
+		for (final String string : strings) {
 			if (string != null && string.length() > 0) {
 				return string;
 			}
@@ -202,10 +203,6 @@ public class JRIClassLoader extends URLClassLoader {
 	}
 	
 	
-	public static final int OS_WIN = 1;
-	public static final int OS_NIX = 2;
-	public static final int OS_MAC = 3;
-	
 	private final String r_home;
 	private final String r_arch;
 	private final List<String> r_libs;
@@ -276,7 +273,7 @@ public class JRIClassLoader extends URLClassLoader {
 		if (this.rjPath == null) {
 			final String message = "Path to rj package not found. Use R_LIBS or java property 'de.walware.rj.rpkg.path' to specify the location.";
 			LOGGER.log(Level.SEVERE, message);
-			throw new IllegalArgumentException(message);
+			throw new RuntimeException(message);
 		}
 		
 		final String rJavaClassPath = System.getProperty("rjava.class.path");
@@ -348,9 +345,21 @@ public class JRIClassLoader extends URLClassLoader {
 			addClassPath(jriJarFile);
 		}
 		else {
-			if (verbose) {
-				LOGGER.log(Level.WARNING, "JRI.jar not found and not added to classpath");
-			}
+			final String message = "JRI.jar not found.";
+			LOGGER.log(Level.SEVERE, message);
+			throw new RuntimeException(message);
+		}
+		
+		final UnixFile rjJarFile = searchFile(new String[] {
+				this.rjPath + "/server/rj.jar",
+		});
+		if (rjJarFile != null) {
+			addClassPath(rjJarFile);
+		}
+		else {
+			final String message = "rj.jar not found.";
+			LOGGER.log(Level.SEVERE, message);
+			throw new RuntimeException(message);
 		}
 	}
 	
@@ -407,6 +416,7 @@ public class JRIClassLoader extends URLClassLoader {
 	}
 	
 	
+	@Override
 	public int getOSType() {
 		return this.os;
 	}
@@ -638,10 +648,12 @@ public class JRIClassLoader extends URLClassLoader {
 	}
 	
 	/** add a library to path mapping for a native library */
+	@Override
 	public void addRLibrary(final String name, final String path) {
 		this.libMap.put(name, new UnixFile(path));
 	}
 	
+	@Override
 	public void addClassPath(final String cp) {
 		final UnixFile f = new UnixFile(cp);
 		addClassPath(f);

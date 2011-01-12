@@ -9,26 +9,33 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri;
 
 import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
-import de.walware.rj.data.RObject;
-import de.walware.rj.data.RObjectFactory;
-import de.walware.rj.data.defaultImpl.RDataFrameImpl;
+import de.walware.rj.data.defaultImpl.RRawDataImpl;
 
 
-public class JRIDataFrameImpl extends RDataFrameImpl {
+public class JRIRawDataImpl extends RRawDataImpl {
 	
 	
-	public JRIDataFrameImpl(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames) {
-		super(columns, className1, initialNames, initialRownames, false);
+	public JRIRawDataImpl(final byte[] values) {
+		super(values);
 	}
 	
-	public JRIDataFrameImpl(final RJIO io, final RObjectFactory factory) throws IOException {
-		super(io, factory);
+	public JRIRawDataImpl(final RJIO io) throws IOException {
+		super(io);
 	}
 	
+	
+	public byte[] getJRIValueArray() {
+		if (this.byteValues.length == this.length) {
+			return this.byteValues;
+		}
+		final byte[] array = new byte[this.length];
+		System.arraycopy(this.byteValues, 0, array, 0, this.length);
+		return array;
+	}
 	
 }

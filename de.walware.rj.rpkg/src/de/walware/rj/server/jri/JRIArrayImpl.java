@@ -9,51 +9,52 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import de.walware.rj.data.RArray;
+import de.walware.rj.data.RCharacterStore;
+import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
+import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
-import de.walware.rj.data.RVector;
 import de.walware.rj.data.defaultImpl.AbstractRObject;
 import de.walware.rj.data.defaultImpl.ExternalizableRObject;
+import de.walware.rj.data.defaultImpl.ExternalizableRStore;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
+import de.walware.rj.data.defaultImpl.SimpleRListImpl;
 
 
-public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
-		implements RVector<DataType>, ExternalizableRObject {
+public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
+		implements RArray<DataType>, ExternalizableRObject {
 	
 	
 	private DataType data;
-	private int length;
 	
 	private String className1;
-	private RStore namesAttribute;
+	private int[] dimAttribute;
+	private SimpleRListImpl<RStore> dimnamesAttribute;
 	
 	
-	public JRIVectorImpl(final DataType data, final String className1, final String[] initialNames) {
-		this(data, data.getLength(), className1, initialNames);
-	}
-	
-	public JRIVectorImpl(final DataType data, final int length, final String className1, final String[] initialNames) {
-		if (data == null) {
-			throw new NullPointerException();
-		}
-		if (initialNames != null && data.getLength() >= 0 && initialNames.length != data.getLength()) {
-			throw new IllegalArgumentException();
-		}
-		this.data = data;
-		this.length = length;
+	public JRIArrayImpl(final DataType data, final String className1, final int[] dim,
+			final SimpleRListImpl<RStore> dimnames) {
 		this.className1 = className1;
-		if (initialNames != null) {
-			this.namesAttribute = new RCharacterDataImpl(initialNames);
-		}
+		this.dimAttribute = dim;
+		this.data = data;
+		this.dimnamesAttribute = dimnames;
 	}
 	
-	public JRIVectorImpl(final RJIO io, final RObjectFactory factory) throws IOException {
+	public JRIArrayImpl(final DataType data, final String className1, final int[] dim) {
+		this.className1 = className1;
+		this.dimAttribute = dim;
+		this.data = data;
+	}
+	
+	public JRIArrayImpl(final RJIO io, final RObjectFactory factory) throws IOException {
 		readExternal(io, factory);
 	}
 	
@@ -65,16 +66,23 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			this.className1 = io.readString();
 		}
-		this.length = io.in.readInt();
+		final int[] dim = io.readIntArray();
+		this.dimAttribute = dim;
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			this.namesAttribute = factory.readNames(io);
+			final RCharacterDataImpl names0 = new RCharacterDataImpl(io);
+			final RStore[] names1 = new RStore[dim.length];
+			for (int i = 0; i < dim.length; i++) {
+				names1[i] = factory.readNames(io);
+			}
+			this.dimnamesAttribute = new SimpleRListImpl<RStore>(names0, names1);
 		}
 		//-- data
 		this.data = (DataType) factory.readStore(io);
+		
 		if (!customClass) {
-			this.className1 = this.data.getBaseVectorRClassName();
+			this.className1 = (dim.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY;
 		}
-		// attributes
+		//-- attributes
 		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(io));
 		}
@@ -84,11 +92,12 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		//-- options
 		int options = 0;
 		final boolean customClass = this.className1 != null
-				&& !this.className1.equals(this.data.getBaseVectorRClassName());
+				&& !this.className1.equals((this.dimAttribute.length == 2) ?
+						RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
-		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.namesAttribute != null) {
+		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.dimnamesAttribute != null) {
 			options |= RObjectFactory.O_WITH_NAMES;
 		}
 		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
@@ -100,21 +109,24 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			io.writeString(this.className1);
 		}
-		io.out.writeInt(this.length);
+		io.writeIntArray(this.dimAttribute, this.dimAttribute.length);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			factory.writeNames(this.namesAttribute, io);
+			((ExternalizableRStore) this.dimnamesAttribute.getNames()).writeExternal(io);
+			for (int i = 0; i < this.dimAttribute.length; i++) {
+				factory.writeNames(this.dimnamesAttribute.get(i), io);
+			}
 		}
 		//-- data
 		factory.writeStore(this.data, io);
-		// attributes
+		//-- attributes
 		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			factory.writeAttributeList(attributes, io);
 		}
 	}
 	
 	
-	public byte getRObjectType() {
-		return TYPE_VECTOR;
+	public final byte getRObjectType() {
+		return TYPE_ARRAY;
 	}
 	
 	public String getRClassName() {
@@ -122,11 +134,36 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	public int getLength() {
-		return this.length;
+		if (this.dimAttribute.length == 0) {
+			return 0;
+		}
+		int length = this.data.getLength();
+		if (length >= 0) {
+			return length;
+		}
+		length = 1;
+		for (int i = 0; i < this.dimAttribute.length; i++) {
+			length *= this.dimAttribute[i];
+		}
+		return length;
 	}
 	
-	public RStore getNames() {
-		return this.namesAttribute;
+	public RIntegerStore getDim() {
+		return new JRIIntegerDataImpl(this.dimAttribute);
+	}
+	
+	public RCharacterStore getDimNames() {
+		if (this.dimnamesAttribute != null) {
+			return this.dimnamesAttribute.getNames();
+		}
+		return null;
+	}
+	
+	public RStore getNames(final int dim) {
+		if (this.dimnamesAttribute != null) {
+			return this.dimnamesAttribute.get(dim);
+		}
+		return null;
 	}
 	
 	
@@ -138,11 +175,18 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("RObject type=vector, class=").append(getRClassName());
+		sb.append("RObject type=array, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(getLength());
+		sb.append("\n\tdim=");
+		sb.append(Arrays.toString(this.dimAttribute));
 		sb.append("\n\tdata: ");
 		sb.append(this.data.toString());
 		return sb.toString();
+	}
+	
+	
+	public int[] getJRIDimArray() {
+		return this.dimAttribute;
 	}
 	
 }

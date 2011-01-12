@@ -20,7 +20,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.util.logging.Logger;
 
-import org.rosuda.rj.JRIClassLoader;
+import de.walware.rj.server.jri.loader.JRIClassLoader;
 
 
 /**

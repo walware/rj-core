@@ -9,7 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.jriImpl;
+package de.walware.rj.server.jri;
 
 import static de.walware.rj.data.RObjectFactory.F_ONLY_STRUCT;
 import static de.walware.rj.server.RjsComObject.V_ERROR;
@@ -42,7 +42,6 @@ import java.util.logging.Logger;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RMainLoopCallbacks;
 import org.rosuda.JRI.Rengine;
-import org.rosuda.rj.JRIClassLoader;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
@@ -91,6 +90,7 @@ import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
 import de.walware.rj.server.srvImpl.InternalEngine;
+import de.walware.rj.server.srvImpl.RJClassLoader;
 import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ExtServer;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
@@ -99,7 +99,7 @@ import de.walware.rj.server.srvext.ServerRuntimePlugin;
 /**
  * Remove server based on
  */
-public class RosudaJRIServer extends RJ
+public class JRIServer extends RJ
 		implements InternalEngine, RMainLoopCallbacks, ExtServer {
 	
 	private static final int ENGINE_NOT_STARTED = 0;
@@ -174,35 +174,35 @@ public class RosudaJRIServer extends RJ
 	private class InitCallbacks implements RMainLoopCallbacks {
 		public String rReadConsole(final Rengine engine, final String prompt, final int addToHistory) {
 			initEngine(engine);
-			return RosudaJRIServer.this.rReadConsole(engine, prompt, addToHistory);
+			return JRIServer.this.rReadConsole(engine, prompt, addToHistory);
 		}
 		public void rWriteConsole(final Rengine engine, final String text, final int oType) {
 			initEngine(engine);
-			RosudaJRIServer.this.rWriteConsole(engine, text, oType);
+			JRIServer.this.rWriteConsole(engine, text, oType);
 		}
 		public void rFlushConsole(final Rengine engine) {
 			initEngine(engine);
-			RosudaJRIServer.this.rFlushConsole(engine);
+			JRIServer.this.rFlushConsole(engine);
 		}
 		public void rBusy(final Rengine engine, final int which) {
 			initEngine(engine);
-			RosudaJRIServer.this.rBusy(engine, which);
+			JRIServer.this.rBusy(engine, which);
 		}
 		public void rShowMessage(final Rengine engine, final String message) {
 			initEngine(engine);
-			RosudaJRIServer.this.rShowMessage(engine, message);
+			JRIServer.this.rShowMessage(engine, message);
 		}
 		public String rChooseFile(final Rengine engine, final int newFile) {
 			initEngine(engine);
-			return RosudaJRIServer.this.rChooseFile(engine, newFile);
+			return JRIServer.this.rChooseFile(engine, newFile);
 		}
 		public void rLoadHistory(final Rengine engine, final String filename) {
 			initEngine(engine);
-			RosudaJRIServer.this.rLoadHistory(engine, filename);
+			JRIServer.this.rLoadHistory(engine, filename);
 		}
 		public void rSaveHistory(final Rengine engine, final String filename) {
 			initEngine(engine);
-			RosudaJRIServer.this.rSaveHistory(engine, filename);
+			JRIServer.this.rSaveHistory(engine, filename);
 		}
 	}
 	
@@ -210,7 +210,7 @@ public class RosudaJRIServer extends RJ
 	private String name;
 	
 	private Server publicServer;
-	private JRIClassLoader rClassLoader;
+	private RJClassLoader rClassLoader;
 	private Rengine rEngine;
 	private List<String> rArgs;
 	private long rCSSize;
@@ -307,7 +307,7 @@ public class RosudaJRIServer extends RJ
 	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
 	
 	
-	public RosudaJRIServer() {
+	public JRIServer() {
 		this.rCSSize = s2long(System.getProperty("jri.threadCStackSize"), 16 * MEGA);
 		
 		this.mainLoopState = ENGINE_NOT_STARTED;
@@ -317,9 +317,13 @@ public class RosudaJRIServer extends RJ
 	}
 	
 	
-	public void init(final String name, final Server publicServer) throws Exception {
+	public void init(final String name, final Server publicServer, final RJClassLoader loader) throws Exception {
+		if (loader == null) {
+			throw new NullPointerException("loader");
+		}
 		this.name = name;
 		this.publicServer = publicServer;
+		this.rClassLoader = loader;
 		
 		this.platformDataCommands = new HashMap<String, String>();
 		this.platformDataCommands.put("os.type", ".Platform$OS.type");
@@ -446,7 +450,6 @@ public class RosudaJRIServer extends RJ
 			
 			final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 			try {
-				this.rClassLoader = JRIClassLoader.getRJavaClassLoader();
 				Thread.currentThread().setContextClassLoader(this.rClassLoader);
 				
 				if (Rengine.getVersion() < REQUIRED_JRI_API) {
@@ -543,7 +546,7 @@ public class RosudaJRIServer extends RJ
 	private void initEngine(final Rengine engine) {
 		this.rEngine = engine;
 		this.rEngine.setContextClassLoader(this.rClassLoader);
-		this.rEngine.addMainLoopCallbacks(RosudaJRIServer.this);
+		this.rEngine.addMainLoopCallbacks(JRIServer.this);
 		RjsComConfig.setDefaultRObjectFactory(new JRIObjectFactory());
 		
 		this.rniP_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
@@ -722,7 +725,7 @@ public class RosudaJRIServer extends RJ
 		
 		loadPlatformData();
 		
-		if (this.rClassLoader.getOSType() == JRIClassLoader.OS_WIN) {
+		if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
 			if (this.rArgs.contains("--internet2")) {
 				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0L);
 			}
@@ -784,7 +787,7 @@ public class RosudaJRIServer extends RJ
 					}
 				}
 				else if (arg.startsWith("--max-mem-size=")) {
-					long size = s2long(arg.substring(15), 0);
+					final long size = s2long(arg.substring(15), 0);
 					if (size > 0) {
 						this.rMemSize = size;
 					}
@@ -792,7 +795,7 @@ public class RosudaJRIServer extends RJ
 				checked.add(arg);
 			}
 		}
-		if (!saveState && this.rClassLoader.getOSType() != JRIClassLoader.OS_WIN) {
+		if (!saveState && this.rClassLoader.getOSType() != RJClassLoader.OS_WIN) {
 			checked.add(0, "--interactive");
 		}
 		this.rArgs = checked;

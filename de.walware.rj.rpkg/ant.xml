@@ -1,7 +1,7 @@
 <project name="RJ_RPackage" basedir=".">
 	
 	<property name="eproject" value="de.walware.rj.rpkg"/>
-	<property name="target.dir" value="pkg/inst/java"/>
+	<property name="target.dir" value="pkg/inst/server"/>
 	
 	<target name="epack">
 		<jar jarfile="${basedir}/${target.dir}/rj.jar">
