@@ -32,6 +32,10 @@ public class RListImpl extends AbstractRObject
 	private RCharacterDataImpl namesAttribute;
 	
 	
+	public RListImpl(final RObject[] initialComponents, final String[] initialNames) {
+		this(initialComponents, RObject.CLASSNAME_LIST, initialNames, initialComponents.length);
+	}
+	
 	public RListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
 		this(initialComponents, className1, initialNames, initialComponents.length);
 	}

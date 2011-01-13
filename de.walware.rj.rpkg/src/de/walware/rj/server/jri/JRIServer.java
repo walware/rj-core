@@ -26,7 +26,6 @@ import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,6 @@ import de.walware.rj.RjInitFailedException;
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RDataFrame;
-import de.walware.rj.data.RDataJConverter;
 import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
@@ -57,6 +55,7 @@ import de.walware.rj.data.RList;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
+import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
 import de.walware.rj.data.RS4Object;
@@ -305,6 +304,8 @@ public class JRIServer extends RJ
 	private long rniP_evalTemp_classExpr;
 	private long rniP_evalTemp_rmExpr;
 	private long rniP_evalDummyExpr;
+	
+	private RObjectFactory rObjectFactory;
 	
 	private RjsGraphic graphicLast;
 	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
@@ -563,7 +564,8 @@ public class JRIServer extends RJ
 		this.rEngine = re;
 		this.rEngine.setContextClassLoader(this.rClassLoader);
 		this.rEngine.addMainLoopCallbacks(JRIServer.this);
-		RjsComConfig.setDefaultRObjectFactory(new JRIObjectFactory());
+		this.rObjectFactory = new JRIObjectFactory();
+		RjsComConfig.setDefaultRObjectFactory(this.rObjectFactory);
 		
 		this.rniP_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
 		this.rEngine.rniPreserve(this.rniP_NULL);
@@ -2456,24 +2458,43 @@ public class JRIServer extends RJ
 	}
 	
 	public String rChooseFile(final Rengine re, final int newFile) {
-		final Map<String, Object> answer = execUICommand(ExtUICmdItem.C_CHOOSE_FILE,
-				Collections.singletonMap("newResource", (Object) (newFile == 1)), true );
+		final RList args = this.rObjectFactory.createList(new RObject[] {
+				this.rObjectFactory.createVector(this.rObjectFactory.createLogiData(new boolean[] {
+						(newFile == 1),
+				} )),
+		}, new String[] {
+				"newResource",
+		} );
+		final RList answer = execUICommand(ExtUICmdItem.C_CHOOSE_FILE, args, true);
 		if (answer != null) {
-			return (String) answer.get("filename");
+			final RObject filenameObject = answer.get("filename");
+			if (RDataUtil.isSingleString(filenameObject)) {
+				return filenameObject.getData().getChar(0);
+			}
 		}
-		else {
-			return null;
-		}
+		return null;
 	}
 	
 	public void rLoadHistory(final Rengine re, final String filename) {
-		execUICommand(ExtUICmdItem.C_LOAD_HISTORY,
-				Collections.singletonMap("filename", (Object) filename), true);
+		final RList args = this.rObjectFactory.createList(new RObject[] {
+				this.rObjectFactory.createVector(this.rObjectFactory.createCharData(new String[] {
+						filename,
+				} )),
+		}, new String[] {
+				"filename",
+		} );
+		execUICommand(ExtUICmdItem.C_LOAD_HISTORY, args, true);
 	}
 	
 	public void rSaveHistory(final Rengine re, final String filename) {
-		execUICommand(ExtUICmdItem.C_SAVE_HISTORY,
-				Collections.singletonMap("filename", (Object) filename), true);
+		final RList args = this.rObjectFactory.createList(new RObject[] {
+				this.rObjectFactory.createVector(this.rObjectFactory.createCharData(new String[] {
+						filename,
+				} )),
+		}, new String[] {
+				"filename",
+		} );
+		execUICommand(ExtUICmdItem.C_SAVE_HISTORY, args, true);
 	}
 	
 	public long rExecJCommand(final Rengine re, String commandId, final long argsExpr, final int options) {
@@ -2507,35 +2528,18 @@ public class JRIServer extends RJ
 				commandGroup = (idx > 0) ? commandId.substring(0, idx) : null;
 				commandId = commandId.substring(idx+1);
 			}
+			
+			RList answer = null;
 			if (commandGroup.equals("ui")) {
-				final RDataJConverter converter = new RDataJConverter();
-				converter.setKeepArray1(false);
-				converter.setRObjectFactory(new JRIObjectFactory());
-				
-				final Map<String, Object> javaArgs = new HashMap<String, Object>();
-				if (args != null) {
-					for (int i = 0; i < args.getLength(); i++) {
-						javaArgs.put(args.getName(i), converter.toJava(args.get(i)));
-					}
-				}
-				final Map<String, Object> answer = execUICommand(commandId, javaArgs, wait);
-				
+				answer = execUICommand(commandId, args, wait);
+			}
+			
+			if (answer != null) {
 				final int savedMaxDepth = this.rniMaxDepth;
 				this.rniMaxDepth += 255;
 				final int savedProtectedCounter = this.rniProtectedCounter;
 				try {
-					if (answer != null) {
-						final String[] names = new String[answer.size()];
-						final RObject[] components = new RObject[answer.size()];
-						int i = 0;
-						for (final Entry<String, Object> entry : answer.entrySet()) {
-							names[i] = entry.getKey();
-							components[i] = converter.toRJ(entry.getValue());
-							i++;
-						}
-						final RList rAnswer = new JRIListImpl(components, null, names);
-						return rniAssignDataObject(rAnswer);
-					}
+					return rniAssignDataObject(answer);
 				}
 				finally {
 					if (this.rniProtectedCounter > savedProtectedCounter) {
@@ -2551,6 +2555,17 @@ public class JRIServer extends RJ
 		}
 		
 		return 0;
+	}
+	
+	public RList execUICommand(final String command, final RList args, final boolean wait) {
+		if (command == null) {
+			throw new NullPointerException("command");
+		}
+		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, args, wait));
+		if (wait && answer instanceof ExtUICmdItem && answer.isOK()) {
+			return ((ExtUICmdItem) answer).getDataArgs();
+		}
+		return null;
 	}
 	
 	private void internalRStopped() {
@@ -2598,18 +2613,6 @@ public class JRIServer extends RJ
 	public void onRExit() {
 		internalRStopped();
 		super.onRExit();
-	}
-	
-	@Override
-	public Map<String, Object> execUICommand(final String command, final Map<String, Object> args, final boolean wait) {
-		if (command == null) {
-			throw new NullPointerException("command");
-		}
-		final MainCmdItem answer = internalMainFromR(new ExtUICmdItem(command, 0, args, wait));
-		if (wait && answer instanceof ExtUICmdItem && answer.isOK()) {
-			return ((ExtUICmdItem) answer).getDataMap();
-		}
-		return null;
 	}
 	
 	@Override

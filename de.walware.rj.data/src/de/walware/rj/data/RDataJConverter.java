@@ -11,6 +11,9 @@
 
 package de.walware.rj.data;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 
 
 /**
@@ -69,6 +72,18 @@ public class RDataJConverter {
 		if (javaObj instanceof String[]) {
 			return this.rObjectFactory.createVector(
 					this.rObjectFactory.createCharData((String[]) javaObj) );
+		}
+		if (javaObj instanceof Map) {
+			final Map<?, ?> map = (Map<?, ?>) javaObj;
+			final String[] names = new String[map.size()];
+			final RObject[] components = new RObject[map.size()];
+			int i = 0;
+			for (final Entry<?, ?> entry : map.entrySet()) {
+				names[i] = (String) entry.getKey();
+				components[i] = toRJ(entry.getValue());
+				i++;
+			}
+			return this.rObjectFactory.createList(components, names);
 		}
 		return null;
 	}

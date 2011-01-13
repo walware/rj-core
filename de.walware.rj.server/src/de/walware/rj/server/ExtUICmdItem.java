@@ -12,9 +12,9 @@
 package de.walware.rj.server;
 
 import java.io.IOException;
-import java.util.Map;
 
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RList;
 
 
 /**
@@ -35,26 +35,19 @@ public final class ExtUICmdItem extends MainCmdItem {
 	
 	
 	private String command;
-	private Map<String, Object> map;
+	private RList data;
 	
 	private RjsStatus status;
 	
 	
-	public ExtUICmdItem(final String command, final int options, final boolean waitForClient) {
-		assert (command != null);
-		this.command = command;
-		this.options = (waitForClient) ?
-				(options | OM_WAITFORCLIENT) : (options);
-	}
-	
-	public ExtUICmdItem(final String command, final int options, final Map<String, Object> args, final boolean waitForClient) {
+	public ExtUICmdItem(final String command, final int options, final RList args, final boolean waitForClient) {
 		assert (command != null);
 		this.command = command;
 		this.options = (waitForClient) ?
 				(options | OM_WAITFORCLIENT) : (options);
 		if (args != null) {
 			this.options |= OV_WITHMAP;
-			this.map = args;
+			this.data = args;
 		}
 	}
 	
@@ -76,7 +69,8 @@ public final class ExtUICmdItem extends MainCmdItem {
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {
-			this.map = io.readStringKeyHashMap();
+			io.flags = 0;
+			this.data = (RList) DataCmdItem.gDefaultFactory.readObject(io);
 		}
 	}
 	
@@ -90,7 +84,8 @@ public final class ExtUICmdItem extends MainCmdItem {
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {
-			io.writeStringKeyMap(this.map);
+			io.flags = 0;
+			DataCmdItem.gDefaultFactory.writeObject(this.data, io);
 		}
 	}
 	
@@ -112,11 +107,11 @@ public final class ExtUICmdItem extends MainCmdItem {
 		}
 	}
 	
-	public void setAnswer(final Map<String, Object> answer) {
+	public void setAnswer(final RList answer) {
 		this.options = (answer != null) ? 
 				((this.options & OM_CLEARFORANSWER) | OM_MAPANSWER) : (this.options & OM_CLEARFORANSWER);
 		this.status = null;
-		this.map = answer;
+		this.data = answer;
 	}
 	
 	
@@ -135,8 +130,8 @@ public final class ExtUICmdItem extends MainCmdItem {
 		return this.command;
 	}
 	
-	public Map<String, Object> getDataMap() {
-		return this.map;
+	public RList getDataArgs() {
+		return this.data;
 	}
 	
 	
@@ -153,7 +148,7 @@ public final class ExtUICmdItem extends MainCmdItem {
 			return false;
 		}
 		if (((this.options & OV_WITHMAP) != 0)
-				&& !getDataMap().equals(otherItem.getDataMap())) {
+				&& !getDataArgs().equals(otherItem.getDataArgs())) {
 			return false;
 		}
 		return true;
@@ -168,9 +163,9 @@ public final class ExtUICmdItem extends MainCmdItem {
 		sb.append(Integer.toHexString(this.options));
 		sb.append(")");
 		if ((this.options & OV_WITHMAP) != 0) {
-			sb.append("\n<TEXT>\n");
-			sb.append(this.map.toString());
-			sb.append("\n</TEXT>");
+			sb.append("\n<ARGS>\n");
+			sb.append(this.data.toString());
+			sb.append("\n</ARGS>");
 		}
 		else {
 			sb.append("\n<TEXT />");

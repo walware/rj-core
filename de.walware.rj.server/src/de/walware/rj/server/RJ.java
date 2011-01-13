@@ -47,10 +47,6 @@ public class RJ {
 		instance = null;
 	}
 	
-	public Map<String, Object> execUICommand(final String command, final Map<String, Object> args, final boolean wait) {
-		throw new UnsupportedOperationException();
-	}
-	
 	public void registerGraphic(final RjsGraphic graphic) {
 	}
 	
