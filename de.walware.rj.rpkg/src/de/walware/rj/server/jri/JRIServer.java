@@ -135,6 +135,12 @@ public class JRIServer extends RJ
 	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
 	
 	
+	private static final int CODE_DATA_COMMON = 0x1000;
+	private static final int CODE_DATA_EVAL_DATA = 0x1010;
+	private static final int CODE_DATA_RESOLVE_DATA = 0x1020;
+	private static final int CODE_DATA_ASSIGN_DATA = 0x1030;
+	
+	
 	private static long s2long(final String s, final long defaultValue) {
 		if (s != null && s.length() > 0) {
 			final int multi;
@@ -1402,7 +1408,8 @@ public class JRIServer extends RJ
 						cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
 					}
 					else {
-						cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, 0x1021, "Invalid reference."));
+						cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
+								"Invalid reference." ));
 					}
 				}
 				break DATA_CMD;
@@ -1433,7 +1440,8 @@ public class JRIServer extends RJ
 		catch (final Throwable e) {
 			final String message = "Eval data failed. Cmd:\n" + cmd.toString() + ".";
 			LOGGER.log(Level.SEVERE, message, e);
-			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, 0x1001, "Internal server error (see server log)."));
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_COMMON | 0x1),
+					"Internal server error (see server log)." ));
 			return cmd;
 		}
 		finally {
@@ -1477,7 +1485,7 @@ public class JRIServer extends RJ
 	
 	private long rniEval(final String expression) throws RjsException {
 		final long exprP = rniResolveExpression(expression);
-		return rniEvalExpr(exprP, 0x1002);
+		return rniEvalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x3));
 	}
 	
 	/**
@@ -1489,7 +1497,8 @@ public class JRIServer extends RJ
 	*/ 
 	private void rniAssign(final String expression, final RObject obj) throws RjsException {
 		if (obj == null) {
-			throw new RjsException(0x1032, "The R object to assign is missing.");
+			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x2),
+					"The R object to assign is missing." );
 		}
 		long exprP = rniResolveExpression(expression);
 		this.rEngine.rniProtect(exprP);
@@ -1502,17 +1511,19 @@ public class JRIServer extends RJ
 								0, false ),
 						0, false ),
 				0, true );
-		rniEvalExpr(exprP, 0x1033);
+		rniEvalExpr(exprP, (CODE_DATA_ASSIGN_DATA | 0x3));
 	}
 	
 	private long rniResolveExpression(final String expression) throws RjsException {
 		final long exprP = this.rEngine.rniParse(expression, 1);
-		if (exprP == 0 || this.rEngine.rniExpType(exprP) != REXP.EXPRSXP) {
-			throw new RjsException(0x1031, "The specified expression is invalid (syntax error).");
+		if (this.rEngine.rniExpType(exprP) != REXP.EXPRSXP) {
+			throw new RjsException((CODE_DATA_COMMON | 0x3),
+					"The specified expression is invalid (syntax error)." );
 		}
 		final long[] expressionsP = this.rEngine.rniGetVector(exprP);
-		if (expressionsP == null || expressionsP.length != 1 || expressionsP[0] == this.rniP_NULL) {
-			throw new RjsException(0x1031, "The specified expression is invalid (not a single expression).");
+		if (expressionsP == null || expressionsP.length != 1) {
+			throw new RjsException((CODE_DATA_COMMON | 0x3),
+					"The specified expression is invalid (not a single expression)." );
 		}
 		return expressionsP[0];
 	}
@@ -1545,13 +1556,13 @@ public class JRIServer extends RJ
 					message = "<no information available>";
 				}
 				switch (code) {
-				case 0x1002:
+				case (CODE_DATA_EVAL_DATA | 0x3):
 					message = "An error occurred when evaluation the specified expression in R " + message + ".";
 					break;
-				case 0x1033:
-					message = "An error occurred when assigning the value to the specified expression in R" + message + ".";
+				case (CODE_DATA_ASSIGN_DATA | 0x3):
+					message = "An error occurred when assigning the value to the specified expression in R " + message + ".";
 					break;
-				case 0x1038:
+				case (CODE_DATA_ASSIGN_DATA | 0x8):
 					message = "An error occurred when instancing an S4 object in R " + message + ".";
 					break;
 				default:
@@ -1647,12 +1658,14 @@ public class JRIServer extends RJ
 					this.rniP_newSymbol, this.rEngine.rniCons(
 							this.rEngine.rniPutString(s4obj.getRClassName()), objP,
 							this.rniP_ClassSymbol, false ),
-					0, true ), 0x1038 );
+					0, true ),
+					(CODE_DATA_ASSIGN_DATA | 0x8) );
 			this.rEngine.rniProtect(objP);
 			this.rniProtectedCounter++;
 			return objP; }
 		default:
-			throw new RjsException(0x1037, "The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported.");
+			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x7),
+					"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
 		}
 	}
 	
