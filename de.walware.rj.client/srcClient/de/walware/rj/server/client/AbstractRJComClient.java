@@ -32,6 +32,7 @@ import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RReference;
 import de.walware.rj.server.BinExchange;
@@ -259,7 +260,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public final boolean processUICallback(final RJIO io) throws IOException {
 		final ExtUICmdItem item = new ExtUICmdItem(io);
 		try {
-			handleUICallback(item, this.progressMonitor);
+			final RList answer = handleUICallback(item.getDataText(), item.getDataArgs(),
+					this.progressMonitor);
+			item.setAnswer(answer);
 		}
 		catch (final IOException e) {
 			throw e;
@@ -277,11 +280,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		return false;
 	}
 	
-	protected void handleUICallback(final ExtUICmdItem item, final IProgressMonitor monitor) throws Exception {
-		log(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "Unhandled RJ UI command '" + item.getDataText() + "'.", null)); 
-		if (item.waitForClient()) {
-			item.setAnswer(new RjsStatus(RjsStatus.ERROR, 0, "Client error processing current command."));
-		}
+	protected RList handleUICallback(final String commandId, final RList args,
+			final IProgressMonitor monitor) throws Exception {
+		throw new CoreException(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "Unhandled RJ UI command '" + commandId + "'.", null)); 
 	}
 	
 	
