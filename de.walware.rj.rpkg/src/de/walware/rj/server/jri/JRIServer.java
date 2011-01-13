@@ -2465,7 +2465,7 @@ public class JRIServer extends RJ
 		}, new String[] {
 				"newResource",
 		} );
-		final RList answer = execUICommand(ExtUICmdItem.C_CHOOSE_FILE, args, true);
+		final RList answer = execUICommand("common/chooseFile", args, true);
 		if (answer != null) {
 			final RObject filenameObject = answer.get("filename");
 			if (RDataUtil.isSingleString(filenameObject)) {
@@ -2483,7 +2483,7 @@ public class JRIServer extends RJ
 		}, new String[] {
 				"filename",
 		} );
-		execUICommand(ExtUICmdItem.C_LOAD_HISTORY, args, true);
+		execUICommand("common/loadHistory", args, true);
 	}
 	
 	public void rSaveHistory(final Rengine re, final String filename) {
@@ -2494,7 +2494,7 @@ public class JRIServer extends RJ
 		}, new String[] {
 				"filename",
 		} );
-		execUICommand(ExtUICmdItem.C_SAVE_HISTORY, args, true);
+		execUICommand("common/saveHistory", args, true);
 	}
 	
 	public long rExecJCommand(final Rengine re, String commandId, final long argsExpr, final int options) {

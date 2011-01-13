@@ -22,11 +22,6 @@ import de.walware.rj.data.RList;
  */
 public final class ExtUICmdItem extends MainCmdItem {
 	
-	public static final String C_CHOOSE_FILE = "chooseFile";
-	public static final String C_LOAD_HISTORY = "loadHistory";
-	public static final String C_SAVE_HISTORY = "saveHistory";
-	public static final String C_SHOW_HISTORY = "showHistory";
-	public static final String C_ADDTO_HISTORY = "addtoHistory";
 	
 	private static final int OV_WITHMAP =          0x10000000;
 	private static final int OV_WITHSTATUS =        0x40000000;

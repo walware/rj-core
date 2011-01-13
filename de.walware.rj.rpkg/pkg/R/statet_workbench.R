@@ -28,3 +28,11 @@ statet.chooseFile <- function(new = FALSE) {
 	}
 	return (answer$filename)
 }
+
+#' Shows the Cmd History view in StatET
+#' 
+#' @export
+statet.showHistory <- function() {
+	.rj_ui.execCommand("common/showHistory", wait= FALSE)
+	return (invisible())
+}

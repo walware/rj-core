@@ -34,7 +34,7 @@
 	if (!is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")
 	}
-	.rj_ui.execCommand("loadHistory", list(
+	.rj_ui.execCommand("common/loadHistory", list(
 					filename = filename ), TRUE)
 	return (invisible())
 }
@@ -42,7 +42,7 @@
 	if (!is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")
 	}
-	.rj_ui.execCommand("saveHistory", list(
+	.rj_ui.execCommand("common/saveHistory", list(
 					filename = filename ), TRUE)
 	return (invisible())
 }
@@ -50,7 +50,7 @@
 	if (missing(line) || !is.character(line) || length(line) != 1) {
 		stop("Illegal argument: line")
 	}
-	.rj_ui.execCommand("addtoHistory", list(
+	.rj_ui.execCommand("common/addtoHistory", list(
 					line = line ), FALSE)
 	return (invisible())
 }
