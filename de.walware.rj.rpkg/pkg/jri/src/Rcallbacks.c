@@ -456,3 +456,36 @@ SEXP Re_ExecJCommand(SEXP commandId, SEXP args, SEXP options)
 	
 	return (v) ? v : R_NilValue;
 }
+
+
+int Re_ProcessJEventsRequested;
+
+void Re_ProcessJEvents();
+
+void Re_CallbackHandler()
+{
+	if (Re_ProcessJEventsRequested) {
+		Re_ProcessJEvents();
+	}
+}
+
+void Re_ProcessJEvents()
+{	
+	JNIEnv *lenv = checkEnvironment();
+	jmethodID mid;
+	
+	jri_checkExceptions(lenv, 1);
+	mid = (*lenv)->GetMethodID(lenv, engineClass, "jriProcessJEvents", "()V");
+	jri_checkExceptions(lenv, 0);
+	
+#ifdef JRI_DEBUG
+	printf("jriProcessJEvents mid=%x\n", mid);
+#endif
+	Re_ProcessJEventsRequested = 0;
+	if (!mid) {
+		return;
+	}
+	(*lenv)->CallVoidMethod(lenv, engineObj, mid);
+	jri_checkExceptions(lenv, 1);
+}
+

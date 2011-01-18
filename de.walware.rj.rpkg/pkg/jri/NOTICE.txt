@@ -8,4 +8,4 @@ client applications
   - Support for no-save/save startup arguments of R on Linux
   - Support for C stack size of R thread (experimental)
   - Added flexible, generic callback mechanism to execute Java commands using R ("ExecJCommand")
-
+  - Added mechanism to process Java events using a R callback handler ("ProcessJEvents")

@@ -53,4 +53,11 @@ public interface RMainLoopCallbacks {
 	 **/
 	long rExecJCommand(Rengine re, String commandId, long argsExpr, int options);
 	
+	/**
+	 * Called to process events. Must be enabled by {@link Rengine#rniSetProcessJEvents(int)}.
+	 * 
+	 * @param re the calling engine
+	 **/
+	public void rProcessJEvents(Rengine re);
+	
 }

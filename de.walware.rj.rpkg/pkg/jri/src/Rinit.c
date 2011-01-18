@@ -21,6 +21,7 @@ static const R_CallMethodDef callMethods[]  = {
 #define R_INTERFACE_PTRS 1
 #define CSTACK_DEFNS 1
 #include <Rinterface.h>
+#include <R_ext/eventloop.h>
 /* and SaveAction is not officially exported */
 extern SA_TYPE SaveAction;
 
@@ -92,7 +93,8 @@ int initR(int argc, char **argv, unsigned long stacksize) {
     ptr_R_ChooseFile = Re_ChooseFile;
     ptr_R_loadhistory = Re_loadhistory;
     ptr_R_savehistory = Re_savehistory;
-
+    
+    R_PolledEvents = Re_CallbackHandler;
 #ifdef JGR_DEBUG
 	printf("Setting up R event loop\n");
 #endif
@@ -170,11 +172,6 @@ extern void ProcessEvents(void);
 extern void end_Rmainloop(void), R_ReplDLLinit(void);
 extern int R_ReplDLLdo1();
 extern void run_Rmainloop(void);
-
-void myCallBack()
-{
-    /* called during i/o, eval, graphics in ProcessEvents */
-}
 
 #ifndef YES
 #define YES    1
@@ -280,7 +277,7 @@ int initR(int argc, char **argv, unsigned long stacksize)
     Rp->Busy = Re_Busy;
     Rp->ShowMessage = Re_ShowMessage;
     Rp->YesNoCancel = myYesNoCancel;
-    Rp->CallBack = myCallBack;
+    Rp->CallBack = Re_CallbackHandler;
     Rp->CharacterMode = LinkDLL;
 
     Rp->R_Quiet = FALSE;

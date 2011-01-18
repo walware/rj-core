@@ -27,5 +27,7 @@ void Re_loadhistory(SEXP call, SEXP op, SEXP args, SEXP env);
 void Re_savehistory(SEXP call, SEXP op, SEXP args, SEXP env);
 int  Re_ShowFiles(int nfile, RCCONST char **file, RCCONST char **headers, RCCONST char *wtitle, Rboolean del, RCCONST char *pager);
 SEXP Re_ExecJCommand(SEXP commandId, SEXP args, SEXP options);
+extern int Re_ProcessJEventsRequested;
+void Re_CallbackHandler();
 
 #endif

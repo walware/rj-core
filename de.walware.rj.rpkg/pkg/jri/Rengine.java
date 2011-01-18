@@ -415,7 +415,15 @@ public class Rengine extends Thread {
 	@param flag determines how to attempt to inform R about the interrput. For normal (safe) operation using flag signalling must be 0. Other options are 1 (SIGINT for compatibility with older JRI API) and 2 (<tt>Rf_onintr</tT> call - use <u>only</u> on the R thread and only if you know what it means). Values other than 0 are only supported since JRI 0.5-4.
 	@return result code (currently 0) */
     public native int rniStop(int flag);
-    
+	
+	/** RNI:
+	 * Sets the callback flag to the specified value
+	 * 
+	 * @param flag (1 = enable one callback)
+	 * @return result code (currently unused)
+	 */
+	public native int rniSetProcessJEvents(int flag);
+	
     /** RNI: assign a value to an environment
 	@param name name
 	@param exp value
@@ -529,6 +537,13 @@ public class Rengine extends Thread {
 			return this.callback.rExecJCommand(this, commandId, argsExpr, options);
 		}
 		return 0;
+	}
+	
+	public void jriProcessJEvents()
+	{
+		if (this.callback != null) {
+			this.callback.rProcessJEvents(this);
+		}
 	}
 	
 	

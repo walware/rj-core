@@ -72,6 +72,9 @@ class TextConsole2 implements RMainLoopCallbacks
         return 0;
     }
     
+    public void rProcessJEvents(Rengine re) {
+    }
+    
 }
 
 public class rtest2 {

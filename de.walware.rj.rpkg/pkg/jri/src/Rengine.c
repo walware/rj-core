@@ -658,4 +658,9 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniStop
     return 0;
 }
 
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetProcessJEvents(
+		JNIEnv *env, jobject this, jint flag) {
+	Re_ProcessJEventsRequested = (int) flag;
+	return 0;
+}
 

@@ -211,6 +211,9 @@ public class JRIServer extends RJ
 			initEngine(re);
 			return JRIServer.this.rExecJCommand(re, commandId, argsExpr, options);
 		}
+		public void rProcessJEvents(final Rengine re) {
+			JRIServer.this.rProcessJEvents(re);
+		}
 	}
 	
 	
@@ -2566,6 +2569,9 @@ public class JRIServer extends RJ
 			return ((ExtUICmdItem) answer).getDataArgs();
 		}
 		return null;
+	}
+	
+	public void rProcessJEvents(final Rengine re) {
 	}
 	
 	private void internalRStopped() {
