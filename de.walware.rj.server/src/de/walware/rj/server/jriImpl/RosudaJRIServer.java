@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RMainLoopCallbacks;
 import org.rosuda.JRI.Rengine;
-import org.rosuda.rj.JRClassLoader;
+import org.rosuda.rj.JRIClassLoader;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
@@ -210,7 +210,7 @@ public class RosudaJRIServer extends RJ
 	private String name;
 	
 	private Server publicServer;
-	private JRClassLoader rClassLoader;
+	private JRIClassLoader rClassLoader;
 	private Rengine rEngine;
 	private List<String> rArgs;
 	private long rCSSize;
@@ -446,7 +446,7 @@ public class RosudaJRIServer extends RJ
 			
 			final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 			try {
-				this.rClassLoader = JRClassLoader.getRJavaClassLoader();
+				this.rClassLoader = JRIClassLoader.getRJavaClassLoader();
 				Thread.currentThread().setContextClassLoader(this.rClassLoader);
 				
 				if (Rengine.getVersion() < REQUIRED_JRI_API) {
@@ -722,7 +722,7 @@ public class RosudaJRIServer extends RJ
 		
 		loadPlatformData();
 		
-		if (this.rClassLoader.getOSType() == JRClassLoader.OS_WIN) {
+		if (this.rClassLoader.getOSType() == JRIClassLoader.OS_WIN) {
 			if (this.rArgs.contains("--internet2")) {
 				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0L);
 			}
@@ -792,7 +792,7 @@ public class RosudaJRIServer extends RJ
 				checked.add(arg);
 			}
 		}
-		if (!saveState && this.rClassLoader.getOSType() != JRClassLoader.OS_WIN) {
+		if (!saveState && this.rClassLoader.getOSType() != JRIClassLoader.OS_WIN) {
 			checked.add(0, "--interactive");
 		}
 		this.rArgs = checked;

@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
-import org.rosuda.rj.JRClassLoader;
+import org.rosuda.rj.JRIClassLoader;
 
 import de.walware.rj.server.Server;
 import de.walware.rj.server.srvImpl.InternalEngine;
@@ -43,9 +43,9 @@ public final class RosudaJRILoader {
 		try {
 			final boolean verbose = args.containsKey("verbose");
 			if (verbose) {
-				JRClassLoader.setDebug(1000);
+				JRIClassLoader.setDebug(1000);
 			}
-			final JRClassLoader loader = JRClassLoader.getRJavaClassLoader();
+			final JRIClassLoader loader = JRIClassLoader.getRJavaClassLoader();
 			if (verbose) {
 				loader.setDefaultAssertionStatus(true);
 			}
@@ -80,11 +80,6 @@ public final class RosudaJRILoader {
 				final Method versionMethod = rEngineClazz.getMethod("getVersion");
 				final long version = ((Long) versionMethod.invoke(null)).longValue();
 				String serverClazzName = "de.walware.rj.server.jriImpl.RosudaJRIServer";
-				if (!args.containsKey("disable-jri-switch")) {
-					if (version < 0x010a) { // 3159 (rJava < 0.8)
-						serverClazzName = "de.walware.rj.server.jriImpl.RosudaJRIServer1";
-					}
-				}
 				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass(serverClazzName);
 				loader.loadRJavaClass(serverClazzName + "$InitCallbacks");
 				

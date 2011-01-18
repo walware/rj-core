@@ -1,6 +1,6 @@
 Encoding: UTF-8
 Package: rj
-Version: 0.5.2-1
+Version: 0.5.5-1
 Date: 2010-12-23
 Title: R Package for high-level Java-R library RJ
 Author: Stephan Wahlbrink, Tobias Verbeke
@@ -8,7 +8,9 @@ Maintainer: Stephan Wahlbrink <stephan.wahlbrink@walware.de>
 Depends: R (>= 2.9.0)
 Imports: rJava
 Suggests: JavaGD
+SystemRequirements: java
 Description: R functions for the RJ library.  Also includes callback functions
   for StatET.  The package can be use only when R was loaded via RJ.
+  The package is shipped with the JRI library by Simon Urbanek.
 License: LGPL (>= 2.1)
 URL: http://www.walware.de/goto/statet

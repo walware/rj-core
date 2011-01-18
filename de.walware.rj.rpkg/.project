@@ -35,4 +35,16 @@
 		<nature>org.eclipse.pde.PluginNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>srcJRI/org/rosuda/JRI</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/pkg/jri</locationURI>
+		</link>
+		<link>
+			<name>srcJRIExamples</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/pkg/jri/examples</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

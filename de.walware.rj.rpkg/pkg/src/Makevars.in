@@ -1,0 +1,15 @@
+PKG_CPPFLAGS=-I. @JAVA_CPPFLAGS@
+PKG_LIBS=@JAVA_LIBS@
+JAVA_HOME=@JAVA_HOME@
+
+JRI_SRC=../jri
+JRI_DST=../inst/jri
+
+all: $(SHLIB) jri
+
+jri:
+	(cd $(JRI_SRC) && $(MAKE))
+	-@(mkdir -p $(JRI_DST))
+	@(cp -r $(JRI_SRC)/src/JRI.jar $(JRI_SRC)/*jri.* $(JRI_SRC)/run $(JRI_SRC)/examples $(JRI_DST))
+
+.PHONY: all

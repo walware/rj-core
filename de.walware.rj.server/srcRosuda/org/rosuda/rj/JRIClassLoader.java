@@ -31,22 +31,22 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 
-public class JRClassLoader extends URLClassLoader {
+public class JRIClassLoader extends URLClassLoader {
 	
-	private static JRClassLoader instance;
+	private static JRIClassLoader instance;
 	
-	public static JRClassLoader getRJavaClassLoader() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		synchronized (JRClassLoader.class) {
+	public static JRIClassLoader getRJavaClassLoader() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		synchronized (JRIClassLoader.class) {
 			if (instance != null) {
 				return instance;
 			}
-			instance = (JRClassLoader) Class.forName("RJavaClassLoader").newInstance();
+			instance = (JRIClassLoader) Class.forName("RJavaClassLoader").newInstance();
 			return instance;
 		}
 	}
 	
 	
-	private static final Logger LOGGER = Logger.getLogger("org.rosuda.rjava");
+	private static final Logger LOGGER = Logger.getLogger("org.rosuda.jri");
 	public static boolean verbose = false;
 	
 	public static void setDebug(final int level) {
@@ -216,9 +216,9 @@ public class JRClassLoader extends URLClassLoader {
 	
 	
 	/** 
-	 * Path of rJava
+	 * Path of rj R package
 	 */
-	private String rJavaPath;
+	private String rjPath;
 	
 	/**
 	 * Map of native libraries (name, path)
@@ -240,7 +240,7 @@ public class JRClassLoader extends URLClassLoader {
 	private final boolean useSecond = "true".equalsIgnoreCase(System.getProperty("rjava.classloader.alternative")); // default false
 	
 	
-	protected JRClassLoader() {
+	protected JRIClassLoader() {
 		super(new URL[0], getSystemClassLoader());
 		this.libMap = new HashMap<String, UnixFile>();
 		this.classPath = new Vector<UnixFile>();
@@ -269,12 +269,12 @@ public class JRClassLoader extends URLClassLoader {
 		
 		initRLibs();
 		
-		this.rJavaPath = System.getProperty("rjava.path");
-		if (this.rJavaPath == null) {
-			this.rJavaPath = searchPackageInLibrary("rJava");
+		this.rjPath = System.getProperty("de.walware.rj.rpkg.path");
+		if (this.rjPath == null) {
+			this.rjPath = searchPackageInLibrary("rj");
 		}
-		if (this.rJavaPath == null) {
-			final String message = "Path to rJava package not found. Use R_LIBS or java property 'rjava.path' to specify the location.";
+		if (this.rjPath == null) {
+			final String message = "Path to rj package not found. Use R_LIBS or java property 'de.walware.rj.rpkg.path' to specify the location.";
 			LOGGER.log(Level.SEVERE, message);
 			throw new IllegalArgumentException(message);
 		}
@@ -285,29 +285,35 @@ public class JRClassLoader extends URLClassLoader {
 		}
 		
 		// rJava library
-		String rJavaLibPath = System.getProperty("rjava.rjavalibs");
-		if (rJavaLibPath == null) {
-			rJavaLibPath = this.rJavaPath + "/java";
+		String rJavaPath = System.getProperty("rjava.path");
+		if (rJavaPath == null) {
+			rJavaPath = searchPackageInLibrary("rJava");
 		}
-		addClassPath(this.rJavaPath + "/java");
-		final String rJavaDynlibName;
-		switch (this.os) {
-		case OS_WIN:
-			rJavaDynlibName = "rJava.dll";
-			break;
-		default:
-			rJavaDynlibName = "rJava.so";
-			break;
-		}
-		final UnixFile rJavaDynlibFile = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
-		if (rJavaDynlibFile.exists()) {
-			this.libMap.put("rJava", rJavaDynlibFile);
+		if (rJavaPath != null) {
+			String rJavaLibPath = System.getProperty("rjava.rjavalibs");
+			if (rJavaLibPath == null) {
+				rJavaLibPath = rJavaPath + "/java";
+			}
+			addClassPath(rJavaPath + "/java");
+			final String rJavaDynlibName;
+			switch (this.os) {
+			case OS_WIN:
+				rJavaDynlibName = "rJava.dll";
+				break;
+			default:
+				rJavaDynlibName = "rJava.so";
+				break;
+			}
+			final UnixFile rJavaDynlibFile = new UnixFile(rJavaLibPath + '/' + rJavaDynlibName);
+			if (rJavaDynlibFile.exists()) {
+				this.libMap.put("rJava", rJavaDynlibFile);
+			}
 		}
 		
 		// jri library
 		String jriLibPath = System.getProperty("rjava.jrilibs");
 		if (jriLibPath == null) {
-			jriLibPath = this.rJavaPath + "/jri";
+			jriLibPath = this.rjPath + "/jri";
 		}
 		final String jriDynlibName;
 		switch (this.os) {
@@ -336,7 +342,7 @@ public class JRClassLoader extends URLClassLoader {
 		
 		final UnixFile jriJarFile = searchFile(new String[] {
 				jriLibPath + "/JRI.jar",
-				this.rJavaPath + "/jri/JRI.jar",
+				this.rjPath + "/jri/JRI.jar",
 		});
 		if (jriJarFile != null) {
 			addClassPath(jriJarFile);

@@ -2,14 +2,6 @@
 
 #' Initializes the package
 .onLoad <- function(libname, pkgname) {
-	if (.jinit() < 0) {
-		stop(".jinit failed.")
-	}
-	if (!.jpackage(pkgname, lib.loc = libname)) {
-		stop(".jpackage failed.")
-	}
-	
-	.rj.jInstance <<- .jcall("de/walware/rj/server/RJ", "Lde/walware/rj/server/RJ;", "get")
 	
 	utilsEnv <- getNamespace("utils")
 	assign("help", envir = .rj.originals, value = get("help", envir = utilsEnv))
@@ -19,6 +11,17 @@
 	assign("file.choose", envir = .rj.originals, value = get("file.choose", envir = .BaseNamespaceEnv))
 	
 	return (invisible(TRUE))
+}
+
+.rj.init <- function() {
+	if (.jinit() < 0) {
+		stop(".jinit failed.")
+	}
+	if (!.jpackage(pkgname, lib.loc = libname)) {
+		stop(".jpackage failed.")
+	}
+	
+	.rj.jInstance <<- .jcall("de/walware/rj/server/RJ", "Lde/walware/rj/server/RJ;", "get")
 }
 
 .rj.jInstance <- NULL

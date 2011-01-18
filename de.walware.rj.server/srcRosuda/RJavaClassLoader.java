@@ -20,10 +20,13 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.util.logging.Logger;
 
-import org.rosuda.rj.JRClassLoader;
+import org.rosuda.rj.JRIClassLoader;
 
 
-public class RJavaClassLoader extends JRClassLoader {
+/**
+ * Java classloader compatible with rJava
+ */
+public class RJavaClassLoader extends JRIClassLoader {
 	
 	
 	public static RJavaClassLoader primaryLoader = null;

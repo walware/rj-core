@@ -1,0 +1,15 @@
+JRI_SRC=../jri
+JRI_DST=../inst/jri
+
+all: $(SHLIB) jri
+
+jri:
+	(cd $(JRI_SRC) && $(MAKE))
+	-@(mkdir -p $(JRI_DST))
+	@(cp -r $(JRI_SRC)/src/JRI.jar $(JRI_SRC)/*jri.* $(JRI_SRC)/run.bat $(JRI_SRC)/examples $(JRI_DST)/)
+ifdef R_ARCH
+	-@(mkdir -p $(JRI_DST)$(R_ARCH))
+	@(cp -r $(JRI_SRC)/*jri.* $(JRI_DST)$(R_ARCH)/)
+endif
+
+.PHONY: all

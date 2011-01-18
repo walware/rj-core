@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# JRI
+echo "Configure JRI..."
+export RHOME
+export JAVA_HOME
+cd jri
+sh configure.win
+
