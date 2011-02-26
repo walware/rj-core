@@ -13,7 +13,6 @@ package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
 
-import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RFunction;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObjectFactory;
@@ -24,16 +23,11 @@ public class RFunctionImpl extends AbstractRObject
 		implements RFunction, ExternalizableRObject {
 	
 	
-	public static RFunctionImpl createForServer(final String header) {
-		return new RFunctionImpl(header);
-	}
-	
-	
 	private String headerSource;
 	private String bodySource;
 	
 	
-	private RFunctionImpl(final String header) {
+	public RFunctionImpl(final String header) {
 		this.headerSource = header;
 	}
 	
@@ -71,10 +65,6 @@ public class RFunctionImpl extends AbstractRObject
 	
 	public String getBodySource() {
 		return this.bodySource;
-	}
-	
-	public RCharacterStore getNames() {
-		return null;
 	}
 	
 	public RStore getData() {

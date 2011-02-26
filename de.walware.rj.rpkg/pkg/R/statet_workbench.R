@@ -4,7 +4,7 @@
 #' @param filename name of file to open
 #' 
 #' @export
-statet_openInEditor <- function(filename) {
+statet.openInEditor <- function(filename) {
 	if (missing(filename) || !is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")
 	}
@@ -17,7 +17,7 @@ statet_openInEditor <- function(filename) {
 #' 
 #' @param new if the choosen file can be new (does not yet exits)
 #' @export
-statet_chooseFile <- function(new = FALSE) {
+statet.chooseFile <- function(new = FALSE) {
 	if (!is.logical(new) || length(new) != 1) {
 		stop("Illegal argument: new")
 	}
@@ -28,4 +28,3 @@ statet_chooseFile <- function(new = FALSE) {
 	}
 	return (answer$filename)
 }
-

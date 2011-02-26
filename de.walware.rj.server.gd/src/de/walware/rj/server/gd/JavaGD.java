@@ -45,6 +45,7 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 		return getDeviceNumber();
 	}
 	
+	
 	@Override
 	public void gdOpen(final int devNr, final double w, final double h) {
 		super.gdOpen(devNr, w, h);

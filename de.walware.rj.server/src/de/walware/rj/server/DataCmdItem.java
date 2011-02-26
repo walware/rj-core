@@ -158,7 +158,9 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
-		writeExternal(RJIO.get(out));
+		final RJIO io = RJIO.get(out);
+		writeExternal(io);
+		io.out = null;
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
@@ -185,7 +187,9 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException {
-		readExternal(RJIO.get(in));
+		final RJIO io = RJIO.get(in);
+		readExternal(io);
+		io.in = null;
 	}
 	
 	

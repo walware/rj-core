@@ -572,7 +572,7 @@ public class RDataUtil {
 	}
 	
 	public static int binarySearch(final RStore data,
-			int[] fromIdxs, int length, int[] values) {
+			final int[] fromIdxs, final int length, final int[] values) {
 		if (fromIdxs.length > values.length) {
 			throw new IllegalArgumentException();
 		}
@@ -605,7 +605,7 @@ public class RDataUtil {
 		return -(low + 1);  // key not found.
 	}
 	
-	public static int compare(int[] values1, int[] values2) {
+	public static int compare(final int[] values1, final int[] values2) {
 		for (int i = 0; i < values1.length; i++) {
 			if (values1[i] < values2[i]) {
 				return -1;

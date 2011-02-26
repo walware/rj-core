@@ -517,59 +517,32 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		case RObject.TYPE_MISSING:
 			return;
 		case RObject.TYPE_VECTOR:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_ARRAY:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_LIST:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_DATAFRAME:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_ENV:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_FUNCTION:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_REFERENCE:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_S4OBJECT:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		case RObject.TYPE_OTHER:
-			if (robject instanceof ExternalizableRObject) {
-				((ExternalizableRObject) robject).writeExternal(io, this);
-				return;
-			}
-			throw new UnsupportedOperationException();
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
 		default:
 			throw new IOException("object type = " + type);
 		}

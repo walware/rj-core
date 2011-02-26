@@ -110,7 +110,7 @@ public class AbstractServerControl {
 		LOGGER.log(Level.CONFIG, sb.toString());
 	}
 	
-	public static void exit(int status) {
+	public static void exit(final int status) {
 		System.err.flush();
 		System.out.flush();
 		System.exit(status);

@@ -109,9 +109,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (final InterruptedException e) {
-					Thread.interrupted();
-				}
+				catch (final InterruptedException e) {}
 			}
 		}
 		if (this.pendingLogin == FAILED) {
@@ -130,9 +128,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (final InterruptedException e) {
-					Thread.interrupted();
-				}
+				catch (final InterruptedException e) {}
 			}
 		}
 		if (this.pendingLogin != LOGGED_IN) {
@@ -156,9 +152,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 				try {
 					wait();
 				}
-				catch (final InterruptedException e) {
-					Thread.interrupted();
-				}
+				catch (final InterruptedException e) {}
 			}
 		}
 		this.pendingLogin = 0;
@@ -196,9 +190,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 					try {
 						wait();
 					}
-					catch (final InterruptedException e) {
-						Thread.interrupted();
-					}
+					catch (final InterruptedException e) {}
 				}
 			}
 			

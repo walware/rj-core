@@ -51,7 +51,7 @@ public interface RComplexStore extends RStore {
 		}
 		
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(final Object obj) {
 			if (!(obj instanceof Complex)) {
 				return false;
 			}

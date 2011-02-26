@@ -78,7 +78,7 @@
 	tmpout <- textConnection("rdHTML", open = "w", local = TRUE, encoding = "UTF-8")
 	tools:::Rd2HTML(rd, out = tmpout, dynamic = TRUE, package = pkg.name)
 	close(tmpout)
-	rdHTML
+	return (rdHTML)
 }
 
 .statet.checkPkg <- function(id, libPath, name) {

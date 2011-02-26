@@ -126,7 +126,7 @@ public class RMIServerControl extends AbstractServerControl {
 		catch (final NotBoundException e) {
 			exit(0);
 		}
-		catch (MalformedURLException e) {
+		catch (final MalformedURLException e) {
 			final LogRecord record = new LogRecord(Level.SEVERE,
 					"{0} the server address ''{1}'' is invalid.");
 			record.setParameters(new Object[] { this.logPrefix, this.name });

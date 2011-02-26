@@ -73,6 +73,7 @@ public final class JRIServerLoader {
 			final InternalEngine engine;
 			try {
 				Thread.currentThread().setContextClassLoader(loader);
+				
 				loader.loadRJavaClass("org.rosuda.JRI.REXP");
 				loader.loadRJavaClass("org.rosuda.JRI.RMainLoopCallbacks");
 				final Class<?> rEngineClazz = loader.loadRJavaClass("org.rosuda.JRI.Rengine");

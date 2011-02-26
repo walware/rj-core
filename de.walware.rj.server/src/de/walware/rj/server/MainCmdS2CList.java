@@ -60,6 +60,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 				out.writeByte(item.getCmdType());
 				item.writeExternal(io);
 			} while ((item = item.next) != null);
+			io.out = null;
 		}
 		out.writeByte(MainCmdItem.T_NONE);
 	}
@@ -109,6 +110,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
+				io.in = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				item = item.next = new ConsoleReadCmdItem(io);
@@ -126,6 +128,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 				item = item.next = new DataCmdItem(io);
 				continue;
 			default:
+				io.in = null;
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
 			}
 		}
