@@ -251,9 +251,6 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVar(
 	}
 	
 	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, sVar, TRUE);
-	if (TYPEOF(sVar) == PROMSXP) {
-		sVar = eval(sVar, R_BaseEnv);
-	}
 	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
 }
 
@@ -263,10 +260,46 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVarBySym(
 	SEXP sVar;
 	
 	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, L2SEXP(symName), TRUE);
-	if (TYPEOF(sVar) == PROMSXP) {
-		sVar = eval(sVar, R_BaseEnv);
-	}
 	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetPromise(
+		JNIEnv *env, jobject this, jlong p, jint t)
+{
+	SEXP s = L2SEXP(p);
+	SEXP sVal = PRVALUE(s);
+	int er = 0;
+	if (sVal == R_UnboundValue) {
+		if (t == 0) {
+			return 0;
+		}
+		switch (TYPEOF(PRCODE(s))) {
+		case NILSXP:
+		case LISTSXP:
+		case INTSXP:
+		case REALSXP:
+		case STRSXP:
+		case CPLXSXP:
+		case RAWSXP:
+		case S4SXP:
+		case SPECIALSXP:
+		case BUILTINSXP:
+		case ENVSXP:
+		case CLOSXP:
+		case VECSXP:
+		case EXTPTRSXP:
+		case WEAKREFSXP:
+			sVal = Rf_eval(s, R_BaseEnv);
+			break;
+		default:
+			if (t == 1) {
+				return 0;
+			}
+			sVal = R_tryEval(s, R_BaseEnv, &er);
+			break;
+		}
+	}
+	return (!er && sVal != R_UnboundValue) ? SEXP2L(sVal) : 0;
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniSpecialObject

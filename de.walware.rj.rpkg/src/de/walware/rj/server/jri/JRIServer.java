@@ -69,6 +69,7 @@ import de.walware.rj.data.defaultImpl.RMissing;
 import de.walware.rj.data.defaultImpl.RNull;
 import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 import de.walware.rj.data.defaultImpl.ROtherImpl;
+import de.walware.rj.data.defaultImpl.RPromise;
 import de.walware.rj.data.defaultImpl.RReferenceImpl;
 import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
 import de.walware.rj.data.defaultImpl.SimpleRListImpl;
@@ -1652,7 +1653,7 @@ public final class JRIServer extends RJ
 	}
 	
 	/**
-	 * Assigns an {@link RObject RJ R object} to an expression (e.g. symbol) in R.
+	 * Creates and assigns an {@link RObject RJ R object} to an expression (e.g. symbol) in R.
 	 * 
 	 * @param expression an expression the R object is assigned to
 	 * @param obj an R object to assign
@@ -1740,7 +1741,7 @@ public final class JRIServer extends RJ
 	 * (Java to R).
 	 * 
 	 * @param obj an R object
-	 * @return long R pointer
+	 * @return long protected R pointer
 	 * @throws RjsException 
 	 */ 
 	private long rniAssignDataObject(final RObject obj) throws RjsException {
@@ -1899,13 +1900,21 @@ public final class JRIServer extends RJ
 	 * @param force forces the creation of the object (ignoring the depth etc.)
 	 * @return new created R object
 	 */ 
-	private RObject rniCreateDataObject(final long objP, final int flags, final byte mode) {
+	private RObject rniCreateDataObject(long objP, final int flags, final byte mode) {
 		if (mode == EVAL_MODE_DEFAULT && (this.rniDepth >= this.rniMaxDepth)) {
 			return null;
 		}
 		this.rniDepth++;
 		try {
-			final int rType = this.rEngine.rniExpType(objP);
+			int rType = this.rEngine.rniExpType(objP);
+			if (rType == REXP.PROMSXP) {
+				objP = this.rEngine.rniGetPromise(objP, 
+						((flags & RObjectFactory.F_LOAD_PROMISE) != 0) ? 2 : 1);
+				if (objP == 0) {
+					return RPromise.INSTANCE;
+				}
+				rType = this.rEngine.rniExpType(objP);
+			}
 			switch (rType) {
 			case REXP.NILSXP:
 				return RNull.INSTANCE;
@@ -2274,6 +2283,9 @@ public final class JRIServer extends RJ
 				break; // invalid
 			}
 			case REXP.SYMSXP: {
+				if (objP == this.rniP_MissingArg) {
+					return RMissing.INSTANCE;
+				}
 				return ((flags & F_ONLY_STRUCT) != 0) ? 
 						new JRILanguageImpl(RLanguage.NAME, null) :
 						new JRILanguageImpl(RLanguage.NAME, this.rEngine.rniGetSymbolName(objP), null);
@@ -2309,7 +2321,6 @@ public final class JRIServer extends RJ
 				return new ROtherImpl(className1);
 			}
 			}
-			
 //				final long classP = this.rEngine.rniEval(this.rEngine.rniCons(this.rniP_classFun,
 //						this.rEngine.rniCons(objP, this.rniP_NULL, this.rniP_xSymbol, false), 0, true),
 //						this.rniP_BaseEnv);

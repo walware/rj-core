@@ -11,8 +11,6 @@ public class Rengine extends Thread {
 	 */
 	public static boolean jriLoaded;
 
-    boolean loopHasLock = false;
-    
     static {
         try {
             System.loadLibrary("jri");
@@ -460,6 +458,8 @@ public class Rengine extends Thread {
 		@return reference to a string vector of names in the environment */
 	public synchronized native long rniListEnv(long exp, boolean all);
 	
+	public synchronized native long rniGetPromise(long exp, int t);
+	
 	/** RNI:
 	 * Get variable in an environment
 	 * 
@@ -574,17 +574,7 @@ public class Rengine extends Thread {
     {
 	if (DEBUG>1)
 	    System.out.println("Rengine.jreReadConsole BEGIN "+Thread.currentThread());
-        if (loopHasLock) {
-	    Rsync.unlock();
-	    loopHasLock = false;
-	}
         String s = (callback == null) ? null : callback.rReadConsole(this, prompt, addToHistory);
-        loopHasLock = Rsync.safeLock();
-	if (!loopHasLock) {
-            String es = "\n>>JRI Warning: jriReadConsole detected a possible deadlock ["+Rsync+"]["+Thread.currentThread()+"]. Proceeding without lock, but this is inherently unsafe.\n";
-            jriWriteConsole(es, 1);
-            System.err.print(es);
-        }
 	if (DEBUG>1)
 	    System.out.println("Rengine.jreReadConsole END "+Thread.currentThread());
         return s;
@@ -749,12 +739,11 @@ public class Rengine extends Thread {
     public void run() {
 	if (DEBUG > 0)
 	    System.out.println("Starting R...");
-	loopHasLock = Rsync.safeLock(); // force all code to wait until R is ready
+	Rsync.safeLock(); // force all code to wait until R is ready
 	try {
 	    if (setupR(args) == 0) {
-		if (!runLoop && loopHasLock) { // without event loop we can unlock now since we woin't do anything
+		if (!runLoop ) { // without event loop we can unlock now since we woin't do anything
 		    Rsync.unlock();
-		    loopHasLock = false;
 		}
 		while (alive) {
 		    try {
@@ -784,7 +773,7 @@ public class Rengine extends Thread {
 		System.err.println("Unable to start R");
 	    }
 	} finally {
-	    if (loopHasLock) Rsync.unlock();
+	    Rsync.unlock();
 	}
     }
 	

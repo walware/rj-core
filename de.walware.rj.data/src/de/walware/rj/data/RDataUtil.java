@@ -116,6 +116,8 @@ public class RDataUtil {
 			return "<other>";
 		case RObject.TYPE_MISSING:
 			return "<missing>";
+		case RObject.TYPE_PROMISE:
+			return "<promise>";
 		default:
 			return "<unkown>";
 		}

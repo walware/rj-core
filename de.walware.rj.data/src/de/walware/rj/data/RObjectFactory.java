@@ -24,6 +24,9 @@ public interface RObjectFactory {
 	int F_WITH_ATTR = 0x2;
 	
 	
+	/** Flag to eval all promises directly */
+	int F_LOAD_PROMISE = 0x20;
+	
 	int O_WITH_ATTR = 0x2;
 	
 	int O_CLASS_NAME = 0x4;

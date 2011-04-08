@@ -514,6 +514,8 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			return new ROtherImpl(io, this);
 		case RObject.TYPE_MISSING:
 			return RMissing.INSTANCE;
+		case RObject.TYPE_PROMISE:
+			return RPromise.INSTANCE;
 		default:
 			throw new IOException("object type = " + type);
 		}
@@ -529,6 +531,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		switch (type) {
 		case RObject.TYPE_NULL:
 		case RObject.TYPE_MISSING:
+		case RObject.TYPE_PROMISE:
 			return;
 		case RObject.TYPE_VECTOR:
 			((ExternalizableRObject) robject).writeExternal(io, this);

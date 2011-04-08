@@ -36,6 +36,11 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		this.length = values.length;
 	}
 	
+	public RIntegerDataImpl(final int[] values, final int length) {
+		this.intValues = values;
+		this.length = length;
+	}
+	
 	public RIntegerDataImpl(final int[] values, final int[] naIdxs) {
 		this.intValues = values;
 		this.length = values.length;

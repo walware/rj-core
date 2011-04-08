@@ -116,6 +116,13 @@ public interface RObject {
 	 */
 	byte TYPE_MISSING =         0x11;
 	
+	/**
+	 * Constant indicating an R object is not yet evaluated.
+	 * 
+	 * @since 0.6.0
+	 */
+	byte TYPE_PROMISE =         0x12;
+	
 	
 	//-- Common class names --//
 	String CLASSNAME_LOGICAL = "logical";

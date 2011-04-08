@@ -29,6 +29,7 @@ import de.walware.rj.data.defaultImpl.RMissing;
 import de.walware.rj.data.defaultImpl.RNull;
 import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 import de.walware.rj.data.defaultImpl.ROtherImpl;
+import de.walware.rj.data.defaultImpl.RPromise;
 import de.walware.rj.data.defaultImpl.RReferenceImpl;
 import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
 import de.walware.rj.data.defaultImpl.RVectorImpl;
@@ -97,6 +98,8 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			return new ROtherImpl(io, this);
 		case RObject.TYPE_MISSING:
 			return RMissing.INSTANCE;
+		case RObject.TYPE_PROMISE:
+			return RPromise.INSTANCE;
 		default:
 			throw new IOException("object type = " + type);
 		}
