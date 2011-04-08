@@ -24,10 +24,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
@@ -39,6 +41,7 @@ import de.walware.rj.server.BinExchange;
 import de.walware.rj.server.ComHandler;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleReadCmdItem;
+import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
@@ -55,7 +58,7 @@ import de.walware.rj.services.RService;
 /**
  * Generic RJ Com protocol client for servers offering a {@link ConsoleEngine}.
  * <p>
- * Offers basic implementation for most methods of the {@link RService} API,
+ * It offers basic implementation for most methods of the {@link RService} API,
  * including:</p>
  * <ul>
  *   <li>Expression evaluation</li>
@@ -64,6 +67,17 @@ import de.walware.rj.services.RService;
  *   <li>R graphics (requires an {@link RClientGraphicFactory}, set in {@link #initGraphicFactory()},
  *       or via {@link #setGraphicFactory(RClientGraphicFactory, RClientGraphicActions)})</li>
  *   <li>Console (REPL), if connected to server slot 0</li>
+ * </ul>
+ * <p>
+ * If offers two mechanisms allowing the usage of RService API and R thread when they are already
+ * used by a regular call. So the two modes allows to "hijack" the R thread to "inject" additional
+ * calls to the RService API:</p>
+ * <ul>
+ *   <li>Hot Mode: Enables to run code in any situation, also if R is busy. Nesting of hot modes is
+ *       not possible. It can be requested asynchronous from any thread. The hot mode is appropriate
+ *       for e.g. short task for the GUI.</li>
+ *   <li>Extra Mode: Enables to run code at the before or after of a client-server communication.
+ *       Must be requested synchronous from the R thread.</li>
  * </ul>
  */
 public abstract class AbstractRJComClient implements ComHandler {
@@ -74,6 +88,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public static int[] version() {
 		return new int[] { 1, 0, 0 };
 	}
+	
+	public static final int EXTRA_BEFORE = 1;
+	public static final int EXTRA_NESTED = 2;
 	
 	private static final ScheduledExecutorService RJHelper_EXECUTOR =
 			Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("RJHelper"));
@@ -119,6 +136,22 @@ public abstract class AbstractRJComClient implements ComHandler {
 		
 	}
 	
+	private class HotModeRequestRunnable implements Runnable {
+		
+		public void run() {
+			if (AbstractRJComClient.this.hotModeRequested.get()) {
+				try {
+					runAsyncCtrl(CtrlCmdItem.REQUEST_HOT_MODE);
+				}
+				catch (final CoreException e) {
+					if (e.getStatus().getSeverity() != IStatus.CANCEL) {
+						log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when requesting hot mode.", e));
+					}
+				}
+			}
+		}
+	}
+	
 	
 	private IProgressMonitor progressMonitor;
 	
@@ -136,7 +169,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	private int dataLevelRequest = 0;
 	private int dataLevelAnswer = 0;
+	private int dataLevelIgnore = 0;
 	private final DataCmdItem[] dataAnswer = new DataCmdItem[16];
+	
+	private int hotModeState;
+	private ConsoleReadCmdItem hotModeReadCallbackBackup;
+	private MainCmdItem hotModeC2SFirstBackup;
+	private final AtomicBoolean hotModeRequested = new AtomicBoolean();
+	private final Runnable hotModeRunnable = new HotModeRequestRunnable();
+	
+	private int extraModeRequested;
 	
 	private RClientGraphicFactory graphicFactory;
 	private RClientGraphicActions graphicActions;
@@ -213,6 +255,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public final void processMainCmd(final ObjectInput in) throws IOException {
 		boolean runGC = false;
 		updateBusy(in.readBoolean());
+		if (this.hotModeState == 4) {
+			this.hotModeState = 0;
+			this.consoleReadCallback = this.hotModeReadCallbackBackup;
+			this.hotModeReadCallbackBackup = null;
+			if (this.hotModeC2SFirstBackup != null) {
+				addC2SCmd(this.hotModeC2SFirstBackup);
+				this.hotModeC2SFirstBackup = null;
+			}
+		}
 		
 		this.mainIO.in = in;
 		while (true) {
@@ -222,9 +273,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 				this.mainRunGC = runGC;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				this.consoleReadCallback = new ConsoleReadCmdItem(this.mainIO);
-				updatePrompt(this.consoleReadCallback.getDataText(),
-						(this.consoleReadCallback.getCmdOption() & 0xf) == RjsComObject.V_TRUE);
+				processPrompt(new ConsoleReadCmdItem(this.mainIO));
 				continue;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
 				runGC = true;
@@ -448,7 +497,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private final void finalizeDataLevel() {
 		final int level = this.dataLevelRequest--;
 		this.dataAnswer[level] = null;
-		this.dataLevelAnswer = 0;
+		this.dataLevelAnswer = (this.dataAnswer[this.dataLevelRequest] != null) ? this.dataLevelRequest : 0;
 	}
 	
 	
@@ -480,15 +529,29 @@ public abstract class AbstractRJComClient implements ComHandler {
 			// TODO if (rmiregistry is available) scheduleCheck();
 			// no need to log here
 		}
+		catch (final Exception e) {
+		}
 		return false;
 	}
 	
-	public final void runAsyncInterrupt() {
+	public final boolean runAsyncInterrupt() {
 		try {
-			this.rjConsoleServer.interrupt();
+			runAsyncCtrl(CtrlCmdItem.REQUEST_CANCEL);
+			return true;
 		}
-		catch (final RemoteException e) {
-			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when trying to interrupt R.", e));
+		catch (final CoreException e) {
+			if (e.getStatus().getSeverity() != IStatus.CANCEL) {
+				log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when trying to interrupt R.", e));
+			}
+			return false;
+		}
+	}
+	
+	public final void runAsyncCtrl(final int id) throws CoreException {
+		final RjsStatus status = (RjsStatus) runAsync(new CtrlCmdItem(id));
+		if (status.getSeverity() != RjsStatus.OK) {
+			throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+					"Executing CTRL command failed.", null));
 		}
 	}
 	
@@ -526,64 +589,119 @@ public abstract class AbstractRJComClient implements ComHandler {
 		if (this.closed) {
 			throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID, 0, this.closedMessage, null));
 		}
-		this.progressMonitor = monitor;
-		int ok = 0;
-		while (true) {
-			try {
-				RjsComObject receivedCom = null;
-				if (sendItem != null) {
-					if (sendItem.getCmdType() == MainCmdItem.T_CONSOLE_READ_ITEM) {
-						this.consoleReadCallback = null;
-					}
-					this.mainC2SList.setObjects(sendItem);
-					sendCom = this.mainC2SList;
-					sendItem = null;
-				}
-//				System.out.println("client *-> server: " + sendCom);
-				this.mainRunGC = false;
-				receivedCom = this.rjConsoleServer.runMainLoop(sendCom);
-				this.mainC2SList.clear();
-				sendCom = null;
-//				System.out.println("client *<- server: " + receivedCom);
-				switch (receivedCom.getComType()) {
-				case RjsComObject.T_PING:
-					sendCom = RjsStatus.OK_STATUS;
-					ok = 0;
-					continue;
-				case RjsComObject.T_MAIN_LIST:
-					sendItem = getC2SCmds();
-					ok = 0;
-					if (sendItem == null
-							&& (!this.consoleReadCallbackRequired || this.consoleReadCallback != null)
-							&& (this.dataLevelRequest == this.dataLevelAnswer) ) {
-						if (this.mainRunGC) {
-							this.mainRunGC = false;
-							this.rjConsoleServer.runMainLoop(RjsPing.INSTANCE);
+		final boolean loopReadCallbackIgnore = !this.consoleReadCallbackRequired;
+		final int loopDataLevelIgnore = this.dataLevelIgnore;
+		try {
+			if ((this.extraModeRequested & EXTRA_BEFORE) != 0 && this.hotModeState < 1) {
+				this.extraModeRequested = 0;
+				this.dataLevelIgnore = this.dataLevelRequest;
+				processExtraMode(EXTRA_BEFORE);
+			}
+			if (this.hotModeRequested.get() && this.hotModeState < 1) {
+				this.dataLevelIgnore = this.dataLevelRequest;
+				startHotMode();
+			}
+			this.progressMonitor = monitor;
+			int ok = 0;
+			while (!this.closed) {
+				try {
+					RjsComObject receivedCom = null;
+					if (sendItem != null) {
+						if (sendItem.getCmdType() == MainCmdItem.T_CONSOLE_READ_ITEM) {
+							this.consoleReadCallback = null;
 						}
-						return;
+						this.mainC2SList.setObjects(sendItem);
+						sendCom = this.mainC2SList;
+						sendItem = null;
 					}
-					continue;
-				case RjsComObject.T_STATUS:
-					handleServerStatus((RjsStatus) receivedCom, monitor);
-					ok = 0;
+	//				System.out.println("client *-> server: " + sendCom);
+					this.mainRunGC = false;
+					receivedCom = this.rjConsoleServer.runMainLoop(sendCom);
+					this.mainC2SList.clear();
+					sendCom = null;
+	//				System.out.println("client *<- server: " + receivedCom);
+					switch (receivedCom.getComType()) {
+					case RjsComObject.T_PING:
+						ok = 0;
+						sendCom = RjsStatus.OK_STATUS;
+						continue;
+					case RjsComObject.T_MAIN_LIST:
+						ok = 0;
+						switch (this.hotModeState) {
+						case 1:
+							sendCom = this.mainC2SList; // repeat
+							continue;
+						case 2:
+							this.hotModeState = 3;
+							this.hotModeRequested.set(false);
+							this.dataLevelIgnore = this.dataLevelRequest;
+							try {
+								processHotMode();
+								continue;
+							}
+							finally {
+								this.progressMonitor = monitor;
+								this.hotModeState = 4;
+								this.consoleReadCallback.setAnswer(RjsStatus.OK_STATUS);
+								sendItem = this.consoleReadCallback;
+							}
+						default:
+							while ((sendItem = getC2SCmds()) == null
+									&& (loopReadCallbackIgnore || this.consoleReadCallback != null)
+									&& (this.dataLevelRequest <= loopDataLevelIgnore
+											|| this.dataLevelRequest == this.dataLevelAnswer
+											|| (this.extraModeRequested & EXTRA_NESTED) != 0 ) ) {
+								if (this.mainRunGC) {
+									this.mainRunGC = false;
+									this.rjConsoleServer.runMainLoop(RjsPing.INSTANCE);
+								}
+								if ((this.extraModeRequested & EXTRA_NESTED) != 0 && this.hotModeState < 1) {
+									this.extraModeRequested = 0;
+									this.dataLevelIgnore = this.dataLevelRequest;
+									try {
+										processExtraMode(EXTRA_NESTED);
+										continue; // validate again
+									}
+									finally {
+										this.progressMonitor = monitor;
+									}
+								}
+								else {
+									return; // finished
+								}
+							}
+							continue;
+						}
+					case RjsComObject.T_STATUS:
+						ok = 0;
+						processStatus((RjsStatus) receivedCom, monitor);
+						sendCom = this.mainC2SList;
+						continue;
+					}
+				}
+				catch (final ConnectException e) {
+					handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_DISCONNECTED), monitor);
+					return;
+				}
+				catch (final RemoteException e) {
+					log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "Communication error detail. Send:\n"+sendCom, e));
+					if (!this.closed && runAsyncPing()) { // async to avoid server gc
+						if (this.consoleReadCallback == null && ok == 0) {
+							ok++;
+							handleStatus(new Status(IStatus.ERROR, RJ_CLIENT_ID, "Communication error, see Eclipse log for detail."), monitor);
+							continue;
+						}
+						throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "Communication error.", e));
+					}
+					handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_LOST), monitor);
 					return;
 				}
 			}
-			catch (final ConnectException e) {
-				handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_DISCONNECTED), monitor);
-			}
-			catch (final RemoteException e) {
-				log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "Communication error detail. Send:\n"+sendCom, e));
-				if (!this.closed && runAsyncPing()) { // async to avoid server gc
-					if (this.consoleReadCallback == null && ok == 0) {
-						ok++;
-						handleStatus(new Status(IStatus.ERROR, RJ_CLIENT_ID, "Communication error, see Eclipse log for detail."), monitor);
-						continue;
-					}
-					throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "Communication error.", e));
-				}
-				handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_LOST), monitor);
-			}
+			
+			handleServerStatus(new RjsStatus(RjsStatus.INFO, Server.S_DISCONNECTED), monitor);
+		}
+		finally {
+			this.dataLevelIgnore = loopDataLevelIgnore;
 		}
 	}
 	
@@ -603,6 +721,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		else {
 			item.next = this.mainC2SFirst;
 			this.mainC2SFirst = item;
+			
+			// TODO
+			log(new Status(IStatus.INFO, RJ_CLIENT_ID, "Multiple C2S items:\\" + this.mainC2SFirst.toString() + "\n" + this.mainC2SFirst.next.toString()));
 		}
 	}
 	
@@ -610,6 +731,73 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final MainCmdItem item = this.mainC2SFirst;
 		this.mainC2SFirst = null;
 		return item;
+	}
+	
+	private final void processStatus(final RjsStatus status, final IProgressMonitor monitor)
+			throws CoreException {
+		if ((status.getCode() & 0xffffff00) == 0) {
+			handleServerStatus(status, monitor);
+			return;
+		}
+		if (status.getSeverity() != RjsStatus.OK) {
+			// TODO
+//			System.out.println(status);
+		}
+	}
+	
+	private final void processPrompt(final ConsoleReadCmdItem item) {
+		switch (item.getCmdOption() & 0xf) {
+		case 2:
+			if (this.hotModeState < 2) {
+				this.hotModeState = 2;
+				this.hotModeReadCallbackBackup = this.consoleReadCallback;
+				this.hotModeC2SFirstBackup = this.mainC2SFirst;
+				this.mainC2SFirst = null;
+			}
+			this.consoleReadCallback = item;
+			return;
+		case RjsComObject.V_TRUE:
+			this.consoleReadCallback = item;
+			updatePrompt(item.getDataText(), true);
+			return;
+		default:
+			this.consoleReadCallback = item;
+			updatePrompt(item.getDataText(), false);
+			return;
+		}
+	}
+	
+	public void requestHotMode(final boolean async) {
+		this.hotModeRequested.set(true);
+		if (async) {
+			RJHelper_EXECUTOR.schedule(this.hotModeRunnable, 100, TimeUnit.MILLISECONDS);
+		}
+	}
+	
+	public boolean startHotMode() {
+		if (this.hotModeState == 0) {
+			this.hotModeRequested.set(false);
+			final boolean savedCallbackRequired = this.consoleReadCallbackRequired;
+			this.consoleReadCallbackRequired = false;
+			try {
+				this.hotModeState = 1;
+				runMainLoop(new CtrlCmdItem(CtrlCmdItem.REQUEST_HOT_MODE), null, new NullProgressMonitor());
+				return true;
+			}
+			catch (final Throwable e) {
+				this.hotModeState = 0;
+				log(new Status(IStatus.ERROR, RJ_CLIENT_ID, 0,
+						"An error occurred when running hot mode.", e ));
+			}
+			finally {
+				this.consoleReadCallbackRequired = savedCallbackRequired;
+			}
+		}
+		return false;
+	}
+	
+	public void requestExtraMode(final int positions) {
+		this.extraModeRequested = positions;
 	}
 	
 	
@@ -626,6 +814,12 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	protected void showMessage(final String text) {
+	}
+	
+	protected void processHotMode() {
+	}
+	
+	protected void processExtraMode(final int i) {
 	}
 	
 	private void addGraphic(final int devId, final double w, final double h, final boolean activate) throws RjException {
