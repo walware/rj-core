@@ -24,6 +24,10 @@ public class JRIIntegerDataImpl extends RIntegerDataImpl {
 		super(values);
 	}
 	
+	public JRIIntegerDataImpl(final int[] values, final int length) {
+		super(values, length);
+	}
+	
 	public JRIIntegerDataImpl(final RJIO io) throws IOException {
 		super(io);
 	}

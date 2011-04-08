@@ -237,17 +237,17 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RCharacterStore> checkRCharVector(final RObject obj) throws UnexpectedRDataException {
+	public static RVector<RLogicalStore> checkRLogiVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
 		if (obj.getRObjectType() != RObject.TYPE_VECTOR) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
 		}
-		if (obj.getData().getStoreType() != RStore.CHARACTER) {
+		if (obj.getData().getStoreType() != RStore.LOGICAL) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getStoreAbbr(obj.getData()));
 		}
-		return (RVector<RCharacterStore>) obj;
+		return (RVector<RLogicalStore>) obj;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -265,17 +265,31 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RIntegerStore> checkRIntVector(final RObject obj, final int length) throws UnexpectedRDataException {
+	public static RVector<RNumericStore> checkRNumVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
 		if (obj.getRObjectType() != RObject.TYPE_VECTOR) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
 		}
-		if (obj.getData().getStoreType() != RStore.INTEGER) {
+		if (obj.getData().getStoreType() != RStore.NUMERIC) {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getStoreAbbr(obj.getData()));
 		}
-		return (RVector<RIntegerStore>) obj;
+		return (RVector<RNumericStore>) obj;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static RVector<RCharacterStore> checkRCharVector(final RObject obj) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		if (obj.getRObjectType() != RObject.TYPE_VECTOR) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
+		}
+		if (obj.getData().getStoreType() != RStore.CHARACTER) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getStoreAbbr(obj.getData()));
+		}
+		return (RVector<RCharacterStore>) obj;
 	}
 	
 	public static RArray<?> checkRArray(final RObject obj) throws UnexpectedRDataException {

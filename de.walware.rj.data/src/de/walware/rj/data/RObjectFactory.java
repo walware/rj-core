@@ -23,9 +23,12 @@ public interface RObjectFactory {
 	/** XXX: Not yet implemented */
 	int F_WITH_ATTR = 0x2;
 	
+	/** Flag to load environments directly instead of the reference only */
+	int F_LOAD_ENVIR = 0x10;
 	
 	/** Flag to eval all promises directly */
 	int F_LOAD_PROMISE = 0x20;
+	
 	
 	int O_WITH_ATTR = 0x2;
 	

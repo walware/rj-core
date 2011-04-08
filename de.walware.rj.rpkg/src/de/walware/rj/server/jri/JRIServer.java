@@ -2213,7 +2213,7 @@ public final class JRIServer extends RJ
 				return new JRIListImpl(itemObjects, className1, itemNames);
 			}
 			case REXP.ENVSXP: {
-				if (this.rniDepth > 1 && (flags & 0x8) == 0) {
+				if (this.rniDepth > 1 && (flags & RObjectFactory.F_LOAD_ENVIR) == 0) {
 					return new RReferenceImpl(objP, RObject.TYPE_REFERENCE, "environment");
 				}
 				final String[] names = this.rEngine.rniGetStringArray(this.rEngine.rniListEnv(objP, true));

@@ -23,6 +23,10 @@ import de.walware.rj.data.defaultImpl.RListImpl;
 public class JRIListImpl extends RListImpl {
 	
 	
+	public JRIListImpl(final RObject[] initialComponents, final int length) {
+		super(initialComponents, CLASSNAME_LIST, new String[length], length);
+	}
+	
 	public JRIListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
 		super(initialComponents, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, initialComponents.length);
 	}
