@@ -93,6 +93,10 @@ public final class RJIO {
 	}
 	
 	
+	public void writeInt(final int value) throws IOException {
+		this.out.writeInt(value);
+	}
+	
 	public void writeIntArray(final int[] array, final int length) throws IOException {
 		final ObjectOutput out = this.out;
 		out.writeInt(length);
@@ -126,6 +130,14 @@ public final class RJIO {
 				iw += icount;
 			}
 		}
+	}
+	
+	public void writeLong(final long value) throws IOException {
+		this.out.writeLong(value);
+	}
+	
+	public void writeDouble(final double value) throws IOException {
+		this.out.writeDouble(value);
 	}
 	
 	public void writeDoubleArray(final double[] array, final int length) throws IOException {
@@ -257,11 +269,17 @@ public final class RJIO {
 	}
 	
 	
+	public int readInt() throws IOException {
+		return this.in.readInt();
+	}
+	
 	public int[] readIntArray() throws IOException {
 		final ObjectInput in = this.in;
 		final int length = in.readInt();
 		if (length <= 256) {
 			switch (length) {
+			case -1:
+				return null;
 			case 0:
 				return EMPTY_INT_ARRAY;
 			case 1:
@@ -354,6 +372,14 @@ public final class RJIO {
 			}
 			return array;
 		}
+	}
+	
+	public long readLong() throws IOException {
+		return this.in.readLong();
+	}
+	
+	public double readDouble() throws IOException {
+		return this.in.readDouble();
 	}
 	
 	public double[] readDoubleArray() throws IOException {
