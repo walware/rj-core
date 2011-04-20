@@ -77,6 +77,8 @@ public final class RJIO {
 	
 	public int flags;
 	
+	private int serialKey;
+	
 	
 	public RJIO() {
 		this.bb = ByteBuffer.allocateDirect(BB_LENGTH);
@@ -90,8 +92,14 @@ public final class RJIO {
 		this.ca = new char[CA_LENGTH];
 		this.ib = this.bb.asIntBuffer();
 		this.db = this.bb.asDoubleBuffer();
+		
+		this.serialKey = (int) System.currentTimeMillis();
 	}
 	
+	
+	public void writeByte(final byte value) throws IOException {
+		this.out.writeByte(value);
+	}
 	
 	public void writeInt(final int value) throws IOException {
 		this.out.writeInt(value);
@@ -268,6 +276,10 @@ public final class RJIO {
 		this.out.flush();
 	}
 	
+	
+	public byte readByte() throws IOException {
+		return this.in.readByte();
+	}
 	
 	public int readInt() throws IOException {
 		return this.in.readInt();
@@ -691,6 +703,26 @@ public final class RJIO {
 		}
 		catch (final ClassNotFoundException e) {
 			throw new IOException(e.getMessage());
+		}
+	}
+	
+	
+	public int writeCheck1() throws IOException {
+		this.out.writeInt(++this.serialKey);
+		return this.serialKey;
+	}
+	
+	public void writeCheck2(int check) throws IOException {
+		this.out.writeInt(check);
+	}
+	
+	public int readCheck1() throws IOException {
+		return this.in.readInt();
+	}
+	
+	public void readCheck2(int check) throws IOException {
+		if (check != this.in.readInt()) {
+			throw new IOException("Corrupted stream detected.");
 		}
 	}
 	
