@@ -4,6 +4,7 @@
 	<property name="target.dir" value="pkg/inst/server"/>
 	
 	<target name="epack">
+		<mkdir dir="${basedir}/${target.dir}"/>
 		<jar jarfile="${basedir}/${target.dir}/rj.jar">
 			<fileset dir="src"/>
 			<fileset dir="bin"/>
