@@ -35,6 +35,8 @@ public class ServerUtil {
 	public static final String RJ_DATA_ID = "de.walware.rj.data";
 	public static final String RJ_SERVER_ID = "de.walware.rj.server";
 	
+	public static final int[] RJ_VERSION = new int[] { 0, 5, 5 };
+	
 	public static final RjsStatus MISSING_ANSWER_STATUS = new RjsStatus(RjsStatus.ERROR, 121, "Server error (missing answer).");
 	
 	
@@ -119,6 +121,19 @@ public class ServerUtil {
 			sb.append(sep);
 			if (value != null) {
 				sb.append(value);
+			}
+		}
+	}
+	
+	public static void prettyPrintVersion(final int[] version, final StringBuilder sb) {
+		if (version == null || version.length == 0) {
+			sb.append("<missing>");
+		}
+		else {
+			sb.append(version[0]);
+			for (int i = 1; i < version.length; i++) {
+				sb.append('.');
+				sb.append(version[i]);
 			}
 		}
 	}

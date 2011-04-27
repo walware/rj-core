@@ -324,6 +324,10 @@ public class JRIServer extends RJ
 	}
 	
 	
+	public int[] getVersion() {
+		return new int[] { 0, 5, 5 };
+	}
+	
 	public void init(final String name, final Server publicServer, final RJClassLoader loader) throws Exception {
 		if (loader == null) {
 			throw new NullPointerException("loader");
@@ -2521,6 +2525,7 @@ public class JRIServer extends RJ
 		graphic.setSlot(this.currentSlot);
 	}
 	
+	@Override
 	public void initLastGraphic(final int devId, final String target) {
 		if (this.graphicLast == null
 				|| (this.graphicLast.getDevId() > 0 && this.graphicLast.getDevId() != devId) ) {

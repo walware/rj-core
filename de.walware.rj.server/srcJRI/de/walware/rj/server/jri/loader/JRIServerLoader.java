@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
+import de.walware.rj.RjInitFailedException;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvext.ExtServer;
@@ -87,6 +88,20 @@ public final class JRIServerLoader {
 				Logger.getLogger("de.walware.rj.server.jri").log(Level.INFO, "Perhaps autodetection of RJ classpath entry failed: " + 
 						((myClasspath != null) ? myClasspath : "-"));
 				throw e;
+			}
+			
+			final int[] rjVersion = ServerUtil.RJ_VERSION;
+			final int[] implVersion = engine.getVersion();
+			if (implVersion.length < 2
+					|| implVersion[0] != rjVersion[0] || implVersion[1] != rjVersion[1]) {
+				final StringBuilder sb = new StringBuilder();
+				sb.append("The version of the loaded RJ server ");
+				ServerUtil.prettyPrintVersion(implVersion, sb);
+				sb.append(" is not compatible to RJ version ");
+				ServerUtil.prettyPrintVersion(rjVersion, sb);
+				sb.append(".");
+				sb.append(" Make sure that the correct R package 'rj' is installed and in the R library path.");
+				throw new RjInitFailedException(sb.toString());
 			}
 			
 			final ExtServer localServer = (ExtServer) engine;

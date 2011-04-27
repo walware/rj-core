@@ -20,6 +20,7 @@ import de.walware.rj.server.srvext.Client;
 
 public interface InternalEngine {
 	
+	int[] getVersion();
 	
 	int getState();
 	Client getCurrentClient();
