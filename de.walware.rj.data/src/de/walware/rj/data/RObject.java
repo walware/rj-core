@@ -82,6 +82,14 @@ public interface RObject {
 	 */
 	byte TYPE_S4OBJECT =        0x0a;
 	
+	
+	/**
+	 * Constant indicating an R language object.
+	 * <p>
+	 * The object is an instance of {@link RLanguage}.</p>
+	 */
+	byte TYPE_LANGUAGE =        0x0c;
+	
 	/**
 	 * Constant indicating an R function object.
 	 * <p>
@@ -125,6 +133,9 @@ public interface RObject {
 	String CLASSNAME_LIST = "list";
 	String CLASSNAME_PAIRLIST = "pairlist";
 	String CLASSNAME_ENV = "environment";
+	String CLASSNAME_NAME = "name";
+	String CLASSNAME_EXPRESSION = "expression";
+	String CLASSNAME_CALL = "call";
 	
 	String CLASSNAME_NULL = "NULL";
 	

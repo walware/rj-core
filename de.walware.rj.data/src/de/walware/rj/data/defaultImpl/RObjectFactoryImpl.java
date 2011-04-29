@@ -21,6 +21,7 @@ import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RLanguage;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
@@ -404,6 +405,17 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	
+	/*-- Language --*/
+	
+	public RLanguage createName(final String name) {
+		return new RLanguageImpl(RLanguage.NAME, name, RObject.CLASSNAME_NAME);
+	}
+	
+	public RLanguage createExpression(final String expr) {
+		return new RLanguageImpl(RLanguage.EXPRESSION, expr, RObject.CLASSNAME_EXPRESSION);
+	}
+	
+	
 	/*-- Data/RStore --*/
 	
 	public RLogicalStore createLogiData(final boolean[] logiValues) {
@@ -490,6 +502,8 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			return new RDataFrameImpl(io, this);
 		case RObject.TYPE_ENV:
 			return new REnvironmentImpl(io, this);
+		case RObject.TYPE_LANGUAGE:
+			return new RLanguageImpl(io, this);
 		case RObject.TYPE_FUNCTION:
 			return new RFunctionImpl(io, this);
 		case RObject.TYPE_REFERENCE:
@@ -529,6 +543,9 @@ public class RObjectFactoryImpl implements RObjectFactory {
 			((ExternalizableRObject) robject).writeExternal(io, this);
 			return;
 		case RObject.TYPE_ENV:
+			((ExternalizableRObject) robject).writeExternal(io, this);
+			return;
+		case RObject.TYPE_LANGUAGE:
 			((ExternalizableRObject) robject).writeExternal(io, this);
 			return;
 		case RObject.TYPE_FUNCTION:

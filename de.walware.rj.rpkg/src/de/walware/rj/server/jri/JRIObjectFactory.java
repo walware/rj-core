@@ -85,6 +85,8 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			return new JRIDataFrameImpl(io, this);
 		case RObject.TYPE_ENV:
 			return new REnvironmentImpl(io, this);
+		case RObject.TYPE_LANGUAGE:
+			return new JRILanguageImpl(io, this);
 		case RObject.TYPE_FUNCTION:
 			return new RFunctionImpl(io, this);
 		case RObject.TYPE_REFERENCE:

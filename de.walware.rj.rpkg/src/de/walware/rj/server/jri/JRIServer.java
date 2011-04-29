@@ -51,6 +51,7 @@ import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
+import de.walware.rj.data.RLanguage;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RLogicalStore;
 import de.walware.rj.data.RNumericStore;
@@ -352,6 +353,7 @@ public class JRIServer extends RJ
 	private long rniP_complexFun;
 	private long rniP_envNameFun;
 	private long rniP_headerFun;
+	private long rniP_deparseLineXCall;
 	private long rniP_slotNamesFun;
 	private long rniP_ReFun;
 	private long rniP_ImFun;
@@ -692,61 +694,84 @@ public class JRIServer extends RJ
 					this.rniP_BaseEnv );
 			this.rEngine.rniPreserve(this.rniP_tryCatchFun);
 			
-			{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500),collapse="")
-				final long pasteFun = rniProtect(this.rEngine.rniEval(
+			{	final long pasteFun = rniProtect(this.rEngine.rniEval(
 						this.rEngine.rniInstallSymbol("paste"),
 						this.rniP_BaseEnv ));
 				final long deparseFun = rniProtect(this.rEngine.rniEval(
 						this.rEngine.rniInstallSymbol("deparse"),
 						this.rniP_BaseEnv ));
-				final long argsFun = rniProtect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("args"),
-						this.rniP_BaseEnv ));
+				
 				final long exprSymbol = this.rEngine.rniInstallSymbol("expr");
 				final long controlSymbol = this.rEngine.rniInstallSymbol("control");
 				final long widthcutoffSymbol = this.rEngine.rniInstallSymbol("width.cutoff");
 				final long collapseSymbol = this.rEngine.rniInstallSymbol("collapse");
 				
-				final long argList = rniProtect(this.rEngine.rniCons(
-						this.rniP_MissingArg, this.rniP_NULL,
-						this.rniP_xSymbol, false ));
-				final long argsCall = rniProtect(this.rEngine.rniCons(
-						argsFun, this.rEngine.rniCons(
-								this.rniP_xSymbol, this.rniP_NULL,
-								this.rniP_nameSymbol, false ),
-						0, true ));
 				final long deparseControlValue = rniProtect(this.rEngine.rniPutStringArray(
 						new String[] { "keepInteger", "keepNA" } ));
 				final long deparseWidthcutoffValue = rniProtect(this.rEngine.rniPutIntArray(
 						new int[] { 500 } ));
 				final long collapseValue = rniProtect(this.rEngine.rniPutString(""));
 				
-				final long deparseCall = rniProtect(this.rEngine.rniCons(
-						deparseFun, this.rEngine.rniCons(
-								argsCall, this.rEngine.rniCons(
-										deparseControlValue, this.rEngine.rniCons(
-												deparseWidthcutoffValue, this.rniP_NULL,
-												widthcutoffSymbol, false ),
-										controlSymbol, false ),
-								exprSymbol, false ),
-						0, true ));
-				final long body = this.rEngine.rniCons(
-						pasteFun, this.rEngine.rniCons(
-								deparseCall, this.rEngine.rniCons(
-										collapseValue, this.rniP_NULL,
-										collapseSymbol, false ),
-								0, false ),
-						0, true );
+				{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
+					final long argList = rniProtect(this.rEngine.rniCons(
+							this.rniP_MissingArg, this.rniP_NULL,
+							this.rniP_xSymbol, false ));
+					final long argsFun = rniProtect(this.rEngine.rniEval(
+							this.rEngine.rniInstallSymbol("args"),
+							this.rniP_BaseEnv ));
+					final long argsCall = rniProtect(this.rEngine.rniCons(
+							argsFun, this.rEngine.rniCons(
+									this.rniP_xSymbol, this.rniP_NULL,
+									this.rniP_nameSymbol, false ),
+							0, true ));
+					final long deparseCall = rniProtect(this.rEngine.rniCons(
+							deparseFun, this.rEngine.rniCons(
+									argsCall, this.rEngine.rniCons(
+											deparseControlValue, this.rEngine.rniCons(
+													this.rEngine.rniPutIntArray(new int[] { 500 }), this.rniP_NULL,
+													widthcutoffSymbol, false ),
+											controlSymbol, false ),
+									exprSymbol, false ),
+							0, true ));
+					final long body = this.rEngine.rniCons(
+							pasteFun, this.rEngine.rniCons(
+									deparseCall, this.rEngine.rniCons(
+											collapseValue, this.rniP_NULL,
+											collapseSymbol, false ),
+									0, false ),
+							0, true );
+					
+					this.rniP_headerFun = this.rEngine.rniEval(this.rEngine.rniCons(
+							this.rniP_functionSymbol, this.rEngine.rniCons(
+									argList, this.rEngine.rniCons(
+											body, this.rniP_NULL,
+											0, false ),
+									0, false ),
+							0, true ),
+							this.rniP_BaseEnv );
+					this.rEngine.rniPreserve(this.rniP_headerFun);
+				}
 				
-				this.rniP_headerFun = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.rniP_functionSymbol, this.rEngine.rniCons(
-								argList, this.rEngine.rniCons(
-										body, this.rniP_NULL,
-										0, false ),
-								0, false ),
-						0, true ),
-						this.rniP_BaseEnv );
-				this.rEngine.rniPreserve(this.rniP_headerFun);
+				{	// paste(deparse(expr=x,control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
+					final long deparseCall = rniProtect(this.rEngine.rniCons(
+							deparseFun, this.rEngine.rniCons(
+									this.rniP_xSymbol, this.rEngine.rniCons(
+											deparseControlValue, this.rEngine.rniCons(
+													deparseWidthcutoffValue, this.rniP_NULL,
+													widthcutoffSymbol, false ),
+											controlSymbol, false ),
+									exprSymbol, false ),
+							0, true ));
+					this.rEngine.rniPreserve(deparseCall);
+					this.rniP_deparseLineXCall = this.rEngine.rniCons(
+							pasteFun, this.rEngine.rniCons(
+									deparseCall, this.rEngine.rniCons(
+											collapseValue, this.rniP_NULL,
+											collapseSymbol, false ),
+									0, false ),
+							0, true );
+					this.rEngine.rniPreserve(this.rniP_deparseLineXCall);
+				}
 			}
 			this.rniP_slotNamesFun = this.rEngine.rniEval(
 					this.rEngine.rniParse("methods::.slotNames", 1),
@@ -1789,10 +1814,31 @@ public class JRIServer extends RJ
 							this.rniP_ClassSymbol, false ),
 					0, true ),
 					(CODE_DATA_ASSIGN_DATA | 0x8) )); }
+		case RObject.TYPE_LANGUAGE: {
+			final RLanguage lang = (RLanguage) obj;
+			if (lang.getLanguageType() == RLanguage.NAME) {
+				return this.rEngine.rniInstallSymbol(lang.getSource());
+			}
+			objP = this.rEngine.rniParse(lang.getSource(), -1);
+			if (objP == 0) {
+				throw new RjsException(CODE_DATA_ASSIGN_DATA | 0x9, "The language data is invalid.");
+			}
+			if (lang.getLanguageType() == RLanguage.CALL) {
+				final long[] list = this.rEngine.rniGetVector(objP);
+				if (list != null && list.length == 1
+						&& this.rEngine.rniExpType(list[0]) == REXP.LANGSXP ) {
+					return rniProtect(list[0]);
+				}
+			}
+			else {
+				return rniProtect(objP);
+			}
+			break; }
 		default:
-			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x7),
-					"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
+			break;
 		}
+		throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x7),
+				"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
 	}
 	
 	private long rniAssignDataStore(final RStore data) {
@@ -2222,20 +2268,31 @@ public class JRIServer extends RJ
 				break; // invalid
 			}
 			case REXP.SYMSXP: {
-				String className1;
-				if (mode == EVAL_MODE_DATASLOT
-						|| (className1 = this.rEngine.rniGetClassAttrString(objP)) == null ) {
-					className1 = "name";
+				return ((flags & F_ONLY_STRUCT) != 0) ? 
+						new JRILanguageImpl(RLanguage.NAME, null) :
+						new JRILanguageImpl(RLanguage.NAME, this.rEngine.rniGetSymbolName(objP), null);
+			}
+			case REXP.LANGSXP: {
+				final String className1;
+				if (mode != EVAL_MODE_DATASLOT) {
+					className1 = this.rEngine.rniGetClassAttrString(objP);
 				}
-				return new ROtherImpl(className1);
+				else {
+					className1 = null;
+				}
+				return ((flags & F_ONLY_STRUCT) != 0) ? 
+						new JRILanguageImpl(RLanguage.CALL, className1) :
+						new JRILanguageImpl(RLanguage.CALL, rniGetSource(objP), className1);
 			}
 			case REXP.EXPRSXP: {
 				String className1;
 				if (mode == EVAL_MODE_DATASLOT
 						|| (className1 = this.rEngine.rniGetClassAttrString(objP)) == null ) {
-					className1 = "expression";
+					className1 = null;
 				}
-				return new ROtherImpl(className1);
+				return ((flags & F_ONLY_STRUCT) != 0) ? 
+						new JRILanguageImpl(RLanguage.EXPRESSION, className1) :
+						new JRILanguageImpl(RLanguage.EXPRESSION, rniGetSource(objP), className1);
 			}
 			case REXP.EXTPTRSXP: {
 				String className1;
@@ -2428,6 +2485,20 @@ public class JRIServer extends RJ
 		return null;
 	}
 	
+	private String rniGetSource(final long objP) {
+		this.rniEvalTempAssigned = true;
+		if (this.rEngine.rniAssign("x", objP, this.rniP_RJTempEnv)) {
+			final String args;
+			final long argsP;
+			if ((argsP = this.rEngine.rniEval(this.rniP_deparseLineXCall, this.rniP_RJTempEnv)) != 0
+					&& (args = this.rEngine.rniGetString(argsP)) != null
+					&& args.length() > 0 ) {
+	//			return args.substring(9,);
+				return args;
+			}
+		}
+		return null;
+	}
 	
 	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 		if (this.safeMode) {

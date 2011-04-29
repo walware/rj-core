@@ -42,6 +42,9 @@ public interface RObjectFactory {
 	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
 	
+	RLanguage createName(String name);
+	RLanguage createExpression(String expr);
+	
 	RLogicalStore createLogiData(boolean[] logiValues);
 	RIntegerStore createIntData(int[] intValues);
 	RNumericStore createNumData(double[] numValues);
