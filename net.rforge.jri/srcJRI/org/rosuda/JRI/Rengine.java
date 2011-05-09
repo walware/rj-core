@@ -392,13 +392,13 @@ public class Rengine extends Thread {
 		@return new EXTPTRSEXP pointing to the Java object
 		@since API 1.5, JRI 0.3
 		*/
-	synchronized native long rniJavaToXref(Object o);
+	public synchronized native long rniJavaToXref(Object o);
 	/** RNI: convert EXTPTRSEXP to Java object - make sure the pointer is really what you expect, otherwise you'll crash the JVM!
 		@param exp reference to EXTPTRSEXP pointing to a Java object
 		@return resulting Java object
 		@since API 1.5, JRI 0.3
 		*/
-	synchronized native Object rniXrefToJava(long exp);
+	public synchronized native Object rniXrefToJava(long exp);
 	
     /** RNI: return the API version of the native library
 		@return API version of the native library */
