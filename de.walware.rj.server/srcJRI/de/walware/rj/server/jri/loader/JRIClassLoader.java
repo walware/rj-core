@@ -205,9 +205,9 @@ public class JRIClassLoader extends RJClassLoader {
 	
 	private final String r_home;
 	private final String r_arch;
-	private final List<String> r_libs;
 	private final List<String> r_libs_site;
 	private final List<String> r_libs_user;
+	private final List<String> r_libs;
 	
 	private final int os;
 	
@@ -251,8 +251,8 @@ public class JRIClassLoader extends RJClassLoader {
 		this.r_home = checkDirPath(System.getenv("R_HOME"));
 		this.r_arch = getNonEmpty(System.getenv("R_ARCH"), System.getProperty("r.arch"));
 		this.r_libs_site = checkDirPathList(System.getenv("R_LIBS_SITE"));
-		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		this.r_libs_user = checkDirPathList(System.getenv("R_LIBS_USER"));
+		this.r_libs = checkDirPathList(System.getenv("R_LIBS"));
 		final String osname = System.getProperty("os.name").toLowerCase();
 		if (osname.contains("win")) {
 			this.os = OS_WIN;
@@ -436,20 +436,18 @@ public class JRIClassLoader extends RJClassLoader {
 		synchronized (this.defaultLibPath) {
 			this.defaultLibPath.clear();
 			
-			// R user libraries (R_LIBS_USER)
-			if (this.r_libs_user != null) {
-				for (final String l : this.r_libs_user) {
-					this.defaultLibPath.add(l);
-				}
-			}
-			
 			// R other libraries (R_LIBS)
 			if (this.r_libs != null) {
 				for (final String l : this.r_libs) {
 					this.defaultLibPath.add(l);
 				}
 			}
-			
+			// R user libraries (R_LIBS_USER)
+			if (this.r_libs_user != null) {
+				for (final String l : this.r_libs_user) {
+					this.defaultLibPath.add(l);
+				}
+			}
 			// R site libraries (R_LIBS_SITE)
 			if (this.r_libs_site != null) {
 				for (final String l : this.r_libs_site) {
