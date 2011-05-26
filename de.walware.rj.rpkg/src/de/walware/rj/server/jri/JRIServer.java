@@ -39,6 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.rosuda.JRI.RConfig;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RMainLoopCallbacks;
 import org.rosuda.JRI.Rengine;
@@ -220,7 +221,7 @@ public class JRIServer extends RJ
 	private RJClassLoader rClassLoader;
 	private Rengine rEngine;
 	private List<String> rArgs;
-	private long rCSSize;
+	private RConfig rConfig;
 	private long rMemSize;
 	
 	private final ReentrantLock mainExchangeLock = new ReentrantLock();
@@ -315,7 +316,13 @@ public class JRIServer extends RJ
 	
 	
 	public JRIServer() {
-		this.rCSSize = s2long(System.getProperty("jri.threadCStackSize"), 16 * MEGA);
+		this.rConfig = new RConfig();
+		// default 16M, overwritten by arg --max-cssize, if set
+		this.rConfig.MainCStack_Size = s2long(
+				System.getProperty("de.walware.rj.rMainCStack_Size"), 16 * MEGA );
+		// default true
+		this.rConfig.MainCStack_SetLimit = !"false".equalsIgnoreCase(
+				System.getProperty("de.walware.rj.rMainCStack_SetLimit") );
 		
 		this.mainLoopState = ENGINE_NOT_STARTED;
 		this.mainLoopClient0State = CLIENT_NONE;
@@ -471,13 +478,9 @@ public class JRIServer extends RJ
 				}
 				
 				final String[] args = checkArgs((String[]) properties.get("args"));
-				System.setProperty("jri.threadCStackSize", Long.toString(this.rCSSize));
-				if (System.getProperty("jri.initCStackLimit") == null) {
-					System.setProperty("jri.initCStackLimit", "yes");
-				}
 				
 				this.mainLoopState = ENGINE_RUN_IN_R;
-				final Rengine re = new Rengine(args, true, new InitCallbacks());
+				final Rengine re = new Rengine(args, this.rConfig, true, new InitCallbacks());
 				
 				while (this.rEngine != re) {
 					Thread.sleep(100);
@@ -794,7 +797,7 @@ public class JRIServer extends RJ
 					long size = s2long(arg.substring(13), 0);
 					size = ((size + MEGA - 1) / MEGA) * MEGA;
 					if (size >= 4 * MEGA) {
-						this.rCSSize = size;
+						this.rConfig.MainCStack_Size = size;
 					}
 				}
 				else if (arg.startsWith("--max-mem-size=")) {

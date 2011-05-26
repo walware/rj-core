@@ -60,15 +60,6 @@ public class Rengine extends Thread {
 		return (getVersion()==rniGetVersion());
 	}
 	
-	private static long toLong(String s, long defaultValue) {
-		if (s != null) {
-			try {
-				return Long.parseLong(s);
-			} catch (NumberFormatException e) {}
-		}
-		return defaultValue;
-	}
-	
     /** debug flag. Set to value &gt;0 to enable debugging messages. The verbosity increases with increasing number */
     public static int DEBUG = 0;
 	
@@ -103,6 +94,8 @@ public class Rengine extends Thread {
     boolean died, alive, runLoop, loopRunning;
     /** arguments used to initialize R, set by the constructor */
 	String[] args;
+	/** Advanced configuration parameters */
+	RConfig config;
 	/** synchronization mutex */
 	Mutex Rsync;
 	/** callback handler */
@@ -114,13 +107,18 @@ public class Rengine extends Thread {
 	@param initialCallbacks an instance implementing the {@link org.rosuda.JRI.RMainLoopCallbacks RMainLoopCallbacks} interface that provides methods to be called by R
     */
     public Rengine(String[] args, boolean runMainLoop, RMainLoopCallbacks initialCallbacks) {
-        super(null, null, "Rengine Thread", toLong(System.getProperty("jri.threadCStackSize"), 0));
+        this(args, new RConfig(), runMainLoop, initialCallbacks);
+    }
+    
+    public Rengine(String[] args, RConfig config, boolean runMainLoop, RMainLoopCallbacks initialCallbacks) {
+        super(null, null, "Rengine Thread", config.MainCStack_Size);
         Rsync=new Mutex();
         died=false;
         alive=false;
         runLoop=runMainLoop;
         loopRunning=false;
         this.args=args;
+        this.config = config;
         callback=initialCallbacks;
         mainEngine=this;
 	mainRThread=this;
@@ -170,7 +168,7 @@ public class Rengine extends Thread {
     }
     
     synchronized int setupR(String[] args) {
-        int r=rniSetupR(args, "yes".equals(System.getProperty("jri.initCStackLimit")) ? toLong(System.getProperty("jri.threadCStackSize"), 0) : 0);
+        int r=rniSetupR(args, config.MainCStack_SetLimit ? config.MainCStack_Size : 0);
         if (r==0) {
             alive=true; died=false;
         } else {
