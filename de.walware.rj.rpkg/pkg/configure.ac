@@ -12,14 +12,14 @@ AC_SUBST(R_HOME)
 export R_HOME
 RBIN="${R_HOME}/bin/R"
 
-
+# Set CC/CFLAGS
 CC=`"${RBIN}" CMD config CC`;
 CFLAGS=`"${RBIN}" CMD config CFLAGS`
 
 AC_PROG_CC
 
 
-AC_MSG_CHECKING(Java config of R)
+AC_MSG_CHECKING(Java support in R)
 : ${JAVA_HOME=`"${RBIN}" CMD config JAVA_HOME|sed 's/ERROR:.*//'`}
 : ${JAVA=`"${RBIN}" CMD config JAVA|sed 's/ERROR:.*//'`}
 : ${JAVAC=`"${RBIN}" CMD config JAVAC|sed 's/ERROR:.*//'`}

@@ -19,7 +19,7 @@ if [ -z "$CONFIGURED" ]; then
 fi
 
 if [ x$JAVA_HOME = x ]; then
-    echo "ERROR: cannot find Java Development Kit." >&2
+    echo "ERROR: cannot find Java Development Kit (JDK)." >&2
     echo "       Please set JAVA_HOME to specify its location manually" >&2
     exit 1
 fi

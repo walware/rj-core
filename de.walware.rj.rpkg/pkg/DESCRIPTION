@@ -2,14 +2,15 @@ Encoding: UTF-8
 Package: rj
 Version: 0.5.5-4
 Date: 2011-01-11
-Title: R Package for high-level Java-R library RJ
-Author: Stephan Wahlbrink, Tobias Verbeke
+Title: RJ - R Package for high-level Java-R library RJ
+Author: Stephan Wahlbrink, Tobias Verbeke, low-level R binding based on the JRI library by Simon Urbanek
 Maintainer: Stephan Wahlbrink <stephan.wahlbrink@walware.de>
 Depends: R (>= 2.11.0)
 Suggests: rJava, JavaGD
 SystemRequirements: java
-Description: R functions for the RJ library.  Also includes callback functions
-  for StatET.  The package can be use only when R was loaded via RJ.
-  The package is shipped with the JRI library by Simon Urbanek.
+Description: Server implementation and R functions for the high-level Java-R library RJ.  The
+  package also includes callback functions for StatET.  It is shipped with an adapted version of
+  the JRI library.
+  The package can be use only when R was loaded via RJ.
 License: LGPL (>= 2.1)
-URL: http://www.walware.de/goto/statet
+URL: http://www.walware.de/goto/opensource

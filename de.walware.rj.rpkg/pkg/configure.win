@@ -6,4 +6,3 @@ export RHOME
 export JAVA_HOME
 cd jri
 sh configure.win
-
