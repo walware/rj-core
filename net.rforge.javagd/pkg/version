@@ -1,0 +1,9 @@
+#!/bin/sh
+
+PNAME=JavaGD
+VER=`sed -n -e 's/.*JavaGD v\([0-9.-]\{1,\}\).*/\1/p' src/javaGD.h`
+if test "$1" = "-f"; then 
+    echo "${PNAME}_${VER}.tar.gz"
+else
+    echo "${VER}"
+fi

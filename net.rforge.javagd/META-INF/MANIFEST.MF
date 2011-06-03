@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: JavaGD R Package
+Bundle-SymbolicName: net.rforge.javagd
+Bundle-Version: 0.5.3.qualifier
+Bundle-ClassPath: pkg/inst/java/javaGD.jar
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: org.rosuda.javaGD

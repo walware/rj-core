@@ -1,0 +1,7 @@
+# we need to add JNI specific stuff here
+ifdef DEBUG
+  PKG_CFLAGS+=-DJGD_DEBUG
+endif
+PKG_CFLAGS+=@XTRA_CF@ @JAVA_INC@ -Iinclude
+PKG_LIBS+=@XTRA_LD@ @JAVA_LIBS@
+JAVA_HOME=@JAVA_HOME@
