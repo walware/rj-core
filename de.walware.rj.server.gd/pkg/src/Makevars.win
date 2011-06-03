@@ -1,0 +1,11 @@
+# To compile the Windows version, you need to:
+# - install JDK 1.4 or higher
+# everything else should be handled by the configure.win script
+
+include Makevars.java
+
+# normally you don't have to touch this unless you want to add
+# debugging flags like -DRJ_DEBUG or -DRJ_PROFILE to PKG_CFLAGS
+JAVA_INCLUDES=$(JAVA_HOME)/include $(JAVA_HOME)/include/win32
+PKG_CFLAGS= -D_R_ -DWin32 -I$(RHOME)/src/include $(JAVA_INCLUDES:%=-I%) -Iinclude/Win32
+PKG_LIBS= -ljvm.dll -L$(TOP)/src -Ljvm-w32 -L.
