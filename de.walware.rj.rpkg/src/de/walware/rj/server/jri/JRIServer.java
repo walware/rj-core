@@ -332,7 +332,7 @@ public class JRIServer extends RJ
 	
 	
 	public int[] getVersion() {
-		return new int[] { 0, 5, 5 };
+		return new int[] { 1, 0, 0 };
 	}
 	
 	public void init(final String name, final Server publicServer, final RJClassLoader loader) throws Exception {
