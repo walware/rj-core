@@ -22,10 +22,19 @@
 
 package org.rosuda.javaGD;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.lang.reflect.Method;
+import java.util.Vector;
+
 
 public class GDCanvas extends Canvas implements GDContainer, MouseListener {
     Vector l;

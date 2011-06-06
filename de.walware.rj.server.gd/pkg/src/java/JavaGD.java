@@ -21,9 +21,10 @@
 
 package org.rosuda.javaGD;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.Method;
+import java.awt.Frame;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
 
 /** JavaGD is an implementation of the {@link GDInterface} protocol which displays the R graphics in an AWT window (via {@link GDCanvas}). It can be used as an example gfor implementing custom display classes which can then be used by JavaGD. Three sample back-ends are included in the JavaGD sources: {@link GDCanvas} (AWT), {@link JGDPanel} (Swing) and {@link JGDBufferedPanel} (Swing with cached update). */
 public class JavaGD extends GDInterface implements WindowListener {

@@ -1,22 +1,25 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(JavaGD, 0.5, Simon.Urbanek@math.uni-augsburg.de)
+AC_INIT(rj.gd, 0.5, stephan.wahlbrink@walware.de)
 AC_CONFIG_SRCDIR([src/javaGD.c])
 AC_CONFIG_HEADER([src/config.h])
 
-# find R home and set CC/CFLAGS
+AC_MSG_CHECKING(R config)
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
-  echo "could not determine R_HOME"
-  exit 1
+  AC_MSG_ERROR(cannot determine R_HOME)
 fi
-RBIN="${R_HOME}/bin/R"
-CC=`${RBIN} CMD config CC`;
-CPP=`${RBIN} CMD config CPP`;
-CFLAGS=`${RBIN} CMD config CFLAGS`
+AC_MSG_RESULT([found
+    R_HOME   : ${R_HOME}])
 AC_SUBST(R_HOME)
+RBIN="${R_HOME}/bin/R"
 
-# Checks for programs.
+# Set CC/CFLAGS
+CC=`"${RBIN}" CMD config CC`;
+CPP=`"${RBIN}" CMD config CPP`;
+CFLAGS=`"${RBIN}" CMD config CFLAGS`
+
 AC_PROG_CC
+
 
 # Checks for libraries.
 
@@ -34,19 +37,19 @@ AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([memset mkdir rmdir select socket])
 
-AC_MSG_CHECKING([Java support in R])
+
+AC_MSG_CHECKING(Java support in R)
 R_JAVA_HOME=`"${RBIN}" CMD config JAVA_HOME`
 : ${JAVA_HOME="${R_JAVA_HOME}"}
 if test -z "${JAVA_HOME}"; then
-   AC_MSG_ERROR([absent
-R was configured without Java support. Please run
-R CMD javareconf
+  AC_MSG_ERROR([cannot determine JAVA_HOME
+R is not configured with Java support. Please run
+    R CMD javareconf
 as root to add Java support to R.
 
 If you don't have root privileges, run
-R CMD javareconf -e
-to set all Java-related variables and then install rJava.
-(works with R 2.5.0 only)])
+    R CMD javareconf -e
+to set all Java-related variables and then install the package.])
 fi
 
 #: ${JAR=`"${RBIN}" CMD config JAR|sed 's/ERROR:.*//'`}
@@ -72,14 +75,14 @@ if test -n "${JAVA}" && test -n "${JAVA_CPPFLAGS}" && test -n "${JAVA_LIBS}"; th
 fi
 if test "${have_all_flags}" = no; then
   AC_MSG_ERROR([${java_error}
-Make sure R is configured with full Java support (including JDK). Run
-R CMD javareconf
+R is not configured with full Java support. Please make sure 
+an JDK is installed and run
+    R CMD javareconf
 as root to add Java support to R.
 
 If you don't have root privileges, run
-R CMD javareconf -e
-to set all Java-related variables and then install rJava.
-])
+    R CMD javareconf -e
+to set all Java-related variables and then install the package.])
 fi
 
 JAVA_INC="${JAVA_CPPFLAGS}"
@@ -109,16 +112,15 @@ int main(void) {
 	],[AC_MSG_RESULT(yes)],
 	[AC_MSG_ERROR([Cannot compile a simple JNI program. See config.log for details.])])
 
-AC_SUBST(JAVA_LIBS)
-AC_SUBST(JAVA_INC)
 AC_SUBST(JAVA_HOME)
-AC_SUBST(JAVA_LD)
-AC_SUBST(XTRA_CF)
-AC_SUBST(XTRA_LD)
 AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
 AC_SUBST(JAVAH)
+AC_SUBST(JAVA_LIBS)
+AC_SUBST(JAVA_INC)
+AC_SUBST(JAVA_LD)
+AC_SUBST(XTRA_CF)
+AC_SUBST(XTRA_LD)
 
 AC_CONFIG_FILES([src/Makevars])
-AC_CONFIG_FILES([R/zzz.R])
 AC_OUTPUT

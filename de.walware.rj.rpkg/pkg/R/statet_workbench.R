@@ -29,11 +29,3 @@ statet_chooseFile <- function(new = FALSE) {
 	return (answer$filename)
 }
 
-#' Opens a new graphic device in the graphic view of StatET.
-#' 
-#' @param width initial width of the graphic in pixel
-#' @param height initial width of the graphic in pixel
-#' @param ps initial font size in points
-#' @export
-statet_gd <- .rj_gd.new
-

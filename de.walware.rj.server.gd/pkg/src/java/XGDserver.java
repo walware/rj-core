@@ -23,10 +23,15 @@
 
 package org.rosuda.javaGD;
 
-import java.net.*;
-import java.io.*;
-import java.awt.*;
-import org.rosuda.javaGD.*;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
 
 /** XGDserver is a sample implementation of a server understanding the XGD1 protocol using {@link GDCanvas} for drawing. It is meant rather as a template for projects that wish to use R graphics device remotely via the <a href=http://rforge.net/xGD>xGD package</a>. The main customization for other projects can be done for Open (1) and Close (2) commands. */ 
 public class XGDserver extends Thread {

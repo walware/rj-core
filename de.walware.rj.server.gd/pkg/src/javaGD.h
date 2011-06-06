@@ -14,21 +14,8 @@
 #include <R_ext/GraphicsDevice.h>
 #include <jni.h>
 
-/* for compatibility with older R versions */ 
-#if R_GE_version < 4
-#include <Rgraphics.h>
-#include <Rdevices.h>
-#define GEaddDevice(X) addDevice((DevDesc*)(X))
-#define GEdeviceNumber(X) devNumber((DevDesc*)(X))
-#define GEgetDevice(X) ((GEDevDesc*) GetDevice(X))
-#define ndevNumber(X) devNumber((DevDesc*)(X))
-#define GEkillDevice(X) KillDevice(X)
-#define desc2GEDesc(X) ((DevDesc*) GetDevice(devNumber((DevDesc*) (X))))
-#endif
-#if R_VERSION >= R_Version(2,8,0)
 #ifndef NewDevDesc
 #define NewDevDesc DevDesc
-#endif
 #endif
 
 Rboolean newJavaGDDeviceDriver(NewDevDesc*, char*, double, double, double);

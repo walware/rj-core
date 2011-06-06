@@ -22,7 +22,8 @@
 
 package org.rosuda.javaGD;
 
-import java.awt.*;
+import java.awt.Graphics;
+
 
 public class JGDBufferedPanel extends JGDPanel {
     public long lastSyncAttempt, lastPaint;

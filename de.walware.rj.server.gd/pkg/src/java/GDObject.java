@@ -23,7 +23,14 @@
 
 package org.rosuda.javaGD;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
 
 /** GDObject is an arbitrary object that can be painted */
 abstract class GDObject {

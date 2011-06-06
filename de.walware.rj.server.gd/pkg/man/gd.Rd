@@ -1,14 +1,14 @@
-\name{JavaGD}
-\alias{JavaGD}
-\alias{javaGD}
+\name{rj.gd}
+\alias{.rj.GD}
 \title{
-  Create a new Java graphics device
+  Create a new RJ graphics device
 }
 \description{
-  \code{JavaGD} initializes a new Java grapgics device and creates a new window.
+  \code{.rj.GD} initializes a new graphics device. If supported, the new device is
+  shown in a new window/page in the client application.
 }
 \usage{
-JavaGD(name="JavaGD", width=400, height=300, ps=12)
+.rj.GD(name="rj.gd", width=400, height=300, ps=12)
 }
 \arguments{
   \item{name}{Name of the device}
@@ -23,7 +23,7 @@ JavaGD(name="JavaGD", width=400, height=300, ps=12)
 }
 \examples{
 \dontrun{
-JavaGD()
+.rj.GD()
 }
 }
 \keyword{device}

@@ -1,5 +1,6 @@
 #include "javaGD.h"
 #include "jGDtalk.h"
+#include "rjutil.h"
 #include <Rdefines.h>
 
 int initJavaGD(newJavaGDDesc* xd);
@@ -16,22 +17,12 @@ char *symbol2utf8(const char *c); /* from s2u.c */
 #define gdWarning(S)
 #endif
 
-#if R_VERSION < 0x10900
-#error This JavaGD needs at least R version 1.9.0
+#if R_VERSION < R_Version(2,11,0)
+#error This JavaGD needs at least R version 2.11.0
 #endif
 
-#if R_VERSION >= R_Version(2,7,0)
 #define constxt const
-#else
-#define constxt
-#endif
 
-/* the internal representation of a color in this API is RGBa with a=0 meaning transparent and a=255 meaning opaque (hence a means 'opacity'). previous implementation was different (inverse meaning and 0x80 as NA), so watch out. */
-#if R_VERSION < 0x20000
-#define CONVERT_COLOR(C) ((((C)==0x80000000) || ((C)==-1))?0:(((C)&0xFFFFFF)|((0xFF000000-((C)&0xFF000000)))))
-#else
-#define CONVERT_COLOR(C) (C)
-#endif
 
 static void newJavaGD_Activate(NewDevDesc *dd);
 static void newJavaGD_Circle(double x, double y, double r,
@@ -41,7 +32,6 @@ static void newJavaGD_Clip(double x0, double x1, double y0, double y1,
 			NewDevDesc *dd);
 static void newJavaGD_Close(NewDevDesc *dd);
 static void newJavaGD_Deactivate(NewDevDesc *dd);
-static void newJavaGD_Hold(NewDevDesc *dd);
 static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd);
 static void newJavaGD_Line(double x1, double y1, double x2, double y2,
 			R_GE_gcontext *gc,
@@ -134,14 +124,14 @@ static void sendGC(JNIEnv *env, newJavaGDDesc *xd, R_GE_gcontext *gc, int sendAl
     
     if (sendAll || gc->col != lastGC.col) {
         mid = (*env)->GetMethodID(env, xd->talkClass, "gdcSetColor", "(I)V");
-        if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, CONVERT_COLOR(gc->col));
+        if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, gc->col);
         else gdWarning("checkGC.gdcSetColor: can't get mid");
 		chkX(env);
     }
 
     if (sendAll || gc->fill != lastGC.fill)  {
         mid = (*env)->GetMethodID(env, xd->talkClass, "gdcSetFill", "(I)V");
-        if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, CONVERT_COLOR(gc->fill));
+        if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, gc->fill);
         else gdWarning("checkGC.gdcSetFill: can't get mid");
 		chkX(env);
     }
@@ -240,19 +230,6 @@ static void newJavaGD_Deactivate(NewDevDesc *dd)
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdDeactivate", "()V");
     if (mid) (*env)->CallVoidMethod(env, xd->talk, mid);
 	chkX(env);
-}
-
-static void newJavaGD_Hold(NewDevDesc *dd)
-{
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    jmethodID mid;
-
-    if(!env || !xd || !xd->talk) return;
-
-    mid = (*env)->GetMethodID(env, xd->talkClass, "gdHold", "()V");
-    if (mid) (*env)->CallVoidMethod(env, xd->talk, mid);
-    chkX(env);
 }
 
 static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd)
@@ -359,7 +336,7 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     sendAllGC(env, xd, gc);
 }
 
-Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd,  char *dsp, double w, double h)
+Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd, char *dsp, double w, double h)
 {   
     if (initJavaGD(xd)) return FALSE;
     
@@ -587,13 +564,9 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->locator = newJavaGD_Locator;
     dd->mode = newJavaGD_Mode;
     dd->metricInfo = newJavaGD_MetricInfo;
-#if R_GE_version >= 4
     dd->hasTextUTF8 = TRUE;
     dd->strWidthUTF8 = newJavaGD_StrWidthUTF8;
     dd->textUTF8 = newJavaGD_TextUTF8;
-#else
-    dd->hold = newJavaGD_Hold;
-#endif
 }
 
 /*--------- Java Initialization -----------*/
@@ -655,74 +628,71 @@ int initJVM(char *user_classpath) {
 
 /*---------------- R-accessible functions -------------------*/
 
-void setJavaGDClassPath(char **cp) {
-    jarClassPath=(char*)malloc(strlen(*cp)+1);
-    strcpy(jarClassPath, *cp);
-}
-
-void getJavaGDClassPath(char **cp) {
-    *cp=jarClassPath;
+SEXP RJgd_initLib(SEXP cp) {
+	JNIEnv *env = getJNIEnv();
+	int i, l;
+	
+	if (!jvm) {
+		initJVM(jarClassPath);
+		env = getJNIEnv();
+	}
+	if (!env) error("missing JNIEnv");
+	
+	if (!isString(cp)) {
+		error("cp is not a string vector");
+	}
+	l = LENGTH(cp);
+	for (i = 0; i < l; i++) {
+		SEXP elt = STRING_ELT(cp, i);
+		if (elt != R_NaString) {
+			addJClassPath(env, CHAR_UTF8(elt));
+		}
+	}
+	
+	return R_NilValue;
 }
 
 int initJavaGD(newJavaGDDesc* xd) {
-    JNIEnv *env=getJNIEnv();
-
+	jclass jc = 0;
+	jobject jo = 0;
+	
+	JNIEnv *env=getJNIEnv();
+	
     if (!jvm) {
         initJVM(jarClassPath);
         env=getJNIEnv();
     }
-            
+    
     if (!env) return -1;
     
-    {
-      jobject o = 0;
-      int releaseO = 1;
-      jmethodID mid;
-      jclass c=0;
-      char *customClass=getenv("JAVAGD_CLASS_NAME");
-      if (!getenv("JAVAGD_USE_RJAVA")) {
-	if (customClass) { c=(*env)->FindClass(env, customClass); chkX(env); }
-	if (!c) { c=(*env)->FindClass(env, "org/rosuda/javaGD/JavaGD"); chkX(env); }
-	if (!c) { c=(*env)->FindClass(env, "JavaGD"); chkX(env); }
-      }
-      if (!c) {
-	/* use rJava to instantiate the JavaGD class */
-	SEXP cl;
-	int  te;
-	if (!customClass || !*customClass) customClass="org/rosuda/javaGD/JavaGD";
-	/* require(rJava) to make sure it's loaded */
-	cl = R_tryEval(lang2(install("require"), install("rJava")), R_GlobalEnv, &te);
-	if (te == 0 && asLogical(cl)) { /* rJava is available and loaded */
-	  /* if .jniInitialized is FALSE then no one actually loaded rJava before, so */
-	  cl = eval(lang2(install(".jnew"), mkString(customClass)), R_GlobalEnv);
-	  chkX(env);
-	  if (cl != R_NilValue && inherits(cl, "jobjRef")) {
-	    o = (jobject) R_ExternalPtrAddr(GET_SLOT(cl, install("jobj")));
-	    releaseO = 0;
-	    c = (*env)->GetObjectClass(env, o);
-	  }
+	char *customClass = getenv("RJGD_CLASS_NAME");
+	if (!customClass) { 
+		//customClass = "org.rosuda.javaGD.JavaGD";
+		customClass = "de.walware.rj.server.gd.JavaGD";
 	}
-      }
-      if (!c && !o) error("Cannot find JavaGD class.");
-      if (!o) {
-	mid=(*env)->GetMethodID(env, c, "<init>", "()V");
-        if (!mid) {
-            (*env)->DeleteLocalRef(env, c);  
-            error("Cannot find default JavaGD contructor.");
-        }
-        o=(*env)->NewObject(env, c, mid);
-        if (!o) {
-	  (*env)->DeleteLocalRef(env, c);  
-	  error("Connot instantiate JavaGD object.");
-        }
-      }
-
-      xd->talk = (*env)->NewGlobalRef(env, o);
-      xd->talkClass = (*env)->NewGlobalRef(env, c);
-      (*env)->DeleteLocalRef(env, c);
-      if (releaseO) (*env)->DeleteLocalRef(env, o);
-    }
-    
-    return 0;
+	
+	jc = getJClass(env, customClass, (RJ_ERROR_RERROR | RJ_GLOBAL_REF));
+	{	jmethodID jm = (*env)->GetMethodID(env, jc, "<init>", "()V");
+		if (!jm) {
+			(*env)->DeleteLocalRef(env, jc);  
+			handleJError(env, RJ_ERROR_RERROR, "Cannot find default constructor for GD class '%s'.", customClass);
+		}
+		jo = (*env)->NewObject(env, jc, jm);
+		if (!jo) {
+			(*env)->DeleteLocalRef(env, jc);  
+			handleJError(env, RJ_ERROR_RERROR, "Cannot instantiate object of GD class '%s'.", customClass);
+		}
+	}
+	
+	xd->talk = (*env)->NewGlobalRef(env, jo);
+	(*env)->DeleteLocalRef(env, jo);
+	xd->talkClass = jc;
+	
+	if (!xd->talk) {
+		chkX(env);
+		gdWarning("Rjgd_NewDevice: talk is null");
+		return -1;
+	}
+	
+	return 0;
 }
-

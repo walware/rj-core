@@ -1,0 +1,16 @@
+<project name="RJ-GD_RPackage" basedir=".">
+	
+	<property name="eproject" value="de.walware.rj.server.gd"/>
+	<property name="jartarget.dir" value="pkg/inst/java"/>
+	
+	<target name="epack">
+		<mkdir dir="${basedir}/${jartarget.dir}"/>
+		<jar jarfile="${basedir}/${jartarget.dir}/gd.jar">
+			<fileset dir="srcGD"/>
+			<fileset dir="src"/>
+			<fileset dir="bin"/>
+		</jar>
+		<eclipse.refreshLocal resource="${eproject}/${jartarget.dir}"/>
+	</target>
+	
+</project>

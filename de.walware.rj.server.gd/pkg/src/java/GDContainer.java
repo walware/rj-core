@@ -23,7 +23,9 @@
 
 package org.rosuda.javaGD;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+
 
 /** <code>GDContainer</code> is the minimal interface that has to be implemented by classes that are used as back-ends for JavaGD. The interface feeds graphics objects to the instance which are then free to use them for any purpose such as display or printing. */
 public interface GDContainer {

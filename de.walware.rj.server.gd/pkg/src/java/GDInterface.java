@@ -22,21 +22,24 @@
 
 package org.rosuda.javaGD;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.lang.reflect.Method;
+
 
 /** <code>CGInterface</code> defines an interface (and provides a simple implementation) between the JavaGD R device and the Java code. Any back-end that desires to display R graphics in Java can subclass this class are provide its name to JavaGD package via JAVAGD_CLASS_NAME environment variable. The default implementation handles most callbacks, but subclasses should override at least {@link #gdOpen} to create an instance of {@link GDContainer} {@link #c} which will be used for all subsequent drawing.
  <p>
  <b>external API: those methods are called via JNI from the GD C code</b>
  <p>
  <pre>
- public void     gdOpen(int devNr, double w, double h);
+ public void     gdOpen(double w, double h);
  public void     gdActivate();
  public void     gdCircle(double x, double y, double r);
  public void     gdClip(double x0, double x1, double y0, double y1);
  public void     gdClose();
  public void     gdDeactivate();
- public void     gdHold();
  public double[] gdLocator();
  public void     gdLine(double x1, double y1, double x2, double y2);
  public double[] gdMetricInfo(int ch);
@@ -115,10 +118,6 @@ public class GDInterface {
         active=false;
     }
 
-    /** (unimplemented - this call is now obsolete in R) */
-    public void     gdHold() {
-    }
-
     /** invoke the locator
      *  @return array of indices or <code>null</code> is cancelled */
     public double[] gdLocator() {
@@ -166,11 +165,6 @@ public class GDInterface {
      *  @param mode mode as signalled by R (currently 0=R stopped drawing, 1=R started drawing, 2=graphical input exists) */
     public void     gdMode(int mode) {
         if (c!=null) c.syncDisplay(mode==0);
-    }
-
-    /** create a new, blank page (old API, not used anymore) */
-    public void     gdNewPage() {
-        if (c!=null) c.reset();
     }
 
     /** create a new, blank page 

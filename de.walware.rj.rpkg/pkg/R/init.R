@@ -16,25 +16,6 @@
 .rj.originals <- new.env()
 
 
-.rj.initRJava <- function() {
-	require(rJava)
-	if (.jinit() < 0) {
-		stop(".jinit failed.")
-	}
-	
-	assign("rjInstance", .jcall("de/walware/rj/server/RJ", "Lde/walware/rj/server/RJ;", "get"), .rj.originals)
-}
-
-#' Checks if the package (binding to Java part) is successfully initialized
-#' @param jpackage if additional java package is required
-.rj.checkRJavaInit <- function() {
-	if (is.null(.rj.originals$rjInstance)) {
-		stop("RJ not (successfully) initialized")
-	}
-	return (invisible())
-}
-
-
 #' Environment for temporary R objects
 .rj.tmp <- new.env()
 

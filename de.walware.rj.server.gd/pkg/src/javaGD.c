@@ -110,15 +110,6 @@ Rf_setNewJavaGDDeviceData(NewDevDesc *dd, double gamma_fac, newJavaGDDesc *xd)
 
     dd->ipr[0] = 1/jGDdpiX;
     dd->ipr[1] = 1/jGDdpiY;
-#if R_GE_version < 4
-    dd->asp = jGDasp;
-
-    /* Device capabilities */
-    dd->canResizePlot = TRUE;
-    dd->canChangeFont = TRUE;
-    dd->canRotateText = TRUE;
-    dd->canResizeText = TRUE;
-#endif
     dd->canClip = TRUE;
     dd->canHAdj = 2;
     dd->canChangeGamma = FALSE;
@@ -183,7 +174,7 @@ Rf_addJavaGDDevice(char *display, double width, double height, double initps)
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
     
-    char *devname="JavaGD";
+    char *devname="rj.GD";
 
     R_CheckDeviceAvailable();
 #ifdef BEGIN_SUSPEND_INTERRUPTS
@@ -192,15 +183,6 @@ Rf_addJavaGDDevice(char *display, double width, double height, double initps)
 	/* Allocate and initialize the device driver data */
 	if (!(dev = (NewDevDesc*)calloc(1, sizeof(NewDevDesc))))
 	    return 0;
-	/* Do this for early redraw attempts */
-#if R_GE_version < 4
-	dev->displayList = R_NilValue;
-	dev->newDevStruct = 1;
-	/* Make sure that this is initialised before a GC can occur.
-	 * This (and displayList) get protected during GC
-	 */
-	dev->savedSnapshot = R_NilValue;
-#endif
 	/* Took out the GInit because MOST of it is setting up
 	 * R base graphics parameters.  
 	 * This is supposed to happen via addDevice now.
@@ -340,6 +322,6 @@ void javaGDgetDisplayParam(double *par) {
 	par[2] = jGDasp;
 }
 
-void javaGDversion(int *ver) {*
-	ver=JAVAGD_VER;
+void javaGDversion(int *ver) {
+	*ver=JAVAGD_VER;
 }

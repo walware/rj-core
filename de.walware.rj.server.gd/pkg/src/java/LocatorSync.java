@@ -22,6 +22,7 @@
 
 package org.rosuda.javaGD;
 
+
 /** a simple synchronization class that can be used by a separate thread to wake JavaGD from waiting for a locator result. The waiting thread calls {@link #waitForAction()} which returns only after another thread calls {@link #triggerAction}. */
 public class LocatorSync {
     private double[] locResult=null;

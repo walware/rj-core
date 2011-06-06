@@ -9,9 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.gd;
-
-import java.util.Arrays;
+package de.walware.rj.server.gd;
 
 import org.rosuda.javaGD.GDInterface;
 
@@ -72,10 +70,6 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 		this.rj.execGDCommand(new GDCmdItem.CInit(this.devId, this.w, this.h, this.active, this.rjSlot));
 	}
 	
-	
-	@Override
-	public void gdNewPage() {
-	}
 	
 	@Override
 	public void gdNewPage(final int devNr) {
@@ -157,7 +151,6 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	public double[] gdMetricInfo(final int ch) {
 		final double[] result = this.rj.execGDCommand(new GDCmdItem.CGetFontMetric(this.devId, ch, this.rjSlot));
 		if (result != null && result.length == 3) {
-			System.out.println("metric: " + Arrays.toString(result));
 			return result;
 		}
 		else {
@@ -212,10 +205,6 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 		this.rj.execGDCommand(new GDCmdItem.DrawText(this.devId, x, y, hadj, rot, str, this.rjSlot));
 	}
 	
-	
-	@Override
-	public void gdHold() {
-	}
 	
 	@Override
 	public double[] gdLocator() {
