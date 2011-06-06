@@ -59,8 +59,8 @@ typedef struct {
     /* X11 Driver Specific */
     /* Parameters with copy per X11 device. */
 
-    int windowWidth;			/* Window width (pixels) */
-    int windowHeight;			/* Window height (pixels) */
+    double windowWidth;			/* Window width (pixels) */
+    double windowHeight;			/* Window height (pixels) */
     int resize;				/* Window resized */
 
     jobject talk; /* object associated with this graphics */

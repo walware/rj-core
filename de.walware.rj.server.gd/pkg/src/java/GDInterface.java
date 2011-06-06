@@ -34,7 +34,7 @@ import java.lang.reflect.Method;
  <b>external API: those methods are called via JNI from the GD C code</b>
  <p>
  <pre>
- public void     gdOpen(double w, double h);
+ public void     gdOpen(int devNr, double w, double h);
  public void     gdActivate();
  public void     gdCircle(double x, double y, double r);
  public void     gdClip(double x0, double x1, double y0, double y1);
@@ -44,7 +44,7 @@ import java.lang.reflect.Method;
  public void     gdLine(double x1, double y1, double x2, double y2);
  public double[] gdMetricInfo(int ch);
  public void     gdMode(int mode);
- public void     gdNewPage(int deviceNumber);
+ public void     gdNewPage();
  public void     gdPolygon(int n, double[] x, double[] y);
  public void     gdPolyline(int n, double[] x, double[] y);
  public void     gdRect(double x0, double y0, double x1, double y1);
@@ -67,22 +67,34 @@ public class GDInterface {
     public boolean active=false;
     /** flag indicating whether this device has currently an open instance */
     public boolean open=false;
-    /** device number as supplied by R in {@link #newPage()} (-1 if undefined) */
-    int devNr=-1;
-    
+	
+	/**
+	 * The device number as supplied by R in {@link #gdOpen(int, double, double)}
+	 * (-1 if undefined)
+	 **/
+	private int devNr = -1;
+	
     /** container that will receive all drawing methods. It should be created by subclasses in the {@link #gdOpen} method. */
     public GDContainer c=null;
     
     /** synchronization object for locator calls */
     public LocatorSync ls=null;
-    
-    /** requests a new device of the specified size
-     *  @param w width of the device
-     *  @param h height of the device */
-    public void     gdOpen(double w, double h) {
-        open=true;
-    }
-
+	
+	
+	/** 
+	 * Opens the new device with the specified size
+	 * @param devNr device number
+	 * @param w width of the device
+	 * @param h height of the device */
+	public void     gdOpen(int devNr, double w, double h) {
+		this.devNr = devNr;
+		open=true;
+		
+		if (c != null) {
+			c.setDeviceNumber(devNr);
+		}
+	}
+	
     /** the device became active (current) */ 
     public void     gdActivate() {
         active=true;
@@ -169,11 +181,9 @@ public class GDInterface {
 
     /** create a new, blank page 
      *  @param devNr device number assigned to this device by R */
-    public void     gdNewPage(int devNr) { // new API: provides the device Nr.
-        this.devNr=devNr;
+    public void     gdNewPage() {
         if (c!=null) {
             c.reset();
-            c.setDeviceNumber(devNr);
         }
     }
 
@@ -273,11 +283,16 @@ public class GDInterface {
         c.add(f);
         c.getGState().f=f.getFont();
     }
-
-    /** returns the device number
-     *  @return device number or -1 is unknown */
-    public int getDeviceNumber() { return (c==null)?devNr:c.getDeviceNumber(); }
-
+	
+	/**
+	 * Returns the device number
+	 * 
+	 * @return the device number or -1 is unknown
+	 **/
+	public int getDeviceNumber() {
+		return this.devNr;
+	}
+	
     /** close the device in R associted with this instance */
     public void executeDevOff() {
         if (c==null || c.getDeviceNumber()<0) return;

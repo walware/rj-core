@@ -58,7 +58,7 @@ Rboolean newJavaGDDeviceDriver(NewDevDesc *dd,
 #endif
 
   xd = Rf_allocNewJavaGDDeviceDesc(initps);
-  if (!newJavaGD_Open((NewDevDesc*)(dd), xd, disp_name, width, height)) {
+  if (!newJavaGD_NewDevice((NewDevDesc*)(dd), xd, disp_name, width, height)) {
     free(xd);
     return FALSE;
   }
@@ -176,12 +176,13 @@ Rf_addJavaGDDevice(char *display, double width, double height, double initps)
     
     char *devname="rj.GD";
 
+    R_GE_checkVersionOrDie(R_GE_version);
     R_CheckDeviceAvailable();
 #ifdef BEGIN_SUSPEND_INTERRUPTS
     BEGIN_SUSPEND_INTERRUPTS {
 #endif
 	/* Allocate and initialize the device driver data */
-	if (!(dev = (NewDevDesc*)calloc(1, sizeof(NewDevDesc))))
+	if (!(dev = (NewDevDesc*) calloc(1, sizeof(NewDevDesc))))
 	    return 0;
 	/* Took out the GInit because MOST of it is setting up
 	 * R base graphics parameters.  
@@ -193,13 +194,12 @@ Rf_addJavaGDDevice(char *display, double width, double height, double initps)
 		error("unable to start device %s", devname);
 	    return 0;
 	  }
-	gsetVar(install(".Device"), mkString(devname), R_NilValue);
 	dd = GEcreateDevDesc(dev);
-	GEaddDevice(dd);
-	GEinitDisplayList(dd);
+	GEaddDevice2(dd, devname);
 #ifdef JGD_DEBUG
 	printf("JavaGD> devNum=%d, dd=%lx\n", ndevNumber(dd), (unsigned long)dd);
 #endif
+	newJavaGD_Open(dev);
 #ifdef BEGIN_SUSPEND_INTERRUPTS
     } END_SUSPEND_INTERRUPTS;
 #endif

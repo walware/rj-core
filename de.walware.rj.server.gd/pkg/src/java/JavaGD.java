@@ -36,13 +36,10 @@ public class JavaGD extends GDInterface implements WindowListener {
         super();
     }
     
-    /** creates a new graphics window containing a canvas
-     *  @param w width of the canvas
-     *  @param h height of the canvas */
-    public void     gdOpen(double w, double h) {
+    public void     gdOpen(int devNr, double w, double h) {
         if (f!=null) gdClose();
 
-        f=new Frame("JavaGD");
+        f=new Frame("JavaGD ("+(getDeviceNumber()+1)+")"+(active?" *active*":""));
         f.addWindowListener(this);
         c=new GDCanvas(w, h);
         f.add((GDCanvas)c);
@@ -54,7 +51,7 @@ public class JavaGD extends GDInterface implements WindowListener {
         super.gdActivate();
         if (f!=null) {
             f.requestFocus();
-            f.setTitle("JavaGD "+((devNr>0)?("("+(devNr+1)+")"):"")+" *active*");
+            f.setTitle("JavaGD ("+(getDeviceNumber()+1)+")"+" *active*");
         }
     }
 
@@ -70,12 +67,11 @@ public class JavaGD extends GDInterface implements WindowListener {
 
     public void     gdDeactivate() {
         super.gdDeactivate();
-        if (f!=null) f.setTitle("JavaGD "+((devNr>0)?("("+(devNr+1)+")"):""));
+        if (f!=null) f.setTitle("JavaGD ("+(getDeviceNumber()+1)+")");
     }
 
-    public void     gdNewPage(int devNr) { // new API: provides the device Nr.
-        super.gdNewPage(devNr);
-        if (f!=null) f.setTitle("JavaGD ("+(devNr+1)+")"+(active?" *active*":""));
+    public void     gdNewPage() {
+        super.gdNewPage();
     }
 
     /*-- WindowListener interface methods */

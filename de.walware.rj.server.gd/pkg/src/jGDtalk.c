@@ -42,8 +42,9 @@ static void newJavaGD_MetricInfo(int c,
 			      double* width, NewDevDesc *dd);
 static void newJavaGD_Mode(int mode, NewDevDesc *dd);
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
-Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd,
-		     char *dsp, double w, double h);
+Rboolean newJavaGD_NewDevice(NewDevDesc *dd, newJavaGDDesc *xd,
+		char *dsp, double w, double h);
+void newJavaGD_Open(NewDevDesc *dd);
 static void newJavaGD_Polygon(int n, double *x, double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
@@ -322,52 +323,55 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
     JNIEnv *env = getJNIEnv();
     jmethodID mid;
-    int devNr;
     
     if(!env || !xd || !xd->talk) return;
     
-    devNr = ndevNumber(dd);
-
-    mid = (*env)->GetMethodID(env, xd->talkClass, "gdNewPage", "(I)V");
-    if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, devNr);
+    mid = (*env)->GetMethodID(env, xd->talkClass, "gdNewPage", "()V");
+    if (mid) (*env)->CallVoidMethod(env, xd->talk, mid);
 	chkX(env);
 
     /* this is an exception - we send all GC attributes just after the NewPage command */
     sendAllGC(env, xd, gc);
 }
 
-Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd, char *dsp, double w, double h)
-{   
-    if (initJavaGD(xd)) return FALSE;
-    
+Rboolean newJavaGD_NewDevice(NewDevDesc *dd, newJavaGDDesc *xd, char *dsp, double w, double h)
+{
+	if (!xd) {
+		gdWarning("Rjgd_NewDevice: xd is null");
+		return FALSE;
+	}
+	
+	if (initJavaGD(xd)) return FALSE;
+	
     xd->fill = 0xffffffff; /* transparent, was R_RGB(255, 255, 255); */
     xd->col = R_RGB(0, 0, 0);
     xd->canvas = R_RGB(255, 255, 255);
     xd->windowWidth = w;
     xd->windowHeight = h;
-        
-    {
-        JNIEnv *env = getJNIEnv();
-        jmethodID mid;
-        
-        if(!env || !xd || !xd->talk) {
-            gdWarning("gdOpen: env, xd or talk is null");
-            return FALSE;
-        }
-        
-        /* we're not using dsp atm! */
-        mid = (*env)->GetMethodID(env, xd->talkClass, "gdOpen", "(DD)V");
-        if (mid)
-            (*env)->CallVoidMethod(env, xd->talk, mid, w, h);
-        else {
-            gdWarning("gdOpen: can't get mid");
-			chkX(env);
-            return FALSE;
-        }
-		chkX(env);
-    }
     
     return TRUE;
+}
+
+void newJavaGD_Open(NewDevDesc *dd)
+{	
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	int devNr = ndevNumber(dd);
+	
+	JNIEnv *env = getJNIEnv();
+	jmethodID mid;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	mid = (*env)->GetMethodID(env, xd->talkClass, "gdOpen", "(IDD)V");
+	if (!mid) {
+		chkX(env);
+		gdWarning("gdOpen: can't get mid");
+		return;
+	}
+	
+	(*env)->CallVoidMethod(env, xd->talk, mid, (jint) devNr,
+			(jdouble) xd->windowWidth, (jdouble) xd->windowHeight );
+	chkX(env);
 }
 
 static jarray newDoubleArray(JNIEnv *env, int n, double *ct)
