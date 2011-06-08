@@ -449,7 +449,11 @@ public class Rengine extends Thread {
         // we don't really "add", we just replace ... (so far)
         callback = c;
     }
-
+	
+	public RMainLoopCallbacks getMainLoopCallbacks() {
+		return callback;
+	}
+	
     /** if Rengine was initialized with <code>runMainLoop=false</code> then this method can be used to start the main loop at a later point. It has no effect if the loop is running already. This method returns immediately but the loop will be started once the engine is ready. Please note that there is currently no way of stopping the R thread if the R event loop is running other than using <code>quit</code> command in R which closes the entire application. */
     public void startMainLoop() {
 		runLoop=true;

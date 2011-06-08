@@ -54,14 +54,6 @@ public interface ConsoleEngine extends Remote {
 	void setProperties(Map<String, ? extends Object> properties) throws RemoteException;
 	
 	/**
-	 * Tries to interrupt the current computation.
-	 * 
-	 * @return <code>true</code> if the interruption was send to R, otherwise false
-	 * @throws RemoteException
-	 */
-	boolean interrupt() throws RemoteException;
-	
-	/**
 	 * Disconnects the client from the server
 	 * The client can reconnect using {@link #connect(long)}.
 	 * 

@@ -76,6 +76,7 @@ import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
 import de.walware.rj.server.ConsoleWriteErrCmdItem;
 import de.walware.rj.server.ConsoleWriteOutCmdItem;
+import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
@@ -133,6 +134,9 @@ public class JRIServer extends RJ
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
 	
+	private static final int CODE_CTRL_COMMON = 0x2000;
+	private static final int CODE_CTRL_REQUEST_CANCEL = 0x2010;
+	private static final int CODE_CTRL_REQUEST_HOT_MODE = 0x2020;
 	
 	private static final int CODE_DATA_COMMON = 0x1000;
 	private static final int CODE_DATA_EVAL_DATA = 0x1010;
@@ -212,7 +216,48 @@ public class JRIServer extends RJ
 			return JRIServer.this.rExecJCommand(re, commandId, argsExpr, options);
 		}
 		public void rProcessJEvents(final Rengine re) {
-			JRIServer.this.rProcessJEvents(re);
+			JRIServer.this.mainExchangeLock.lock();
+			try {
+				if (JRIServer.this.hotModeRequested) {
+					JRIServer.this.hotModeDelayed = true;
+				}
+			}
+			finally {
+				JRIServer.this.mainExchangeLock.unlock();
+			}
+		}
+	}
+	
+	private class HotLoopCallbacks implements RMainLoopCallbacks {
+		public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
+			if (prompt.startsWith("Browse")) {
+				return "c\n";
+			}
+			return "\n";
+		}
+		public void rWriteConsole(final Rengine re, final String text, final int oType) {
+			LOGGER.log(Level.WARNING, "HotMode - Console Output:\n" + text);
+		}
+		public void rFlushConsole(final Rengine re) {
+			JRIServer.this.rFlushConsole(re);
+		}
+		public void rBusy(final Rengine re, final int which) {
+			JRIServer.this.rBusy(re, which);
+		}
+		public void rShowMessage(final Rengine re, final String message) {
+			LOGGER.log(Level.WARNING, "HotMode - Message:\n" + message);
+		}
+		public String rChooseFile(final Rengine re, final int newFile) {
+			return null;
+		}
+		public void rLoadHistory(final Rengine re, final String filename) {
+		}
+		public void rSaveHistory(final Rengine re, final String filename) {
+		}
+		public long rExecJCommand(final Rengine re, final String commandId, final long argsExpr, final int options) {
+			return 0;
+		}
+		public void rProcessJEvents(final Rengine re) {
 		}
 	}
 	
@@ -246,6 +291,13 @@ public class JRIServer extends RJ
 	private MainCmdItem mainLoopC2SCommandFirst;
 	private int mainLoopS2CAnswerFail;
 	
+	private boolean safeMode;
+	
+	private boolean hotModeRequested;
+	private boolean hotModeDelayed;
+	private boolean hotMode;
+	private final RMainLoopCallbacks hotModeCallbacks = new HotLoopCallbacks();
+	
 	private int serverState;
 	
 	private final ReentrantReadWriteLock[] clientLocks = new ReentrantReadWriteLock[] {
@@ -259,7 +311,7 @@ public class JRIServer extends RJ
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
-	private int rniTemp;
+	private int rniDepth;
 	private boolean rniEvalTempAssigned;
 	private int rniMaxDepth;
 	private boolean rniInterrupted;
@@ -398,6 +450,8 @@ public class JRIServer extends RJ
 	
 	private void connectClient0(final Client client,
 			final ConsoleEngine consoleEngine, final ConsoleEngine export) {
+		disconnectClient0();
+		
 		this.client0 = client;
 		this.client0Engine = consoleEngine;
 		this.client0ExpRef = export;
@@ -418,11 +472,17 @@ public class JRIServer extends RJ
 			this.client0PrevExpRef = null;
 		}
 		if (this.client0 != null) {
+			final Client client = this.client0;
 			DefaultServerImpl.removeClient(this.client0ExpRef);
 			this.client0 = null;
 			this.client0Engine = null;
 			this.client0PrevExpRef = this.client0ExpRef;
 			this.client0ExpRef = null;
+			
+			if (this.hotModeRequested) {
+				this.hotModeRequested = false;
+			}
+			internalClearClient(client);
 		}
 	}
 	
@@ -482,6 +542,7 @@ public class JRIServer extends RJ
 				final String[] args = checkArgs((String[]) properties.get("args"));
 				
 				this.mainLoopState = ENGINE_RUN_IN_R;
+				this.hotMode = true;
 				final Rengine re = new Rengine(args, this.rConfig, true, new InitCallbacks());
 				
 				while (this.rEngine != re) {
@@ -566,266 +627,283 @@ public class JRIServer extends RJ
 	private void initEngine(final Rengine re) {
 		this.rEngine = re;
 		this.rEngine.setContextClassLoader(this.rClassLoader);
-		this.rEngine.addMainLoopCallbacks(JRIServer.this);
 		this.rObjectFactory = new JRIObjectFactory();
 		RjsComConfig.setDefaultRObjectFactory(this.rObjectFactory);
 		
-		this.rniP_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
-		this.rEngine.rniPreserve(this.rniP_NULL);
-		this.rniP_Unbound = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
-		this.rEngine.rniPreserve(this.rniP_Unbound);
-		this.rniP_MissingArg = this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
-		this.rEngine.rniPreserve(this.rniP_MissingArg);
-		this.rniP_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
-		this.rEngine.rniPreserve(this.rniP_BaseEnv);
-		
-		this.rniP_AutoloadEnv = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"),
-				this.rniP_BaseEnv );
-		if (this.rniP_AutoloadEnv != 0) {
-			if (this.rEngine.rniExpType(this.rniP_AutoloadEnv) == REXP.ENVSXP) {
-				this.rEngine.rniPreserve(this.rniP_AutoloadEnv);
+		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
+		try {
+			this.rniP_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
+			this.rEngine.rniPreserve(this.rniP_NULL);
+			this.rniP_Unbound = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
+			this.rEngine.rniPreserve(this.rniP_Unbound);
+			this.rniP_MissingArg = this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
+			this.rEngine.rniPreserve(this.rniP_MissingArg);
+			this.rniP_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
+			this.rEngine.rniPreserve(this.rniP_BaseEnv);
+			
+			this.rniP_AutoloadEnv = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"),
+					this.rniP_BaseEnv );
+			if (this.rniP_AutoloadEnv != 0) {
+				if (this.rEngine.rniExpType(this.rniP_AutoloadEnv) == REXP.ENVSXP) {
+					this.rEngine.rniPreserve(this.rniP_AutoloadEnv);
+				}
+				else {
+					this.rniP_AutoloadEnv = 0;
+				}
 			}
-			else {
-				this.rniP_AutoloadEnv = 0;
+			
+			this.rniP_functionSymbol = this.rEngine.rniInstallSymbol("function");
+			this.rEngine.rniPreserve(this.rniP_functionSymbol);
+			this.rniP_ifSymbol = this.rEngine.rniInstallSymbol("if");
+			this.rEngine.rniPreserve(this.rniP_ifSymbol);
+			this.rniP_AssignSymbol = this.rEngine.rniInstallSymbol("<-");
+			this.rEngine.rniPreserve(this.rniP_AssignSymbol);
+			this.rniP_xSymbol = this.rEngine.rniInstallSymbol("x");
+			this.rEngine.rniPreserve(this.rniP_xSymbol);
+			this.rniP_zSymbol = this.rEngine.rniInstallSymbol("z");
+			this.rEngine.rniPreserve(this.rniP_zSymbol);
+			this.rniP_objectSymbol = this.rEngine.rniInstallSymbol("object");
+			this.rEngine.rniPreserve(this.rniP_objectSymbol);
+			this.rniP_envSymbol = this.rEngine.rniInstallSymbol("env");
+			this.rEngine.rniPreserve(this.rniP_envSymbol);
+			this.rniP_nameSymbol = this.rEngine.rniInstallSymbol("name");
+			this.rEngine.rniPreserve(this.rniP_nameSymbol);
+			this.rniP_realSymbol = this.rEngine.rniInstallSymbol("real");
+			this.rEngine.rniPreserve(this.rniP_realSymbol);
+			this.rniP_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
+			this.rEngine.rniPreserve(this.rniP_imaginarySymbol);
+			this.rniP_newSymbol = this.rEngine.rniInstallSymbol("new");
+			this.rEngine.rniPreserve(this.rniP_newSymbol);
+			this.rniP_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
+			this.rEngine.rniPreserve(this.rniP_ClassSymbol);
+			this.rniP_exprSymbol = this.rEngine.rniInstallSymbol("expr");
+			this.rEngine.rniPreserve(this.rniP_exprSymbol);
+			this.rniP_errorSymbol = this.rEngine.rniInstallSymbol("error");
+			this.rEngine.rniPreserve(this.rniP_errorSymbol);
+			
+			this.rniP_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniParse("new.env()", 1),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_RJTempEnv);
+			this.rniP_orderedClassString = this.rEngine.rniPutStringArray(new String[] { "ordered", "factor" });
+			this.rEngine.rniPreserve(this.rniP_orderedClassString);
+			this.rniP_factorClassString = this.rEngine.rniPutString("factor");
+			this.rEngine.rniPreserve(this.rniP_factorClassString);
+			this.rniP_dataframeClassString = this.rEngine.rniPutString("data.frame");
+			this.rEngine.rniPreserve(this.rniP_dataframeClassString);
+			
+			this.rniP_lengthFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("length"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_lengthFun);
+			this.rniP_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_complexFun);
+			this.rniP_envNameFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("environmentName"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_envNameFun);
+			this.rniP_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_ReFun);
+			this.rniP_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_ImFun);
+			this.rniP_ItemFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("$"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_ItemFun);
+			this.rniP_tryCatchFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("tryCatch"),
+					this.rniP_BaseEnv );
+			this.rEngine.rniPreserve(this.rniP_tryCatchFun);
+			
+			{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500),collapse="")
+				final long pasteFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("paste"),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(pasteFun);
+				final long deparseFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("deparse"),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(deparseFun);
+				final long argsFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("args"),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(argsFun);
+				final long exprSymbol = this.rEngine.rniInstallSymbol("expr");
+				this.rEngine.rniPreserve(exprSymbol);
+				final long controlSymbol = this.rEngine.rniInstallSymbol("control");
+				this.rEngine.rniPreserve(controlSymbol);
+				final long widthcutoffSymbol = this.rEngine.rniInstallSymbol("width.cutoff");
+				this.rEngine.rniPreserve(widthcutoffSymbol);
+				final long collapseSymbol = this.rEngine.rniInstallSymbol("collapse");
+				this.rEngine.rniPreserve(collapseSymbol);
+				
+				final long argList = this.rEngine.rniCons(
+						this.rniP_MissingArg, this.rniP_NULL,
+						this.rniP_xSymbol, false );
+				this.rEngine.rniPreserve(argList);
+				final long argsCall = this.rEngine.rniCons(
+						argsFun, this.rEngine.rniCons(
+								this.rniP_xSymbol, this.rniP_NULL,
+								this.rniP_nameSymbol, false ),
+						0, true );
+				this.rEngine.rniPreserve(argsCall);
+				final long deparseControlValue = this.rEngine.rniPutStringArray(new String[] { "keepInteger", "keepNA" });
+				this.rEngine.rniPreserve(deparseControlValue);
+				final long deparseWidthcutoffValue = this.rEngine.rniPutIntArray(new int[] { 500 });
+				this.rEngine.rniPreserve(deparseWidthcutoffValue);
+				final long deparseCall = this.rEngine.rniCons(
+						deparseFun, this.rEngine.rniCons(
+								argsCall, this.rEngine.rniCons(
+										deparseControlValue, this.rEngine.rniCons(
+												deparseWidthcutoffValue, this.rniP_NULL,
+												widthcutoffSymbol, false ),
+										controlSymbol, false ),
+								exprSymbol, false ),
+						0, true );
+				this.rEngine.rniPreserve(deparseCall);
+				final long collapseValue = this.rEngine.rniPutString("");
+				this.rEngine.rniPreserve(collapseValue);
+				final long body = this.rEngine.rniCons(
+						pasteFun, this.rEngine.rniCons(
+								deparseCall, this.rEngine.rniCons(
+										collapseValue, this.rniP_NULL,
+										collapseSymbol, false ),
+								0, false ),
+						0, true );
+				
+				this.rniP_headerFun = this.rEngine.rniEval(this.rEngine.rniCons(
+						this.rniP_functionSymbol, this.rEngine.rniCons(
+								argList, this.rEngine.rniCons(
+										body, this.rniP_NULL,
+										0, false ),
+								0, false ),
+						0, true ),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(this.rniP_headerFun);
 			}
-		}
-		
-		this.rniP_functionSymbol = this.rEngine.rniInstallSymbol("function");
-		this.rEngine.rniPreserve(this.rniP_functionSymbol);
-		this.rniP_ifSymbol = this.rEngine.rniInstallSymbol("if");
-		this.rEngine.rniPreserve(this.rniP_ifSymbol);
-		this.rniP_AssignSymbol = this.rEngine.rniInstallSymbol("<-");
-		this.rEngine.rniPreserve(this.rniP_AssignSymbol);
-		this.rniP_xSymbol = this.rEngine.rniInstallSymbol("x");
-		this.rEngine.rniPreserve(this.rniP_xSymbol);
-		this.rniP_zSymbol = this.rEngine.rniInstallSymbol("z");
-		this.rEngine.rniPreserve(this.rniP_zSymbol);
-		this.rniP_objectSymbol = this.rEngine.rniInstallSymbol("object");
-		this.rEngine.rniPreserve(this.rniP_objectSymbol);
-		this.rniP_envSymbol = this.rEngine.rniInstallSymbol("env");
-		this.rEngine.rniPreserve(this.rniP_envSymbol);
-		this.rniP_nameSymbol = this.rEngine.rniInstallSymbol("name");
-		this.rEngine.rniPreserve(this.rniP_nameSymbol);
-		this.rniP_realSymbol = this.rEngine.rniInstallSymbol("real");
-		this.rEngine.rniPreserve(this.rniP_realSymbol);
-		this.rniP_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
-		this.rEngine.rniPreserve(this.rniP_imaginarySymbol);
-		this.rniP_newSymbol = this.rEngine.rniInstallSymbol("new");
-		this.rEngine.rniPreserve(this.rniP_newSymbol);
-		this.rniP_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
-		this.rEngine.rniPreserve(this.rniP_ClassSymbol);
-		this.rniP_exprSymbol = this.rEngine.rniInstallSymbol("expr");
-		this.rEngine.rniPreserve(this.rniP_exprSymbol);
-		this.rniP_errorSymbol = this.rEngine.rniInstallSymbol("error");
-		this.rEngine.rniPreserve(this.rniP_errorSymbol);
-		
-		this.rniP_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniParse("new.env()", 1),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_RJTempEnv);
-		this.rniP_orderedClassString = this.rEngine.rniPutStringArray(new String[] { "ordered", "factor" });
-		this.rEngine.rniPreserve(this.rniP_orderedClassString);
-		this.rniP_factorClassString = this.rEngine.rniPutString("factor");
-		this.rEngine.rniPreserve(this.rniP_factorClassString);
-		this.rniP_dataframeClassString = this.rEngine.rniPutString("data.frame");
-		this.rEngine.rniPreserve(this.rniP_dataframeClassString);
-		
-		this.rniP_lengthFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("length"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_lengthFun);
-		this.rniP_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_complexFun);
-		this.rniP_envNameFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("environmentName"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_envNameFun);
-		this.rniP_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_ReFun);
-		this.rniP_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_ImFun);
-		this.rniP_ItemFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("$"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_ItemFun);
-		this.rniP_tryCatchFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("tryCatch"),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_tryCatchFun);
-		
-		{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500),collapse="")
-			final long pasteFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("paste"),
+			{	// function(x)if(isS4(x))class(x)
+				final long isS4Fun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("isS4"),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(isS4Fun);
+				final long classFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("class"),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(classFun);
+				
+				final long argList = this.rEngine.rniCons(
+						this.rniP_MissingArg, this.rniP_NULL,
+						this.rniP_xSymbol, false );
+				this.rEngine.rniPreserve(argList);
+				final long isS4Call = this.rEngine.rniCons(
+						isS4Fun, this.rEngine.rniCons(
+								this.rniP_xSymbol, this.rniP_NULL,
+								this.rniP_objectSymbol, false ),
+						0, true );
+				this.rEngine.rniPreserve(isS4Call);
+				final long classCall = this.rEngine.rniCons(
+						classFun, this.rEngine.rniCons(
+								this.rniP_xSymbol, this.rniP_NULL,
+								this.rniP_xSymbol, false ),
+						0, true );
+				this.rEngine.rniPreserve(classCall);
+				final long body = this.rEngine.rniCons(
+						this.rniP_ifSymbol, this.rEngine.rniCons(
+								isS4Call, this.rEngine.rniCons(
+										classCall, this.rniP_NULL,
+										0, false ),
+								0, false ),
+						0, true );
+				this.rEngine.rniPreserve(body);
+				
+				this.rniP_s4classFun = this.rEngine.rniEval(this.rEngine.rniCons(
+						this.rniP_functionSymbol, this.rEngine.rniCons(
+								argList, this.rEngine.rniCons(
+										body, this.rniP_NULL,
+										0, false ),
+								0, false ),
+						0, true ),
+						this.rniP_BaseEnv );
+				this.rEngine.rniPreserve(this.rniP_s4classFun);
+			}
+			this.rniP_slotNamesFun = this.rEngine.rniEval(
+					this.rEngine.rniParse("methods::.slotNames", 1),
 					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(pasteFun);
-			final long deparseFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("deparse"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(deparseFun);
-			final long argsFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("args"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(argsFun);
-			final long exprSymbol = this.rEngine.rniInstallSymbol("expr");
-			this.rEngine.rniPreserve(exprSymbol);
-			final long controlSymbol = this.rEngine.rniInstallSymbol("control");
-			this.rEngine.rniPreserve(controlSymbol);
-			final long widthcutoffSymbol = this.rEngine.rniInstallSymbol("width.cutoff");
-			this.rEngine.rniPreserve(widthcutoffSymbol);
-			final long collapseSymbol = this.rEngine.rniInstallSymbol("collapse");
-			this.rEngine.rniPreserve(collapseSymbol);
+			this.rEngine.rniPreserve(this.rniP_slotNamesFun);
 			
-			final long argList = this.rEngine.rniCons(
-					this.rniP_MissingArg, this.rniP_NULL,
-					this.rniP_xSymbol, false );
-			this.rEngine.rniPreserve(argList);
-			final long argsCall = this.rEngine.rniCons(
-					argsFun, this.rEngine.rniCons(
-							this.rniP_xSymbol, this.rniP_NULL,
-							this.rniP_nameSymbol, false ),
-					0, true );
-			this.rEngine.rniPreserve(argsCall);
-			final long deparseControlValue = this.rEngine.rniPutStringArray(new String[] { "keepInteger", "keepNA" });
-			this.rEngine.rniPreserve(deparseControlValue);
-			final long deparseWidthcutoffValue = this.rEngine.rniPutIntArray(new int[] { 500 });
-			this.rEngine.rniPreserve(deparseWidthcutoffValue);
-			final long deparseCall = this.rEngine.rniCons(
-					deparseFun, this.rEngine.rniCons(
-							argsCall, this.rEngine.rniCons(
-									deparseControlValue, this.rEngine.rniCons(
-											deparseWidthcutoffValue, this.rniP_NULL,
-											widthcutoffSymbol, false ),
-									controlSymbol, false ),
-							exprSymbol, false ),
-					0, true );
-			this.rEngine.rniPreserve(deparseCall);
-			final long collapseValue = this.rEngine.rniPutString("");
-			this.rEngine.rniPreserve(collapseValue);
-			final long body = this.rEngine.rniCons(
-					pasteFun, this.rEngine.rniCons(
-							deparseCall, this.rEngine.rniCons(
-									collapseValue, this.rniP_NULL,
-									collapseSymbol, false ),
-							0, false ),
-					0, true );
+			this.rniP_evalTryCatch_errorExpr = this.rEngine.rniCons(
+					this.rEngine.rniEval(this.rEngine.rniParse("function(e){" +
+							"s<-raw(5);" +
+							"class(s)<-\".rj.eval.error\";" +
+							"attr(s,\"error\")<-e;" +
+							"attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");" +
+							"invisible(s);}", 1 ), 0 ), this.rniP_NULL,
+					this.rniP_errorSymbol, false );
+			this.rEngine.rniPreserve(this.rniP_evalTryCatch_errorExpr);
 			
-			this.rniP_headerFun = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rniP_functionSymbol, this.rEngine.rniCons(
-							argList, this.rEngine.rniCons(
-									body, this.rniP_NULL,
-									0, false ),
-							0, false),
-					0, true ),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_headerFun);
-		}
-		{	// function(x)if(isS4(x))class(x)
-			final long isS4Fun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("isS4"),
-					this.rniP_BaseEnv);
-			this.rEngine.rniPreserve(isS4Fun);
-			final long classFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("class"),
-					this.rniP_BaseEnv);
-			this.rEngine.rniPreserve(classFun);
+			this.rniP_evalTemp_classExpr = this.rEngine.rniParse("class(x);", 1);
+			this.rEngine.rniPreserve(this.rniP_evalTemp_classExpr);
+			this.rniP_evalTemp_rmExpr = this.rEngine.rniParse("rm(x);", 1);
+			this.rEngine.rniPreserve(this.rniP_evalTemp_rmExpr);
 			
-			final long argList = this.rEngine.rniCons(
-					this.rniP_MissingArg, this.rniP_NULL,
-					this.rniP_xSymbol, false );
-			this.rEngine.rniPreserve(argList);
-			final long isS4Call = this.rEngine.rniCons(
-					isS4Fun, this.rEngine.rniCons(
-							this.rniP_xSymbol, this.rniP_NULL,
-							this.rniP_objectSymbol, false ),
-					0, true );
-			this.rEngine.rniPreserve(isS4Call);
-			final long classCall = this.rEngine.rniCons(
-					classFun, this.rEngine.rniCons(
-							this.rniP_xSymbol, this.rniP_NULL,
-							this.rniP_xSymbol, false ),
-					0, true );
-			this.rEngine.rniPreserve(classCall);
-			final long body = this.rEngine.rniCons(
-					this.rniP_ifSymbol, this.rEngine.rniCons(
-							isS4Call, this.rEngine.rniCons(
-									classCall, this.rniP_NULL,
-									0, false ),
-							0, false ),
-					0, true );
-			this.rEngine.rniPreserve(body);
+			this.rniP_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
+			this.rEngine.rniPreserve(this.rniP_evalDummyExpr);
 			
-			this.rniP_s4classFun = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rniP_functionSymbol, this.rEngine.rniCons(
-							argList, this.rEngine.rniCons(
-									body, this.rniP_NULL,
-									0, false ),
-							0, false ),
-					0, true ),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_s4classFun);
-		}
-		this.rniP_slotNamesFun = this.rEngine.rniEval(this.rEngine.rniParse("methods::.slotNames", 1),
-				this.rniP_BaseEnv );
-		this.rEngine.rniPreserve(this.rniP_slotNamesFun);
-		
-		this.rniP_evalTryCatch_errorExpr = this.rEngine.rniCons(
-				this.rEngine.rniEval(this.rEngine.rniParse("function(e){" +
-						"s<-raw(5);" +
-						"class(s)<-\".rj.eval.error\";" +
-						"attr(s,\"error\")<-e;" +
-						"attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");" +
-						"invisible(s);}", 1 ), 0 ), this.rniP_NULL,
-				this.rniP_errorSymbol, false );
-		this.rEngine.rniPreserve(this.rniP_evalTryCatch_errorExpr);
-		
-		this.rniP_evalTemp_classExpr = this.rEngine.rniParse("class(x);", 1);
-		this.rEngine.rniPreserve(this.rniP_evalTemp_classExpr);
-		this.rniP_evalTemp_rmExpr = this.rEngine.rniParse("rm(x);", 1);
-		this.rEngine.rniPreserve(this.rniP_evalTemp_rmExpr);
-		
-		this.rniP_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
-		this.rEngine.rniPreserve(this.rniP_evalDummyExpr);
-		
-		if (LOGGER.isLoggable(Level.FINER)) {
-			final StringBuilder sb = new StringBuilder("Pointers:");
-			
-			final Field[] fields = getClass().getDeclaredFields();
-			for (final Field field : fields) {
-				final String name = field.getName();
-				if (name.startsWith("rniP_") && Long.TYPE.equals(field.getType())) {
-					sb.append("\n\t");
-					sb.append(name.substring(5));
-					sb.append(" = ");
-					try {
-						final long p = field.getLong(this);
-						sb.append("0x");
-						sb.append(Long.toHexString(p));
+			if (LOGGER.isLoggable(Level.FINER)) {
+				final StringBuilder sb = new StringBuilder("Pointers:");
+				
+				final Field[] fields = getClass().getDeclaredFields();
+				for (final Field field : fields) {
+					final String name = field.getName();
+					if (name.startsWith("rniP_") && Long.TYPE.equals(field.getType())) {
+						sb.append("\n\t");
+						sb.append(name.substring(5));
+						sb.append(" = ");
+						try {
+							final long p = field.getLong(this);
+							sb.append("0x");
+							sb.append(Long.toHexString(p));
+						}
+						catch (final Exception e) {
+							sb.append(e.getMessage());
+						}
 					}
-					catch (final Exception e) {
-						sb.append(e.getMessage());
+				}
+				
+				LOGGER.log(Level.FINER, sb.toString());
+			}
+			
+			if (this.rniP_tryCatchFun == 0) {
+				LOGGER.log(Level.SEVERE, "Failed to initialize engine: Base functions are missing (check 'Renviron').");
+				AbstractServerControl.exit(162);
+				return;
+			}
+			
+			loadPlatformData();
+			
+			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
+				if (this.rArgs.contains("--internet2")) {
+					this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
+				}
+				if (this.rMemSize != 0) {
+					final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0);
+					if (rniP != 0) {
+						final long memSizeMB = this.rMemSize / MEGA;
+						final double[] array = this.rEngine.rniGetDoubleArray(rniP);
+						if (array != null && array.length == 1 && memSizeMB > array[0]) {
+							this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0);
+						}
 					}
 				}
 			}
 			
-			LOGGER.log(Level.FINER, sb.toString());
-		}
-		
-		if (this.rniP_tryCatchFun == 0) {
-			LOGGER.log(Level.SEVERE, "Failed to initialize engine: Base functions are missing (check 'Renviron').");
-			AbstractServerControl.exit(162);
-			return;
-		}
-		
-		loadPlatformData();
-		
-		if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
-			if (this.rArgs.contains("--internet2")) {
-				this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
+			this.hotMode = false;
+			if (this.hotModeDelayed) {
+				this.hotModeRequested = true;
 			}
-			if (this.rMemSize != 0) {
-				final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0);
-				if (rniP != 0) {
-					final long memSizeMB = this.rMemSize / MEGA;
-					final double[] array = this.rEngine.rniGetDoubleArray(rniP);
-					if (array != null && array.length == 1 && memSizeMB > array[0]) {
-						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0);
-					}
-				}
+			if (!this.hotModeRequested) {
+				return;
 			}
 		}
+		finally {
+			this.rEngine.addMainLoopCallbacks(JRIServer.this);
+		}
+		
+		// if (this.hotModeRequested)
+		rProcessJEvents(this.rEngine);
 	}
 	
 	private void loadPlatformData() {
@@ -922,6 +1000,7 @@ public class JRIServer extends RJ
 					
 					this.mainLoopBusyAtClient = true;
 					this.mainLoopClient0State = CLIENT_OK;
+					this.mainLoopS2CAnswerFail = 0;
 					if (this.mainLoopS2CLastCommands[0].getItems() != null) {
 						if (this.mainLoopS2CNextCommandsFirst[0] != null) {
 							MainCmdItem last = this.mainLoopS2CLastCommands[0].getItems();
@@ -976,6 +1055,7 @@ public class JRIServer extends RJ
 	}
 	
 	public void disconnect(final Client client) throws RemoteException {
+		assert (client.slot == 0);
 		this.clientLocks[client.slot].writeLock().lock();
 		try {
 			checkClient(client);
@@ -1011,33 +1091,6 @@ public class JRIServer extends RJ
 		}
 	}
 	
-	public boolean interrupt(final Client client) throws RemoteException {
-		this.clientLocks[client.slot].readLock().lock();
-		try {
-			checkClient(client);
-			try {
-				if (this.mainInterruptLock.tryLock(1L, TimeUnit.SECONDS)) {
-					try {
-						this.rniInterrupted = true;
-						this.rEngine.rniStop(0);
-						return true;
-					}
-					catch (final Throwable e) {
-						LOGGER.log(Level.SEVERE, "An error occurred when trying to interrupt the R engine.", e);
-					}
-					finally {
-						this.mainInterruptLock.unlock();
-					}
-				}
-			}
-			catch (final InterruptedException e) {}
-			return false;
-		}
-		finally {
-			this.clientLocks[client.slot].readLock().unlock();
-		}
-	}
-	
 	public RjsComObject runMainLoop(final Client client, final RjsComObject command) throws RemoteException {
 		this.clientLocks[client.slot].readLock().lock();
 		boolean clientLock = true;
@@ -1047,8 +1100,10 @@ public class JRIServer extends RJ
 			this.mainLoopS2CLastCommands[client.slot].clear();
 			
 			switch ((command != null) ? command.getComType() : RjsComObject.T_MAIN_LIST) {
+			
 			case RjsComObject.T_PING:
 				return RjsStatus.OK_STATUS;
+			
 			case RjsComObject.T_MAIN_LIST:
 				final MainCmdC2SList mainC2SCmdList = (MainCmdC2SList) command;
 				if (client.slot > 0 && mainC2SCmdList != null) {
@@ -1067,10 +1122,16 @@ public class JRIServer extends RJ
 				finally {
 					this.mainExchangeLock.unlock();
 				}
+				
+			case RjsComObject.T_CTRL:
+				return internalCtrl(client.slot, (CtrlCmdItem) command);
+				
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;
+			
 			default:
 				throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
+			
 			}
 		}
 		finally {
@@ -1090,13 +1151,19 @@ public class JRIServer extends RJ
 				throw new IllegalArgumentException("Missing command.");
 			}
 			switch (command.getComType()) {
+			
 			case RjsComObject.T_PING:
 				if (client.slot == 0) {
 					this.client0LastPing = System.nanoTime();
 				}
 				return internalPing();
+			
+			case RjsComObject.T_CTRL:
+				return internalCtrl(client.slot, (CtrlCmdItem) command);
+			
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;
+			
 			default:
 				throw new IllegalArgumentException("Unknown command: " + "0x"+Integer.toHexString(command.getComType()) + ".");
 			}
@@ -1106,6 +1173,57 @@ public class JRIServer extends RJ
 		}
 	}
 	
+	private RjsStatus internalCtrl(final byte slot, final CtrlCmdItem command) {
+		switch (command.getCtrlId()) {
+		
+		case CtrlCmdItem.REQUEST_CANCEL:
+			try {
+				if (this.mainInterruptLock.tryLock(1L, TimeUnit.SECONDS)) {
+					try {
+						this.rniInterrupted = true;
+						this.rEngine.rniStop(0);
+						return RjsStatus.OK_STATUS;
+					}
+					catch (final Throwable e) {
+						LOGGER.log(Level.SEVERE, "An error occurred when trying to interrupt the R engine.", e);
+						return new RjsStatus(RjsStatus.ERROR, CODE_CTRL_REQUEST_CANCEL | 0x2);
+					}
+					finally {
+						this.mainInterruptLock.unlock();
+					}
+				}
+			}
+			catch (final InterruptedException e) {
+				Thread.interrupted();
+			}
+			return new RjsStatus(RjsStatus.ERROR, CODE_CTRL_REQUEST_CANCEL | 0x1, "Timeout.");
+		
+		case CtrlCmdItem.REQUEST_HOT_MODE:
+			this.mainExchangeLock.lock();
+			try {
+				if (!this.hotModeRequested) {
+					if (this.hotMode) {
+						this.hotModeRequested = true;
+					}
+					else {
+						this.hotModeRequested = true;
+						this.rEngine.rniSetProcessJEvents(1);
+						this.mainExchangeR.signalAll();
+					}
+				}
+				return RjsStatus.OK_STATUS;
+			}
+			catch (final Exception e) {
+				LOGGER.log(Level.SEVERE, "An error occurred when requesting hot mode.", e);
+				return new RjsStatus(RjsStatus.ERROR, CODE_CTRL_REQUEST_HOT_MODE | 0x2);
+			}
+			finally {
+				this.mainExchangeLock.unlock();
+			}
+		}
+		
+		return new RjsStatus(RjsStatus.ERROR, CODE_CTRL_COMMON | 0x2);
+	}
 	
 	private RjsStatus internalPing() {
 		final Rengine r = this.rEngine;
@@ -1118,7 +1236,7 @@ public class JRIServer extends RJ
 		return new RjsStatus(RjsStatus.WARNING, S_STOPPED);
 	}
 	
-	private RjsComObject internalMainCallbackFromClient(final byte slot, final MainCmdC2SList mainC2SCmdList) throws RemoteException {
+	private RjsComObject internalMainCallbackFromClient(final byte slot, final MainCmdC2SList mainC2SCmdList) {
 //		System.out.println("fromClient 1: " + mainC2SCmdList);
 //		System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
 //		System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
@@ -1129,7 +1247,7 @@ public class JRIServer extends RJ
 		if (this.mainLoopState == ENGINE_WAIT_FOR_CLIENT) {
 			if (mainC2SCmdList == null && this.mainLoopS2CNextCommandsFirst[slot] == null) {
 				if (slot == 0) {
-					if (this.mainLoopS2CAnswerFail == 0) { // retry
+					if (this.mainLoopS2CAnswerFail < 3) { // retry
 						this.mainLoopS2CAnswerFail++;
 						this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
 						LOGGER.log(Level.WARNING, "Unanswered request - retry: " + this.mainLoopS2CNextCommandsLast[0]);
@@ -1175,7 +1293,9 @@ public class JRIServer extends RJ
 		}
 		while (this.mainLoopS2CNextCommandsFirst[slot] == null
 //					&& (this.mainLoopState != ENGINE_STOPPED)
-				&& (this.mainLoopState == ENGINE_RUN_IN_R || this.mainLoopC2SCommandFirst != null)
+				&& (this.mainLoopState == ENGINE_RUN_IN_R
+						|| this.mainLoopC2SCommandFirst != null
+						|| this.hotModeRequested)
 				&& ((slot > 0)
 						|| ( (this.mainLoopClient0State == CLIENT_OK_WAIT)
 							&& (this.mainLoopStdOutSize == 0)
@@ -1264,7 +1384,8 @@ public class JRIServer extends RJ
 					final int stackId = ++this.mainLoopServerStack;
 					try {
 						if (Thread.currentThread() == this.rEngine) {
-							while (this.mainLoopC2SCommandFirst == null || this.mainLoopServerStack > stackId) {
+							while ((this.mainLoopC2SCommandFirst == null && !this.hotModeRequested)
+									|| this.mainLoopServerStack > stackId ) {
 								int i = 0;
 								final ServerRuntimePlugin[] plugins = this.pluginsList;
 								this.mainExchangeLock.unlock();
@@ -1285,7 +1406,8 @@ public class JRIServer extends RJ
 									this.mainInterruptLock.unlock();
 									this.mainExchangeLock.lock();
 								}
-								if (this.mainLoopC2SCommandFirst != null && this.mainLoopServerStack <= stackId) {
+								if ((this.mainLoopC2SCommandFirst != null || this.hotModeRequested)
+										&& this.mainLoopServerStack <= stackId ) {
 									break;
 								}
 								try {
@@ -1310,24 +1432,30 @@ public class JRIServer extends RJ
 					}
 				}
 				
-				// initial != null && initial.waitForClient()
-				// && this.mainLoopC2SCommandFirst != null
-				item = this.mainLoopC2SCommandFirst;
-				this.mainLoopC2SCommandFirst = this.mainLoopC2SCommandFirst.next;
-				item.next = null;
-				
-//				System.out.println("fromR 2: " + item);
-//				System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
-//				System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
-				
-				if (item.getCmdType() < MainCmdItem.T_S2C_C2S) {
-					// ANSWER
-					if (initialItem.requestId == item.requestId) {
-						this.mainLoopS2CRequest.remove((initialItem.requestId & 0xff));
-						return item;
-					}
-					else {
-						continue;
+				if (this.hotModeRequested) {
+					item = null;
+				}
+				else {
+					// initial != null && initial.waitForClient()
+					// && this.mainLoopC2SCommandFirst != null
+					item = this.mainLoopC2SCommandFirst;
+					this.mainLoopC2SCommandFirst = this.mainLoopC2SCommandFirst.next;
+					item.next = null;
+					
+	//				System.out.println("fromR 2: " + item);
+	//				System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
+	//				System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
+					
+					if (item.getCmdType() < MainCmdItem.T_S2C_C2S) {
+						// ANSWER
+						if (initialItem.requestId == item.requestId) {
+							this.mainLoopS2CRequest.remove((initialItem.requestId & 0xff));
+							return item;
+						}
+						else {
+							item = null;
+							continue;
+						}
 					}
 				}
 			}
@@ -1339,7 +1467,21 @@ public class JRIServer extends RJ
 			// && this.mainLoopC2SCommandFirst != null
 			// && this.mainLoopC2SCommandFirst.getCmdType() < MainCmdItem.T_S2C_C2S
 //			System.out.println("fromR evalDATA");
-			item = internalEvalData((DataCmdItem) item);
+			
+			if (item == null) {
+				rProcessJEvents(null);
+				continue;
+			}
+			switch (item.getCmdType()) {
+			
+			case MainCmdItem.T_DATA_ITEM:
+				item = internalEvalData((DataCmdItem) item);
+				continue;
+				
+			default:
+				continue;
+			
+			}
 		}
 	}
 	
@@ -1360,6 +1502,38 @@ public class JRIServer extends RJ
 		}
 	}
 	
+	
+	public boolean inSafeMode() {
+		return this.safeMode;
+	}
+	
+	public int beginSafeMode() {
+		if (this.safeMode) {
+			return 0;
+		}
+		try {
+			// TODO disable
+			this.safeMode = true;
+			return 1;
+		}
+		catch (final Exception e) {
+			LOGGER.log(Level.SEVERE, "An error occurred when running 'beginSafeMode' command.", e);
+			return -1;
+		}
+	}
+	
+	public void endSafeMode(final int mode) {
+		if (mode > 0) {
+			try {
+				this.safeMode = false;
+				// TODO enable
+			}
+			catch (final Exception e) {
+				LOGGER.log(Level.SEVERE, "An error occurred when running 'endSafeMode' command.", e);
+			}
+		}
+	}
+	
 	/**
 	 * Executes an {@link DataCmdItem R data command} (assignment, evaluation, ...).
 	 * Returns the result in the cmd object passed in, which is passed back out.
@@ -1368,20 +1542,24 @@ public class JRIServer extends RJ
 	 * @return the data command item with setted answer
 	 */
 	private DataCmdItem internalEvalData(final DataCmdItem cmd) {
-		final byte previousSlot = this.currentSlot;
+		final byte savedSlot = this.currentSlot;
 		this.currentSlot = cmd.slot;
 		final boolean ownLock = this.rEngine.getRsync().safeLock();
+		final int savedDepth = this.rniDepth;
 		final int savedMaxDepth = this.rniMaxDepth;
 		{	final byte depth = cmd.getDepth();
-			this.rniMaxDepth = this.rniTemp + ((depth >= 1) ? depth : 128);
+			this.rniDepth = 0;
+			this.rniMaxDepth = (depth >= 1) ? depth : 128;
 		}
 		final int savedProtectedCounter = this.rniProtectedCounter;
+		final int savedSafeMode = beginSafeMode();
 		try {
 			final String input = cmd.getDataText();
 			if (input == null) {
 				throw new IllegalStateException("Missing input.");
 			}
 			DATA_CMD: switch (cmd.getEvalType()) {
+			
 			case DataCmdItem.EVAL_VOID:
 				{	if (this.rniInterrupted) {
 						throw new CancellationException();
@@ -1393,6 +1571,7 @@ public class JRIServer extends RJ
 					cmd.setAnswer(RjsStatus.OK_STATUS);
 				}
 				break DATA_CMD;
+			
 			case DataCmdItem.EVAL_DATA:
 				{	if (this.rniInterrupted) {
 						throw new CancellationException();
@@ -1404,6 +1583,7 @@ public class JRIServer extends RJ
 					cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
 				}
 				break DATA_CMD;
+			
 			case DataCmdItem.RESOLVE_DATA:
 				{	final long objP = Long.parseLong(input);
 					if (objP != 0) {
@@ -1418,6 +1598,7 @@ public class JRIServer extends RJ
 					}
 				}
 				break DATA_CMD;
+			
 			case DataCmdItem.ASSIGN_DATA:
 				{	if (this.rniInterrupted) {
 						throw new CancellationException();
@@ -1426,8 +1607,10 @@ public class JRIServer extends RJ
 					cmd.setAnswer(RjsStatus.OK_STATUS);
 				}
 				break DATA_CMD;
+			
 			default:
 				throw new IllegalStateException("Unsupported command.");
+			
 			}
 			if (this.rniInterrupted) {
 				throw new CancellationException();
@@ -1450,11 +1633,13 @@ public class JRIServer extends RJ
 			return cmd;
 		}
 		finally {
-			this.currentSlot = previousSlot;
+			this.currentSlot = savedSlot;
+			endSafeMode(savedSafeMode);
 			if (this.rniProtectedCounter > savedProtectedCounter) {
 				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
 				this.rniProtectedCounter = savedProtectedCounter;
 			}
+			this.rniDepth = savedDepth;
 			this.rniMaxDepth = savedMaxDepth;
 			
 			if (this.rniInterrupted || this.rniEvalTempAssigned) {
@@ -1751,10 +1936,10 @@ public class JRIServer extends RJ
 	 * @return new created R object
 	 */ 
 	private RObject rniCreateDataObject(final long objP, final int flags, final byte mode) {
-		if (mode == EVAL_MODE_DEFAULT && (this.rniTemp > 512 || this.rniTemp >= this.rniMaxDepth)) {
+		if (mode == EVAL_MODE_DEFAULT && (this.rniDepth >= this.rniMaxDepth)) {
 			return null;
 		}
-		this.rniTemp++;
+		this.rniDepth++;
 		try {
 			final int rType = this.rEngine.rniExpType(objP);
 			switch (rType) {
@@ -2089,14 +2274,14 @@ public class JRIServer extends RJ
 					itemNames[i] = (tag != 0) ? this.rEngine.rniGetSymbolName(tag) : null;
 					itemObjects[i] = rniCreateDataObject(car, flags, EVAL_MODE_DEFAULT);
 					cdr = this.rEngine.rniCDR(cdr);
-					if (cdr == 0 || this.rEngine.rniExpType(cdr) != REXP.LISTSXP) {
+					if (this.rEngine.rniExpType(cdr) != REXP.LISTSXP) {
 						break;
 					}
 				}
 				return new JRIListImpl(itemObjects, className1, itemNames);
 			}
 			case REXP.ENVSXP: {
-				if (this.rniTemp > 1 && (flags & 0x8) == 0) {
+				if (this.rniDepth > 1 && (flags & 0x8) == 0) {
 					return new RReferenceImpl(objP, RObject.TYPE_REFERENCE, "environment");
 				}
 				final String[] names = this.rEngine.rniGetStringArray(this.rEngine.rniListEnv(objP, true));
@@ -2233,7 +2418,7 @@ public class JRIServer extends RJ
 			}
 		}
 		finally {
-			this.rniTemp--;
+			this.rniDepth--;
 		}
 	}
 	
@@ -2397,6 +2582,12 @@ public class JRIServer extends RJ
 	
 	
 	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
+		if (this.safeMode) {
+			if (prompt.startsWith("Browse")) {
+				return "c\n";
+			}
+			return "\n";
+		}
 		final MainCmdItem cmd = internalMainFromR(new ConsoleReadCmdItem(
 				(addToHistory == 1) ? V_TRUE : V_FALSE, prompt ));
 		if (cmd.isOK()) {
@@ -2572,6 +2763,90 @@ public class JRIServer extends RJ
 	}
 	
 	public void rProcessJEvents(final Rengine re) {
+		while (true) {
+			this.mainExchangeLock.lock();
+			try {
+				if (!this.hotModeRequested) {
+					return;
+				}
+				if (this.hotMode || this.mainLoopState == ENGINE_WAIT_FOR_CLIENT
+						|| this.rEngine.getMainLoopCallbacks() != JRIServer.this) {
+					this.hotModeRequested = false;
+					this.hotModeDelayed = true;
+					return;
+				}
+				this.hotModeRequested = false;
+				this.hotMode = true;
+			}
+			finally {
+				this.mainExchangeLock.unlock();
+			}
+			final int savedSafeMode = beginSafeMode();
+			try {
+				this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
+				internalMainFromR(new ConsoleReadCmdItem(2, ""));
+			}
+			catch (final Throwable e) {
+				LOGGER.log(Level.SEVERE, "An error occured when running hot mode.", e);
+			}
+			finally {
+				endSafeMode(savedSafeMode);
+				this.mainExchangeLock.lock();
+				try {
+					this.rEngine.addMainLoopCallbacks(JRIServer.this);
+					this.hotMode = false;
+					if (this.hotModeDelayed) {
+						this.hotModeDelayed = false;
+						this.hotModeRequested = true;
+					}
+					if (!this.hotModeRequested) {
+						return;
+					}
+				}
+				finally {
+					this.mainExchangeLock.unlock();
+				}
+			}
+		}
+	}
+	
+	private void internalClearClient(final Client client) {
+		final MainCmdC2SList list = new MainCmdC2SList();
+		final int savedClientState = this.mainLoopClient0State;
+		this.mainLoopClient0State = CLIENT_OK;
+		final byte slot = client.slot;
+		try {
+			if (slot == 0) {
+				try {
+					while (this.hotMode) {
+						final MainCmdItem cmdItem = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
+						cmdItem.setAnswer(RjsStatus.CANCEL_STATUS);
+						list.setObjects(cmdItem);
+						if (this.mainLoopS2CNextCommandsFirst[slot] == cmdItem) {
+							this.mainLoopS2CNextCommandsFirst[slot] = null;
+						}
+						else {
+							MainCmdItem item = this.mainLoopS2CNextCommandsFirst[slot];
+							while (item != null) {
+								if (item.next == cmdItem) {
+									item.next = null;
+									break;
+								}
+								item = item.next;
+							}
+						}
+						
+						internalMainCallbackFromClient((byte) 0, list);
+					}
+				}
+				catch (final Exception e) {
+					LOGGER.log(Level.SEVERE, "An error occurrend when trying to cancel hot loop.", e);
+				}
+			}
+		}
+		finally {
+			this.mainLoopClient0State = savedClientState;
+		}
 	}
 	
 	private void internalRStopped() {
@@ -2580,6 +2855,7 @@ public class JRIServer extends RJ
 			if (this.mainLoopState == ENGINE_STOPPED) {
 				return;
 			}
+			this.hotMode = false;
 			this.mainLoopState = ENGINE_STOPPED;
 			
 			this.mainExchangeClient.signalAll();

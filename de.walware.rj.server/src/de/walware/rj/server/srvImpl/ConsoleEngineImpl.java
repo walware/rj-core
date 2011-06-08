@@ -47,10 +47,6 @@ public final class ConsoleEngineImpl implements ConsoleEngine {
 		this.internalEngine.setProperties(this.client, properties);
 	}
 	
-	public boolean interrupt() throws RemoteException {
-		return this.internalEngine.interrupt(this.client);
-	}
-	
 	public void disconnect() throws RemoteException {
 		this.internalEngine.disconnect(this.client);
 	}

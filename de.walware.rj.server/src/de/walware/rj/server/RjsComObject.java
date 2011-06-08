@@ -37,6 +37,11 @@ public interface RjsComObject {
 	 */
 	public static final int T_FILE_EXCHANGE =        4;
 	
+	/**
+	 * {@link CtrlCmdItem}
+	 */
+	public static final int T_CTRL =                 5;
+	
 	
 	// Same value as in IStatus
 	public static final int V_OK =               RjsStatus.OK;

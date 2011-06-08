@@ -82,6 +82,7 @@ public final class JRIServerLoader {
 				String serverClazzName = "de.walware.rj.server.jri.JRIServer";
 				final Class<? extends InternalEngine> serverClazz = (Class<? extends InternalEngine>) loader.loadRJavaClass(serverClazzName);
 				loader.loadRJavaClass(serverClazzName + "$InitCallbacks");
+				loader.loadRJavaClass(serverClazzName + "$HotLoopCallbacks");
 				
 				engine = serverClazz.newInstance();
 			}
