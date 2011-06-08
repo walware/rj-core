@@ -13,7 +13,7 @@
 	
 	<groupId>de.walware.rj</groupId>
 	<artifactId>de.walware.rj.eclient.graphics</artifactId>
-	<version>0.5.3-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 	
 	<dependencies>

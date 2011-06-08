@@ -71,7 +71,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public static final String RJ_CLIENT_ID = "de.walware.rj.client";
 	
 	public static int[] version() {
-		return new int[] { 0, 5, 0 };
+		return new int[] { 1, 0, 0 };
 	}
 	
 	private static final ScheduledExecutorService RJHelper_EXECUTOR =
