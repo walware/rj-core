@@ -27,7 +27,7 @@ import java.awt.event.WindowListener;
 
 
 /** JavaGD is an implementation of the {@link GDInterface} protocol which displays the R graphics in an AWT window (via {@link GDCanvas}). It can be used as an example gfor implementing custom display classes which can then be used by JavaGD. Three sample back-ends are included in the JavaGD sources: {@link GDCanvas} (AWT), {@link JGDPanel} (Swing) and {@link JGDBufferedPanel} (Swing with cached update). */
-public class JavaGD extends GDInterface implements WindowListener {
+public class JavaGD extends GDContainerGD implements WindowListener {
     /** frame containing the graphics canvas */ 
     public Frame f;
     
@@ -37,9 +37,10 @@ public class JavaGD extends GDInterface implements WindowListener {
     }
     
     public void     gdOpen(int devNr, double w, double h) {
+        super.gdOpen(devNr, w, h);
         if (f!=null) gdClose();
 
-        f=new Frame("JavaGD ("+(getDeviceNumber()+1)+")"+(active?" *active*":""));
+        f=new Frame("JavaGD ("+(getDeviceNumber()+1)+")"+(isActive()?" *active*":""));
         f.addWindowListener(this);
         c=new GDCanvas(w, h);
         f.add((GDCanvas)c);

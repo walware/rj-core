@@ -34,11 +34,11 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	
 	public void setSlot(final byte slot) {
-		rjSlot = slot;
+		this.rjSlot = slot;
 	}
 	
 	public byte getSlot() {
-		return rjSlot;
+		return this.rjSlot;
 	}
 	
 	public int getDevId() {
@@ -47,16 +47,13 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdOpen(final int devNr, final double w, final double h) {
-		if (this.open) {
-			gdClose();
-		}
 		super.gdOpen(devNr, w, h);
 		this.w = w;
 		this.h = h;
 		
 		this.rj.registerGraphic(this);
 		this.rj.execGDCommand(new GDCmdItem.CInit(
-				getDeviceNumber(), this.w, this.h, this.active, this.rjSlot ));
+				getDeviceNumber(), this.w, this.h, isActive(), this.rjSlot ));
 	}
 	
 	public void deferredInit(final int devId, final String target) {
@@ -64,9 +61,8 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdNewPage() {
-		super.gdNewPage();
 		this.rj.execGDCommand(new GDCmdItem.CInit(
-				getDeviceNumber(), this.w, this.h, this.active, this.rjSlot ));
+				getDeviceNumber(), this.w, this.h, isActive(), this.rjSlot ));
 	}
 	
 	@Override
@@ -80,28 +76,28 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdActivate() {
-		if (this.active) {
-			return;
+		super.gdActivate();
+		if (isOpen()) {
+			this.rj.execGDCommand(new GDCmdItem.CSetActiveOn(
+					getDeviceNumber(), this.rjSlot ));
 		}
-		this.active = true;
-		this.rj.execGDCommand(new GDCmdItem.CSetActiveOn(
-				getDeviceNumber(), this.rjSlot ));
 	}
 	
 	@Override
 	public void gdDeactivate() {
-		if (!this.active) {
-			return;
+		super.gdDeactivate();
+		if (isOpen()) {
+			this.rj.execGDCommand(new GDCmdItem.CSetActiveOff(
+					getDeviceNumber(), this.rjSlot ));
 		}
-		this.active = false;
-		this.rj.execGDCommand(new GDCmdItem.CSetActiveOff(
-				getDeviceNumber(), this.rjSlot ));
 	}
 	
 	@Override
 	public void gdMode(final int mode) {
-		this.rj.execGDCommand(new GDCmdItem.CSetMode(
-				getDeviceNumber(), mode, this.rjSlot ));
+		if (isOpen()) {
+			this.rj.execGDCommand(new GDCmdItem.CSetMode(
+					getDeviceNumber(), mode, this.rjSlot ));
+		}
 	}
 	
 	@Override
@@ -109,8 +105,8 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 		final double[] result = this.rj.execGDCommand(new GDCmdItem.CGetSize(
 				getDeviceNumber(), this.rjSlot ));
 		if (result != null && result.length == 2) {
-			w = result[0];
-			h = result[1];
+			this.w = result[0];
+			this.h = result[1];
 			return new double[] { 0.0, result[0], result[1], 0.0 };
 		}
 		else {
@@ -214,11 +210,6 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	@Override
 	public double[] gdLocator() {
 		return null; // TODO
-	}
-	
-	@Override
-	public void executeDevOff() {
-		// not supported at this layer
 	}
 	
 }
