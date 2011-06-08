@@ -197,6 +197,47 @@ public class Rengine extends Thread {
 		@param count number of references to unprotect */
 	public synchronized native void rniUnprotect(int count);
 
+	/** RNI:
+	 * Gets the SEXP type
+	 * 
+	 * @param p reference to a SEXP
+	 * @return type of the expression (see xxxSEXP constants)
+	 **/
+	public synchronized native int rniExpType(long p);
+	
+	/** RNI:
+	 * Gets the first value of the class attribute
+	 * 
+	 * @param p reference to a SEXP
+	 * @return the first value if available, otherwise <code>null</code>
+	 **/
+	public synchronized native String rniGetClassAttrString(long p);
+	
+	/** RNI:
+	 * Returns if the reference is an S4 object
+	 * 
+	 * @param p reference to a SEXP
+	 * @return <code>true</code> if S4 object, otherwise <code>false</code>
+	 */
+	public synchronized native boolean rniIsS4(long p);
+	
+	/** RNI:
+	 * Gets the length of the R element
+	 * 
+	 * @param p reference to a SEXP
+	 * @return the length
+	 */
+	public synchronized native int rniGetLength(long p);
+	
+	/** RNI:
+	 * Gets the dim of the R element
+	 * 
+	 * @param p reference to a SEXP
+	 * @return the dim or <code>null</code> if dim not available
+	 */
+	public synchronized native int[] rniGetArrayDim(long p);
+	
+	
     /** RNI: get the contents of the first entry of a character vector
 	@param exp reference to STRSXP
 	@return contents or <code>null</code> if the reference is not STRSXP */
@@ -223,11 +264,23 @@ public class Rengine extends Thread {
 	 @param exp reference to RAWSXP
 	 @return contents or <code>null</code> if the reference is not RAWSXP */
     public synchronized native byte[] rniGetRawArray(long exp);
-    /** RNI: get the contents of a generic vector (aka list)
-	@param exp reference to VECSXP
-	@return contents as an array of references or <code>null</code> if the reference is not VECSXP */
-    public synchronized native long[] rniGetVector(long exp);
-
+	
+	/** RNI:
+	 * Gets the contents of a generic vector (aka list)
+	 * 
+	 * @param p reference to VECSXP/EXPRSXP
+	 * @return contents as an array of references or <code>null</code> if the reference is not VECSXP */
+	public synchronized native long[] rniGetVector(long p);
+	
+	/** RNI:
+	 * Gets the an element of a generic vector (aka list)
+	 * 
+	 * @param p reference to VECSXP/EXPRSXP
+	 * @param index the index of the element
+	 * @return the reference or <code>0</code> if the reference is not VECSXP/EXPRSXP or the index is invalid
+	 */
+	public synchronized native long rniGetVectorElt(long p, int index);
+	
     /** RNI: create a character vector of the length 1
 	@param s initial contents of the first entry
 	@return reference to the resulting STRSXP */
@@ -264,21 +317,45 @@ public class Rengine extends Thread {
 	@return reference to the resulting VECSXP */
     public synchronized native long rniPutVector(long[] exps);
     
-    /** RNI: get an attribute
-	@param exp reference to the object whose attribute is requested
-	@param name name of the attribute
-	@return reference to the attribute or 0 if there is none */
-    public synchronized native long rniGetAttr(long exp, String name);
+	/** RNI:
+	 * Gets an attribute
+	 * 
+	 * @param p reference to the object whose attribute is requested
+	 * @param name name of the attribute
+	 * @return reference to the attribute or 0 if there is none
+	 **/
+	public synchronized native long rniGetAttr(long p, String name);
+	
+	/** RNI:
+	 * Get an attribute using an installed symbol
+	 * 
+	 * @param p reference to the object whose attribute is requested
+	 * @param name name of the attribute as reference to a SYMSXP
+	 * @return reference to the attribute or 0 if there is none
+	 **/
+	public synchronized native long rniGetAttrBySym(long p, long name);
+	
 	/** RNI: get attribute names
 	 @param exp reference to the object whose attributes are requested
 	 @return a list of strings naming all attributes or <code>null</code> if there are none 
 	 @since API 1.9, JRI 0.5 */
-    public synchronized native String[] rniGetAttrNames(long exp);	
-    /** RNI: set an attribute
-	 @param exp reference to the object whose attribute is to be modified
-	 @param name attribute name
-	 @param attr reference to the object to be used as the contents of the attribute */
-    public synchronized native void rniSetAttr(long exp, String name, long attr);
+    public synchronized native String[] rniGetAttrNames(long exp);
+	
+	/** RNI:
+	 * Sets an attribute
+	 * 
+	 * @param p reference to the object whose attribute is to be modified
+	 * @param name attribute name
+	 * @param attr reference to the object to be used as the contents of the attribute */
+	public synchronized native void rniSetAttr(long p, String name, long attr);
+	
+	/** RNI:
+	 * Sets an attribute using an installed symbol
+	 * 
+	 * @param p reference to the object whose attribute is to be modified
+	 * @param name name of the attribute as reference to a SYMSXP
+	 * @param attr reference to the object to be used as the contents of the attribute */
+	public synchronized native void rniSetAttrBySym(long p, long name, long attr);
 
 	/** RNI: determines whether an R object instance inherits from a specific class (S3 for now)
 		@since API 1.5, JRI 0.3
@@ -382,7 +459,25 @@ public class Rengine extends Thread {
 		@param all if set to <code>true</code> then all objects will be shown, otherwise hidden objects will be omitted
 		@return reference to a string vector of names in the environment */
 	public synchronized native long rniListEnv(long exp, boolean all);
-
+	
+	/** RNI:
+	 * Get variable in an environment
+	 * 
+	 * @param rho reference to environment
+	 * @param sym symbol name
+	 * @return reference to the value or 0 if not found
+	 **/
+	public synchronized native long rniGetVar(long rho, String sym);
+	
+	/** RNI:
+	 * Get variable in an environment
+	 * 
+	 * @param rho reference to environment
+	 * @param sym symbol name as reference to a SYMSXP
+	 * @return reference to the value or 0 if not found
+	 **/
+	public synchronized native long rniGetVarBySym(long rho, long sym);
+	
 	/** RNI: return a special object reference. Note that all such references are constants valid for the entire session and cannot be protected/preserved (they are persistent already).
 		@since API 1.9, JRI 0.5
 		@param which constant referring to a particular special object (see SO_xxx constants)
@@ -433,10 +528,6 @@ public class Rengine extends Thread {
     */
     public synchronized native boolean rniAssign(String name, long exp, long rho);
     
-    /** RNI: get the SEXP type
-	@param exp reference to a SEXP
-	@return type of the expression (see xxxSEXP constants) */
-    public synchronized native int rniExpType(long exp);
     /** RNI: run the main loop.<br> <i>Note:</i> this is an internal method and it doesn't return until the loop exits. Don't use directly! */
     public native void rniRunMainLoop();
     

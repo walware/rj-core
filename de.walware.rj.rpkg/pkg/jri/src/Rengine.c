@@ -133,31 +133,34 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniParse
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniEval
   (JNIEnv *env, jobject this, jlong exp, jlong rho)
 {
-      SEXP es = R_NilValue, exps = L2SEXP(exp);
-      SEXP eval_env = L2SEXP(rho);
-      int er = 0;
-      int i = 0, l;
-
-      /* invalid (NULL) expression (parse error, ... ) */
-      if (!exp) return 0;
-
-      if (TYPEOF(exps) == EXPRSXP) { 
-      	  /* if the object is a list of exps, eval them one by one */
-          l = LENGTH(exps);
-          while (i < l) {
-              es = R_tryEval(VECTOR_ELT(exps,i), eval_env, &er);
-              
-              /* an error occured, no need to continue */
-              if (er) return 0;
-              i++;
-          }
-      } else
-          es = R_tryEval(exps, eval_env, &er);
-      
-      /* er is just a flag - on error return 0 */
-      if (er) return 0;
-      
-      return SEXP2L(es);
+	SEXP es = R_NilValue, exps = L2SEXP(exp);
+	SEXP eval_env = L2SEXP(rho);
+	int er = 0;
+	int i = 0, l;
+	
+	/* invalid (NULL) expression (parse error, ... ) */
+	if (!exp) return 0;
+	
+	PROTECT(exps);
+	if (TYPEOF(exps) == EXPRSXP) { 
+		/* if the object is a list of exps, eval them one by one */
+		l = LENGTH(exps);
+		while (i < l) {
+			es = R_tryEval(VECTOR_ELT(exps, i), eval_env, &er);
+			
+			/* an error occured, no need to continue */
+			if (er) break;
+			i++;
+		}
+	} else {
+		es = R_tryEval(exps, eval_env, &er);
+	}
+	UNPROTECT(1);
+	
+	/* er is just a flag - on error return 0 */
+	if (er) return 0;
+	
+	return SEXP2L(es);
 }
 
 struct safeAssign_s {
@@ -235,6 +238,33 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
 	return SEXP2L(R_lsInternal(rho ? L2SEXP(rho) : R_GlobalEnv, all));
 }
 
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVar(
+		JNIEnv *env, jobject this, jlong rho, jstring symName)
+{
+	SEXP sVar = jri_installString(env, symName);
+	if (!sVar || sVar == R_NilValue) {
+		return 0;
+	}
+	
+	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, sVar, TRUE);
+	if (TYPEOF(sVar) == PROMSXP) {
+		sVar = eval(sVar, R_BaseEnv);
+	}
+	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVarBySym(
+		JNIEnv *env, jobject this, jlong rho, jlong symName)
+{	
+	SEXP sVar;
+	
+	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, L2SEXP(symName), TRUE);
+	if (TYPEOF(sVar) == PROMSXP) {
+		sVar = eval(sVar, R_BaseEnv);
+	}
+	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
+}
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniSpecialObject
 (JNIEnv *env, jobject this, jint which)
 {
@@ -267,12 +297,47 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniJavaToXref
   return SEXP2L(R_MakeExternalPtr(go, R_NilValue, R_NilValue));
 }
 
+
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniExpType(
+		JNIEnv *env, jobject this, jlong p)
+{
+	return p ? TYPEOF(L2SEXP(p)) : 0;
+}
+
+JNIEXPORT jobject JNICALL Java_org_rosuda_JRI_Rengine_rniGetClassAttrString(
+		JNIEnv *env, jobject this, jlong p)
+{
+	return jri_putString(env, Rf_getAttrib(L2SEXP(p), R_ClassSymbol), 0);
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniIsS4(
+		JNIEnv *env, jobject this, jlong p)
+{
+	return (IS_S4_OBJECT(L2SEXP(p)) == TRUE) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGetLength(
+		JNIEnv *env, jobject this, jlong p)
+{
+	return (p) ? (jint) Rf_length(L2SEXP(p)) : 0;
+}
+
+JNIEXPORT jarray JNICALL Java_org_rosuda_JRI_Rengine_rniGetArrayDim(
+		JNIEnv *env, jobject this, jlong p)
+{
+	SEXP sDim = Rf_getAttrib(L2SEXP(p), R_DimSymbol);
+	if (TYPEOF(sDim) == INTSXP && LENGTH(sDim) > 0) {
+		return jri_putIntArray(env, sDim);
+	}
+	return 0;
+}
+
+
 JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetString
   (JNIEnv *env, jobject this, jlong exp)
 {
       return jri_putString(env, L2SEXP(exp), 0);
 }
-
 
 JNIEXPORT jobjectArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetStringArray
   (JNIEnv *env, jobject this, jlong exp)
@@ -304,17 +369,27 @@ JNIEXPORT jintArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetDoubleArray
       return jri_putDoubleArray(env, L2SEXP(exp));
 }
 
-JNIEXPORT jlongArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetVector
-(JNIEnv *env, jobject this, jlong exp)
+JNIEXPORT jlongArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetVector(
+		JNIEnv *env, jobject this, jlong p)
 {
-    return jri_putSEXPLArray(env, L2SEXP(exp));
+	SEXP s = L2SEXP(p);
+	if (TYPEOF(s) != VECSXP && TYPEOF(s) != EXPRSXP) {
+		return 0;
+	}
+	return jri_putSEXPLArray(env, s);
 }
 
-JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniExpType
-  (JNIEnv *env, jobject this, jlong exp)
-{
-    return exp ? TYPEOF(L2SEXP(exp)) : 0;
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVectorElt(
+		JNIEnv *env, jobject this, jlong p, jint index)
+{	
+	SEXP s = L2SEXP(p);
+	if ((TYPEOF(s) != VECSXP && TYPEOF(s) != EXPRSXP)
+			|| index < 0 || index >= LENGTH(s)) {
+		return 0;
+	}
+	return SEXP2L(VECTOR_ELT(s, index));
 }
+
 
 JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniIdle
   (JNIEnv *env, jobject this)
@@ -380,15 +455,22 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniPutVector
     return SEXP2L(jri_getSEXPLArray(env, a));
 }
 
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttr
-(JNIEnv *env, jobject this, jlong exp, jstring name)
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttr(
+		JNIEnv *env, jobject this, jlong p, jstring name)
 {
     SEXP an = jri_installString(env, name);
-    if (!an || an==R_NilValue || exp==0 || L2SEXP(exp)==R_NilValue) return 0;
+    if (!an || an==R_NilValue || p==0 || L2SEXP(p)==R_NilValue) return 0;
     {
-        SEXP a = getAttrib(L2SEXP(exp), an);
+        SEXP a = getAttrib(L2SEXP(p), an);
         return (a==R_NilValue)?0:SEXP2L(a);
     }
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrBySym(
+		JNIEnv *env, jobject this, jlong p, jlong name)
+{
+	SEXP sAttr = Rf_getAttrib(L2SEXP(p), L2SEXP(name));
+	return (sAttr != R_NilValue) ? SEXP2L(sAttr) : 0;
 }
 
 JNIEXPORT jobjectArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrNames
@@ -422,13 +504,13 @@ JNIEXPORT jobjectArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrNames
     return sa;
 }
 
-JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetAttr
-(JNIEnv *env, jobject this, jlong exp, jstring aName, jlong attr)
+JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetAttr(
+		JNIEnv *env, jobject this, jlong p, jstring aName, jlong attr)
 {
     SEXP an = jri_installString(env, aName);
-    if (!an || an==R_NilValue || exp==0 || L2SEXP(exp)==R_NilValue) return;
+    if (!an || an==R_NilValue || p==0 || L2SEXP(p)==R_NilValue) return;
 
-    setAttrib(L2SEXP(exp), an, (attr==0)?R_NilValue:L2SEXP(attr));
+    setAttrib(L2SEXP(p), an, (attr==0) ? R_NilValue : L2SEXP(attr));
 	
 	/* BTW: we don't need to adjust the object bit for "class", setAttrib does that already */
 
@@ -437,6 +519,12 @@ JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetAttr
        SET_ATTRIB(L2SEXP(exp), (attr==0)?R_NilValue:L2SEXP(attr)); */
     
 }
+
+JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetAttrBySym(
+		JNIEnv *env, jobject this, jlong p, jlong name, jlong attr)
+{
+	setAttrib(L2SEXP(p), L2SEXP(name), (attr == 0) ? R_NilValue : L2SEXP(attr));
+}	
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniInstallSymbol
 (JNIEnv *env, jobject this, jstring s)
@@ -491,7 +579,7 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniCDR
 {
     if (exp) {
         SEXP r = CDR(L2SEXP(exp));
-        return (r==R_NilValue)?0:SEXP2L(r);
+        return (r && r != R_NilValue && TYPEOF(r) == LISTSXP) ? SEXP2L(r) : 0;
     }
     return 0;
 }

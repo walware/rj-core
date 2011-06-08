@@ -74,8 +74,8 @@ jarray jri_putStringArray(JNIEnv *env, SEXP e)
         if (!sa) { jri_error("Unable to create string array."); return 0; }
         while (j < LENGTH(e)) {
 	    SEXP elt = STRING_ELT(e, j);
-	    jobject s = (elt == R_NaString) ? 0 : (*env)->NewStringUTF(env, CHAR_UTF8(STRING_ELT(e,j)));
-            _dbg(if (s) rjprintf (" [%d] \"%s\"\n",j,CHAR_UTF8(STRING_ELT(e,j))); else rjprintf(" [%d] NA\n", j));
+	    jobject s = (elt == R_NaString) ? 0 : (*env)->NewStringUTF(env, CHAR_UTF8(elt));
+            _dbg(if (s) rjprintf (" [%d] \"%s\"\n",j,CHAR_UTF8(elt)); else rjprintf(" [%d] NA\n", j));
             (*env)->SetObjectArrayElement(env, sa, j, s);
             j++;
         }
@@ -368,7 +368,7 @@ SEXP jri_getIntArray(JNIEnv *env, jarray o) {
   PROTECT(ar=allocVector(INTSXP,l));
   memcpy(INTEGER(ar),ap,sizeof(jint)*l);
   UNPROTECT(1);
-  (*env)->ReleaseIntArrayElements(env, o, ap, 0);
+  (*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
   _prof(profReport("RgetIntArrayCont[%d]:",o));
   return ar;
 }
@@ -392,7 +392,7 @@ SEXP jri_getByteArray(JNIEnv *env, jarray o) {
   }
   ar = allocVector(RAWSXP, l);
   memcpy(RAW(ar), ap, l);
-  (*env)->ReleaseByteArrayElements(env, o, ap, 0);
+  (*env)->ReleaseByteArrayElements(env, o, ap, JNI_ABORT);
   _prof(profReport("RgetByteArrayCont[%d]:",o));
   return ar;
 }
@@ -417,7 +417,7 @@ SEXP jri_getBoolArrayI(JNIEnv *env, jarray o) {
   PROTECT(ar=allocVector(LGLSXP,l));
   memcpy(LOGICAL(ar),ap,sizeof(jint)*l);
   UNPROTECT(1);
-  (*env)->ReleaseIntArrayElements(env, o, ap, 0);
+  (*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
   _prof(profReport("RgetBoolArrayICont[%d]:",o));
   return ar;
 }
@@ -446,7 +446,7 @@ SEXP jri_getBoolArray(JNIEnv *env, jarray o) {
     while (i<l) { lgl[i]=ap[i]?1:0; i++; }
   }
   UNPROTECT(1);
-  (*env)->ReleaseBooleanArrayElements(env, o, ap, 0);
+  (*env)->ReleaseBooleanArrayElements(env, o, ap, JNI_ABORT);
   _prof(profReport("RgetBoolArrayCont[%d]:",o));
   return ar;
 }
@@ -473,7 +473,7 @@ SEXP jri_getSEXPLArray(JNIEnv *env, jarray o) {
         i++;
     }
     UNPROTECT(1);
-    (*env)->ReleaseLongArrayElements(env, o, ap, 0);
+    (*env)->ReleaseLongArrayElements(env, o, ap, JNI_ABORT);
     _prof(profReport("jri_getSEXPLArray[%d]:",o));
     return ar;
 }
@@ -498,7 +498,7 @@ SEXP jri_getDoubleArray(JNIEnv *env, jarray o) {
   PROTECT(ar=allocVector(REALSXP,l));
   memcpy(REAL(ar),ap,sizeof(jdouble)*l);
   UNPROTECT(1);
-  (*env)->ReleaseDoubleArrayElements(env, o, ap, 0);
+  (*env)->ReleaseDoubleArrayElements(env, o, ap, JNI_ABORT);
   _prof(profReport("RgetDoubleArrayCont[%d]:",o));
   return ar;
 }

@@ -118,7 +118,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	public String getRClassName() {
-		return this.className1;
+		return (this.className1 != null) ? this.className1 : this.data.getBaseVectorRClassName();
 	}
 	
 	public int getLength() {

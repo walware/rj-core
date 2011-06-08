@@ -130,7 +130,8 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	public String getRClassName() {
-		return this.className1;
+		return (this.className1 != null) ? this.className1 :
+				((this.dimAttribute.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
 	}
 	
 	public int getLength() {

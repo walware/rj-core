@@ -127,7 +127,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	}
 	
 	public String getRClassName() {
-		return this.className1;
+		return (this.className1 != null) ? this.className1 : RObject.CLASSNAME_ENV;
 	}
 	
 	
