@@ -17,8 +17,6 @@ public interface RjsGraphic {
 	
 	int getDevId();
 	
-	void deferredInit(int devId, String target);
-	
 	void setSlot(byte slot);
 	byte getSlot();
 	

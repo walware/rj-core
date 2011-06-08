@@ -56,9 +56,6 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 				getDeviceNumber(), this.w, this.h, isActive(), this.rjSlot ));
 	}
 	
-	public void deferredInit(final int devId, final String target) {
-	}
-	
 	@Override
 	public void gdNewPage() {
 		this.rj.execGDCommand(new GDCmdItem.CInit(

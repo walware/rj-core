@@ -159,10 +159,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -206,10 +202,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -259,10 +251,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -309,10 +297,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -355,10 +339,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -409,10 +389,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -469,10 +445,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -523,10 +495,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		@Override
 		public void setAnswer(final RjsStatus status) {
 			this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
-		}
-		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -590,10 +558,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -645,10 +609,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -697,10 +657,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -756,10 +712,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -828,10 +780,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -890,10 +838,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -958,10 +902,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -1020,10 +960,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -1088,10 +1024,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			throw new UnsupportedOperationException();
 		}
 		
-		public void setAnswer(final byte[] data) {
-			throw new UnsupportedOperationException();
-		}
-		
 		
 		@Override
 		public double[] getData() {
@@ -1147,10 +1079,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		
@@ -1216,10 +1144,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		@Override
 		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		public void setAnswer(final byte[] data) {
 			throw new UnsupportedOperationException();
 		}
 		

@@ -47,9 +47,6 @@ public class RJ {
 	public void registerGraphic(final RjsGraphic graphic) {
 	}
 	
-	public void initLastGraphic(final int devId, final String target) {
-	}
-	
 	public void unregisterGraphic(final RjsGraphic graphic) {
 	}
 	

@@ -2529,16 +2529,6 @@ public class JRIServer extends RJ
 	}
 	
 	@Override
-	public void initLastGraphic(final int devId, final String target) {
-		if (this.graphicLast == null
-				|| (this.graphicLast.getDevId() > 0 && this.graphicLast.getDevId() != devId) ) {
-			return;
-		}
-		this.graphicLast.deferredInit(devId, target);
-		this.graphicLast = null;
-	}
-	
-	@Override
 	public void unregisterGraphic(final RjsGraphic graphic) {
 		this.graphicList.remove(graphic);
 	}
