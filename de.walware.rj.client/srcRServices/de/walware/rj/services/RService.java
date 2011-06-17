@@ -67,11 +67,18 @@ public interface RService {
 	int DEPTH_INFINITE = -1;
 	
 	/**
-	 * Value for depth parameters indicating that the depth is limited to the specified object itself.
+	 * Value for depth parameters indicating to create only the specified object itself.
 	 * 
 	 * @since 0.5.0
 	 */
 	int DEPTH_ONE = 1;
+	
+	/**
+	 * Value for depth parameters indicating to create only a reference to the specified object.
+	 * 
+	 * @since 1.1.0
+	 */
+	int DEPTH_REFERENCE = 0;
 	
 	
 	RPlatform getPlatform();
