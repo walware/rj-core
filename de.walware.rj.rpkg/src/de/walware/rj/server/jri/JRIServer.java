@@ -1526,55 +1526,63 @@ public final class JRIServer extends RJ
 			if (input == null) {
 				throw new IllegalStateException("Missing input.");
 			}
+			final RObject data = cmd.getData();
 			DATA_CMD: switch (cmd.getOp()) {
 			
-			case DataCmdItem.EVAL_VOID:
-				{	if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					rniEval(input);
-					if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					cmd.setAnswer(RjsStatus.OK_STATUS);
+			case DataCmdItem.EVAL_VOID: {
+				if (this.rniInterrupted) {
+					throw new CancellationException();
 				}
+				if (data == null) {
+					rniEval(input);
+				}
+				else {
+					rniEval(input, (RList) data);
+				}
+				if (this.rniInterrupted) {
+					throw new CancellationException();
+				}
+				cmd.setAnswer(RjsStatus.OK_STATUS); }
 				break DATA_CMD;
 			
-			case DataCmdItem.EVAL_DATA:
-				{	if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					final long objP = rniEval(input);
+			case DataCmdItem.EVAL_DATA: {
+				if (this.rniInterrupted) {
+					throw new CancellationException();
+				}
+				final long objP;
+				if (data == null) {
+					objP = rniEval(input);
+				}
+				else {
+					objP = rniEval(input, (RList) data);
+				}
+				if (this.rniInterrupted) {
+					throw new CancellationException();
+				}
+				cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
+				break DATA_CMD; }
+			
+			case DataCmdItem.RESOLVE_DATA: {
+				final long objP = Long.parseLong(input);
+				if (objP != 0) {
 					if (this.rniInterrupted) {
 						throw new CancellationException();
 					}
 					cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
 				}
-				break DATA_CMD;
-			
-			case DataCmdItem.RESOLVE_DATA:
-				{	final long objP = Long.parseLong(input);
-					if (objP != 0) {
-						if (this.rniInterrupted) {
-							throw new CancellationException();
-						}
-						cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
-					}
-					else {
-						cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
-								"Invalid reference." ));
-					}
+				else {
+					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
+							"Invalid reference." ));
 				}
-				break DATA_CMD;
+				break DATA_CMD; }
 			
-			case DataCmdItem.ASSIGN_DATA:
-				{	if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					rniAssign(input, cmd.getData());
-					cmd.setAnswer(RjsStatus.OK_STATUS);
+			case DataCmdItem.ASSIGN_DATA: {
+				if (this.rniInterrupted) {
+					throw new CancellationException();
 				}
-				break DATA_CMD;
+				rniAssign(input, data);
+				cmd.setAnswer(RjsStatus.OK_STATUS);
+				break DATA_CMD; }
 			
 			default:
 				throw new IllegalStateException("Unsupported command.");
@@ -1583,22 +1591,18 @@ public final class JRIServer extends RJ
 			if (this.rniInterrupted) {
 				throw new CancellationException();
 			}
-			return cmd;
 		}
 		catch (final RjsException e) {
 			cmd.setAnswer(e.getStatus());
-			return cmd;
 		}
 		catch (final CancellationException e) {
 			cmd.setAnswer(RjsStatus.CANCEL_STATUS);
-			return cmd;
 		}
 		catch (final Throwable e) {
 			final String message = "Eval data failed. Cmd:\n" + cmd.toString() + ".";
 			LOGGER.log(Level.SEVERE, message, e);
 			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_COMMON | 0x1),
 					"Internal server error (see server log)." ));
-			return cmd;
 		}
 		finally {
 			this.currentSlot = savedSlot;
@@ -1639,6 +1643,7 @@ public final class JRIServer extends RJ
 				}
 			}
 		}
+		return cmd.waitForClient() ? cmd : null;
 	}
 	
 	private long rniProtect(final long p) {
@@ -1650,6 +1655,43 @@ public final class JRIServer extends RJ
 	private long rniEval(final String expression) throws RjsException {
 		final long exprP = rniResolveExpression(expression);
 		return rniEvalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x3));
+	}
+	
+	private long rniEval(final String name, final RList args) throws RjsException {
+		final long exprP = rniCreateFCall(name, args);
+		return rniEvalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x4));
+	}
+	
+	private long rniCreateFCall(final String name, final RList args) throws RjsException {
+		long argsP = this.rniP_NULL;
+		for (int i = args.getLength() - 1; i >= 0; i--) {
+			final String argName = args.getName(i);
+			final RObject argValue = args.get(i);
+			final long argValueP;
+			if (argValue != null) {
+				argValueP = rniAssignDataObject(argValue);
+			}
+			else {
+				argValueP = this.rniP_MissingArg;
+			}
+			argsP = rniProtect(this.rEngine.rniCons(argValueP, argsP,
+					(argName != null) ? this.rEngine.rniInstallSymbol(argName) : 0, false ));
+		}
+		long funP;
+		if (name.indexOf(':') > 0) {
+			funP = this.rEngine.rniParse(name, 1);
+			long[] list;
+			if (funP != 0 && (list = this.rEngine.rniGetVector(funP)) != null && list.length == 1) {
+				funP = list[0];
+			}
+			else {
+				throw new RjsException(CODE_DATA_COMMON | 0x4, "The reference to the function is invalid.");
+			}
+		}
+		else {
+			funP = this.rEngine.rniInstallSymbol(name);
+		}
+		return this.rEngine.rniCons(funP, argsP, 0, true);
 	}
 	
 	/**
@@ -1719,6 +1761,9 @@ public final class JRIServer extends RJ
 				switch (code) {
 				case (CODE_DATA_EVAL_DATA | 0x3):
 					message = "An error occurred when evaluation the specified expression in R " + message + ".";
+					break;
+				case (CODE_DATA_EVAL_DATA | 0x4):
+					message = "An error occurred when evaluation the function in R " + message + ".";
 					break;
 				case (CODE_DATA_ASSIGN_DATA | 0x3):
 					message = "An error occurred when assigning the value to the specified expression in R " + message + ".";
