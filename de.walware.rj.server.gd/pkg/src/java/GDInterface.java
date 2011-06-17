@@ -28,12 +28,13 @@ package org.rosuda.javaGD;
  <b>external API: those methods are called via JNI from the GD C code</b>
  <p>
  <pre>
- public void     gdOpen(int devNr, double w, double h);
+ public void     gdOpen(int devNr);
  public void     gdActivate();
  public void     gdCircle(double x, double y, double r);
  public void     gdClip(double x0, double x1, double y0, double y1);
  public void     gdClose();
  public void     gdDeactivate();
+ public double[] gdInit(double width, double height, int unit, double xpi, double ypi)
  public double[] gdLocator();
  public void     gdLine(double x1, double y1, double x2, double y2);
  public double[] gdMetricInfo(int ch);
@@ -58,6 +59,11 @@ package org.rosuda.javaGD;
 */
 public abstract class GDInterface {
 	
+	
+	public static final int IN = 0;
+	public static final int PX = 1;
+	
+	
 	/**
 	 * Flag indicating whether this device is active (current) in R
 	 **/
@@ -73,6 +79,11 @@ public abstract class GDInterface {
 	 * (-1 if undefined)
 	 **/
 	private int devNr = -1;
+	
+	private double width = 672.0;
+	private double height = 672.0;
+	private double xpi = 96.0;
+	private double ypi = 96.0;
 	
 	
 	/**
@@ -93,12 +104,62 @@ public abstract class GDInterface {
 	}
 	
 	
+	public void setSize(double width, double height, int unit) {
+		switch (unit) {
+		case IN:
+			this.width = width *  this.xpi;
+			this.height = height * this.ypi;
+			break;
+		default:
+			this.width = width;
+			this.height = height;
+			break;
+		}
+	}
+	
+	public double getWidth() {
+		return this.width;
+	}
+	
+	public double getHeight() {
+		return this.height;
+	}
+	
+	
+	/**
+	 * Returns the raster point per inch (dpi)
+	 * 
+	 * @param width initial width of the device
+	 * @param height initial height of the device
+	 * @param unit constant for unit of width and height ({@link #IN}, {@link #PX})
+	 * @param xpi
+	 * @param ypi
+	 * @return array with factor for x (horizontal) and y (vertical)
+	 */
+	public double[] gdInit(double width, double height, int unit, double xpi, double ypi) {
+		if (xpi > 0 && ypi > 0) {
+			this.xpi = xpi;
+			this.ypi = ypi;
+		}
+		setSize(width, height, unit);
+		
+		return new double[] { this.width, this.height };
+	}
+	
+	/**
+	 * Returns the raster point per inch (dpi)
+	 * 
+	 * @return array with factor for x (horizontal) and y (vertical)
+	 */
+	public double[] gdPPI() {
+		return new double[] { this.xpi, this.ypi };
+	}
+	
 	/** 
 	 * Opens the new device with the specified size
 	 * @param devNr device number
-	 * @param w width of the device
-	 * @param h height of the device */
-	public void     gdOpen(int devNr, double w, double h) {
+	 */
+	public void     gdOpen(int devNr) {
 		if (isOpen()) {
 			gdClose();
 		}

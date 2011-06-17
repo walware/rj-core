@@ -1,9 +1,19 @@
 ## RJ graphic device
 
-rj.GD <- function(name = "rj.gd", width = 400, height = 300, ps = 12) {
+rj.GD <- function(name = "rj.gd", width = 7, height = 7, size.unit = "in",
+		xpinch = NA, ypinch = NA, canvas = "white",
+		pointsize = 12, gamma = 1.0) {
 	initLib()
-	invisible(.C("newJavaGD", as.character(name),
-					as.numeric(width), as.numeric(height), as.numeric(ps),
+	
+	if (!size.unit %in% c("in", "px")) {
+		error(paste("Illegal argument: unsupported unit", size.unit))
+	}
+	size.unit <- switch(size.unit, "px" = 1L, 0L)
+	
+	invisible(.Call("newJavaGD", as.character(name),
+					width, height, size.unit,
+					xpinch, ypinch, canvas,
+					pointsize, gamma,
 					PACKAGE= "rj.gd" ))
 }
 

@@ -3,8 +3,6 @@
 #include "rjutil.h"
 #include <Rdefines.h>
 
-int initJavaGD(newJavaGDDesc* xd);
-
 char *symbol2utf8(const char *c); /* from s2u.c */
 
 /* Device Driver Actions */
@@ -42,9 +40,6 @@ static void newJavaGD_MetricInfo(int c,
 			      double* width, NewDevDesc *dd);
 static void newJavaGD_Mode(int mode, NewDevDesc *dd);
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
-Rboolean newJavaGD_NewDevice(NewDevDesc *dd, newJavaGDDesc *xd,
-		char *dsp, double w, double h);
-void newJavaGD_Open(NewDevDesc *dd);
 static void newJavaGD_Polygon(int n, double *x, double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
@@ -84,6 +79,8 @@ static jmethodID jmGDInterfaceCircle;
 static jmethodID jmGDInterfaceClip;
 static jmethodID jmGDInterfaceClose;
 static jmethodID jmGDInterfaceDeactivate;
+static jmethodID jmGDInterfaceGetPPI;
+static jmethodID jmGDInterfaceInit;
 static jmethodID jmGDInterfaceLocator;
 static jmethodID jmGDInterfaceLine;
 static jmethodID jmGDInterfaceMetricInfo;
@@ -323,38 +320,6 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     sendAllGC(env, xd, gc);
 }
 
-Rboolean newJavaGD_NewDevice(NewDevDesc *dd, newJavaGDDesc *xd, char *dsp, double w, double h)
-{
-	if (!xd) {
-		gdWarning("Rjgd_NewDevice: xd is null");
-		return FALSE;
-	}
-	
-	if (initJavaGD(xd)) return FALSE;
-	
-    xd->fill = 0xffffffff; /* transparent, was R_RGB(255, 255, 255); */
-    xd->col = R_RGB(0, 0, 0);
-    xd->canvas = R_RGB(255, 255, 255);
-    xd->windowWidth = w;
-    xd->windowHeight = h;
-    
-    return TRUE;
-}
-
-void newJavaGD_Open(NewDevDesc *dd)
-{	
-	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-	int devNr = ndevNumber(dd);
-	
-	JNIEnv *env = getJNIEnv();
-	
-	if (!env || !xd || !xd->talk || !jmGDInterfaceOpen) return;
-	
-	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceOpen, (jint) devNr,
-			(jdouble) xd->windowWidth, (jdouble) xd->windowHeight );
-	chkX(env);
-}
-
 static jarray newDoubleArray(JNIEnv *env, int n, double *ct)
 {
     jdoubleArray da=(*env)->NewDoubleArray(env,n);
@@ -521,7 +486,9 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->deactivate = newJavaGD_Deactivate;
     dd->size = newJavaGD_Size;
     dd->newPage = newJavaGD_NewPage;
+    dd->canClip = TRUE;
     dd->clip = newJavaGD_Clip;
+    dd->canHAdj = 2;
     dd->strWidth = newJavaGD_StrWidth;
     dd->text = newJavaGD_Text;
     dd->rect = newJavaGD_Rect;
@@ -535,6 +502,8 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->hasTextUTF8 = TRUE;
     dd->strWidthUTF8 = newJavaGD_StrWidthUTF8;
     dd->textUTF8 = newJavaGD_TextUTF8;
+    dd->wantSymbolUTF8 = TRUE;
+    dd->useRotatedTextInContour = TRUE;
 }
 
 /*--------- Java Initialization -----------*/
@@ -620,7 +589,7 @@ SEXP RJgd_initLib(SEXP cp) {
 	return R_NilValue;
 }
 
-int initJavaGD(newJavaGDDesc* xd) {
+Rboolean createJavaGD(newJavaGDDesc *xd) {
 	jclass jc = 0;
 	jobject jo = 0;
 	
@@ -631,7 +600,7 @@ int initJavaGD(newJavaGDDesc* xd) {
         env=getJNIEnv();
     }
     
-    if (!env) return -1;
+    if (!env) return FALSE;
     
 	char *customClass = getenv("RJGD_CLASS_NAME");
 	if (!customClass) { 
@@ -646,12 +615,14 @@ int initJavaGD(newJavaGDDesc* xd) {
 		jmGDInterfaceClip = getJMethod(env, jc, "gdClip", "(DDDD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceClose = getJMethod(env, jc, "gdClose", "()V", RJ_ERROR_RERROR);
 		jmGDInterfaceDeactivate = getJMethod(env, jc, "gdDeactivate", "()V", RJ_ERROR_RERROR);
+		jmGDInterfaceGetPPI = getJMethod(env, jc, "gdPPI", "()[D", RJ_ERROR_RERROR);
+		jmGDInterfaceInit = getJMethod(env, jc, "gdInit", "(DDIDD)[D", RJ_ERROR_RERROR);
 		jmGDInterfaceLocator = getJMethod(env, jc, "gdLocator", "()[D", RJ_ERROR_RERROR);
 		jmGDInterfaceLine = getJMethod(env, jc, "gdLine", "(DDDD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceMetricInfo = getJMethod(env, jc, "gdMetricInfo", "(I)[D", RJ_ERROR_RERROR);
 		jmGDInterfaceMode = getJMethod(env, jc, "gdMode", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceNewPage = getJMethod(env, jc, "gdNewPage", "()V", RJ_ERROR_RERROR);
-		jmGDInterfaceOpen = getJMethod(env, jc, "gdOpen", "(IDD)V", RJ_ERROR_RERROR);
+		jmGDInterfaceOpen = getJMethod(env, jc, "gdOpen", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolygon = getJMethod(env, jc, "gdPolygon", "(I[D[D)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolyline = getJMethod(env, jc, "gdPolyline", "(I[D[D)V", RJ_ERROR_RERROR);
 		jmGDInterfaceRect = getJMethod(env, jc, "gdRect", "(DDDD)V", RJ_ERROR_RERROR);
@@ -659,7 +630,7 @@ int initJavaGD(newJavaGDDesc* xd) {
 		jmGDInterfaceStrWidth = getJMethod(env, jc, "gdStrWidth", "(Ljava/lang/String;)D", RJ_ERROR_RERROR);
 		jmGDInterfaceText = getJMethod(env, jc, "gdText", "(DDLjava/lang/String;DD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetColor = getJMethod(env, jc, "gdcSetColor", "(I)V", RJ_ERROR_RERROR);
-		jmGDInterfaceSetFill = getJMethod(env, jc, "gdcSetFile", "(I)V", RJ_ERROR_RERROR);
+		jmGDInterfaceSetFill = getJMethod(env, jc, "gdcSetFill", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetLine = getJMethod(env, jc, "gdcSetLine", "(DI)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetFont = getJMethod(env, jc, "gdcSetFont", "(DDDILjava/lang/String;)V", RJ_ERROR_RERROR);
 		jcGDInterface = jc;
@@ -685,8 +656,84 @@ int initJavaGD(newJavaGDDesc* xd) {
 	if (!xd->talk) {
 		chkX(env);
 		gdWarning("Rjgd_NewDevice: talk is null");
-		return -1;
+		return FALSE;
 	}
 	
-	return 0;
+	return TRUE;
+}
+
+void initJavaGD(newJavaGDDesc *xd, double *width, double *height, int *unit, double *xpi, double *ypi) {
+	JNIEnv *env = getJNIEnv();
+	jobject jo;
+	
+	if(!env || !xd || !xd->talk) return;
+	
+	jo = (*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceInit,
+			(jdouble) *width, (jdouble) *height, (jint) *unit, (jdouble) *xpi, (jdouble) *ypi);
+	if (jo) {
+		jdouble *ac = (jdouble*)(*env)->GetDoubleArrayElements(env, jo, 0);
+		if (!ac) {
+			(*env)->DeleteLocalRef(env, jo);
+			gdWarning("gdInit: cant's get double*");
+			if (*unit != 1) {
+				*width = 672.0;
+				*height = 672.0;
+			}
+			return;
+		}
+		*width = ac[0];
+		*height = ac[1];
+		(*env)->ReleaseDoubleArrayElements(env, jo, ac, 0);
+		(*env)->DeleteLocalRef(env, jo);
+	} else {
+		gdWarning("gdInit: method returned null");
+		if (*unit != 1) {
+			*width = 672.0;
+			*height = 672.0;
+		}
+	}
+	chkX(env);
+}
+
+void openJavaGD(NewDevDesc *dd)
+{	
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	int devNr = ndevNumber(dd);
+	
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk || !jmGDInterfaceOpen) return;
+	
+	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceOpen, (jint) devNr);
+	chkX(env);
+}
+
+void getJavaGDPPI(NewDevDesc *dd, double *xpi, double *ypi) {
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	jobject jo;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	*xpi = 96.0;
+	*ypi = 96.0;
+	
+	jo = (*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceGetPPI);
+	if (jo) {
+		jdouble *ac = (jdouble*)(*env)->GetDoubleArrayElements(env, jo, 0);
+		if (!ac) {
+			(*env)->DeleteLocalRef(env, jo);
+			gdWarning("getPPI: cant's get double*, using default");
+			return;
+		}
+		if (ac[0] > 0.0 && ac[1] > 0.0) {
+			*xpi = ac[0];
+			*ypi = ac[1];
+		}
+		(*env)->ReleaseDoubleArrayElements(env, jo, ac, 0);
+		(*env)->DeleteLocalRef(env, jo);
+	} else {
+		gdWarning("getPPI: method returned null, using default");
+	}
+	chkX(env);
 }

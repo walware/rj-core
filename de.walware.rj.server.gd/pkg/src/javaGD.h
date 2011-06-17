@@ -18,8 +18,6 @@
 #define NewDevDesc DevDesc
 #endif
 
-Rboolean newJavaGDDeviceDriver(NewDevDesc*, char*, double, double, double);
-
 /********************************************************/
 /* Each driver can have its own device-specic graphical */
 /* parameters and resources.  these should be wrapped	*/
@@ -56,19 +54,9 @@ typedef struct {
     int basefontface;			/* Typeface */
     int basefontsize;			/* Size in points */
 
-    /* X11 Driver Specific */
-    /* Parameters with copy per X11 device. */
-
-    double windowWidth;			/* Window width (pixels) */
-    double windowHeight;			/* Window height (pixels) */
-    int resize;				/* Window resized */
-
     jobject talk; /* object associated with this graphics */
     jclass  talkClass; /* class of the talk object (cached) */
 } newJavaGDDesc;
-
-newJavaGDDesc * Rf_allocNewJavaGDDeviceDesc(double ps);
-int Rf_setNewJavaGDDeviceData(NewDevDesc *dd, double gamma_fac, newJavaGDDesc *xd);
 
 #endif
 

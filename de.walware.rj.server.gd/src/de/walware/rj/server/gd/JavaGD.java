@@ -24,18 +24,10 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	private final RJ rj;
 	private byte rjSlot;
 	
-	private double w;
-	private double h;
-	
-	
 	public JavaGD() {
 		this.rj = RJ.get();
 	}
 	
-	
-	public void setSlot(final byte slot) {
-		this.rjSlot = slot;
-	}
 	
 	public byte getSlot() {
 		return this.rjSlot;
@@ -47,20 +39,38 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	
 	@Override
-	public void gdOpen(final int devNr, final double w, final double h) {
-		super.gdOpen(devNr, w, h);
-		this.w = w;
-		this.h = h;
-		
+	public double[] gdInit(final double width, final double height, final int unit,
+			double xpi, double ypi) {
+		this.rjSlot = this.rj.getCurrentSlot();
+		if (xpi <= 0.0 || ypi <= 0.0) {
+			try {
+				final double[] ppi = (double[]) this.rj.getClientProperty(this.rjSlot, "display.ppi");
+				if (ppi != null && ppi.length == 2) {
+					xpi = ppi[0];
+					ypi = ppi[1];
+				}
+			}
+			catch (final Exception e) {
+				xpi = 0.0;
+				ypi = 0.0;
+			}
+		}
+		return super.gdInit(width, height, unit, xpi, ypi);
+	}
+	
+	@Override
+	public void gdOpen(final int devNr) {
+		super.gdOpen(devNr);
 		this.rj.registerGraphic(this);
+		
 		this.rj.execGDCommand(new GDCmdItem.CInit(
-				getDeviceNumber(), this.w, this.h, isActive(), this.rjSlot ));
+				getDeviceNumber(), getWidth(), getHeight(), isActive(), this.rjSlot ));
 	}
 	
 	@Override
 	public void gdNewPage() {
 		this.rj.execGDCommand(new GDCmdItem.CInit(
-				getDeviceNumber(), this.w, this.h, isActive(), this.rjSlot ));
+				getDeviceNumber(), getWidth(), getHeight(), isActive(), this.rjSlot ));
 	}
 	
 	@Override
@@ -103,13 +113,9 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 		final double[] result = this.rj.execGDCommand(new GDCmdItem.CGetSize(
 				getDeviceNumber(), this.rjSlot ));
 		if (result != null && result.length == 2) {
-			this.w = result[0];
-			this.h = result[1];
-			return new double[] { 0.0, result[0], result[1], 0.0 };
+			setSize(result[0], result[1], PX);
 		}
-		else {
-			return new double[] { 0.0, 0.0, 0.0, 0.0 };
-		}
+		return new double[] { 0.0, getWidth(), getHeight(), 0.0 };
 	}
 	
 	
@@ -208,6 +214,20 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	@Override
 	public double[] gdLocator() {
 		return null; // TODO
+	}
+	
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append("JavaGD RJ-GD");
+		if (getDeviceNumber() > 0) {
+			sb.append(" Nr ").append(getDeviceNumber());
+		}
+		else {
+			sb.append(" (not yet open)");
+		}
+		return sb.toString();
 	}
 	
 }

@@ -23,8 +23,6 @@
 #include "javaGD.h"
 #include "jGDtalk.h"
 
-double jGDdpiX = 100.0;
-double jGDdpiY = 100.0;
 double jGDasp  = 1.0;
 
 /********************************************************/
@@ -34,38 +32,52 @@ double jGDasp  = 1.0;
 /* parameters structure (especially if they are large !)*/
 /********************************************************/
 
+
+static int setNewJavaGDDeviceData(NewDevDesc *dd, newJavaGDDesc *xd,
+		double width, double height, double gamma);
+
+
 /* JavaGD Driver Specific parameters
  * with only one copy for all xGD devices */
 
-
-/*  JavaGD Device Driver Arguments	:	*/
-/*	1) display name			*/
-/*	2) width (pixels)		*/
-/*	3) height (pixels)		*/
-/*	4) host to connect to		*/
-/*	5) tcp port to connect to	*/
-
-Rboolean newJavaGDDeviceDriver(NewDevDesc *dd,
-			    char *disp_name,
-			    double width,
-			    double height,
-                            double initps)
+static Rboolean newJavaGDDeviceDriver(NewDevDesc *dd, char *display,
+		double width, double height, int sizeUnit,
+		double xpi, double ypi, int canvas,
+		double pointsize, double gamma)
 {
-  newJavaGDDesc *xd;
-
+	newJavaGDDesc *xd;
+	
 #ifdef JGD_DEBUG
-  printf("TD: newJavaGDDeviceDriver(\"%s\", %f, %f, %f)\n",disp_name,width,height,initps);
+  printf("TD: newJavaGDDeviceDriver(\"%s\", %f, %f, %f)\n", disp_name, width, height, pointsize);
 #endif
-
-  xd = Rf_allocNewJavaGDDeviceDesc(initps);
-  if (!newJavaGD_NewDevice((NewDevDesc*)(dd), xd, disp_name, width, height)) {
-    free(xd);
-    return FALSE;
-  }
-  
-  Rf_setNewJavaGDDeviceData((NewDevDesc*)(dd), 0.6, xd);
-  
-  return TRUE;
+	
+	// allocate new device description
+	if (!(xd = (newJavaGDDesc*) calloc(1, sizeof(newJavaGDDesc)))) {
+		return FALSE;
+	}
+	// from here on, if we need to bail out with "error", then we must also free(xd).
+	if (!createJavaGD(xd)) {
+		free(xd);
+		return FALSE;
+	}
+	
+	initJavaGD(xd, &width, &height, &sizeUnit, &xpi, &ypi);
+	
+	xd->fill = 0xffffffff; /* transparent */
+	xd->col = R_RGB(0, 0, 0);
+	xd->canvas = canvas;
+	
+	/* Font will load at first use. */
+	if (pointsize < 6 || pointsize > 24) pointsize = 12;
+	xd->fontface = -1;
+	xd->fontsize = -1;
+	xd->basefontface = 1;
+	xd->basefontsize = pointsize;
+	
+	setNewJavaGDDeviceData((NewDevDesc*)(dd), xd,
+			width, height, gamma);
+	
+	return TRUE;
 }
 
 /**
@@ -73,12 +85,15 @@ Rboolean newJavaGDDeviceDriver(NewDevDesc *dd,
   methods/functions. It also specifies the current values of the
   dimensions of the device, and establishes the fonts, line styles, etc.
  */
-int
-Rf_setNewJavaGDDeviceData(NewDevDesc *dd, double gamma_fac, newJavaGDDesc *xd)
+static int
+setNewJavaGDDeviceData(NewDevDesc *dd, newJavaGDDesc *xd,
+		double width, double height, double gamma)
 {
 #ifdef JGD_DEBUG
-	printf("Rf_setNewJavaGDDeviceData\n");
+	printf("setNewJavaGDDeviceData\n");
 #endif
+
+    dd->deviceSpecific = (void *) xd;
 
     /*	Set up Data Structures. */
     setupJavaGDfunctions(dd);
@@ -87,31 +102,29 @@ Rf_setNewJavaGDDeviceData(NewDevDesc *dd, double gamma_fac, newJavaGDDesc *xd)
 
     /* Window Dimensions in Pixels */
     /* Initialise the clipping rect too */
-
-    dd->left = dd->clipLeft = 0;			/* left */
-    dd->right = dd->clipRight = xd->windowWidth;	/* right */
-    dd->bottom = dd->clipBottom = xd->windowHeight;	/* bottom */
-    dd->top = dd->clipTop = 0;			/* top */
-
-    /* Nominal Character Sizes in Pixels */
-
-    dd->cra[0] = 8;
-    dd->cra[1] = 11;
+    dd->left = dd->clipLeft = 0;
+    dd->right = dd->clipRight = width - 1.0;
+    dd->top = dd->clipTop = 0;
+    dd->bottom = dd->clipBottom = height - 1.0;
 
     /* Character Addressing Offsets */
-    /* These are used to plot a single plotting character */
-    /* so that it is exactly over the plotting point */
-
-    dd->xCharOffset = 0.4900;
-    dd->yCharOffset = 0.3333;
-    dd->yLineBias = 0.1;
-
-    /* Inches per raster unit */
-
-    dd->ipr[0] = 1/jGDdpiX;
-    dd->ipr[1] = 1/jGDdpiY;
-    dd->canClip = TRUE;
-    dd->canHAdj = 2;
+	dd->xCharOffset = 0.4900;
+	dd->yCharOffset = 0.3333;
+	dd->yLineBias = 0.1;
+	
+	{	double xpi;
+		double ypi;
+		getJavaGDPPI(dd, &xpi, &ypi);
+		
+		/* Inches per raster unit */
+		dd->ipr[0] = 1.0/xpi;
+		dd->ipr[1] = 1.0/ypi;
+		
+		/* Nominal Character Sizes in Pixels */
+		dd->cra[0] = 0.9 * xd->basefontsize / 72.0 * xpi;
+		dd->cra[1] = 1.2 * xd->basefontsize / 72.0 * ypi;
+	}
+	
     dd->canChangeGamma = FALSE;
 
     dd->startps = xd->basefontsize;
@@ -119,38 +132,11 @@ Rf_setNewJavaGDDeviceData(NewDevDesc *dd, double gamma_fac, newJavaGDDesc *xd)
     dd->startfill = xd->fill;
     dd->startlty = LTY_SOLID;
     dd->startfont = 1;
-    dd->startgamma = gamma_fac;
-
-    dd->deviceSpecific = (void *) xd;
+    dd->startgamma = gamma;
 
     dd->displayListOn = TRUE;
 
     return(TRUE);
-}
-
-
-/**
- This allocates an newJavaGDDesc instance  and sets its default values.
- */
-newJavaGDDesc * Rf_allocNewJavaGDDeviceDesc(double ps)
-{
-    newJavaGDDesc *xd;
-    /* allocate new device description */
-    if (!(xd = (newJavaGDDesc*)calloc(1, sizeof(newJavaGDDesc))))
-	return FALSE;
-
-    /* From here on, if we need to bail out with "error", */
-    /* then we must also free(xd). */
-
-    /*	Font will load at first use.  */
-
-    if (ps < 6 || ps > 24) ps = 12;
-    xd->fontface = -1;
-    xd->fontsize = -1;
-    xd->basefontface = 1;
-    xd->basefontsize = ps;
-
-    return(xd);
 }
 
 
@@ -169,7 +155,9 @@ static char *SaveString(SEXP sxp, int offset)
 } */
 
 static GEDevDesc* 
-Rf_addJavaGDDevice(char *display, double width, double height, double initps)
+addJavaGDDevice(char *display, double width, double height, int sizeUnit,
+		double xpinch, double ypinch, int canvas,
+		double pointsize, double gamma)
 {
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
@@ -188,18 +176,19 @@ Rf_addJavaGDDevice(char *display, double width, double height, double initps)
 	 * R base graphics parameters.  
 	 * This is supposed to happen via addDevice now.
 	 */
-	if (!newJavaGDDeviceDriver(dev, display, width, height, initps))
-	  {
-	    free(dev);
+	if (!newJavaGDDeviceDriver(dev, display, width, height, sizeUnit,
+			xpinch, ypinch, canvas,
+			pointsize, gamma )) {
+		free(dev);
 		error("unable to start device %s", devname);
-	    return 0;
-	  }
+		return 0;
+	}
 	dd = GEcreateDevDesc(dev);
 	GEaddDevice2(dd, devname);
 #ifdef JGD_DEBUG
 	printf("JavaGD> devNum=%d, dd=%lx\n", ndevNumber(dd), (unsigned long)dd);
 #endif
-	newJavaGD_Open(dev);
+	openJavaGD(dev);
 #ifdef BEGIN_SUSPEND_INTERRUPTS
     } END_SUSPEND_INTERRUPTS;
 #endif
@@ -276,50 +265,45 @@ void resizedJavaGD(NewDevDesc *dd) {
 		GEplayDisplayList(GEgetDevice(devNum));
 }
 
-void newJavaGD(char **name, double *w, double *h, double *ps) {
-	Rf_addJavaGDDevice(*name, *w, *h, *ps);  
-}
-
-void javaGDgetSize(int *dev, double *par) {
-    int ds=NumDevices();
-    if (*dev<0 || *dev>=ds) return;
-    {
-        GEDevDesc *gd=GEgetDevice(*dev);
-        if (gd) {
-            NewDevDesc *dd=gd->dev;
-            /*
-             if (dd) {
-                 newJavaGDDesc *xd=(newJavaGDDesc*) dd->deviceSpecific;
-                 if (xd) *obj=(int) xd->talk;
-             }
-             */
-			if (dd) {
-				par[0]=dd->left;
-				par[1]=dd->top;
-				par[2]=dd->right;
-				par[3]=dd->bottom;
-				par[4]=jGDdpiX;
-				par[5]=jGDdpiY;
-			} else {
-#ifdef JGD_DEBUG
-				printf("sizefailed>> device=%d, gd=%lx, dd=%lx\n",*dev,
-				       (unsigned long)gd, (unsigned long)dd);
-#endif
-			}	
-        }
-    }
+SEXP newJavaGD(SEXP sName, SEXP sWidth, SEXP sHeight, SEXP sSizeUnit,
+		SEXP sXpinch, SEXP sYpinch, SEXP sCanvasColor,
+		SEXP sPointsize, SEXP sGamma) {
+	double width = Rf_asReal(sWidth);
+	double height = Rf_asReal(sHeight);
+	if (!R_FINITE(width) || width < 0.0) {
+		error("Illegal argument: width");
+	}
+	if (!R_FINITE(height) || height < 0.0) {
+		error("Illegal argument: height");
+	}
+	int sizeUnit = Rf_asInteger(sSizeUnit);
+	
+	double xpinch = Rf_asReal(sXpinch);
+	double ypinch = Rf_asReal(sYpinch);
+	if (!R_FINITE(xpinch) || xpinch <= 0.0) {
+		xpinch = 0.0;
+		ypinch = 0.0;
+	} else if (!R_FINITE(ypinch)) {
+		ypinch = xpinch;
+	}
+	
+	int canvas = Rf_RGBpar(sCanvasColor, 0);
+	
+	double pointsize = Rf_asReal(sPointsize);
+	
+	double gamma = Rf_asReal(sGamma);
+	if (!R_FINITE(gamma)) {
+		gamma = 1.0;
+	}
+	
+	addJavaGDDevice("", width, height, sizeUnit,
+			xpinch, ypinch, canvas,
+			pointsize, gamma );
+	return R_NilValue;
 }
 
 void javaGDsetDisplayParam(double *par) {
-	jGDdpiX = par[0];
-	jGDdpiY = par[1];
 	jGDasp  = par[2];
-}
-
-void javaGDgetDisplayParam(double *par) {
-	par[0] = jGDdpiX;
-	par[1] = jGDdpiY;
-	par[2] = jGDasp;
 }
 
 void javaGDversion(int *ver) {

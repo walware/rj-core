@@ -366,7 +366,6 @@ public class JRIServer extends RJ
 	
 	private RObjectFactory rObjectFactory;
 	
-	private RjsGraphic graphicLast;
 	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
 	
 	private Map<String, String> platformDataCommands;
@@ -2818,9 +2817,7 @@ public class JRIServer extends RJ
 	
 	@Override
 	public void registerGraphic(final RjsGraphic graphic) {
-		this.graphicLast = graphic;
 		this.graphicList.add(graphic);
-		graphic.setSlot(this.currentSlot);
 	}
 	
 	@Override

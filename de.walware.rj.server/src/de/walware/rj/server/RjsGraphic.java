@@ -17,7 +17,6 @@ public interface RjsGraphic {
 	
 	int getDevId();
 	
-	void setSlot(byte slot);
 	byte getSlot();
 	
 }

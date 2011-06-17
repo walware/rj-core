@@ -43,8 +43,8 @@ public class GDContainerGD extends GDInterface {
 	 * @param devNr device number
 	 * @param w width of the device
 	 * @param h height of the device */
-	public void     gdOpen(int devNr, double w, double h) {
-		super.gdOpen(devNr, w, h);
+	public void     gdOpen(int devNr) {
+		super.gdOpen(devNr);
 		
 		if (c != null) {
 			c.setDeviceNumber(devNr);

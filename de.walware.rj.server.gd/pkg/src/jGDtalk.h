@@ -7,10 +7,11 @@
 
 #include "javaGD.h"
 
-extern void setupJavaGDfunctions(NewDevDesc *dd);
+Rboolean createJavaGD(newJavaGDDesc *xd);
+void initJavaGD(newJavaGDDesc *xd, double *width, double *height, int *unit, double *xpi, double *ypi);
+void setupJavaGDfunctions(NewDevDesc *dd);
+void openJavaGD(NewDevDesc *dd);
 
-Rboolean newJavaGD_NewDevice(NewDevDesc *dd, newJavaGDDesc *xd,
-		char *dsp, double w, double h);
-void newJavaGD_Open(NewDevDesc *dd);
+void getJavaGDPPI(NewDevDesc *dd, double *xpi, double *ypi);
 
 #endif

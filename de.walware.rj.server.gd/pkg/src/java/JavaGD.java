@@ -36,13 +36,13 @@ public class JavaGD extends GDContainerGD implements WindowListener {
         super();
     }
     
-    public void     gdOpen(int devNr, double w, double h) {
-        super.gdOpen(devNr, w, h);
+    public void     gdOpen(int devNr) {
+        super.gdOpen(devNr);
         if (f!=null) gdClose();
 
         f=new Frame("JavaGD ("+(getDeviceNumber()+1)+")"+(isActive()?" *active*":""));
         f.addWindowListener(this);
-        c=new GDCanvas(w, h);
+        c=new GDCanvas(getWidth(), getHeight());
         f.add((GDCanvas)c);
         f.pack();
         f.setVisible(true);
