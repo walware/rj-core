@@ -1066,11 +1066,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public final void evalVoid(final String command, final IProgressMonitor monitor) throws CoreException {
+	public final void evalVoid(final String expression, final IProgressMonitor monitor) throws CoreException {
+		if (expression == null) {
+			throw new NullPointerException("expression");
+		}
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
-					0, (byte) 0, command, null, null )), monitor );
+					0, expression, null )), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1088,13 +1091,74 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public RObject evalData(final String command, final String factoryId,
+	public final void evalVoid(final String name, final RList args, final IProgressMonitor monitor) throws CoreException {
+		if (name == null) {
+			throw new NullPointerException("name");
+		}
+		if (args == null) {
+			throw new NullPointerException("args");
+		}
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
+					0, (byte) 0, name, args, null )), monitor );
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Evaluation failed: " + status.getMessage(), null));
+				}
+			}
+			return;
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public RObject evalData(final String expression, final String factoryId,
 			final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+		if (expression == null) {
+			throw new NullPointerException("expression");
+		}
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
-					options, checkedDepth, command, null, factoryId )), monitor );
+					options, checkedDepth, expression, null, factoryId )), monitor);
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Evaluation failed: " + status.getMessage(), null));
+				}
+			}
+			return ((DataCmdItem) this.dataAnswer[level]).getData();
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public RObject evalData(final String name, final RObject args, final String factoryId,
+			final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+		if (name == null) {
+			throw new NullPointerException("name");
+		}
+		if (args == null) {
+			throw new NullPointerException("args");
+		}
+		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
+					options, checkedDepth, name, args, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1138,6 +1202,12 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	public final void assignData(final String expression, final RObject data, final IProgressMonitor monitor) throws CoreException {
+		if (expression == null) {
+			throw new NullPointerException("expression");
+		}
+		if (data == null) {
+			throw new NullPointerException("data");
+		}
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_DATA,
