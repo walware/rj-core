@@ -371,6 +371,16 @@ public class RDataUtil {
 		return (RDataFrame) obj;
 	}
 	
+	public static RReference checkRReference(final RObject obj) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		if (obj.getRObjectType() != RObject.TYPE_REFERENCE) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
+		}
+		return (RReference) obj;
+	}
+	
 	public static RLanguage checkRLanguage(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");

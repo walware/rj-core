@@ -31,6 +31,7 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	
 	public RReferenceImpl(final long handler, final int type, final String baseClass) {
 		this.handle = handler;
+		this.type = type;
 		this.baseClassName = baseClass;
 	}
 	
@@ -55,7 +56,7 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 		return TYPE_REFERENCE;
 	}
 	
-	public int getReferencedType() {
+	public int getReferencedRObjectType() {
 		return this.type;
 	}
 	
@@ -81,6 +82,19 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	
 	public RList getAttributes() {
 		return null;
+	}
+	
+	
+	@Override
+	public int hashCode() {
+		return (int) this.handle;
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		return (this == obj
+				|| (obj instanceof RReference
+						&& this.handle == ((RReference) obj).getHandle() ));
 	}
 	
 }

@@ -872,8 +872,8 @@ public final class JRIServer extends RJ
 	private void loadPlatformData() {
 		try {
 			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
-				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA, 0,
-						dataEntry.getValue(), null));
+				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA,
+						1, dataEntry.getValue(), null ));
 				if (dataCmd != null && dataCmd.isOK()) {
 					final RObject data = dataCmd.getData();
 					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
@@ -1517,7 +1517,7 @@ public final class JRIServer extends RJ
 		final int savedMaxDepth = this.rniMaxDepth;
 		{	final byte depth = cmd.getDepth();
 			this.rniDepth = 0;
-			this.rniMaxDepth = (depth >= 1) ? depth : 128;
+			this.rniMaxDepth = (depth >= 0) ? depth : 128;
 		}
 		final int savedProtectedCounter = this.rniProtectedCounter;
 		final int savedSafeMode = beginSafeMode();
@@ -1559,7 +1559,7 @@ public final class JRIServer extends RJ
 				if (this.rniInterrupted) {
 					throw new CancellationException();
 				}
-				cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
+				cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption()));
 				break DATA_CMD; }
 			
 			case DataCmdItem.RESOLVE_DATA: {
@@ -1568,7 +1568,7 @@ public final class JRIServer extends RJ
 					if (this.rniInterrupted) {
 						throw new CancellationException();
 					}
-					cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption(), EVAL_MODE_FORCE));
+					cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption()));
 				}
 				else {
 					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
@@ -1932,6 +1932,16 @@ public final class JRIServer extends RJ
 			return objP; }
 		default:
 			throw new UnsupportedOperationException();
+		}
+	}
+	
+	private RObject rniCreateDataObject(final long objP, final int flags) {
+		if (this.rniMaxDepth > 0) {
+			return rniCreateDataObject(objP, flags, EVAL_MODE_FORCE);
+		}
+		else {
+			final RObject rObject = rniCreateDataObject(objP, (flags | F_ONLY_STRUCT), EVAL_MODE_FORCE);
+			return new RReferenceImpl(objP, rObject.getRObjectType(), rObject.getRClassName());
 		}
 	}
 	
