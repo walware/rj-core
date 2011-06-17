@@ -254,8 +254,6 @@ public class JRIServer extends RJ
 	private ConsoleEngine client0PrevExpRef;
 	private volatile long client0LastPing;
 	
-	private byte currentSlot;
-	
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
@@ -555,6 +553,10 @@ public class JRIServer extends RJ
 				this.mainLoopS2CLastCommands[slot].setId(0);
 			}
 		}
+		else {
+			properties.remove(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID);
+		}
+		super.setClientProperties(slot, properties);
 	}
 	
 	private void initEngine(final Rengine re) {
