@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -95,6 +96,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private static final ScheduledExecutorService RJHelper_EXECUTOR =
 			Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("RJHelper"));
 	
+	private static final Random RAND = new Random();
+	
 	
 	private class LazyGraphicFactory implements RClientGraphicFactory {
 		
@@ -167,10 +170,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private Map<String, Object> platformData;
 	private RPlatform platformObj;
 	
+	private final byte randomId = (byte) (0xff & RAND.nextInt(255));
+	
 	private int dataLevelRequest = 0;
 	private int dataLevelAnswer = 0;
 	private int dataLevelIgnore = 0;
-	private final DataCmdItem[] dataAnswer = new DataCmdItem[16];
+	private byte dataRequestCounter = (byte) (0xff & RAND.nextInt(255));
+	private final int[] dataRequestId = new int[32];
+	private final MainCmdItem[] dataAnswer = new MainCmdItem[32];
 	
 	private int hotModeState;
 	private ConsoleReadCmdItem hotModeReadCallbackBackup;
@@ -266,10 +273,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		
 		this.mainIO.in = in;
+		final int check = this.mainIO.readCheck1();
+		
 		while (true) {
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
+				this.mainIO.readCheck2(check);
+				this.mainIO.in = null;
 				this.mainRunGC = runGC;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
@@ -300,6 +311,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 				processDataCmd(this.mainIO);
 				continue;
 			default:
+				this.mainIO.in = null;
 				throw new IOException("Unknown cmdtype id: " + type);
 			}
 		}
@@ -468,19 +480,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
-	public final void processDataCmd(final RJIO io) throws IOException {
+	private final void processDataCmd(final RJIO io) throws IOException {
 		try {
 			final DataCmdItem item = new DataCmdItem(io);
-			if (this.dataLevelRequest > 0) {
-				this.dataAnswer[this.dataLevelRequest] = item;
-				this.dataLevelAnswer = this.dataLevelRequest;
-			}
+			addDataAnswer(item);
 		}
 		catch (final IOException e) {
 			throw e;
 		}
 		catch (final Exception e) {
-			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing data command.", e));
+			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing data command answer.", e));
 		}
 	}
 	
@@ -492,6 +501,30 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		this.dataLevelAnswer = 0;
 		return level;
+	}
+	
+	private final MainCmdItem createDataRequestId(final int level, final MainCmdItem item) {
+		this.dataRequestId[level] = ((((0xff) & item.getCmdType()) << 24)
+				| ((0xff & item.getOp()) << 16)
+				| ((0xff & this.randomId << 8))
+				| ((0xff & ++this.dataRequestCounter)) ); 
+		item.requestId = (((0xff & level) << 24) | (0xffffff & this.dataRequestId[level]));
+		return item;
+	}
+	
+	private final void addDataAnswer(final MainCmdItem item) throws RjException {
+		final int level = (((0xff000000) & item.requestId) >>> 24);
+		if (level > 0 && level <= this.dataLevelRequest
+				&& this.dataRequestId[level] == (((0xff & item.getCmdType()) << 24)
+						| (0xffffff & item.requestId)) ) {
+			this.dataAnswer[level] = item;
+			this.dataLevelAnswer = level;
+			return;
+		}
+		if ((item.requestId & 0xff00 >>> 8) != (this.randomId & 0xff)) {
+			// other client
+		}
+		throw new RjException("Unexpected server answer: " + item);
 	}
 	
 	private final void finalizeDataLevel() {
@@ -913,7 +946,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public final void evalVoid(final String command, final IProgressMonitor monitor) throws CoreException {
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, new DataCmdItem(DataCmdItem.EVAL_VOID, 0, (byte) 0, command, null), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
+					0, (byte) 0, command, null, null )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -936,7 +970,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, new DataCmdItem(DataCmdItem.EVAL_DATA, options, checkedDepth, command, factoryId), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
+					options, checkedDepth, command, null, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -947,7 +982,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 							"Evaluation failed: " + status.getMessage(), null));
 				}
 			}
-			return this.dataAnswer[level].getData();
+			return ((DataCmdItem) this.dataAnswer[level]).getData();
 		}
 		finally {
 			finalizeDataLevel();
@@ -960,7 +995,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			final long handle = reference.getHandle();
-			runMainLoop(null, new DataCmdItem(DataCmdItem.RESOLVE_DATA, options, checkedDepth, Long.toString(handle), factoryId), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.RESOLVE_DATA,
+					options, checkedDepth, Long.toString(handle), null, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -971,7 +1007,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 							"Evaluation failed: " + status.getMessage(), null));
 				}
 			}
-			return this.dataAnswer[level].getData();
+			return ((DataCmdItem) this.dataAnswer[level]).getData();
 		}
 		finally {
 			finalizeDataLevel();
@@ -981,7 +1017,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public final void assignData(final String expression, final RObject data, final IProgressMonitor monitor) throws CoreException {
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, new DataCmdItem(DataCmdItem.ASSIGN_DATA, 0, expression, data), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_DATA,
+					0, expression, data )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
