@@ -16,8 +16,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RJIOExternalizable;
 
-public final class RjsStatus implements RjsComObject, Externalizable {
+
+public final class RjsStatus implements RjsComObject, Externalizable, RJIOExternalizable {
 	
 	
 	public static final int OK =               0x0;
@@ -68,18 +71,12 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 		readExternal(in);
 	}
 	
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		if (this.text != null) {
-			out.writeBoolean(true);
-			out.writeByte(this.severity);
-			out.writeInt(this.code);
-			out.writeUTF(this.text);
-		}
-		else {
-			out.writeBoolean(false);
-			out.writeByte(this.severity);
-			out.writeInt(this.code);
-		}
+	public RjsStatus(final RJIO io) throws IOException {
+		readExternal(io.in);
+	}
+	
+	public void writeExternal(final RJIO io) throws IOException {
+		writeExternal(io.out);
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException {
@@ -92,6 +89,20 @@ public final class RjsStatus implements RjsComObject, Externalizable {
 			this.severity = in.readByte();
 			this.code = in.readInt();
 			this.text = null;
+		}
+	}
+	
+	public void writeExternal(final ObjectOutput out) throws IOException {
+		if (this.text != null) {
+			out.writeBoolean(true);
+			out.writeByte(this.severity);
+			out.writeInt(this.code);
+			out.writeUTF(this.text);
+		}
+		else {
+			out.writeBoolean(false);
+			out.writeByte(this.severity);
+			out.writeInt(this.code);
 		}
 	}
 	

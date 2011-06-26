@@ -843,7 +843,8 @@ public class JRIServer extends RJ
 	private void loadPlatformData() {
 		try {
 			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
-				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA, 0, dataEntry.getValue()));
+				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA, 0,
+						dataEntry.getValue(), null));
 				if (dataCmd != null && dataCmd.isOK()) {
 					final RObject data = dataCmd.getData();
 					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
@@ -1302,7 +1303,7 @@ public class JRIServer extends RJ
 					if (initialItem == null || !initialItem.waitForClient()) {
 						return null;
 					}
-					initialItem.requestId = (byte) this.mainLoopS2CRequest.size();
+					initialItem.requestId = this.mainLoopS2CRequest.size();
 					this.mainLoopS2CRequest.add(initialItem);
 					initial = false;
 				}
@@ -1383,7 +1384,8 @@ public class JRIServer extends RJ
 					if (item.getCmdType() < MainCmdItem.T_S2C_C2S) {
 						// ANSWER
 						if (initialItem.requestId == item.requestId) {
-							this.mainLoopS2CRequest.remove((initialItem.requestId & 0xff));
+							this.mainLoopS2CRequest.remove((initialItem.requestId));
+							assert (this.mainLoopS2CRequest.size() == item.requestId);
 							return item;
 						}
 						else {
@@ -1492,7 +1494,7 @@ public class JRIServer extends RJ
 			if (input == null) {
 				throw new IllegalStateException("Missing input.");
 			}
-			DATA_CMD: switch (cmd.getEvalType()) {
+			DATA_CMD: switch (cmd.getOp()) {
 			
 			case DataCmdItem.EVAL_VOID:
 				{	if (this.rniInterrupted) {

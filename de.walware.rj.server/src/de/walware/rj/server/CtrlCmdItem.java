@@ -17,12 +17,13 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RJIOExternalizable;
 
 
 /**
  * Client-to-Server list with {@link MainCmdItem}s.
  */
-public final class CtrlCmdItem implements RjsComObject, Externalizable {
+public final class CtrlCmdItem implements RjsComObject, RJIOExternalizable, Externalizable {
 	
 	
 	public static final int REQUEST_CANCEL = 1;
@@ -46,17 +47,22 @@ public final class CtrlCmdItem implements RjsComObject, Externalizable {
 	 * Constructor for automatic deserialization
 	 * @throws IOException 
 	 */
-	public CtrlCmdItem(final RJIO io) throws IOException {
-		readExternal(io.in);
+	public CtrlCmdItem(final RJIO in) throws IOException {
+		this.ctrl = in.readInt();
+	}
+	
+	public void readExternal(final ObjectInput in) throws IOException {
+		this.ctrl = in.readInt();
+	}
+	
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeInt(this.ctrl);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.ctrl);
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException {
-		this.ctrl = in.readInt();
-	}
 	
 	
 	public int getComType() {
@@ -77,10 +83,19 @@ public final class CtrlCmdItem implements RjsComObject, Externalizable {
 	
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder(100);
-		sb.append("CtrlCmdItem (");
-		sb.append(this.ctrl);
-		sb.append(")");
+		final StringBuilder sb = new StringBuilder(64);
+		sb.append("CtrlCmdItem ");
+		switch (this.ctrl) {
+		case REQUEST_CANCEL:
+			sb.append("REQUEST_CANCEL");
+			break;
+		case REQUEST_HOT_MODE:
+			sb.append("REQUEST_HOT_MODE");
+			break;
+		default:
+			sb.append(this.ctrl);
+			break;
+		}
 		return sb.toString();
 	}
 	

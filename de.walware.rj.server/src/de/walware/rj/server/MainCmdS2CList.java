@@ -53,16 +53,20 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		
 		out.writeBoolean(this.isBusy);
 		
+		final RJIO io = RJIO.get(out);
+		final int check = io.writeCheck1();
+		
 		MainCmdItem item = this.first;
 		if (item != null) {
-			final RJIO io = RJIO.get(out);
 			do {
 				out.writeByte(item.getCmdType());
 				item.writeExternal(io);
 			} while ((item = item.next) != null);
-			io.out = null;
 		}
 		out.writeByte(MainCmdItem.T_NONE);
+		
+		io.writeCheck2(check);
+		io.out = null;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -73,31 +77,31 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		}
 		
 		this.isBusy = in.readBoolean();
-		final RJIO io;
+		
+		final RJIO io = RJIO.get(in);
+		final int check = io.readCheck1();
+		
 		{	// first
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
 				this.first = null;
+				io.readCheck2(check);
+				io.in = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleReadCmdItem(io);
 				break;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleWriteOutCmdItem(io);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleMessageCmdItem(io);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
-				io = RJIO.get(in);
 				this.first = new ExtUICmdItem(io);
 				break;
 			case MainCmdItem.T_DATA_ITEM:
-				io = RJIO.get(in);
 				this.first = new DataCmdItem(io);
 				break;
 			default:
@@ -110,6 +114,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
+				io.readCheck2(check);
 				io.in = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
@@ -197,7 +202,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder(100);
+		final StringBuilder sb = new StringBuilder(128);
 		sb.append("MainCmdS2CList (isBusy=");
 		sb.append(this.isBusy);
 		sb.append(')');

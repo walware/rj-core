@@ -14,60 +14,43 @@ package de.walware.rj.server;
 import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RJIOExternalizable;
 
 
-public abstract class MainCmdItem {
+public abstract class MainCmdItem implements RJIOExternalizable {
 	
 	
 	public static final byte T_NONE = 0;
 	
 	/**
 	 * {@link ConsoleReadCmdItem}
-	 * S2C
-	 *      options = ADD_TO_HISTORY (TRUE, FALSE)
-	 *      text = prompt
-	 * C2S
-	 *      text = input
 	 */
-	public static final byte T_CONSOLE_READ_ITEM =    1;
+	public static final byte T_CONSOLE_READ_ITEM =          0x01;
 	
 	/**
 	 * {@link ConsoleWriteOutCmdItem}
-	 * S2C
-	 *     text = output
-	 * C2S
-	 *     -
 	 */
-	public static final byte T_CONSOLE_WRITE_OUT_ITEM =   2;
+	public static final byte T_CONSOLE_WRITE_OUT_ITEM =     0x02;
 	
 	/**
 	 * {@link ConsoleWriteErrCmdItem}
-	 * S2C
-	 *     text = output
-	 * C2S
-	 *     -
 	 */
-	public static final byte T_CONSOLE_WRITE_ERR_ITEM =   3;
+	public static final byte T_CONSOLE_WRITE_ERR_ITEM =     0x03;
 	
 	/**
 	 * {@link ConsoleMessageCmdItem}
-	 * S2C
-	 *     text = message
-	 * C2S
-	 *     -
 	 */
-	public static final byte T_MESSAGE_ITEM =         4;
+	public static final byte T_MESSAGE_ITEM =               0x04;
 	
 	/**
 	 * {@link ExtUICmdItem}
-	 * Detail depends on the concrete command {@link ExtUICmdItem#getCommand()}
 	 */
-	public static final byte T_EXTENDEDUI_ITEM =      5;
+	public static final byte T_EXTENDEDUI_ITEM =            0x05;
 	
 	/**
 	 * {@link GDCmdItem}
 	 */
-	public static final byte T_GRAPH_ITEM =           7;
+	public static final byte T_GRAPH_ITEM =                 0x07;
 	
 	/**
 	 * T_id <  => initiated by server
@@ -78,35 +61,44 @@ public abstract class MainCmdItem {
 	/**
 	 * {@link DataCmdItem}
 	 */
-	public static final byte T_DATA_ITEM =           10;
+	public static final byte T_DATA_ITEM =                  0x10;
 	
 	
-	protected static final int OM_STATUS =            0x0f000000; // 0xf << OS_STATUS
-	protected static final int OS_STATUS =            24;
 	
-	protected static final int OM_WITH =              0x70000000;
+	protected static final int OM_STATUS =                  0x00f00000; // 0xf << OS_STATUS
+	protected static final int OS_STATUS =                  20;
 	
-	protected static final int OM_WAITFORCLIENT =     0x80000000;
-	public static final int OV_WAITFORCLIENT =     0x80000000;
-	protected static final int OC_WAITFORCLIENT =     ~(OM_WAITFORCLIENT);
+	protected static final int OM_WITH =                    0x0f000000;
 	
-	public static final int OM_CUSTOM =            0x0000ffff;
+	public static final int OV_ANSWER =                     0x40000000;
+	protected static final int OM_ANSWER =                  OV_ANSWER;
+	public static final int OV_WAITFORCLIENT =              0x80000000;
+	protected static final int OM_WAITFORCLIENT =           OV_WAITFORCLIENT;
+	protected static final int OC_WAITFORCLIENT =           ~(OM_WAITFORCLIENT);
 	
-	protected static final int OM_CLEARFORANSWER =    ~(OM_STATUS | OM_WITH);
+	public static final int OM_CUSTOM =                     0x0000ffff;
+	
+	protected static final int OM_CLEARFORANSWER =          ~(OM_STATUS | OM_WITH);
 	
 	
 	protected int options;
 	
 	public MainCmdItem next;
 	
-	public byte requestId = -1;
+	public int requestId;
 	public byte slot = 0;
 	
 	
 	public abstract byte getCmdType();
 	
+	public abstract byte getOp();
+	
 	public final boolean waitForClient() {
 		return ((this.options & OM_WAITFORCLIENT) != 0);
+	}
+	
+	public final boolean isAnswer() {
+		return ((this.options & OM_ANSWER) != 0);
 	}
 	
 	public final int getCmdOption() {

@@ -23,10 +23,8 @@ import de.walware.rj.data.RList;
 public final class ExtUICmdItem extends MainCmdItem {
 	
 	
-	private static final int OV_WITHMAP =          0x10000000;
-	private static final int OV_WITHSTATUS =        0x40000000;
-	private static final int OM_MAPANSWER =        OV_WITHMAP;
-	private static final int OM_STATUSANSWER =      OV_WITHSTATUS;
+	private static final int OV_WITHMAP =                   0x01000000;
+	private static final int OV_WITHSTATUS =                0x08000000;
 	
 	
 	private String command;
@@ -47,40 +45,34 @@ public final class ExtUICmdItem extends MainCmdItem {
 	}
 	
 	/**
-	 * Constructor for automatic deserialization
-	 */
-	public ExtUICmdItem() {
-	}
-	
-	/**
 	 * Constructor for deserialization
 	 */
-	public ExtUICmdItem(final RJIO io) throws IOException {
-		this.command = io.readString();
-		this.options = io.in.readInt();
-		this.requestId = io.in.readByte();
+	public ExtUICmdItem(final RJIO in) throws IOException {
+		this.requestId = in.readInt();
+		this.command = in.readString();
+		this.options = in.readInt();
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(io.in);
+			this.status = new RjsStatus(in.in);
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {
-			io.flags = 0;
-			this.data = (RList) DataCmdItem.gDefaultFactory.readObject(io);
+			in.flags = 0;
+			this.data = (RList) DataCmdItem.gDefaultFactory.readObject(in);
 		}
 	}
 	
 	@Override
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeString(this.command);
-		io.out.writeInt(this.options);
-		io.out.writeByte(this.requestId);
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeInt(this.requestId);
+		out.writeString(this.command);
+		out.writeInt(this.options);
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status.writeExternal(io.out);
+			this.status.writeExternal(out.out);
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {
-			io.flags = 0;
-			DataCmdItem.gDefaultFactory.writeObject(this.data, io);
+			out.flags = 0;
+			DataCmdItem.gDefaultFactory.writeObject(this.data, out);
 		}
 	}
 	
@@ -91,20 +83,28 @@ public final class ExtUICmdItem extends MainCmdItem {
 	}
 	
 	@Override
+	public byte getOp() {
+		return 0;
+	}
+	
+	@Override
 	public void setAnswer(final RjsStatus status) {
+		assert (status != null);
 		if (status == RjsStatus.OK_STATUS) {
-			this.options = (this.options & OM_CLEARFORANSWER);
+			this.options = (this.options & OM_CLEARFORANSWER) | OV_ANSWER;
 			this.status = null;
 		}
 		else {
-			this.options = ((this.options & OM_CLEARFORANSWER) | OM_STATUSANSWER);
+			this.options = (this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHSTATUS);
 			this.status = status;
 		}
 	}
 	
 	public void setAnswer(final RList answer) {
-		this.options = (answer != null) ? 
-				((this.options & OM_CLEARFORANSWER) | OM_MAPANSWER) : (this.options & OM_CLEARFORANSWER);
+		this.options = (this.options & OM_CLEARFORANSWER) | OV_ANSWER;
+		if (answer != null) {
+			this.options |= OV_WITHMAP;
+		}
 		this.status = null;
 		this.data = answer;
 	}
@@ -152,18 +152,16 @@ public final class ExtUICmdItem extends MainCmdItem {
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer(100);
-		sb.append("ExtUICmdItem (command=");
+		sb.append("ExtUICmdItem ");
 		sb.append(this.command);
-		sb.append(", options=0x");
-		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
+		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		if ((this.options & OV_WITHMAP) != 0) {
 			sb.append("\n<ARGS>\n");
 			sb.append(this.data.toString());
 			sb.append("\n</ARGS>");
 		}
 		else {
-			sb.append("\n<TEXT />");
+			sb.append("\n<ARGS/>");
 		}
 		return sb.toString();
 	}

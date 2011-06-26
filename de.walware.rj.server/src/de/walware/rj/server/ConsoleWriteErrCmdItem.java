@@ -33,13 +33,13 @@ public final class ConsoleWriteErrCmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleWriteErrCmdItem(final RJIO io) throws IOException {
-		this.text = io.readString();
+	public ConsoleWriteErrCmdItem(final RJIO in) throws IOException {
+		this.text = in.readString();
 	}
 	
 	@Override
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeString(this.text);
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeString(this.text);
 	}
 	
 	
@@ -48,17 +48,22 @@ public final class ConsoleWriteErrCmdItem extends MainCmdItem {
 		return T_CONSOLE_WRITE_ERR_ITEM;
 	}
 	
-	
 	@Override
-	public boolean isOK() {
-		return true;
+	public byte getOp() {
+		return 0;
 	}
+	
 	
 	@Override
 	public void setAnswer(final RjsStatus status) {
 		throw new UnsupportedOperationException();
 	}
 	
+	
+	@Override
+	public boolean isOK() {
+		return true;
+	}
 	
 	@Override
 	public RjsStatus getStatus() {
@@ -85,12 +90,9 @@ public final class ConsoleWriteErrCmdItem extends MainCmdItem {
 	
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer(100);
-		sb.append("ConsoleCmdItem (type=");
-		sb.append("CONSOLE_WRITE");
-		sb.append(", options=0x");
-		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
+		final StringBuilder sb = new StringBuilder(128);
+		sb.append("ConsoleWriteErrCmdItem");
+		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		sb.append("\n<TEXT>\n");
 		sb.append(this.text);
 		sb.append("\n</TEXT>");

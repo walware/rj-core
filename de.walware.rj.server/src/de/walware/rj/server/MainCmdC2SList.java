@@ -43,58 +43,61 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
+		final RJIO io;
+		if (this.privateIO != null) {
+			io = this.privateIO;
+			io.out = out;
+		}
+		else {
+			io = RJIO.get(out);
+		}
+		final int check = io.writeCheck1();
+		
 		MainCmdItem item = this.first;
 		if (item != null) {
-			final RJIO io;
-			if (this.privateIO != null) {
-				io = this.privateIO;
-				io.out = out;
-			}
-			else {
-				io = RJIO.get(out);
-			}
 			do {
 				out.writeByte(item.getCmdType());
 				item.writeExternal(io);
 			} while ((item = item.next) != null);
-			io.out = null;
 		}
 		out.writeByte(MainCmdItem.T_NONE);
+		
+		io.writeCheck2(check);
+		io.out = null;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		final RJIO io;
+		final RJIO io = RJIO.get(in);
+		final int check = io.readCheck1();
+		
 		{	// first
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
 				this.first = null;
+				io.readCheck2(check);
+				io.in = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleReadCmdItem(io);
 				break;
 			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleWriteOutCmdItem(io);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
-				io = RJIO.get(in);
 				this.first = new ConsoleMessageCmdItem(io);
 				break;
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
-				io = RJIO.get(in);
 				this.first = new ExtUICmdItem(io);
 				break;
 			case MainCmdItem.T_GRAPH_ITEM:
-				io = RJIO.get(in);
 				this.first = new GDCmdItem.Answer(io);
 				break;
 			case MainCmdItem.T_DATA_ITEM:
-				io = RJIO.get(in);
 				this.first = new DataCmdItem(io);
 				break;
 			default:
+				io.in = null;
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
 			}
 		}
@@ -104,6 +107,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			final byte type = in.readByte();
 			switch (type) {
 			case MainCmdItem.T_NONE:
+				io.readCheck2(check);
 				io.in = null;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:

@@ -1187,6 +1187,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 	}
 	
 	@Override
+	public byte getOp() {
+		return 0;
+	}
+	
+	@Override
 	public final boolean isOK() {
 		return ((this.options & OM_STATUS) == RjsStatus.OK);
 	}

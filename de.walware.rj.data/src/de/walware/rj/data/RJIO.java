@@ -307,7 +307,7 @@ public final class RJIO {
 				in.readFully(this.ba, 0, bn);
 				final int[] array = new int[length];
 				for (int ib = 0; ib < bn; ib += 4) {
-					array[ib >> 2] = (
+					array[ib >>> 2] = (
 							((this.ba[ib] & 0xff) << 24) |
 							((this.ba[ib+1] & 0xff) << 16) |
 							((this.ba[ib+2] & 0xff) << 8) |
@@ -336,7 +336,7 @@ public final class RJIO {
 			while (true) {
 				position += in.read(this.ba, position, BA_LENGTH-position);
 				if (position >= BB_PART) {
-					final int icount = (position >> 2);
+					final int icount = (position >>> 2);
 					final int bcount = (icount << 2);
 					if (!this.bb.hasArray()) {
 						this.bb.clear();
@@ -380,7 +380,7 @@ public final class RJIO {
 					this.bb.put(this.ba, 0, bToComplete);
 				}
 				this.ib.clear();
-				this.ib.get(array, ir, bToComplete >> 2);
+				this.ib.get(array, ir, bToComplete >>> 2);
 			}
 			return array;
 		}
@@ -413,7 +413,7 @@ public final class RJIO {
 				in.readFully(this.ba, 0, bn);
 				final double[] array = new double[length];
 				for (int db = 0; db < bn; db += 8) {
-					array[db >> 3] = Double.longBitsToDouble(
+					array[db >>> 3] = Double.longBitsToDouble(
 							((long) (this.ba[db] & 0xff) << 56) |
 							((long) (this.ba[db+1] & 0xff) << 48) |
 							((long) (this.ba[db+2] & 0xff) << 40) |
@@ -446,7 +446,7 @@ public final class RJIO {
 			while (true) {
 				position += in.read(this.ba, position, BA_LENGTH-position);
 				if (position >= BB_PART) {
-					final int dcount = (position >> 3);
+					final int dcount = (position >>> 3);
 					final int bcount = (dcount << 3);
 					if (!this.bb.hasArray()) {
 						this.bb.clear();
@@ -527,7 +527,7 @@ public final class RJIO {
 					this.bb.put(this.ba, 0, bToComplete);
 				}
 				this.db.clear();
-				this.db.get(array, dr, bToComplete >> 3);
+				this.db.get(array, dr, bToComplete >>> 3);
 			}
 			return array;
 		}
@@ -547,7 +547,7 @@ public final class RJIO {
 		while (true) {
 			position += in.read(this.ba, position, BA_LENGTH-position);
 			if (position >= BB_PART) {
-				final int icount = (position >> 1);
+				final int icount = (position >>> 1);
 				final int bcount = (icount << 1);
 				if (!this.bb.hasArray()) {
 					this.bb.clear();
@@ -575,7 +575,7 @@ public final class RJIO {
 				this.bb.put(this.ba, 0, bToComplete);
 			}
 			this.cb.clear();
-			this.cb.get(ca, cr, bToComplete >> 1);
+			this.cb.get(ca, cr, bToComplete >>> 1);
 		}
 		return new String(ca, 0, cn);
 	}

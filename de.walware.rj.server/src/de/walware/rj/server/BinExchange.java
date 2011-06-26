@@ -388,8 +388,8 @@ public class BinExchange implements RjsComObject, Externalizable {
 	
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer(100);
-		sb.append("DataCmdItem (type=");
+		final StringBuilder sb = new StringBuilder(128);
+		sb.append("DataCmdItem ");
 		switch (this.options & OM_TYPE) {
 		case UPLOAD:
 			sb.append("UPLOAD");
@@ -401,7 +401,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 			sb.append((this.options & OM_TYPE));
 			break;
 		}
-		sb.append(", direction=");
+		sb.append("\n\t").append("direction= ");
 		switch (this.options & OM_2) {
 		case C2S:
 			sb.append("CLIENT-2-SERVER");
@@ -412,9 +412,8 @@ public class BinExchange implements RjsComObject, Externalizable {
 		default:
 			sb.append((this.options & OM_2));
 		}
-		sb.append(", length=");
+		sb.append("\n\tlength= ");
 		sb.append(this.inputLength);
-		sb.append(")");
 		if (this.status != null) {
 			sb.append("\n<STATUS>\n");
 			this.status.getCode();

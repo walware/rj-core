@@ -33,8 +33,8 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleMessageCmdItem(final RJIO io) throws IOException, ClassNotFoundException {
-		this.text = io.readString();
+	public ConsoleMessageCmdItem(final RJIO in) throws IOException, ClassNotFoundException {
+		this.text = in.readString();
 	}
 	
 	@Override
@@ -46,6 +46,11 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	@Override
 	public byte getCmdType() {
 		return T_MESSAGE_ITEM;
+	}
+	
+	@Override
+	public byte getOp() {
+		return 0;
 	}
 	
 	
@@ -85,13 +90,9 @@ public final class ConsoleMessageCmdItem extends MainCmdItem {
 	
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer(100);
-		sb.append("ConsoleCmdItem (type=");
-		sb.append("MESSAGE");
-		sb.append(", options=0x");
-		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
-		sb.append(")");
+		final StringBuilder sb = new StringBuilder(128);
+		sb.append("ConsoleMessageCmdItem");
+		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		sb.append("\n<TEXT>\n");
 		sb.append(this.text);
 		sb.append("\n</TEXT>");

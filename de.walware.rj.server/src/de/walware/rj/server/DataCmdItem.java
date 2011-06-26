@@ -11,10 +11,7 @@
 
 package de.walware.rj.server;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,21 +24,17 @@ import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 /**
  * Command item for main loop data exchange/evaluation
  */
-public final class DataCmdItem extends MainCmdItem implements Externalizable {
+public final class DataCmdItem extends MainCmdItem {
 	
 	
 	public static final byte EVAL_VOID = 0x01;
 	public static final byte EVAL_DATA = 0x02;
-	public static final byte RESOLVE_DATA = 0x12;
-	public static final byte ASSIGN_DATA = 0x22;
+	public static final byte RESOLVE_DATA = 0x04;
+	public static final byte ASSIGN_DATA = 0x06;
 	
-	private static final int OV_USEFACTORY =        0x00100000;
-	
-	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OV_WITHDATA =          0x20000000;
-	private static final int OV_WITHSTATUS =        0x40000000;
-	private static final int OM_DATAANSWER =        OV_WITHDATA | OV_USEFACTORY;
-	private static final int OM_STATUSANSWER =      OV_WITHSTATUS;
+	private static final int OV_WITHTEXT =                  0x01000000;
+	private static final int OV_WITHDATA =                  0x02000000;
+	private static final int OV_WITHSTATUS =                0x08000000;
 	
 	
 	public static final String DEFAULT_FACTORY_ID = "default"; //$NON-NLS-1$
@@ -64,7 +57,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	}
 	
 	
-	private byte type;
+	private byte op;
 	
 	private byte depth;
 	private String text;
@@ -76,120 +69,102 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	
 	
 	/**
-	 * Constructor for evalData operation (send text, load data)
+	 * Constructor for operations with returned data
+	 * <ul>
+	 *     <li>evalData operation (send text, load data)</li>
+	 *     <li>evalData (send call, load data)</li>
+	 * </ul>
 	 */
-	public DataCmdItem(final byte type, final int options, final byte depth, final String text, final String factoryId) {
+	public DataCmdItem(final byte type, final int options, final byte depth,
+			final String text, final RObject data,
+			final String factoryId) {
 		assert (text != null);
 		assert (factoryId == null || gFactories.containsKey(factoryId));
-		this.type = type;
+		this.op = type;
 		this.text = text;
-		this.rdata = null;
-		this.options = (OV_WITHTEXT | (options & OM_CUSTOM));
+		this.options = (OV_WITHTEXT | OV_WAITFORCLIENT | (options & OM_CUSTOM));
+		if (data != null) {
+			this.rdata = data;
+			this.options |= OV_WITHDATA;
+		}
 		this.depth = depth;
 		this.factoryId = (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
 	}
 	
-//	public DataCmdItem(final byte type, final int options, final int depth, final RObject input, final String factoryId) {
-//		assert (input != null);
-//		this.type = type;
-//		this.text = null;
-//		this.rdata = input;
-//		this.options = (OV_WITHDATA | options);
-//		this.depth = depth;
-//		this.factoryId = (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
-//		assert (gFactories.containsKey(this.factoryId));
-//	}
-	
 	/**
-	 * Constructor for assignData operation (send text and data)
+	 * Constructor for operations without returned data:
+	 * <ul>
+	 *     <li>assignData (send text and data)</li>
+	 *     <li>evalVoid (send call)</li>
+	 *     <li>evalVoid (send expr, data=null)</li>
+	 * </ul>
 	 */
-	public DataCmdItem(final byte type, final int options, final String text, final RObject data) {
+	public DataCmdItem(final byte type, final int options,
+			final String text, final RObject data) {
 		assert (text != null);
-		assert (data != null);
-		this.type = type;
+		this.op = type;
 		this.text = text;
-		this.rdata = data;
-		this.options = ((OV_WITHTEXT | OV_WITHDATA) | options);
+		this.options = ((OV_WITHTEXT | OV_WAITFORCLIENT) | (options & OM_CUSTOM));
+		if (data != null) {
+			this.rdata = data;
+			this.options |= OV_WITHDATA;
+		}
 		this.factoryId = "";
 	}
 	
-	/**
-	 * Constructor for evalVoid operation (send text)
-	 */
-	public DataCmdItem(final byte type, final int options, final String text) {
-		assert (text != null);
-		this.type = type;
-		this.text = text;
-		this.rdata = null;
-		this.options = ((OV_WITHTEXT) | options);
-		this.factoryId = "";
-	}
-	
-	/**
-	 * Constructor for automatic deserialization
-	 */
-	public DataCmdItem() {
-	}
 	
 	/**
 	 * Constructor for deserialization
 	 */
-	public DataCmdItem(final RJIO io) throws IOException {
-		readExternal(io);
+	public DataCmdItem(final RJIO in) throws IOException {
+		this.requestId = in.readInt();
+		this.op = in.readByte();
+		this.options = in.readInt();
+		if ((this.options & OV_WITHSTATUS) != 0) {
+			this.status = new RjsStatus(in);
+			return;
+		}
+		this.depth = in.readByte();
+		this.factoryId = in.readString();
+		if ((this.options & OV_WITHTEXT) != 0) {
+			this.text = in.readString();
+		}
+		if ((this.options & OV_WITHDATA) != 0) {
+			if ((this.options & OV_ANSWER) != 0) {
+				in.flags = (this.options & 0xff);
+				this.rdata = getFactory(this.factoryId).readObject(in);
+			}
+			else {
+				in.flags = 0;
+				this.rdata = gDefaultFactory.readObject(in);
+			}
+		}
 	}
 	
 	@Override
-	public void writeExternal(final RJIO io) throws IOException {
-		io.out.writeByte(this.type);
-		io.out.writeInt(this.options);
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeInt(this.requestId);
+		out.writeByte(this.op);
+		out.writeInt(this.options);
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status.writeExternal(io.out);
+			this.status.writeExternal(out);
 			return;
 		}
-		io.out.writeByte(this.depth);
-		io.writeString(this.factoryId);
+		out.writeByte(this.depth);
+		out.writeString(this.factoryId);
 		if ((this.options & OV_WITHTEXT) != 0) {
-			io.writeString(this.text);
+			out.writeString(this.text);
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
-			io.flags = (this.options & 0xff);
-			gDefaultFactory.writeObject(this.rdata, io);
-		}
-	}
-	
-	public void writeExternal(final ObjectOutput out) throws IOException {
-		final RJIO io = RJIO.get(out);
-		writeExternal(io);
-		io.out = null;
-	}
-	
-	public void readExternal(final RJIO io) throws IOException {
-		this.type = io.in.readByte();
-		this.options = io.in.readInt();
-		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(io.in);
-			return;
-		}
-		this.depth = io.in.readByte();
-		this.factoryId = io.readString();
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = io.readString();
-		}
-		if ((this.options & OV_WITHDATA) != 0) {
-			io.flags = (this.options & 0xff);
-			if ((this.options & OV_USEFACTORY) != 0) {
-				this.rdata = getFactory(this.factoryId).readObject(io);
+			if ((this.options & OV_ANSWER) != 0) {
+				out.flags = (this.options & 0xff);
+				gDefaultFactory.writeObject(this.rdata, out);
 			}
 			else {
-				this.rdata = gDefaultFactory.readObject(io);
+				out.flags = 0;
+				gDefaultFactory.writeObject(this.rdata, out);
 			}
 		}
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException {
-		final RJIO io = RJIO.get(in);
-		readExternal(io);
-		io.in = null;
 	}
 	
 	
@@ -201,14 +176,15 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	
 	@Override
 	public void setAnswer(final RjsStatus status) {
+		assert (status != null);
 		if (status == RjsStatus.OK_STATUS) {
-			this.options = (this.options & OM_CLEARFORANSWER);
+			this.options = (this.options & OM_CLEARFORANSWER) | OV_ANSWER;
 			this.status = null;
 			this.text = null;
 			this.rdata = null;
 		}
 		else {
-			this.options = ((this.options & OM_CLEARFORANSWER) | OM_STATUSANSWER);
+			this.options = ((this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHSTATUS));
 			this.status = status;
 			this.text = null;
 			this.rdata = null;
@@ -216,16 +192,19 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	}
 	
 	public void setAnswer(final RObject rdata) {
-		this.options = (rdata != null) ? 
-				((this.options & OM_CLEARFORANSWER) | OM_DATAANSWER) : (this.options & OM_CLEARFORANSWER);
+		this.options = ((this.options & OM_CLEARFORANSWER) | OV_ANSWER);
+		if (rdata != null) {
+			this.options |= OV_WITHDATA;
+		}
 		this.status = null;
 		this.text = null;
 		this.rdata = rdata;
 	}
 	
 	
-	public byte getEvalType() {
-		return this.type;
+	@Override
+	public byte getOp() {
+		return this.op;
 	}
 	
 	@Override
@@ -258,7 +237,7 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 			return false;
 		}
 		final DataCmdItem otherItem = (DataCmdItem) other;
-		if (getEvalType() != otherItem.getEvalType()) {
+		if (getOp() != otherItem.getOp()) {
 			return false;
 		}
 		if (this.options != otherItem.options) {
@@ -274,8 +253,8 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer(100);
-		sb.append("DataCmdItem (type=");
-		switch (this.type) {
+		sb.append("DataCmdItem ");
+		switch (this.op) {
 		case EVAL_VOID:
 			sb.append("EVAL_VOID");
 			break;
@@ -289,23 +268,25 @@ public final class DataCmdItem extends MainCmdItem implements Externalizable {
 			sb.append("ASSIGN_DATA");
 			break;
 		default:
-			sb.append(this.type);
+			sb.append(this.op);
+			break;
 		}
-		sb.append(", options=0x");
-		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
+		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		if ((this.options & OV_WITHTEXT) != 0) {
 			sb.append("\n<TEXT>\n");
 			sb.append(this.text);
 			sb.append("\n</TEXT>");
 		}
 		else {
-			sb.append("\n<TEXT />");
+			sb.append("\n<TEXT/>");
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
 			sb.append("\n<DATA>\n");
 			sb.append(this.rdata.toString());
 			sb.append("\n</DATA>");
+		}
+		else {
+			sb.append("\n<DATA/>");
 		}
 		return sb.toString();
 	}

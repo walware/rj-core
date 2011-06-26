@@ -25,8 +25,7 @@ public final class ConsoleReadCmdItem extends MainCmdItem {
 	public static final int O_ADD_TO_HISTORY = 0;
 	
 	
-	private static final int OV_WITHTEXT =          0x10000000;
-	private static final int OM_TEXTANSWER =        (RjsStatus.OK << OS_STATUS) | OV_WITHTEXT;
+	private static final int OV_WITHTEXT =                  0x01000000;
 	
 	
 	private String text;
@@ -41,20 +40,20 @@ public final class ConsoleReadCmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleReadCmdItem(final RJIO io) throws IOException {
-		this.options = io.in.readInt();
-		this.requestId = io.in.readByte();
+	public ConsoleReadCmdItem(final RJIO in) throws IOException {
+		this.requestId = in.readInt();
+		this.options = in.readInt();
 		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = io.readString();
+			this.text = in.readString();
 		}
 	}
 	
 	@Override
-	public void writeExternal(final RJIO io) throws IOException {
-		io.out.writeInt(this.options);
-		io.out.writeByte(this.requestId);
+	public void writeExternal(final RJIO out) throws IOException {
+		out.writeInt(this.requestId);
+		out.writeInt(this.options);
 		if ((this.options & OV_WITHTEXT) != 0) {
-			io.writeString(this.text);
+			out.writeString(this.text);
 		}
 	}
 	
@@ -62,6 +61,11 @@ public final class ConsoleReadCmdItem extends MainCmdItem {
 	@Override
 	public byte getCmdType() {
 		return T_CONSOLE_READ_ITEM;
+	}
+	
+	@Override
+	public byte getOp() {
+		return 0;
 	}
 	
 	
@@ -72,7 +76,7 @@ public final class ConsoleReadCmdItem extends MainCmdItem {
 	
 	public void setAnswer(final String text) {
 		assert (text != null);
-		this.options = (this.options & OM_CLEARFORANSWER) | OM_TEXTANSWER;
+		this.options = (this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHTEXT);
 		this.text = text;
 	}
 	
@@ -111,19 +115,16 @@ public final class ConsoleReadCmdItem extends MainCmdItem {
 	
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer(100);
-		sb.append("ConsoleCmdItem (type=");
-		sb.append("CONSOLE_READ");
-		sb.append(", options=0x");
-		sb.append(Integer.toHexString(this.options));
-		sb.append(")");
+		final StringBuffer sb = new StringBuffer(128);
+		sb.append("ConsoleReadCmdItem");
+		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		if ((this.options & OV_WITHTEXT) != 0) {
 			sb.append("\n<TEXT>\n");
 			sb.append(this.text);
 			sb.append("\n</TEXT>");
 		}
 		else {
-			sb.append("\n<TEXT />");
+			sb.append("\n<TEXT/>");
 		}
 		return sb.toString();
 	}
