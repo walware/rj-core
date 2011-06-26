@@ -15,7 +15,7 @@ import org.rosuda.javaGD.GDInterface;
 
 import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.RJ;
-import de.walware.rj.server.RjsGraphic;
+import de.walware.rj.server.srvext.RjsGraphic;
 
 
 public class JavaGD extends GDInterface implements RjsGraphic {
@@ -23,6 +23,11 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	private final RJ rj;
 	private byte rjSlot;
+	
+	private int state;
+	
+	private int mode;
+	
 	
 	public JavaGD() {
 		this.rj = RJ.get();
@@ -35,6 +40,10 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	public int getDevId() {
 		return getDeviceNumber();
+	}
+	
+	public int getState() {
+		return this.state;
 	}
 	
 	
@@ -61,22 +70,28 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	@Override
 	public void gdOpen(final int devNr) {
 		super.gdOpen(devNr);
+		this.state = STATE_OPENED;
 		this.rj.registerGraphic(this);
 		
 		this.rj.execGDCommand(new GDCmdItem.CInit(
 				getDeviceNumber(), getWidth(), getHeight(), isActive(), this.rjSlot ));
+		gdMode(0);
 	}
 	
 	@Override
 	public void gdNewPage() {
+		this.state = STATE_PAGED;
 		this.rj.execGDCommand(new GDCmdItem.CInit(
 				getDeviceNumber(), getWidth(), getHeight(), isActive(), this.rjSlot ));
+		
 	}
 	
 	@Override
 	public void gdClose() {
+		this.state = STATE_CLOSED;
 		this.rj.unregisterGraphic(this);
 		super.gdClose();
+		this.mode = 0;
 //		System.out.println(hashCode());
 		this.rj.execGDCommand(new GDCmdItem.CCloseDevice(
 				getDeviceNumber(), this.rjSlot ));
@@ -102,6 +117,7 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdMode(final int mode) {
+		this.mode = mode;
 		if (isOpen()) {
 			this.rj.execGDCommand(new GDCmdItem.CSetMode(
 					getDeviceNumber(), mode, this.rjSlot ));
@@ -114,6 +130,12 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 				getDeviceNumber(), this.rjSlot ));
 		if (result != null && result.length == 2) {
 			setSize(result[0], result[1], PX);
+		}
+		if (this.state == STATE_OPENED) {
+			gdMode(1);
+			this.rj.execGDCommand(new GDCmdItem.CInit(
+				getDeviceNumber(), getWidth(), getHeight(), isActive(), this.rjSlot ));
+			gdMode(0);
 		}
 		return new double[] { 0.0, getWidth(), getHeight(), 0.0 };
 	}
@@ -147,6 +169,7 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	public double[] gdMetricInfo(final int ch) {
 		final double[] result = this.rj.execGDCommand(new GDCmdItem.CGetFontMetric(
 				getDeviceNumber(), ch, this.rjSlot ));
+//		System.out.println("MetricInfo: " + Arrays.toString(result) + " " + (char) ch + " (" + ch + ")");
 		if (result != null && result.length == 3) {
 			return result;
 		}
@@ -159,6 +182,12 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	public double gdStrWidth(final String str) {
 		final double[] result = this.rj.execGDCommand(new GDCmdItem.CGetStrWidth(
 				getDeviceNumber(), str, this.rjSlot ));
+		if (str.length() == 1) {
+//			System.out.println("StrWidth: " + Arrays.toString(result) + " \"" + str + "\" (" + str.codePointAt(0) + ")");
+		}
+		else {
+//			System.out.println("StrWidth: " + Arrays.toString(result) + " \"" + str + "\"");
+		}
 		if (result != null && result.length == 1) {
 			return result[0];
 		}
@@ -169,6 +198,7 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdcSetFont(final double cex, final double ps, final double lineheight, final int fontface, final String fontfamily) {
+//		System.out.println("Font: " + fontface + " \"" + fontfamily + "\"");
 		this.rj.execGDCommand(new GDCmdItem.SetFont(
 				getDeviceNumber(), fontfamily, fontface, ps, cex, lineheight, this.rjSlot ));
 	}
@@ -176,36 +206,42 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public void gdLine(final double x0, final double y0, final double x1, final double y1) {
+//		System.out.println("Line: (" + x0 + ", " + y0 + "), (" + x1 + ", " + y1 + ")");
 		this.rj.execGDCommand(new GDCmdItem.DrawLine(
 				getDeviceNumber(), x0, y0, x1, y1, this.rjSlot ));
 	}
 	
 	@Override
 	public void gdPolyline(final int n, final double[] x, final double[] y) {
+//		System.out.println("Polyline: " + n);
 		this.rj.execGDCommand(new GDCmdItem.DrawPolyline(
 				getDeviceNumber(), x, y, this.rjSlot ));
 	}
 	
 	@Override
 	public void gdRect(final double x0, final double y0, final double x1, final double y1) {
+//		System.out.println("Rect: (" + x0 + ", " + y0 + "), (" + x1 + ", " + y1 + ")");
 		this.rj.execGDCommand(new GDCmdItem.DrawRect(
 				getDeviceNumber(), x0, y0, x1, y1, this.rjSlot ));
 	}
 	
 	@Override
 	public void gdCircle(final double x, final double y, final double r) {
+//		System.out.println("Circle: (" + x + ", " + y + "), " +r);
 		this.rj.execGDCommand(new GDCmdItem.DrawCircle(
 				getDeviceNumber(), x, y, r, this.rjSlot ));
 	}
 	
 	@Override
 	public void gdPolygon(final int n, final double[] x, final double[] y) {
+//		System.out.println("Polygon: " + n);
 		this.rj.execGDCommand(new GDCmdItem.DrawPolygon(
 				getDeviceNumber(), x, y, this.rjSlot ));
 	}
 	
 	@Override
 	public void gdText(final double x, final double y, final String str, final double rot, final double hadj) {
+//		System.out.println("Text: " + str);
 		this.rj.execGDCommand(new GDCmdItem.DrawText(
 				getDeviceNumber(), x, y, hadj, rot, str, this.rjSlot ));
 	}

@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.walware.rj.server.srvext.RjsGraphic;
+
 
 /**
  * Interface from R to Java side of the RJ server

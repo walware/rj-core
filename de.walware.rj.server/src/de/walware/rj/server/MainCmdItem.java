@@ -63,6 +63,10 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	 */
 	public static final byte T_DATA_ITEM =                  0x10;
 	
+	/**
+	 * {@link GraOpCmdItem}
+	 */
+	public static final byte T_GRAPHICS_OP_ITEM =           0x12;
 	
 	
 	protected static final int OM_STATUS =                  0x00f00000; // 0xf << OS_STATUS

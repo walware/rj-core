@@ -81,6 +81,7 @@ import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
+import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
@@ -88,9 +89,9 @@ import de.walware.rj.server.RJ;
 import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsException;
-import de.walware.rj.server.RjsGraphic;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.gd.GraOp;
 import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
@@ -98,6 +99,7 @@ import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvImpl.RJClassLoader;
 import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ExtServer;
+import de.walware.rj.server.srvext.RjsGraphic;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 
 
@@ -366,7 +368,7 @@ public class JRIServer extends RJ
 	
 	private RObjectFactory rObjectFactory;
 	
-	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
+	private JRIServerGraphics graphics;
 	
 	private Map<String, String> platformDataCommands;
 	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
@@ -842,6 +844,8 @@ public class JRIServer extends RJ
 					}
 				}
 			}
+			
+			this.graphics = new JRIServerGraphics(this, this.rEngine);
 			
 			this.hotMode = false;
 			if (this.hotModeDelayed) {
@@ -1436,6 +1440,9 @@ public class JRIServer extends RJ
 			
 			case MainCmdItem.T_DATA_ITEM:
 				item = internalEvalData((DataCmdItem) item);
+				continue;
+			case MainCmdItem.T_GRAPHICS_OP_ITEM:
+				item = internalExecGraOp((GraOpCmdItem) item);
 				continue;
 				
 			default:
@@ -2499,6 +2506,61 @@ public class JRIServer extends RJ
 		return null;
 	}
 	
+	
+	/**
+	 * Performs a graphics operations
+	 * Returns the result in the cmd object passed in, which is passed back out.
+	 * 
+	 * @param cmd the command item
+	 * @return the data command item with setted answer
+	 */
+	private GraOpCmdItem internalExecGraOp(final GraOpCmdItem cmd) {
+		final byte savedSlot = this.currentSlot;
+		this.currentSlot = cmd.slot;
+		final int savedProtectedCounter = this.rniProtectedCounter;
+		final int savedSafeMode = beginSafeMode();
+		try {
+			CMD_OP: switch (cmd.getOp()) {
+			
+			case GraOp.OP_CLOSE:
+				cmd.setAnswer(this.graphics.closeGraphic(cmd.getDevId()));
+				break CMD_OP;
+			case GraOp.OP_REQUEST_RESIZE:
+				cmd.setAnswer(this.graphics.resizeGraphic(cmd.getDevId()));
+				break CMD_OP;
+			
+			default:
+				throw new IllegalStateException("Unsupported graphics operation " + cmd.toString());
+			
+			}
+			return cmd;
+		}
+//		catch (final RjsException e) {
+//			cmd.setAnswer(e.getStatus());
+//			return cmd;
+//		}
+		catch (final CancellationException e) {
+			cmd.setAnswer(RjsStatus.CANCEL_STATUS);
+			return cmd;
+		}
+		catch (final Throwable e) {
+			final String message = "Eval data failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.SEVERE, message, e);
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_COMMON | 0x1),
+					"Internal server error (see server log)." ));
+			return cmd;
+		}
+		finally {
+			this.currentSlot = savedSlot;
+			endSafeMode(savedSafeMode);
+			if (this.rniProtectedCounter > savedProtectedCounter) {
+				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
+				this.rniProtectedCounter = savedProtectedCounter;
+			}
+		}
+	}
+	
+	
 	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 		if (this.safeMode) {
 			if (prompt.startsWith("Browse")) {
@@ -2817,12 +2879,12 @@ public class JRIServer extends RJ
 	
 	@Override
 	public void registerGraphic(final RjsGraphic graphic) {
-		this.graphicList.add(graphic);
+		this.graphics.addGraphic(graphic);
 	}
 	
 	@Override
 	public void unregisterGraphic(final RjsGraphic graphic) {
-		this.graphicList.remove(graphic);
+		this.graphics.removeGraphic(graphic);
 	}
 	
 	@Override

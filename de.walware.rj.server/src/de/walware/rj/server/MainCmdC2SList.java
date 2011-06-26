@@ -96,6 +96,9 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_DATA_ITEM:
 				this.first = new DataCmdItem(io);
 				break;
+			case MainCmdItem.T_GRAPHICS_OP_ITEM:
+				this.first = new GraOpCmdItem(io);
+				break;
 			default:
 				io.in = null;
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
@@ -127,6 +130,9 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 				continue;
 			case MainCmdItem.T_DATA_ITEM:
 				item = item.next = new DataCmdItem(io);
+				continue;
+			case MainCmdItem.T_GRAPHICS_OP_ITEM:
+				item = item.next = new GraOpCmdItem(io);
 				continue;
 			default:
 				io.in = null;

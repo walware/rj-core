@@ -9,14 +9,21 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server;
+package de.walware.rj.server.srvext;
 
 
 public interface RjsGraphic {
 	
 	
+	int STATE_CLOSED = -1;
+	int STATE_OPENED = 1;
+	int STATE_PAGED = 2;
+	
+	
 	int getDevId();
 	
 	byte getSlot();
+	
+	int getState();
 	
 }

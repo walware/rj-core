@@ -912,4 +912,9 @@ public class Rengine extends Thread {
 		    if (obtainedLock) Rsync.unlock();
 	    }
     }
+	
+	
+	public synchronized native int rniGDClose(final int devId);
+	public synchronized native int rniGDResize(final int devId);
+	
 }

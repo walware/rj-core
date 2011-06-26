@@ -44,6 +44,9 @@ extern int UserBreak;
 #include <unistd.h>
 #endif
 
+#include <R_ext/GraphicsEngine.h>
+
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
 (JNIEnv *env, jclass this)
 {
@@ -752,3 +755,28 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetProcessJEvents(
 	return 0;
 }
 
+
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDClose(
+		JNIEnv *env, jobject this, jint devId) {
+	pGEDevDesc dd = GEgetDevice(devId);
+	if (!dd) {
+		return 12;
+	}
+	Rf_killDevice(devId);
+	return 0;
+}
+
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDResize(
+		JNIEnv *env, jobject this, jint devId) {
+	pGEDevDesc gd = GEgetDevice(devId);
+	if (!gd) {
+		return 12;
+	}
+	pDevDesc dd = gd->dev;
+	if (!dd) {
+		return 13;
+	}
+	dd->size(&(dd->left), &(dd->right), &(dd->bottom), &(dd->top), dd);
+	GEplayDisplayList(gd);
+	return 0;
+}
