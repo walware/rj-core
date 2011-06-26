@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RJIOExternalizable;
+import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
 
 
@@ -66,6 +67,13 @@ public final class GraOpCmdItem extends MainCmdItem implements GraOp {
 			this.data = new RjsStatus(in);
 		}
 		else if ((this.options & OV_WITHDATA) != 0) {
+			switch (this.op) {
+			case OP_CONVERT_DEV2USER:
+				this.data = new Coord(in);
+				break;
+			default:
+				break;
+			}
 		}
 	}
 	

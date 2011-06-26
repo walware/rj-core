@@ -249,7 +249,12 @@ public class JavaGD extends GDInterface implements RjsGraphic {
 	
 	@Override
 	public double[] gdLocator() {
-		return null; // TODO
+		final double[] xy = this.rj.execGDCommand(new GDCmdItem.Locator(
+				getDeviceNumber(), this.rjSlot ));
+		if (xy != null && xy.length == 2) {
+			return xy;
+		}
+		return null;
 	}
 	
 	

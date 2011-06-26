@@ -917,4 +917,7 @@ public class Rengine extends Thread {
 	public synchronized native int rniGDClose(final int devId);
 	public synchronized native int rniGDResize(final int devId);
 	
+	public synchronized native int rniGDConvertDevToUser(final int devId, final double[] xy);
+	public synchronized native int rniGDConvertUserToDev(final int devId, final double[] xy);
+
 }

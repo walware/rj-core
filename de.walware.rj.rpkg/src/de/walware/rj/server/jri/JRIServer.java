@@ -91,6 +91,7 @@ import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
 import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
@@ -2528,6 +2529,27 @@ public class JRIServer extends RJ
 			case GraOp.OP_REQUEST_RESIZE:
 				cmd.setAnswer(this.graphics.resizeGraphic(cmd.getDevId()));
 				break CMD_OP;
+				
+			case GraOp.OP_CONVERT_DEV2USER: {
+				final Coord coord = (Coord) cmd.getData();
+				final RjsStatus status = this.graphics.convertDev2User(cmd.getDevId(), coord);
+				if (status.getSeverity() == RjsStatus.OK) {
+					cmd.setAnswer(coord);
+				}
+				else {
+					cmd.setAnswer(status);
+				}
+				break CMD_OP; }
+			case GraOp.OP_CONVERT_USER2DEV: {
+				final Coord coord = (Coord) cmd.getData();
+				final RjsStatus status = this.graphics.convertUser2Dev(cmd.getDevId(), coord);
+				if (status.getSeverity() == RjsStatus.OK) {
+					cmd.setAnswer(coord);
+				}
+				else {
+					cmd.setAnswer(status);
+				}
+				break CMD_OP; }
 			
 			default:
 				throw new IllegalStateException("Unsupported graphics operation " + cmd.toString());

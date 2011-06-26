@@ -23,4 +23,7 @@ public interface GraOp {
 	
 	byte OP_REQUEST_RESIZE =            0x08;
 	
+	byte OP_CONVERT_DEV2USER =          0x10;
+	byte OP_CONVERT_USER2DEV =          0x11;
+	
 }

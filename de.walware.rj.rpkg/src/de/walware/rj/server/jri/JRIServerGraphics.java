@@ -19,6 +19,7 @@ import java.util.List;
 import org.rosuda.JRI.Rengine;
 
 import de.walware.rj.server.RjsStatus;
+import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.srvext.RjsGraphic;
 
 
@@ -105,6 +106,60 @@ public class JRIServerGraphics {
 		}
 		final int code = this.rEngine.rniGDResize(devId);
 		return checkReturnCode(code);
+	}
+	
+	public RjsStatus convertDev2User(final int devId, final Coord coord) {
+		if (coord == null) {
+			throw new NullPointerException("coord");
+		}
+		final RjsGraphic graphic = getGraphic(devId);
+		if (graphic == null || graphic.getState() < RjsGraphic.STATE_OPENED) {
+			return checkReturnCode(11);
+		}
+		if (graphic.getState() < RjsGraphic.STATE_PAGED) {
+			coord.setX(Double.NaN);
+			coord.setY(Double.NaN);
+			return RjsStatus.OK_STATUS;
+		}
+		else {
+			final double[] xy = new double[2];
+			xy[0] = coord.getX();
+			xy[1] = coord.getY();
+			final int code = this.rEngine.rniGDConvertDevToUser(devId, xy);
+			if (code == 0) {
+				coord.setX(xy[0]);
+				coord.setY(xy[1]);
+				return RjsStatus.OK_STATUS;
+			}
+		}
+		return new RjsStatus(RjsStatus.ERROR, 0);
+	}
+	
+	public RjsStatus convertUser2Dev(final int devId, final Coord coord) {
+		if (coord == null) {
+			throw new NullPointerException("coord");
+		}
+		final RjsGraphic graphic = getGraphic(devId);
+		if (graphic == null || graphic.getState() < RjsGraphic.STATE_OPENED) {
+			return checkReturnCode(11);
+		}
+		if (graphic.getState() < RjsGraphic.STATE_PAGED) {
+			coord.setX(Double.NaN);
+			coord.setY(Double.NaN);
+			return RjsStatus.OK_STATUS;
+		}
+		else {
+			final double[] xy = new double[2];
+			xy[0] = coord.getX();
+			xy[1] = coord.getY();
+			final int code = this.rEngine.rniGDConvertUserToDev(devId, xy);
+			if (code == 0) {
+				coord.setX(xy[0]);
+				coord.setY(xy[1]);
+				return RjsStatus.OK_STATUS;
+			}
+			return checkReturnCode(code);
+		}
 	}
 	
 }

@@ -45,6 +45,8 @@ public abstract class GDCmdItem extends MainCmdItem {
 	public static final byte C_GET_FONTMETRIC = 18;
 	public static final byte C_GET_STRINGWIDTH = 19;
 	
+	public static final byte U_LOCATOR =                    0x20;
+	
 	
 	private static final double[] NO_DATA = new double[0];
 	
@@ -1163,6 +1165,54 @@ public abstract class GDCmdItem extends MainCmdItem {
 			sb.append(this.devId);
 			sb.append(", commandId=");
 			sb.append(DRAW_TEXT);
+			sb.append(")\n<GD-DATA>\n");
+			sb.append("\n</GD-DATA>");
+			return sb.toString();
+		}
+		
+	}
+	
+	public static final class Locator extends GDCmdItem {
+		
+		
+		public Locator(final int devId,
+				final byte slot) {
+			this.options = OV_WAITFORCLIENT;
+			this.devId = devId;
+			
+			this.slot = slot;
+		}
+		
+		@Override
+		public void writeExternal(final RJIO io) throws IOException {
+			io.writeInt(this.options);
+			io.writeInt(this.devId);
+			io.writeByte(U_LOCATOR);
+			io.out.writeByte(this.requestId);
+		}
+		
+		
+		@Override
+		public void setAnswer(final RjsStatus status) {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public double[] getData() {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public String toString() {
+			final StringBuffer sb = new StringBuffer();
+			sb.append("GDCmdItem (options=0x");
+			sb.append(Integer.toHexString(this.options));
+			sb.append(", device=");
+			sb.append(this.devId);
+			sb.append(", commandId=");
+			sb.append(U_LOCATOR);
 			sb.append(")\n<GD-DATA>\n");
 			sb.append("\n</GD-DATA>");
 			return sb.toString();
