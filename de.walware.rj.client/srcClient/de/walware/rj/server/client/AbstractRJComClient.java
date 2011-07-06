@@ -19,13 +19,19 @@ import java.io.ObjectInput;
 import java.io.OutputStream;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -48,6 +54,7 @@ import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
+import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsPing;
 import de.walware.rj.server.RjsStatus;
@@ -131,6 +138,46 @@ public abstract class AbstractRJComClient implements ComHandler {
 		
 	}
 	
+	private final static class RunnableList {
+		
+		private Runnable[] array;
+		private int size;
+		
+		public RunnableList() {
+			this.array = new Runnable[4];
+			this.size = 0;
+		}
+		
+		
+		public void add(final Runnable value) {
+			if (value == null) {
+				throw new IllegalArgumentException();
+			}
+			final int oldCapacity = this.array.length;
+			if (this.size < oldCapacity) {
+				this.array[this.size++] = value;
+				return;
+			}
+			final Runnable[] newArray = new Runnable[oldCapacity + 4];
+			System.arraycopy(this.array, 0, newArray, 0, oldCapacity);
+			newArray[this.size++] = value;
+			this.array = newArray;
+		}
+		
+		public boolean isNotEmpty() {
+			return (this.size != 0);
+		}
+		
+		public Runnable[] consume() {
+			final Runnable[] oldListeners = this.array;
+			this.size = 0;
+			this.array = new Runnable[4];
+			return oldListeners;
+		}
+		
+	}
+	
+	
 	private class KeepAliveRunnable implements Runnable {
 		
 		public void run() {
@@ -156,11 +203,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
+	private RService rService;
+	
 	private IProgressMonitor progressMonitor;
 	
 	private final RJIO mainIO = new RJIO();
 	private MainCmdItem mainC2SFirst;
 	private final MainCmdC2SList mainC2SList = new MainCmdC2SList(this.mainIO);
+	private final RunnableList mainDeferredCmds = new RunnableList();
 	private boolean mainRunGC;
 	
 	private boolean consoleReadCallbackRequired;
@@ -200,14 +250,21 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private ScheduledFuture<?> keepAliveJob;
 	private String closedMessage = "Connection to R engine is closed.";
 	
+	private final Lock clientWaitLock = new ReentrantLock();
+	private final Condition clientWaitCondition = this.clientWaitLock.newCondition();
+	private final List<Callable<Boolean>> cancelHandler = new ArrayList<Callable<Boolean>>();
+	
 	
 	protected AbstractRJComClient() {
 		this.graphicFactory = new LazyGraphicFactory();
 	}
 	
-	@Deprecated
-	public final void setServer(final ConsoleEngine rjServer) {
-		setServer(rjServer, 1);
+	
+	public void initClient(final RService r,
+			final Map<String, Object> properties, final int id) {
+		this.rService = r;
+		properties.put("rj.com.init", Boolean.TRUE); //$NON-NLS-1$
+		properties.put(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID, id);
 	}
 	
 	public final void setServer(final ConsoleEngine rjServer, final int client) {
@@ -315,6 +372,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 				throw new IOException("Unknown cmdtype id: " + type);
 			}
 		}
+	}
+	
+	private final void processCmdDeferred(final Runnable runnable) {
+		this.mainDeferredCmds.add(runnable);
 	}
 	
 	
@@ -463,15 +524,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 		catch (final IOException e) {
 			throw e;
 		}
-		catch (final Exception e) {
+		catch (final Throwable e) {
 			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing graphic command.", e));
 			if ((options & MainCmdItem.OV_WAITFORCLIENT) != 0) {
-				if (requestId > 0) {
+//				if (requestId > 0) {
 					addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus()));
-				}
-				else {
-					throw new IllegalStateException();
-				}
+//				}
+//				else {
+//					throw new IllegalStateException();
+//				}
 			}
 			else {
 				return;
@@ -568,6 +629,22 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	public final boolean runAsyncInterrupt() {
+		final Callable<Boolean>[] handlers = getCancelHandlers();
+		for (int i = handlers.length - 1; i >= 0; i--) {
+			try {
+				final Boolean done = handlers[i].call();
+				if (done != null && done.booleanValue()) {
+					return false;
+				}
+			}
+			catch (final Exception e) {
+				// handler failed
+			}
+		}
+		final IProgressMonitor monitor = this.progressMonitor;
+		if (monitor != null) {
+			monitor.setCanceled(true);
+		}
 		try {
 			runAsyncCtrl(CtrlCmdItem.REQUEST_CANCEL);
 			return true;
@@ -659,6 +736,20 @@ public abstract class AbstractRJComClient implements ComHandler {
 						sendCom = RjsStatus.OK_STATUS;
 						continue;
 					case RjsComObject.T_MAIN_LIST:
+						if (this.mainDeferredCmds.isNotEmpty()) {
+							final Runnable[] runnables = this.mainDeferredCmds.consume();
+							for (int i = 0; i < runnables.length; i++) {
+								if (runnables[i] != null) {
+									try {
+										runnables[i].run();
+									}
+									catch (final Exception e) {
+										log(new Status(IStatus.ERROR, RJ_CLIENT_ID, 0,
+												"An error occurred when running a deferred command.", e ));
+									}
+								}
+							}
+						}
 						ok = 0;
 						switch (this.hotModeState) {
 						case 1:
@@ -1112,6 +1203,54 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	public RClientGraphic getLastGraphic() {
 		return this.lastGraphic;
+	}
+	
+	public void addCancelHandler(final Callable<Boolean> handler) {
+		synchronized (this.cancelHandler) {
+			this.cancelHandler.add(handler);
+		}
+	}
+	
+	public void removeCancelHandler(final Callable<Boolean> handler) {
+		synchronized (this.cancelHandler) {
+			final int idx = this.cancelHandler.lastIndexOf(handler);
+			if (idx >= 0) {
+				this.cancelHandler.remove(idx);
+			}
+		}
+	}
+	
+	protected Callable<Boolean>[] getCancelHandlers() {
+		synchronized (this.cancelHandler) {
+			return this.cancelHandler.toArray(new Callable[this.cancelHandler.size()]);
+		}
+	}
+	
+	public Lock getWaitLock() {
+		return this.clientWaitLock;
+	}
+	
+	public void waitingForUser() {
+		if (this.hotModeRequested.get()) {
+			this.clientWaitLock.unlock();
+			try {
+				startHotMode();
+			}
+			finally {
+				this.clientWaitLock.lock();
+			}
+			return;
+		}
+		
+		try {
+			this.clientWaitCondition.awaitNanos(1000 * 100);
+		}
+		catch (final InterruptedException e1) {
+		}
+	}
+	
+	public void resume() {
+		this.clientWaitCondition.signal();
 	}
 	
 }
