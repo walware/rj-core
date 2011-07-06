@@ -29,7 +29,8 @@ import org.eclipse.swt.widgets.ScrollBar;
 /**
  * Composite to display an R graphic.
  */
-public class RGraphicComposite extends Composite implements IERGraphic.Listener {
+public class RGraphicComposite extends Composite
+		implements IERGraphic.ListenerInstructionsExtension {
 	
 	
 	/**
@@ -101,7 +102,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 			hBar.setThumb(clientArea.width);
 			hBar.setPageIncrement(clientArea.width);
 			if (hVisible) {
-				x = (sc.fChanged || previousBounds.x >= 0) ? 0 :
+				x = (sc.fChangedLayout || previousBounds.x >= 0) ? 0 :
 						Math.max(previousBounds.x, clientArea.width - width);
 				hBar.setSelection(-x);
 			}
@@ -112,7 +113,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 			vBar.setThumb(clientArea.height);
 			vBar.setPageIncrement(clientArea.height);
 			if (vVisible) {
-				y = (sc.fChanged || previousBounds.y >= 0) ? 0 :
+				y = (sc.fChangedLayout || previousBounds.y >= 0) ? 0 :
 						Math.max(previousBounds.y, clientArea.height - height);
 				vBar.setSelection(-y);
 			}
@@ -121,7 +122,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 				vBar.setSelection(0);
 			}
 			
-			sc.fChanged = false;
+			sc.fChangedLayout = false;
 			sc.fCanvas.setBounds(x, y, width, height);
 			fInLayout = false;
 		}
@@ -142,7 +143,8 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 	private int fWidth = 0;
 	private int fHeight = 0;
 	
-	private boolean fChanged;
+	private boolean fChangedLayout;
+	private boolean fChangedContent;
 	
 	
 	public RGraphicComposite(final Composite parent, final IERGraphic graphic) {
@@ -156,6 +158,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 				scrollH();
 			}
 		});
+		hBar.setIncrement(10);
 		final ScrollBar vBar = getVerticalBar();
 		vBar.setVisible(false);
 		vBar.addListener(SWT.Selection, new Listener() {
@@ -163,6 +166,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 				scrollV();
 			}
 		});
+		vBar.setIncrement(10);
 		addListener(SWT.Resize, new Listener() {
 			public void handleEvent(final Event event) {
 //				checkContentSize();
@@ -175,12 +179,9 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 		
 		addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(final DisposeEvent e) {
-				if (fGraphic != null) {
-					fGraphic.removeListener(RGraphicComposite.this);
-				}
+				disconnect();
 			}
 		});
-		isDisposed();
 	}
 	
 	private void createCanvas() {
@@ -219,16 +220,30 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 		fCanvas.setLocation(location.x, -vSelection);
 	}
 	
-	public void setGraphic(final IERGraphic graphic) {
+	
+	@Override
+	public void setVisible(final boolean visible) {
+		super.setVisible(visible);
+		if (visible && fChangedContent) {
+			updateGraphic();
+		}
+	}
+	
+	protected void disconnect() {
 		if (fGraphic != null) {
 			fGraphic.removeListener(this);
 		}
+	}
+	
+	public void setGraphic(final IERGraphic graphic) {
+		disconnect();
+		
 		fGraphic = graphic;
 		if (fGraphic != null) {
 			fGraphic.addListener(this);
 		}
 		
-		drawingStopped();
+		instructionsChanged(true, null);
 	}
 	
 	/**
@@ -252,12 +267,14 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 	public void drawingStarted() {
 	}
 	
+	public void instructionsChanged(final boolean reset, final List<IERGraphicInstruction> added) {
+		fChangedContent = true;
+		if (isVisible()) {
+			updateGraphic();
+		}
+	}
+	
 	public void drawingStopped() {
-		final List<? extends IERGraphicInstruction> instructions = (fGraphic != null) ?
-				fGraphic.getInstructions() : RGraphicCanvas.NO_GRAPHIC;
-		fCanvas.setInstructions(instructions);
-		checkContentSize();
-		fCanvas.redraw();
 	}
 	
 	private void checkContentSize() {
@@ -265,7 +282,7 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 		if (fWidth == size.x && fHeight == size.y) {
 			return;
 		}
-		fChanged = true;
+		fChangedLayout = true;
 		fWidth = size.x;
 		fHeight = size.y;
 		fCanvas.setSize(fWidth, fHeight);
@@ -283,9 +300,34 @@ public class RGraphicComposite extends Composite implements IERGraphic.Listener 
 		fCanvas.redraw();
 	}
 	
+	private void updateGraphic() {
+		fChangedContent = false;
+		final List<? extends IERGraphicInstruction> instructions = (fGraphic != null) ?
+				fGraphic.getInstructions() : RGraphicCanvas.NO_GRAPHIC;
+		fCanvas.setInstructions(instructions);
+		checkContentSize();
+		fCanvas.redraw();
+	}
+	
 	public double[] getGraphicFitSize() {
 		final Rectangle bounds = getBounds();
 		return new double[] { bounds.width, bounds.height };
+	}
+	
+	public Control getControl() {
+		return this;
+	}
+	
+	public Control getGraphicWidget() {
+		return fCanvas;
+	}
+	
+	public double convertWidget2GraphicX(final int x) {
+		return fCanvas.widget2graphicsX(x);
+	}
+	
+	public double convertWidget2GraphicY(final int y) {
+		return fCanvas.widget2graphicY(y);
 	}
 	
 }

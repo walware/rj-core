@@ -31,7 +31,7 @@ import java.util.List;
 public interface RGraphic {
 	
 	
-	public static interface Listener {
+	interface Listener {
 		
 		void activated();
 		void deactivated();
@@ -40,9 +40,19 @@ public interface RGraphic {
 		
 	}
 	
-	
+	/**
+	 * Returns the device id of the graphic in R. Note that the device number presented in public
+	 * R functions is this device id + 1.
+	 * 
+	 * @return the device id
+	 */
 	int getDevId();
 	
+	/**
+	 * Returns if graphic device of this graphic is the active device in R.
+	 * 
+	 * @return <code>true</code> if it is active, otherwise <code>false</code>
+	 */
 	boolean isActive();
 	
 	List<? extends RGraphicInstruction> getInstructions();

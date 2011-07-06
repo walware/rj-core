@@ -11,6 +11,10 @@
 
 package de.walware.rj.server.client;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+
+import de.walware.rj.services.RService;
+
 
 /**
  * A minimal {@link RClientGraphic} implementation.
@@ -93,6 +97,11 @@ public class RClientGraphicDummy implements RClientGraphic {
 	}
 	
 	public void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String text) {
+	}
+	
+	
+	public double[] runRLocator(final RService r, final IProgressMonitor monitor) {
+		return null;
 	}
 	
 }

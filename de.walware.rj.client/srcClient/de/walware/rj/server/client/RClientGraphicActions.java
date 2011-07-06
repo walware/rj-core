@@ -11,6 +11,8 @@
 
 package de.walware.rj.server.client;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
 
@@ -25,10 +27,12 @@ public interface RClientGraphicActions {
 	
 	String getRLabel();
 	
-	IStatus copyGraphic(int devId, String toDev, String toDevFile, String toDevArgs);
-	
 	IStatus resizeGraphic(int devId, Runnable beforeResize);
 	
 	IStatus closeGraphic(int devId);
+	
+	
+	void copy(int devId, String toDev, String toDevFile, String toDevArgs,
+			IProgressMonitor monitor) throws CoreException;
 	
 }

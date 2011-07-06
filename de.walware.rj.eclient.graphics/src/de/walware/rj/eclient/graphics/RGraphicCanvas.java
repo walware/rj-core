@@ -38,7 +38,7 @@ public class RGraphicCanvas extends Canvas implements PaintListener {
 	
 	
 	private List<? extends IERGraphicInstruction> fGraphicInstructions;
-	private DefaultGCRenderer fRenderer;
+	private final DefaultGCRenderer fRenderer;
 	
 	private GraphicInitialization fInit;
 	
@@ -78,6 +78,14 @@ public class RGraphicCanvas extends Canvas implements PaintListener {
 		}
 	}
 	
+	public double widget2graphicsX(final double x) {
+		return x; // scale
+	}
+	
+	public double widget2graphicY(final double y) {
+		return y; // scale
+	}
+	
 	public void paintControl(final PaintEvent e) {
 		final GC gc = e.gc;
 		
@@ -87,7 +95,7 @@ public class RGraphicCanvas extends Canvas implements PaintListener {
 		if (fGraphicInstructions.isEmpty()) {
 			return;
 		}
-		fRenderer.clear(1.0f);
+		fRenderer.clear(1.0f); // scale
 		fRenderer.paint(gc, fGraphicInstructions);
 	}
 	

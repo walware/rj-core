@@ -41,6 +41,7 @@ import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
 import de.walware.rj.data.RJIO;
+import de.walware.rj.data.RJIOExternalizable;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RReference;
@@ -52,6 +53,7 @@ import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
+import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.RjsComConfig;
@@ -106,30 +108,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private static final Random RAND = new Random();
 	
 	
-	private class LazyGraphicFactory implements RClientGraphicFactory {
+	private static class DummyFactory implements RClientGraphicFactory {
 		
-		
-		private boolean initialized;
-		
+		public Map<String, ? extends Object> getInitServerProperties() {
+			return null;
+		}
 		
 		public RClientGraphic newGraphic(final int devId, final double w, final double h,
 				final boolean active, final RClientGraphicActions actions, final int options) {
-			if (!this.initialized) {
-				this.initialized = true;
-				try {
-					initGraphicFactory();
-				}
-				catch (final Exception e) {
-					log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when initializing R client graphic factory.", e));
-				}
-				if (AbstractRJComClient.this.graphicFactory != LazyGraphicFactory.this) {
-					return AbstractRJComClient.this.graphicFactory.newGraphic(devId, w, h,
-							active, AbstractRJComClient.this.graphicActions, options);
-				}
-				else {
-					log(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "No R client graphic factory configured.", null));
-				}
-			}
 			return new RClientGraphicDummy(devId, w, h);
 		}
 		
@@ -204,6 +190,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	
 	private RService rService;
+	private Object rHandle;
 	
 	private IProgressMonitor progressMonitor;
 	
@@ -256,15 +243,32 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	
 	protected AbstractRJComClient() {
-		this.graphicFactory = new LazyGraphicFactory();
 	}
 	
 	
-	public void initClient(final RService r,
+	public void initClient(final Object rHandle, final RService r,
 			final Map<String, Object> properties, final int id) {
+		this.rHandle = rHandle;
 		this.rService = r;
 		properties.put("rj.com.init", Boolean.TRUE); //$NON-NLS-1$
 		properties.put(RjsComConfig.RJ_COM_S2C_ID_PROPERTY_ID, id);
+		
+		try {
+			initGraphicFactory();
+		}
+		catch (final Exception e) {
+			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when initializing R client graphic factory.", e));
+		}
+		if (this.graphicFactory != null) {
+			final Map<String, ? extends Object> additional = this.graphicFactory.getInitServerProperties();
+			if (additional != null) {
+				properties.putAll(additional);
+			}
+		}
+		else {
+			this.graphicFactory = new DummyFactory();
+			log(new Status(IStatus.WARNING, RJ_CLIENT_ID, -1, "No R client graphic factory configured.", null));
+		}
 	}
 	
 	public final void setServer(final ConsoleEngine rjServer, final int client) {
@@ -272,6 +276,14 @@ public abstract class AbstractRJComClient implements ComHandler {
 		if (client == 0) {
 			this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
 		}
+	}
+	
+	public Object getRHandle() {
+		return this.rHandle;
+	}
+	
+	public RService getRService() {
+		return this.rService;
 	}
 	
 	public final ConsoleEngine getConsoleServer() {
@@ -366,6 +378,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case MainCmdItem.T_DATA_ITEM:
 				runGC = true;
 				processDataCmd(this.mainIO);
+				continue;
+			case MainCmdItem.T_GRAPHICS_OP_ITEM:
+				runGC = true;
+				processGraphicsOpCmd(this.mainIO);
 				continue;
 			default:
 				this.mainIO.in = null;
@@ -517,6 +533,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 						io.in.readDouble(),
 						io.readString() );
 				return;
+				
 			default:
 				throw new UnsupportedOperationException("Unknown GD command.");
 			}
@@ -554,6 +571,19 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
+	private final void processGraphicsOpCmd(final RJIO io) throws IOException {
+		try {
+			final GraOpCmdItem item = new GraOpCmdItem(io);
+			addDataAnswer(item);
+		}
+		catch (final IOException e) {
+			throw e;
+		}
+		catch (final Exception e) {
+			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing graphic operation answer.", e));
+		}
+	}
+	
 	private final int newDataLevel() {
 		final int level = ++this.dataLevelRequest;
 		if (level >= this.dataAnswer.length) {
@@ -584,6 +614,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		if ((item.requestId & 0xff00 >>> 8) != (this.randomId & 0xff)) {
 			// other client
+			System.out.println("Other client: " + item);
 		}
 		throw new RjException("Unexpected server answer: " + item);
 	}
@@ -975,7 +1006,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	protected RClientGraphic getGraphic(final int devId) throws RjException {
+	protected RClientGraphic getGraphic(final int devId) {
 		if (devId >= 0 && devId < this.graphics.length) {
 			final RClientGraphic graphic = this.graphics[devId];
 			if (graphic != null) {
@@ -1204,6 +1235,53 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public RClientGraphic getLastGraphic() {
 		return this.lastGraphic;
 	}
+	
+	public Object execSyncGraphicOp(final int devId, final byte op,
+			final IProgressMonitor monitor) throws CoreException {
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new GraOpCmdItem(devId, op)),
+					monitor );
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Graphics operation failed: " + status.getMessage(), null));
+				}
+			}
+			return ((GraOpCmdItem) this.dataAnswer[level]).getData();
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public Object execSyncGraphicOp(final int devId, final byte op, final RJIOExternalizable data,
+			final IProgressMonitor monitor) throws CoreException {
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new GraOpCmdItem(devId, op, data)),
+					monitor );
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Graphics operation failed: " + status.getMessage(), null));
+				}
+			}
+			return ((GraOpCmdItem) this.dataAnswer[level]).getData();
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
 	
 	public void addCancelHandler(final Callable<Boolean> handler) {
 		synchronized (this.cancelHandler) {

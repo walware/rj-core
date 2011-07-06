@@ -11,10 +11,17 @@
 
 package de.walware.rj.eclient.internal.graphics;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.core.runtime.ISafeRunnable;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.SafeRunner;
+import org.eclipse.core.runtime.preferences.IPreferencesService;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Display;
 
 import de.walware.rj.server.client.RClientGraphic;
 import de.walware.rj.server.client.RClientGraphicActions;
@@ -26,12 +33,15 @@ import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.IERGraphicsManager;
+import de.walware.rj.eclient.graphics.RGraphics;
+import de.walware.rj.eclient.graphics.RGraphicsPreferencePage;
+import de.walware.rj.eclient.graphics.comclient.IERClientGraphicActions;
 
 
 /**
  * Factory and manager implementation for R graphics under Eclipse.
  * <p>
- * Public class is {@link de.walware.rj.eclient.graphics.ERGraphicFactory}.</p>
+ * Public class is {@link de.walware.rj.eclient.graphics.comclient.ERGraphicFactory}.</p>
  */
 public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphicsManager {
 	
@@ -73,12 +83,44 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	private final AddedSafeRunnable fAddedRunnable = new AddedSafeRunnable();
 	private final RemovedSafeRunnable fRemovedRunnable = new RemovedSafeRunnable();
 	
+	private final Display fDefaultDisplay;
+	private final FontManager fFontManager;
+	
+	
+	public EclipseRGraphicFactory() {
+		fDefaultDisplay = UIAccess.getDisplay();
+		fFontManager = new FontManager(fDefaultDisplay);
+	}
+	
+	
+	public Map<String, ? extends Object> getInitServerProperties() {
+		final Map<String, Object> map = new HashMap<String, Object>();
+		final IPreferencesService preferences = Platform.getPreferencesService();
+		final AtomicReference<double[]> dpi = new AtomicReference<double[]>();
+		dpi.set(RGraphicsPreferencePage.parseDPI(preferences.getString(
+				RGraphics.PREF_DISPLAY_QUALIFIER, RGraphics.PREF_DISPLAY_CUSTOM_DPI_KEY, null, null )));
+		if (dpi.get() == null) {
+			Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+					final Point point = Display.getCurrent().getDPI();
+					dpi.set(new double[] { point.x, point.y });
+				}
+			});
+			if (dpi.get() == null) {
+				dpi.set(new double[] { 96.0, 96.0 });
+			}
+		}
+		map.put("display.ppi", dpi.get()); //$NON-NLS-1$
+		return map;
+	}
 	
 	public RClientGraphic newGraphic(final int devId, final double w, final double h,
 			final boolean active, final RClientGraphicActions actions, final int options) {
-		final EclipseRGraphic egraphic = new EclipseRGraphic(devId, w, h, active, actions, options, this);
+		final EclipseRGraphic egraphic = new EclipseRGraphic(devId, w, h, active,
+				(actions instanceof IERClientGraphicActions) ? (IERClientGraphicActions) actions : null,
+				options, this );
 		if ((options & MANAGED_OFF) == 0) {
-			UIAccess.getDisplay().syncExec(new Runnable() {
+			fDefaultDisplay.syncExec(new Runnable() {
 				public void run() {
 					fGraphics.add(egraphic);
 					fAddedRunnable.fGraphic = egraphic;
@@ -100,7 +142,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	}
 	
 	void close(final EclipseRGraphic graphic) {
-		UIAccess.getDisplay().syncExec(new Runnable() {
+		fDefaultDisplay.syncExec(new Runnable() {
 			public void run() {
 				fGraphics.remove(graphic);
 				fRemovedRunnable.fGraphic = graphic;
@@ -111,6 +153,14 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 				}
 			}
 		});
+	}
+	
+	
+	public FontManager getFontManager(final Display display) {
+		if (display == fDefaultDisplay) {
+			return fFontManager;
+		}
+		return null;
 	}
 	
 	

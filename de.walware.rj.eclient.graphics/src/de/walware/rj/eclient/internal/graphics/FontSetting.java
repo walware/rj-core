@@ -22,12 +22,14 @@ public class FontSetting extends RFontSetting implements IERGraphicInstruction {
 	
 	
 	public final Font swtFont;
+	public final double[] swtProperties;
 	
 	
 	public FontSetting(final String family, final int face, final double pointSize, final double cex, final double lineHeight,
-			final Font swtFont) {
+			final Font swtFont, final double[] swtProperties) {
 		super(family, face, pointSize, cex, lineHeight);
 		this.swtFont = swtFont;
+		this.swtProperties = swtProperties;
 	}
 	
 	

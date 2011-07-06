@@ -35,7 +35,7 @@ import de.walware.rj.eclient.internal.graphics.RectElement;
 import de.walware.rj.eclient.internal.graphics.TextElement;
 
 
-public class DefaultGCRenderer {
+public class OldGCRenderer {
 	
 	
 	private float fScale = 1.0f;
@@ -45,7 +45,6 @@ public class DefaultGCRenderer {
 	private int fLineAlpha;
 	private Color fFillColor;
 	private int fFillAlpha;
-	private final double[] fFontProperties = new double[1];
 	private int fXMax;
 	private int fYMax;
 	
@@ -64,17 +63,15 @@ public class DefaultGCRenderer {
 	
 	public void paint(final GC gc, final List<? extends IERGraphicInstruction> instructions) {
 		final Transform defaultTransform = null;
-		final Transform tempTransform = new Transform(gc.getDevice());
+		Transform tempTransform = null;
 		final float scale = fScale;
 		int currentAlpha = -1;
 		int lineAlpha = fLineAlpha;
 		int fillAlpha = fFillAlpha;
-		
 		try {
 			gc.setAdvanced(true);
 			gc.setAntialias(SWT.ON);
 			gc.setTextAntialias(SWT.ON);
-			gc.setInterpolation(SWT.HIGH);
 			gc.setLineAttributes(fLineAttributes);
 			gc.setTransform(defaultTransform);
 			gc.setAlpha(currentAlpha);
@@ -165,7 +162,6 @@ public class DefaultGCRenderer {
 				case RGraphicInstruction.SET_FONT: {
 					final FontSetting setting = (FontSetting) instr;
 					gc.setFont(setting.swtFont);
-					fFontProperties[0] = setting.swtProperties[0];
 					continue; }
 				case RGraphicInstruction.DRAW_LINE: {
 					final LineElement element = (LineElement) instr;
@@ -173,10 +169,10 @@ public class DefaultGCRenderer {
 						gc.setAlpha(currentAlpha = lineAlpha);
 					}
 					gc.drawLine(
-							(int) (element.x0 + 0.5),
-							(int) (element.y0 + 0.5),
-							(int) (element.x1 + 0.5),
-							(int) (element.y1 + 0.5) );
+							(int) (element.x0 * scale + 0.5),
+							(int) (element.y0 * scale + 0.5),
+							(int) (element.x1 * scale + 0.5),
+							(int) (element.y1 * scale + 0.5) );
 					continue; }
 				case RGraphicInstruction.DRAW_RECTANGLE: {
 					final RectElement element = (RectElement) instr;
@@ -230,62 +226,57 @@ public class DefaultGCRenderer {
 					continue; }
 				case RGraphicInstruction.DRAW_CIRCLE: {
 					final CircleElement element = (CircleElement) instr;
-					tempTransform.setElements(1, 0, 0, 1,
-							(float) (element.x - element.r),
-							(float) (element.y - element.r) );
-					gc.setTransform(tempTransform);
-					final int id = (int) (element.r * 2.0);
+					final int id = (int) (element.r * scale * 2.0 + 0.5);
+					final int ix0 = (int) ((element.x - element.r) * scale + 0.5);
+					final int iy0 = (int) ((element.y - element.r) * scale + 0.5);
 					if (fillAlpha != 0) {
 						if (fillAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = fillAlpha);
 						}
-						gc.fillOval(0, 0, id, id);
+						gc.fillOval(ix0, iy0, id, id);
 					}
 					if (lineAlpha != 0) {
 						if (lineAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = lineAlpha);
 						}
-						gc.drawOval(0, 0, id, id);
+						gc.drawOval(ix0, iy0, id, id);
 					}
-					gc.setTransform(defaultTransform);
 					continue; }
 				case RGraphicInstruction.DRAW_TEXT: {
 					final TextElement element = (TextElement) instr;
 					final double hShift;
 					if (element.horizontalAdjust != 0.0) {
-						hShift = element.horizontalAdjust * element.swtStrWidth;
+						hShift = element.horizontalAdjust * gc.textExtent(element.text, (SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT)).x;
 					}
 					else {
 						hShift = 0.0;
 					}
 					if (element.rotateDegree != 0.0) {
-						tempTransform.setElements(1, 0, 0, 1,
-								(float) element.x,
-								(float) element.y );
+						if (tempTransform == null) {
+							tempTransform = new Transform(gc.getDevice());
+						}
+						tempTransform.identity();
+						tempTransform.translate((float) (element.x * scale), (float) (element.y * scale));
 						tempTransform.rotate((float) -element.rotateDegree);
-						tempTransform.translate(
-								(float) Math.floor(1.1111 - hShift),
-								(float) Math.floor(0.0511 - fFontProperties[0]) );
+						tempTransform.translate((float) - hShift, - gc.getFontMetrics().getAscent());
 						gc.setTransform(tempTransform);
 						if (lineAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = lineAlpha);
 						}
-						gc.drawString(element.text, 0, 0, true);
+						gc.drawText(element.text, 0, 0,
+								(SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT) );
 						gc.setTransform(defaultTransform);
-						
-						continue;
 					}
 					else {
 						if (lineAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = lineAlpha);
 						}
-						gc.drawString(element.text,
-								(int) Math.floor(1.1111 + element.x - hShift),
-								(int) Math.floor(0.5111 + element.y - fFontProperties[0]),
-								true );
-						
-						continue;
-					} }
+						gc.drawText(element.text,
+								(int) (((element.x - hShift) * scale) + 0.5),
+								(int) ((element.y * scale) + 0.5) - gc.getFontMetrics().getAscent(),
+								(SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT) );
+					}
+					continue; }
 				}
 			}
 			
@@ -297,7 +288,9 @@ public class DefaultGCRenderer {
 			fYMax = iymax;
 		}
 		finally {
-			tempTransform.dispose();
+			if (tempTransform != null) {
+				tempTransform.dispose();
+			}
 		}
 	}
 	

@@ -35,7 +35,7 @@ import de.walware.rj.eclient.graphics.RGraphics;
 public class RGraphicsPlugin extends AbstractUIPlugin {
 	
 	
-	public static final String IMG_LOCTOOL_RESIZE_FIT_R = RGraphics.PLUGIN_ID + "/image/loctool/resize-fit-r";
+	public static final String IMG_LOCTOOL_RESIZE_FIT_R = RGraphics.PLUGIN_ID + "/image/loctool/resize-fit-r"; //$NON-NLS-1$
 	
 	
 	/** The shared instance */
@@ -97,6 +97,7 @@ public class RGraphicsPlugin extends AbstractUIPlugin {
 			throw new IllegalStateException("Plug-in is not started.");
 		}
 		final ImageRegistryUtil util = new ImageRegistryUtil(this);
+		
 		util.register(IMG_LOCTOOL_RESIZE_FIT_R, T_LOCTOOL, "resize-fit-r.png");
 	}
 	

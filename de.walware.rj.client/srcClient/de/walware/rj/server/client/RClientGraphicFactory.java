@@ -11,6 +11,8 @@
 
 package de.walware.rj.server.client;
 
+import java.util.Map;
+
 
 /**
  * Factory interface used to create (and close) {@link RClientGraphic} objects.
@@ -29,7 +31,7 @@ public interface RClientGraphicFactory {
 	 * Typically that means, the graphic isn't shown in the default graphic
 	 * view/window.
 	 */
-	public static final int MANAGED_ON = 1 << 1;
+	int MANAGED_ON = 1 << 1;
 	
 	/**
 	 * Indicates that the graphic will not be added to a global graphic collection.
@@ -37,18 +39,25 @@ public interface RClientGraphicFactory {
 	 * Typically that means, the graphic isn't shown in the default graphic
 	 * view/window.
 	 */
-	public static final int MANAGED_OFF = 1 << 2;
+	int MANAGED_OFF = 1 << 2;
 	
 	/**
 	 * Indicates that the graphic will be disposed if closed in R.
 	 */
-	public static final int R_CLOSE_ON = 1 << 3;
+	int R_CLOSE_ON = 1 << 3;
 	
 	/**
 	 * Indicates that the graphic will not be disposed if closed in R.
 	 */
-	public static final int R_CLOSE_OFF = 1 << 4;
+	int R_CLOSE_OFF = 1 << 4;
 	
+	/**
+	 * Returns a map with properties configuring the server
+	 * The values must be serializable.
+	 * 
+	 * @return a map with keys and values of the properties
+	 */
+	Map<String, ? extends Object> getInitServerProperties();
 	
 	/**
 	 * Called if a new graphic is created in R (<code>dev.new()</code>).

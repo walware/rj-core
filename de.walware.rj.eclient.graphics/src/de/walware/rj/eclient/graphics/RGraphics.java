@@ -18,10 +18,16 @@ public class RGraphics {
 	public static final String PLUGIN_ID = "de.walware.rj.eclient.graphics"; //$NON-NLS-1$
 	
 	
+	public static final String PREF_DISPLAY_QUALIFIER = PLUGIN_ID + "/display"; //$NON-NLS-1$
+	public static final String PREF_DISPLAY_CUSTOM_DPI_KEY = "dpi.xy"; //$NON-NLS-1$
+	
 	public static final String PREF_FONTS_QUALIFIER = PLUGIN_ID + "/fonts"; //$NON-NLS-1$
 	public static final String PREF_FONTS_SERIF_FONTNAME_KEY = "serif.name"; //$NON-NLS-1$
 	public static final String PREF_FONTS_SANS_FONTNAME_KEY = "sans.name"; //$NON-NLS-1$
 	public static final String PREF_FONTS_MONO_FONTNAME_KEY = "mono.name"; //$NON-NLS-1$
+	public static final String PREF_FONTS_SYMBOL_USE_KEY = "symbol.use"; //$NON-NLS-1$
+	public static final String PREF_FONTS_SYMBOL_FONTNAME_KEY = "symbol.name"; //$NON-NLS-1$
+	public static final String PREF_FONTS_SYMBOL_ENCODING_KEY = "symbol.enc"; //$NON-NLS-1$
 	
 	
 }

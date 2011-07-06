@@ -19,8 +19,13 @@ import de.walware.rj.eclient.graphics.IERGraphicInstruction;
 public class TextElement extends RText implements IERGraphicInstruction {
 	
 	
-	public TextElement(final double x, final double y, final double hAdj, final double rDeg, final String text) {
+	public final double swtStrWidth;
+	
+	
+	public TextElement(final double x, final double y, final double hAdj, final double rDeg, final String text,
+			final double swtStrWidth) {
 		super(x, y, hAdj, rDeg, text);
+		this.swtStrWidth = swtStrWidth;
 	}
 	
 	

@@ -76,12 +76,13 @@ public class RGraphicCreatorImpl implements RGraphicCreator {
 		this.rjs.setGraphicOptions(graphicOptions);
 		final RClientGraphic graphic;
 		try {
-			this.service.evalVoid("library(\"rj.gd\")", monitor);
 			if (this.width < 0) {
-				this.service.evalVoid(".rj_gd.new()", monitor);
+				this.service.evalVoid("rj.gd::rj.GD()", monitor);
 			}
 			else {
-				this.service.evalVoid(".rj_gd.new(width="+this.width+",height="+this.height+")", monitor);
+				this.service.evalVoid("rj.gd::rj.GD(" +
+						"width= " + this.width + ", height= "+this.height+", size.unit= \"px\"" +
+						")", monitor );
 			}
 			if (expression != null) {
 				this.service.evalData(expression, monitor);

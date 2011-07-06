@@ -20,7 +20,7 @@
 		<dependency>
 			<groupId>de.walware.ecommons</groupId>
 			<artifactId>de.walware.ecommons.coremisc</artifactId>
-			<version>0.10.0-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	

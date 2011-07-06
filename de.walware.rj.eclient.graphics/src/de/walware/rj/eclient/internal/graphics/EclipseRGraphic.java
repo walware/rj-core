@@ -14,29 +14,37 @@ package de.walware.rj.eclient.internal.graphics;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Display;
 
+import de.walware.rj.graphic.utils.CachedMapping;
+import de.walware.rj.graphic.utils.CharMapping;
+import de.walware.rj.graphic.utils.Unicode2AdbSymbolMapping;
 import de.walware.rj.server.client.RClientGraphic;
-import de.walware.rj.server.client.RClientGraphicActions;
 import de.walware.rj.server.client.RClientGraphicFactory;
+import de.walware.rj.services.RService;
+import de.walware.rj.services.RServiceControlExtension;
 
 import de.walware.ecommons.ConstList;
 import de.walware.ecommons.FastList;
+import de.walware.ecommons.IStatusChangeListener;
+import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.IERGraphicInstruction;
 import de.walware.rj.eclient.graphics.RGraphics;
+import de.walware.rj.eclient.graphics.comclient.IERClientGraphicActions;
+import de.walware.rj.eclient.graphics.utils.CopyToDevRunnable;
+import de.walware.rj.eclient.internal.graphics.FontManager.FontFamily;
 
 
 /**
@@ -46,77 +54,202 @@ import de.walware.rj.eclient.graphics.RGraphics;
 public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	
+	private static final CharMapping ADBSYMBOL_MAPPING = new CachedMapping(
+			new Unicode2AdbSymbolMapping() );
+	
+	private static final long MILLI_NANOS = 1000000L;
+	
+	
 	private final int fDevId;
 	
-	private EclipseRGraphicFactory fManager;
+	private int fDrawingStopDelay = 33; // ms after stop
+	private int fDrawingForceDelay = 333; // ms after last update
+	
+	private final EclipseRGraphicFactory fManager;
 	private boolean fIsRClosed;
 	private boolean fIsLocalClosed;
 	
+	private final Object fStateLock = new Object();
 	private boolean fIsActive;
-	private int fMode;
+	private boolean fIsActiveNotified;
+	private int fMode = 1;
+	private int fModeNotified;
+	private long fDrawingStoppedStamp;
+	private long fInstructionsNotifiedStamp;
+	private boolean fStateNotificationDirectScheduled;
+	private boolean fStateNotificationDelayedScheduled;
+	private final Runnable fStateNotificationRunnable = new Runnable() {
+		public void run() {
+			int type = 0;
+			try {
+				while (true) {
+					boolean reset = false;
+					List<IERGraphicInstruction> update = null;
+					synchronized (fStateLock) {
+						if (type == 0
+								&& !fStateNotificationDirectScheduled
+								&& fStateNotificationDelayedScheduled) {
+							fStateNotificationDirectScheduled = true;
+							fStateNotificationDelayedScheduled = false;
+						}
+						if (fIsActive != fIsActiveNotified) {
+							fIsActiveNotified = fIsActive;
+							type = (fIsActive) ? 1 : 2;
+						}
+						else if ((fMode == 1 || fInstructionsUpdateSize > 0)
+								&& fModeNotified != 1 ) {
+							// start
+							fModeNotified = 1;
+							type = 3;
+						}
+						else if (fInstructionsUpdateSize > 0) {
+							// update
+							final long stamp = System.nanoTime();
+							int t = fDrawingForceDelay - (int) ((stamp - fInstructionsNotifiedStamp) / MILLI_NANOS);
+							if (t > 10 && fMode != 1) {
+								t = Math.min(t, fDrawingStopDelay - (int) ((stamp - fDrawingStoppedStamp) / MILLI_NANOS));
+							}
+							if (t <= 10) {
+								synchronized (fInstructionsLock) {
+									if (fInstructions == null) {
+										reset = true;
+										fInstructionsSize = 0;
+									}
+									fInstructions = fInstructionsUpdate;
+									fInstructionsSize = fInstructionsUpdateStart + fInstructionsUpdateSize;
+								}
+								update = new ConstList<IERGraphicInstruction>(fInstructionsUpdate)
+										.subList(fInstructionsUpdateStart, fInstructionsUpdateStart + fInstructionsUpdateSize);
+//								System.out.println("InstrUpdate: \treset= " + reset + " \tcount= " + update.size() + " \ttdiff= " + ((stamp - fInstructionsNotifiedStamp) / MILLI_NANOS));
+								fInstructionsUpdateStart = fInstructionsSize;
+								fInstructionsUpdateSize = 0;
+								fInstructionsNotifiedStamp = stamp;
+								type = 5;
+							}
+							else {
+								if (!fStateNotificationDelayedScheduled) {
+									fStateNotificationDelayedScheduled = true;
+									fDisplay.timerExec(10 + Math.min(t, fDrawingStopDelay), this);
+								}
+								fStateNotificationDirectScheduled = false;
+								type = 0;
+								return;
+							}
+						}
+						else if (fMode != 1 && fModeNotified == 1 ) {
+							// stop
+							final long stamp = System.nanoTime();
+							final int t = fDrawingStopDelay - (int) ((stamp - fDrawingStoppedStamp) / MILLI_NANOS);
+							if (t <= 10) {
+								fModeNotified = 0;
+								type = 4;
+							}
+							else {
+								if (!fStateNotificationDelayedScheduled) {
+									fStateNotificationDelayedScheduled = true;
+									fDisplay.timerExec(10 + t, this);
+								}
+								fStateNotificationDirectScheduled = false;
+								type = 0;
+								return;
+							}
+						}
+						else {
+							// done
+							fStateNotificationDirectScheduled = false;
+							type = 0;
+							return;
+						}
+					}
+					
+					final Listener[] listeners = fGraphicListeners.toArray();
+					for (final Listener listener : listeners) {
+						switch (type) {
+						case 1:
+							listener.activated();
+							continue;
+						case 2:
+							listener.deactivated();
+							continue;
+						case 3:
+							listener.drawingStarted();
+							continue;
+						case 4:
+							listener.drawingStopped();
+							continue;
+						case 5:
+							if (listener instanceof ListenerInstructionsExtension) {
+								((ListenerInstructionsExtension) listener).instructionsChanged(reset, update);
+							}
+//							System.out.println("InstrNotif: ns= " + (System.nanoTime() - fInstructionsNotifiedStamp));
+							continue;
+						}
+					}
+				}
+			}
+			finally {
+				if (type != 0) {
+					synchronized (fStateLock) {
+						fStateNotificationDirectScheduled = false;
+					}
+				}
+			}
+		}
+	};
 	
-	private int fOptions;
-	private RClientGraphicActions fActions;
+	private final int fOptions;
+	private final IERClientGraphicActions fActions;
 	private volatile double[] fNextSize;
 	private double[] fSize;
 	
-	private Font fCurrentFont;
-	private GC fCurrentGC;
-	private FontMetrics fCurrentFontMetrics;
+	private FontFamily fCurrentFontFamily;
+	private int fCurrentFontSize;
+	private int fCurrentFontStyle;
+	private int fCurrentFontRFace;
+	private CharMapping fCurrentFontMapping;
 	
-	private Display fDisplay;
+	private String fLastStringEnc;
+	private double[] fLastStringWidth;
+	
+	private final Display fDisplay;
 	private final Map<Integer, Color> fColors = new HashMap<Integer, Color>();
-	private final Map<FontData, Font> fFonts = new HashMap<FontData, Font>();
+	private final FontManager fFontManager;
 	
 	private String fSerifFontName;
 	private String fSansFontName;
 	private String fMonoFontName;
+	private String fSymbolFontName;
+	private CharMapping fSymbolFontMapping;
 	
+	/** List of newly added instructions */
+	private IERGraphicInstruction[] fInstructionsNew = new IERGraphicInstruction[1]; // initial init
+	/** Count of newly added instructions in {@link #fInstructionsNew} */
+	private int fInstructionsNewSize;
+	/** Current list of instructions, notified + not yet notified */
+	private IERGraphicInstruction[] fInstructionsUpdate;
+	/** Index of first not yet notified instruction in {@link #fInstructionsUpdate} */
+	private int fInstructionsUpdateStart;
+	/** Count of not yet notified instructions in {@link #fInstructionsUpdate} */
+	private int fInstructionsUpdateSize;
+	/** Lock for {@link #fInstructions} and {@link #fInstructionsSize} */
 	private final Object fInstructionsLock = new Object();
+	/** List of notified instructions */
+	private IERGraphicInstruction[] fInstructions;
+	/** Count of notified instructions in {@link #fInstructions} */
 	private int fInstructionsSize;
-	private IERGraphicInstruction[] fInstructions = new IERGraphicInstruction[512];
 	
-	private final FastList<IERGraphic.Listener> fListeners = new FastList<IERGraphic.Listener>(IERGraphic.Listener.class, FastList.IDENTITY);
+	private final Object fUserExchangeLock = new Object();
+	private String fUserExchangeRType;
+	private RServiceControlExtension fUserExchangeRCallback;
 	
-	private final Runnable fActivatedRunnable = new Runnable() {
-		public void run() {
-			final Listener[] listeners = fListeners.toArray();
-			for (final Listener listener : listeners) {
-				listener.activated();
-			}
-		}
-	};
+	private final FastList<IERGraphic.Listener> fGraphicListeners = new FastList<IERGraphic.Listener>(IERGraphic.Listener.class, FastList.IDENTITY);
 	
-	private final Runnable fDeactivatedRunnable = new Runnable() {
-		public void run() {
-			final Listener[] listeners = fListeners.toArray();
-			for (final Listener listener : listeners) {
-				listener.deactivated();
-			}
-		}
-	};
-	
-	private final Runnable fDrawingStartedRunnable = new Runnable() {
-		public void run() {
-			final Listener[] listeners = fListeners.toArray();
-			for (final Listener listener : listeners) {
-				listener.drawingStarted();
-			}
-		}
-	};
-	
-	private final Runnable fDrawingStoppedRunnable = new Runnable() {
-		public void run() {
-			final Listener[] listeners = fListeners.toArray();
-			for (final Listener listener : listeners) {
-				listener.drawingStopped();
-			}
-		}
-	};
+	private IStatus fMessage = Status.OK_STATUS;
+	private final FastList<IStatusChangeListener> fMessageListeners = new FastList<IStatusChangeListener>(IStatusChangeListener.class, FastList.IDENTITY);
 	
 	
 	public EclipseRGraphic(final int devId, final double w, final double h,
-			final boolean active, final RClientGraphicActions actions, final int options,
+			final boolean active, final IERClientGraphicActions actions, final int options,
 			final EclipseRGraphicFactory manager) {
 		fDevId = devId;
 		fIsActive = active;
@@ -127,6 +260,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		fDisplay = UIAccess.getDisplay();
 		fColors.put(0x000000, new Color(fDisplay, 0, 0, 0));
 		fColors.put(0xffffff, new Color(fDisplay, 0xff, 0xff, 0xff));
+		fFontManager = manager.getFontManager(fDisplay);
+//		fFontManager = new FontManager(fDisplay); // -> dispose!
 		
 		fSize = fNextSize = new double[] { w, h };
 		initPanel(w, h);
@@ -137,69 +272,91 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("Device ");
 		sb.append(fDevId + 1);
-		if (fIsActive) {
-			sb.append(" (active)");
-		}
 		if (fActions != null) {
 			final String rLabel = fActions.getRLabel();
 			if (rLabel != null && rLabel.length() > 0) {
-				sb.append(" – ");
+				sb.append(" │ ");
 				sb.append(rLabel);
 			}
+		}
+		if (fIsActive) {
+			sb.append("<active>"); //$NON-NLS-1$
 		}
 		return sb.toString();
 	}
 	
 	private void add(final IERGraphicInstruction instr) {
 		// adding is always in R thread
-		if (fInstructionsSize+1 >= fInstructions.length) {
-			synchronized (fInstructionsLock) {
-				final IERGraphicInstruction[] newArray = new IERGraphicInstruction[fInstructionsSize + 128];
-				System.arraycopy(fInstructions, 0, newArray, 0, fInstructionsSize);
-				fInstructions = newArray;
-			}
+		if (fInstructionsNew == null) {
+			fInstructionsNew = new IERGraphicInstruction[512];
 		}
-		fInstructions[fInstructionsSize] = instr;
-		fInstructionsSize++;
+		else if (fInstructionsNewSize >= fInstructionsNew.length) {
+			final IERGraphicInstruction[] newArray = new IERGraphicInstruction[fInstructionsNewSize + 512];
+//			System.out.println("NewArray " + fInstructionsNewSize + " -> " + newArray.length);
+			System.arraycopy(fInstructionsNew, 0, newArray, 0, fInstructionsNewSize);
+			fInstructionsNew = newArray;
+		}
+		fInstructionsNew[fInstructionsNewSize] = instr;
+		fInstructionsNewSize++;
 	}
 	
 	protected void initPanel(final double w, final double h) {
-		fCurrentFont = null;
-		fCurrentFontMetrics = null;
+		fDrawingStopDelay = 33;
+		fDrawingForceDelay = 333;
+		
+		fCurrentFontFamily = null;
+		fCurrentFontMapping = null;
 		
 		final IPreferencesService preferences = Platform.getPreferencesService();
 		fSerifFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SERIF_FONTNAME_KEY, "", null);
-		fSansFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SANS_FONTNAME_KEY, "", null);;
-		fMonoFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_MONO_FONTNAME_KEY, "", null);;
+		fSansFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SANS_FONTNAME_KEY, "", null);
+		fMonoFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_MONO_FONTNAME_KEY, "", null);
+		if (preferences.getBoolean(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SYMBOL_USE_KEY, true, null)) {
+			fSymbolFontName = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SYMBOL_FONTNAME_KEY, "Symbol", null); //$NON-NLS-1$
+			final String encoding = preferences.getString(RGraphics.PREF_FONTS_QUALIFIER, RGraphics.PREF_FONTS_SYMBOL_ENCODING_KEY, "AdobeSymbol", null); //$NON-NLS-1$
+			if ("AdobeSymbol".equals(encoding)) { //$NON-NLS-1$
+				fSymbolFontMapping = ADBSYMBOL_MAPPING;
+			}
+			else {
+				fSymbolFontMapping = null;
+			}
+		}
+		else {
+			fSymbolFontName = null;
+			fSymbolFontMapping = null;
+		}
 		
 		add(new GraphicInitialization(w, h));
 	}
 	
 	public void reset(final double w, final double h) {
-		synchronized (fInstructionsLock) {
-			for (int i = 0; i < fInstructionsSize; i++) {
-				fInstructions[i] = null;
-			}
-			fInstructionsSize = 0;
+		synchronized (fStateLock) {
+			fInstructionsNew = null;
+			fInstructionsNewSize = 0;
+			fDrawingStoppedStamp = System.nanoTime();
+			fInstructionsNotifiedStamp = fDrawingStoppedStamp - 1000 * MILLI_NANOS;
+			fInstructionsUpdate = null;
+			fInstructionsUpdateStart = 0;
+			fInstructionsUpdateSize = 0;
 		}
 		
 		initPanel(w, h);
 	}
 	
 	public int getDevId() {
-		return this.fDevId;
+		return fDevId;
 	}
 	
 	public void setActive(final boolean active) {
 		if (fIsActive == active) {
 			return;
 		}
-		this.fIsActive = active;
-		if (active) {
-			fDisplay.asyncExec(fActivatedRunnable);
-		}
-		else {
-			fDisplay.asyncExec(fDeactivatedRunnable);
+		synchronized (fStateLock) {
+			fIsActive = active;
+			if (!fStateNotificationDirectScheduled) {
+				fStateNotificationDirectScheduled = true;
+				fDisplay.asyncExec(fStateNotificationRunnable);
+			}
 		}
 	}
 	
@@ -208,12 +365,44 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	public void setMode(final int mode) {
-		fMode = mode;
-		if (mode == 1) {
-			fDisplay.asyncExec(fDrawingStartedRunnable);
-		}
-		else if (mode == 0) {
-			fDisplay.asyncExec(fDrawingStoppedRunnable);
+		synchronized (fStateLock) {
+			if (fMode == mode) {
+				return;
+			}
+			if (mode != 1) {
+				fDrawingStoppedStamp = System.nanoTime();
+				if (fInstructionsNewSize > 0) {
+					if (fInstructionsUpdate == null) {
+						fInstructionsUpdate = fInstructionsNew;
+						fInstructionsUpdateStart = 0;
+						fInstructionsUpdateSize = fInstructionsNewSize;
+						fInstructionsNew = null;
+						fInstructionsNewSize = 0;
+					}
+					else {
+						final int newSize = fInstructionsUpdateStart + fInstructionsUpdateSize + fInstructionsNewSize;
+						if (newSize > fInstructionsUpdate.length) {
+							final IERGraphicInstruction[] newArray = new IERGraphicInstruction[newSize + 512];
+							System.arraycopy(fInstructionsUpdate, 0, newArray, 0, fInstructionsUpdateStart + fInstructionsUpdateSize);
+							fInstructionsUpdate = newArray;
+						}
+						System.arraycopy(fInstructionsNew, 0, fInstructionsUpdate, fInstructionsUpdateStart + fInstructionsUpdateSize, fInstructionsNewSize);
+						fInstructionsUpdateSize += fInstructionsNewSize;
+						fInstructionsNewSize = 0;
+					}
+				}
+			}
+			fMode = mode;
+			if (mode == 1 && fModeNotified != 1 // need start
+					&& !fStateNotificationDirectScheduled) {
+				fStateNotificationDirectScheduled = true;
+				fDisplay.asyncExec(fStateNotificationRunnable);
+			}
+			else if (mode != 1 // stop
+					&& !(fStateNotificationDirectScheduled || fStateNotificationDelayedScheduled) ) {
+				fStateNotificationDirectScheduled = true;
+				fDisplay.asyncExec(fStateNotificationRunnable);
+			}
 		}
 	}
 	
@@ -221,41 +410,33 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return fSize;
 	}
 	
+	
+	protected void printFont() {
+		System.out.println(fCurrentFontFamily.fName + " " + fCurrentFontStyle + " " + fCurrentFontSize);
+	}
+	
 	public double[] computeFontMetric(final int ch) {
-		final double[] answer = new double[] { 0.0, 0.0, 0.0 };
-		fDisplay.syncExec(new Runnable() {
-			public void run() {
-				if (fCurrentGC == null) {
-					fCurrentGC = new GC(Display.getCurrent());
-				}
-				if (fCurrentFontMetrics == null) {
-					fCurrentGC.setFont(fCurrentFont);
-					fCurrentFontMetrics = fCurrentGC.getFontMetrics();
-				}
-				answer[0] = fCurrentFontMetrics.getAscent();
-				answer[1] = fCurrentFontMetrics.getDescent();
-				answer[2] = (ch > 0) ? fCurrentGC.getAdvanceWidth((char) ch) : fCurrentFontMetrics.getAverageCharWidth();
-			}
-		});
-		return answer;
+//		System.out.println("==\nTextMetrics: \"" + ((char) ch) + "\" (" + ch + ")"); printFont();
+		return fCurrentFontFamily.getCharMetrics(fCurrentFontStyle, fCurrentFontSize,
+				(fCurrentFontMapping != null) ? fCurrentFontMapping.encode(ch) : ch );
 	}
 	
 	public double[] computeStringWidth(final String txt) {
-		final double[] answer = new double[] { (8 * txt.length()) };
-		fDisplay.syncExec(new Runnable() {
-			public void run() {
-				if (fCurrentGC == null) {
-					fCurrentGC = new GC(Display.getCurrent());
-				}
-				if (fCurrentFontMetrics == null) {
-					fCurrentGC.setFont(fCurrentFont);
-					fCurrentFontMetrics = fCurrentGC.getFontMetrics();
-				}
-				answer[0] = fCurrentGC.textExtent(txt, SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT).x;
-			}
-		});
-		return answer;
+//		System.out.println("==\nTextWidth: \"" + txt + "\""); printFont();
+		return computeStringWidthEnc((fCurrentFontMapping != null) ? fCurrentFontMapping.encode(txt) : txt);
 	}
+	
+	protected final double[] computeStringWidthEnc(final String text) {
+		if (text.equals(fLastStringEnc)) {
+			return fLastStringWidth;
+		}
+		
+		final double[] answer = fCurrentFontFamily.getStringWidth(fCurrentFontStyle, fCurrentFontSize, text);
+		
+		fLastStringEnc = text;
+		return (fLastStringWidth = answer);
+	}
+	
 	
 	public void addSetClip(final double x0, final double y0, final double x1, final double y1) {
 		final ClipSetting instr = new ClipSetting(x0, y0, x1, y1);
@@ -290,42 +471,54 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	public void addSetFont(String family, final int face, final double pointSize,
 			final double cex, final double lineHeight) {
-		int style;
+//		System.out.println("==\nSetFont: \"" + family + "\" " + face + " " + pointSize + " (cex= " + cex + ")");
 		switch (face) {
 		case 2:
-			style = SWT.BOLD;
-			break;
 		case 3:
-			style = SWT.ITALIC;
-			break;
 		case 4:
-			style = SWT.BOLD | SWT.ITALIC;
+			family = getFontName(family);
+			fCurrentFontStyle = face - 1;
+			fCurrentFontMapping = null;
 			break;
-//		case 5: Symbolfont
+		case 5:
+			if (fSymbolFontName != null) {
+				family = fSymbolFontName;
+				fCurrentFontStyle = 0;
+				fCurrentFontMapping = fSymbolFontMapping;
+				break;
+			}
+			//$FALL-THROUGH$
 		default:
-			style = 0;
+			family = getFontName(family);
+			fCurrentFontStyle = 0;
+			fCurrentFontMapping = null;
 			break;
 		}
-		if (family.equals("serif")) {
-			family = fSerifFontName;
+		fCurrentFontFamily = fFontManager.getFamily(family);
+		fCurrentFontRFace = face;
+		fCurrentFontSize = (int) (pointSize * cex + 0.5);
+		
+		fLastStringEnc = null;
+		
+		final FontSetting instr = new FontSetting(family, face, pointSize, cex, lineHeight,
+				fCurrentFontFamily.getSWTFont(fCurrentFontStyle, fCurrentFontSize),
+				fCurrentFontFamily.getSWTFontProperties(fCurrentFontStyle, fCurrentFontSize) );
+		add(instr);
+	}
+	
+	private String getFontName(final String family) {
+		if (family.length() == 0 || family.equals("sansserif")) {
+			return fSansFontName;
 		}
-		else if (family.equals("sansserif")) {
-			family = fSansFontName;
+		else if (family.equals("serif")) {
+			return fSerifFontName;
 		}
 		else if (family.equals("mono")) {
-			family = fMonoFontName;
+			return fMonoFontName;
 		}
-		final FontData fontData = new FontData(family,
-				(int) (pointSize * cex + 0.5), style);
-		fCurrentFont = fFonts.get(fontData);
-		if (fCurrentFont == null) {
-			fCurrentFont = new Font(fDisplay, fontData);
-			fFonts.put(fontData, fCurrentFont);
+		else {
+			return family;
 		}
-		fCurrentFontMetrics = null;
-		final FontSetting instr = new FontSetting(family, face, pointSize, cex, lineHeight,
-				fCurrentFont);
-		add(instr);
 	}
 	
 	public void addSetLine(final int type, final double width) {
@@ -358,10 +551,58 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
-	public void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String text) {
-		final TextElement instr = new TextElement(x, y, hAdj, rDeg, text);
+	public void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String txt) {
+//		System.out.println("==\nDrawText: " + x + ", " + y + " " + hAdj + " \"" + txt + "\""); printFont();
+		final String text = (fCurrentFontMapping != null) ? fCurrentFontMapping.encode(txt) : txt;
+		final TextElement instr = new TextElement(x, y, hAdj, rDeg, text,
+				(hAdj != 0) ? computeStringWidthEnc(text)[0] : 0);
 		add(instr);
 	}
+	
+	
+	protected void waitRUserExchange(final String type, final RService r, final IProgressMonitor monitor,
+			final Callable<Boolean> cancelListener) {
+		final RServiceControlExtension rControl = (r instanceof RServiceControlExtension) ?
+				(RServiceControlExtension) r : null;
+		if (rControl != null && cancelListener != null) {
+			rControl.addCancelHandler(cancelListener);
+			rControl.getWaitLock().lock();
+		}
+		try {
+			while (true) {
+				synchronized (fUserExchangeLock) {
+					if (fUserExchangeRType != type) {
+						fUserExchangeRCallback = null;
+						return;
+					}
+					if (fIsLocalClosed || fIsRClosed || monitor.isCanceled() ) {
+						fUserExchangeRType = null;
+						fUserExchangeRCallback = null;
+						return;
+					}
+					fUserExchangeRCallback = rControl;
+				}
+				
+				if (rControl != null) {
+					rControl.waitingForUser(monitor);
+				}
+				else {
+					try {
+						Thread.sleep(50);
+					}
+					catch (final InterruptedException e) {
+					}
+				}
+			}
+		}
+		finally {
+			if (rControl != null && cancelListener != null) {
+				rControl.getWaitLock().unlock();
+				rControl.removeCancelHandler(cancelListener);
+			}
+		}
+	}
+	
 	
 	public void closeFromR() {
 		fIsRClosed = true;
@@ -372,8 +613,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		setActive(false);
 	}
 	
-	public void dispose() {
-		fListeners.clear();
+	protected void dispose() {
+		fGraphicListeners.clear();
 		fDisplay.asyncExec(new Runnable() {
 			public void run() {
 				for (final Color color : fColors.values()) {
@@ -382,40 +623,22 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 					}
 				}
 				fColors.clear();
-				for (final Font font : fFonts.values()) {
-					if (!font.isDisposed()) {
-						font.dispose();
-					}
-				}
-				fFonts.clear();
-				if (fCurrentGC != null && !fCurrentGC.isDisposed()) {
-					fCurrentGC.dispose();
-					fCurrentGC = null;
-				}
 			}
 		});
 	}
 	
 	
 	public List<IERGraphicInstruction> getInstructions() {
-		final IERGraphicInstruction[] array;
 		synchronized (fInstructionsLock) {
-			array = new IERGraphicInstruction[fInstructionsSize];
-			System.arraycopy(fInstructions, 0, array, 0, array.length);
+			return (fInstructionsSize > 0) ?
+					new ConstList<IERGraphicInstruction>(fInstructions).subList(0, fInstructionsSize) :
+					new ConstList<IERGraphicInstruction>();
 		}
-		return new ConstList<IERGraphicInstruction>(array);
 	}
 	
-	public Object getRHandle() {
+	public ITool getRHandle() {
 		if (fActions != null) {
 			return fActions.getRHandle();
-		}
-		return null;
-	}
-	
-	public IStatus copy(final String toDev, final String toDevFile, final String toDevArgs) {
-		if (fActions != null) {
-			return fActions.copyGraphic(fDevId, toDev, toDevFile, toDevArgs);
 		}
 		return null;
 	}
@@ -441,19 +664,67 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			return fActions.closeGraphic(fDevId);
 		}
 		else {
-			fManager.close(this);
 			fIsLocalClosed = true;
+			fManager.close(this);
 			dispose();
 		}
 		return null;
 	}
 	
 	public void addListener(final Listener listener) {
-		fListeners.add(listener);
+		fGraphicListeners.add(listener);
 	}
 	
 	public void removeListener(final Listener listener) {
-		fListeners.remove(listener);
+		fGraphicListeners.remove(listener);
+	}
+	
+	protected void updateMessage() {
+		IStatus message = Status.OK_STATUS;
+		if (!fMessage.equals(message)) {
+			fMessage = message;
+			final IStatusChangeListener[] listeners = fMessageListeners.toArray();
+			for (int i = 0; i < listeners.length; i++) {
+				listeners[i].statusChanged(message);
+			}
+		}
+	}
+	
+	public IStatus getMessage() {
+		return fMessage;
+	}
+	
+	public void addMessageListener(final IStatusChangeListener listener) {
+		fMessageListeners.add(listener);
+	}
+	
+	public void removeMessageListener(final IStatusChangeListener listener) {
+		fMessageListeners.remove(listener);
+	}
+	
+	
+	protected void preAction() throws CoreException {
+		if (fActions == null || fActions.getRHandle() == null) {
+			throw new UnsupportedOperationException();
+		}
+		if (fIsRClosed) {
+			throw new CoreException(new Status(IStatus.ERROR, RGraphics.PLUGIN_ID,
+					"The R graphic device is already closed." ));
+		}
+	}
+	
+	@Deprecated
+	public IStatus copy(final String toDev, final String toDevFile, final String toDevArgs)
+			throws CoreException {
+		preAction();
+		return fActions.getRHandle().getQueue().add(new CopyToDevRunnable(this,
+				toDev, toDevFile, toDevArgs ));
+	}
+	
+	public void copy(final String toDev, final String toDevFile, final String toDevArgs,
+			final IProgressMonitor monitor) throws CoreException {
+		preAction();
+		fActions.copy(fDevId, toDev, toDevFile, toDevArgs, monitor);
 	}
 	
 }

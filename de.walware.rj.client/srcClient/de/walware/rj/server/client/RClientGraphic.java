@@ -100,26 +100,27 @@ public interface RClientGraphic {
 	/**
 	 * @see RLine#RLine(double, double, double, double)
 	 */
-	void addDrawLine(final double x0, final double y0, final double x1, final double y1);
+	void addDrawLine(double x0, double y0, double x1, double y1);
 	/**
 	 * @see RRect#RRect(double, double, double, double)
 	 */
-	void addDrawRect(final double x0, final double y0, final double x1, final double y1);
+	void addDrawRect(double x0, double y0, double x1, double y1);
 	/**
 	 * @see RPolyline#RPolyline(double[], double[])
 	 */
-	void addDrawPolyline(final double[] x, final double[] y);
+	void addDrawPolyline(double[] x, double[] y);
 	/**
 	 * @see RPolygon#RPolygon(double[], double[])
 	 */
-	void addDrawPolygon(final double[] x, final double[] y);
+	void addDrawPolygon(double[] x, double[] y);
 	/**
 	 * @see RCircle#RCircle(double, double, double)
 	 */
-	void addDrawCircle(final double x, final double y, final double r);
+	void addDrawCircle(double x, double y, double r);
 	/**
 	 * @see RText#RText(double, double, double, double, String)
 	 */
-	void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String text);
+	void addDrawText(double x, double y, double hAdj, double rDeg, String txt);
+	
 	
 }

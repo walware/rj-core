@@ -12,12 +12,15 @@
 package de.walware.rj.eclient.graphics;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler2;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IMenuManager;
@@ -38,12 +41,17 @@ import org.eclipse.ui.services.IServiceLocator;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.eclipse.ui.views.IViewDescriptor;
 
+import de.walware.rj.services.RService;
+
+import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.SharedUIResources;
 import de.walware.ecommons.ui.actions.HandlerCollection;
 import de.walware.ecommons.ui.actions.HandlerContributionItem;
 import de.walware.ecommons.ui.actions.SimpleContributionItem;
 import de.walware.ecommons.ui.mpbv.ISession;
 import de.walware.ecommons.ui.mpbv.ManagedPageBookView;
+
+import de.walware.rj.eclient.AbstractRServiceRunnable;
 
 
 /**
@@ -67,7 +75,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		
 		
 		public ImageDescriptor getImageDescriptor() {
-			return null;
+			return ImageDescriptor.createFromImage(PageBookRGraphicView.this.getTitleImage());
 		}
 		
 		public String getLabel() {
@@ -80,12 +88,78 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		
 	}
 	
+	protected static abstract class NewDevHandler extends AbstractHandler {
+		
+		
+		public NewDevHandler() {
+		}
+		
+		
+		protected abstract ITool getTool() throws CoreException;
+		
+		public Object execute(final ExecutionEvent event) throws ExecutionException {
+			try {
+				final ITool tool = getTool();
+				if (tool != null) {
+					tool.getQueue().add(new AbstractRServiceRunnable(
+						"r/rj/gd/new", "New R Graphic") { //$NON-NLS-1$
+						
+						@Override
+						public void run(final RService r,
+								final IProgressMonitor monitor) throws CoreException {
+							r.evalVoid("rj.gd::rj.GD()", monitor);
+						}
+						
+					});
+				}
+			}
+			catch (final CoreException e) {
+				if (e.getStatus().getSeverity() != IStatus.CANCEL) {
+					StatusManager.getManager().handle(new Status(IStatus.ERROR, RGraphics.PLUGIN_ID, -1,
+							"An error occurrend when creating a new graphic device.", e),
+							StatusManager.LOG | StatusManager.SHOW);
+				}
+			}
+			return null;
+		}
+		
+	}
+	
+	
+	private static class RGraphicComparator implements Comparator<RGraphicSession> {
+		
+		public RGraphicComparator() {
+		}
+		
+		public int compare(final RGraphicSession o1, final RGraphicSession o2) {
+			final ITool handle1 = o1.fGraphic.getRHandle();
+			final ITool handle2 = o2.fGraphic.getRHandle();
+			if (handle1 == null) {
+				if (handle2 == null) {
+					return 0;
+				}
+				return Integer.MIN_VALUE;
+			}
+			else if (handle2 == null) {
+				return Integer.MAX_VALUE;
+			}
+			if (handle1 != handle2) {
+				final int diff = handle1.getLabel(ITool.LONG_LABEL).compareTo(handle2.getLabel(ITool.LONG_LABEL));
+				if (diff != 0) {
+					return diff;
+				}
+			}
+			return o1.fGraphic.getDevId() - o2.fGraphic.getDevId();
+		}
+		
+	}
+	
 	
 	private static class OpenAdditionalView extends AbstractHandler {
 		
 		private static int gViewCounter;
 		
-		private IViewSite fViewSite;
+		private final IViewSite fViewSite;
 		
 		public OpenAdditionalView(final IViewSite viewSite) {
 			fViewSite = viewSite;
@@ -127,6 +201,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	
 	@Override
 	public void init(final IViewSite site, final IMemento memento) throws PartInitException {
+		setSessionComparator(new RGraphicComparator());
 		super.init(site, memento);
 		fManager = loadManager();
 	}
@@ -199,8 +274,9 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			protected void execute() throws ExecutionException {
 				final Shell shell = getViewSite().getShell();
 				final String[] preferencePages = collectContextMenuPreferencePages();
-				if (preferencePages.length > 0 && (shell == null || !shell.isDisposed()))
-						org.eclipse.ui.dialogs.PreferencesUtil.createPreferenceDialogOn(shell, preferencePages[0], preferencePages, null).open();
+				if (preferencePages.length > 0 && (shell == null || !shell.isDisposed())) {
+					org.eclipse.ui.dialogs.PreferencesUtil.createPreferenceDialogOn(shell, preferencePages[0], preferencePages, null).open();
+				}
 			}
 		});
 	}
