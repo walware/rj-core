@@ -27,16 +27,32 @@ import org.osgi.framework.Bundle;
 public class EServerUtil extends ServerUtil {
 	
 	
+	/**
+	 * @deprecated use {@link #searchRJLibsInPlatform(String[])
+	 */
+	@Deprecated
 	public static String[] searchRJLibsInPlatform(final String[] libs, final boolean is64) {
+		return searchRJLibsInPlatform(libs);
+	}
+	
+	/**
+	 * Searches the specified RJ libraries in the Eclipse Platform installations
+	 * <p>
+	 * Uses always the os/arch currently running.</p>
+	 * 
+	 * @param libs the bundle ids of the libraries
+	 * @return the file paths of the found libraries
+	 */
+	public static String[] searchRJLibsInPlatform(final String[] libs) {
 		final Set<String> resolved = new LinkedHashSet<String>();
 		for (final String lib : libs) {
 			final Bundle pluginBundle = Platform.getBundle(lib);
 			if (pluginBundle != null) {
-				addPath(pluginBundle, resolved, is64);
+				addPath(pluginBundle, resolved);
 				final Bundle[] fragments = Platform.getFragments(pluginBundle);
 				if (fragments != null) {
 					for (final Bundle fragmentBundle : fragments) {
-						addPath(fragmentBundle, resolved, is64);
+						addPath(fragmentBundle, resolved);
 					}
 				}
 			}
@@ -44,7 +60,7 @@ public class EServerUtil extends ServerUtil {
 		return resolved.toArray(new String[resolved.size()]);
 	}
 	
-	private static void addPath(final Bundle bundle, final Set<String> classpath, final boolean is64) {
+	private static void addPath(final Bundle bundle, final Set<String> classpath) {
 //		String location = bundle.getLocation();
 //		if (location.startsWith("initial@")) {
 //			location = location.substring(8);

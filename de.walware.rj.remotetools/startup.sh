@@ -83,10 +83,8 @@ done
 #     R_INCLUDE_DIR=/usr/include/R
 #     R_LIBS_SITE=/usr/local/lib/site-library
 #     JAVA_HOME=/usr/lib/jvm/java-6-sun
-#     BITS=64
 R_HOME=
 JAVA_HOME=
-BITS=64
 
 ###############################################################################
 # Set the home and work directory of this R server.
@@ -283,11 +281,6 @@ JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$HOSTADDRESS -Djava.security.po
 if [ "$JAVA_OPTS_LIB" ]
 then
 	JAVA_OPTS="$JAVA_OPTS -Djava.library.path=$JAVA_OPTS_LIB"
-fi
-if [ $BITS -ge 32 ]
-then
-	JAVA_OPTS_XSS=$(($BITS*256))k
-	JAVA_OPTS="$JAVA_OPTS -Xss$JAVA_OPTS_XSS"
 fi
 if [ "$RJAVA_CP" ]
 then
