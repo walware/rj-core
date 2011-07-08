@@ -110,7 +110,7 @@ setNewJavaGDDeviceData(NewDevDesc *dd, newJavaGDDesc *xd,
     /* Character Addressing Offsets */
 	dd->xCharOffset = 0.4900;
 	dd->yCharOffset = 0.3333;
-	dd->yLineBias = 0.1;
+	dd->yLineBias = 0.2;
 	
 	{	double xpi;
 		double ypi;
