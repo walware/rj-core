@@ -173,7 +173,7 @@ JAVA_OPTS_LIB=
 # The 'Shaj' library is required for this method. It is provided in sources and
 # binary form for several platforms. If no binary match your environment, you
 # have to build it for your system. You find the files inside the folder
-#     shaj-native
+#     shaj
 # of this remotetools package.
 ##
 # General Usage:
@@ -185,10 +185,10 @@ JAVA_OPTS_LIB=
 #     AUTH_SHAJ_LD_DIR=<folder of library>
 # Example:
 #     AUTH=local-shaj
-#     AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj-native/linux-x64"
+#     AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj/linux-x64"
 
 # AUTH=local-shaj
-# AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj-native/<platform>"
+# AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj/<platform>"
 
 ###############################################################################
 # Authentication method: ssh / 'fx' (exchange over file)
@@ -240,7 +240,7 @@ if [ "$AUTH" = "local-shaj" ]
 then
 	AUTH=local-shaj
 	JAVA_OPTS_LIB="$JAVA_OPTS_LIB:$AUTH_SHAJ_LD_DIR"
-	JAVA_CP="$JAVA_CP:$RJS_HOME/shaj.jar"
+	JAVA_CP="$JAVA_CP:$RJS_HOME/shaj/auth.jar"
 fi
 
 if [ "$AUTH" = "fx:file" ]
@@ -272,8 +272,8 @@ then
 	RMI_BASE="file://$RJS_HOME/../de.walware.rj.server/bin"
 	RJAVA_CP=
 else
-	JAVA_CP="$RJS_HOME/rj.server.jar:$RJS_HOME/rj.data.jar:$JAVA_CP"
-	RMI_BASE="file://$RJS_HOME/rj.server.jar"
+	JAVA_CP="$RJS_HOME/de.walware.rj.server.jar:$RJS_HOME/de.walware.rj.data.jar:$JAVA_CP"
+	RMI_BASE="file://$RJS_HOME/de.walware.rj.server.jar"
 	RJAVA_CP=
 fi
 

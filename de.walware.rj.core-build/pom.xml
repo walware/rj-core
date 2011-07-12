@@ -5,17 +5,20 @@
 	
 	<groupId>de.walware.rj</groupId>
 	<artifactId>rj-core</artifactId>
-	<version>1.1.0-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>RJ Core</name>
 	
 	<modules>
 		<module>targetplatform</module>
+		
 		<module>../de.walware.rj.data</module>
 		<module>../de.walware.rj.server</module>
-		<module>../de.walware.rj.remotetools</module>
+		
 		<module>../de.walware.rj.rpkg</module>
 		<module>../de.walware.rj.server.gd</module>
+		
+		<module>../de.walware.rj.remotetools</module>
 	</modules>
 	
 	<properties>
@@ -42,7 +45,7 @@
 						<artifact>
 							<groupId>de.walware.rj</groupId>
 							<artifactId>de.walware.rj.core-targetplatform</artifactId>
-							<version>1.1.0-SNAPSHOT</version>
+							<version>1.0.0-SNAPSHOT</version>
 							<classifier>all</classifier>
 						</artifact>
 					</target>
@@ -74,12 +77,56 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.4.3</version>
+				<version>2.5</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
+	
+	<profiles>
+		<profile>
+			<id>walware-releng</id>
+			<modules>
+				<module>de.walware.rj.core</module>
+				<module>de.walware.rj.core-feature</module>
+				<module>de.walware.rj.core.source-feature</module>
+				
+				<module>consoleserver</module>
+			</modules>
+			
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.2.1</version>
+						<inherited>false</inherited>
+						<dependencies>
+							<dependency>
+								<groupId>de.walware.releng</groupId>
+								<artifactId>de.walware.releng.assemblies</artifactId>
+								<version>1.0.0</version>
+							</dependency>
+						</dependencies>
+						<executions>
+							<execution>
+								<id>make-snapshot</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptorRefs>
+										<descriptorRef>module-snapshot</descriptorRef>
+									</descriptorRefs>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+	
 </project>
