@@ -8,8 +8,8 @@ Bundle-Activator: de.walware.rj.eclient.internal.graphics.RGraphicsPlugin
 Bundle-ActivationPolicy: lazy
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0",
- org.eclipse.ui;bundle-version="3.5.0",
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.6.0",
+ org.eclipse.ui;bundle-version="3.6.0",
  de.walware.rj.client;bundle-version="[1.0.0,1.1.0)",
  de.walware.ecommons.uimisc;bundle-version="[1.0.0,1.1.0)"
 Import-Package: de.walware.ecommons,
