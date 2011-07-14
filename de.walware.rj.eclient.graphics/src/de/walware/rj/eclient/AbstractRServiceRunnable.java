@@ -44,7 +44,7 @@ public abstract class AbstractRServiceRunnable implements IToolRunnable {
 		run((RService) service, monitor);
 	}
 	
-	protected abstract void run(RService service,
+	protected abstract void run(RService r,
 			IProgressMonitor monitor) throws CoreException;
 	
 }
