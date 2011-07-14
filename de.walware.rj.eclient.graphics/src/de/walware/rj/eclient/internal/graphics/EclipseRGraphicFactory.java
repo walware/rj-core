@@ -27,8 +27,8 @@ import de.walware.rj.server.client.RClientGraphic;
 import de.walware.rj.server.client.RClientGraphicActions;
 import de.walware.rj.server.client.RClientGraphicFactory;
 
-import de.walware.ecommons.ConstList;
 import de.walware.ecommons.FastList;
+import de.walware.ecommons.collections.ConstList;
 import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.graphics.IERGraphic;
@@ -85,11 +85,23 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	
 	private final Display fDefaultDisplay;
 	private final FontManager fFontManager;
+	private final ColorManager fColorManager;
 	
 	
 	public EclipseRGraphicFactory() {
 		fDefaultDisplay = UIAccess.getDisplay();
 		fFontManager = new FontManager(fDefaultDisplay);
+		fColorManager = new ColorManager(fDefaultDisplay);
+		fDefaultDisplay.asyncExec(new Runnable() {
+			public void run() {
+				fDefaultDisplay.disposeExec(new Runnable() {
+					public void run() {
+						fFontManager.dispose();
+						fColorManager.dispose();
+					}
+				});
+			}
+		});
 	}
 	
 	
@@ -159,6 +171,13 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	public FontManager getFontManager(final Display display) {
 		if (display == fDefaultDisplay) {
 			return fFontManager;
+		}
+		return null;
+	}
+	
+	public ColorManager getColorManager(final Display display) {
+		if (display == fDefaultDisplay) {
+			return fColorManager;
 		}
 		return null;
 	}

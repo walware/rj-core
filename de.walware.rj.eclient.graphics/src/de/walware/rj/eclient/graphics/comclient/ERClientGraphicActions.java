@@ -20,7 +20,7 @@ import de.walware.rj.server.client.AbstractRJComClient;
 import de.walware.rj.server.client.AbstractRJComClientGraphicActions;
 import de.walware.rj.services.RService;
 
-import de.walware.ecommons.IntArrayMap;
+import de.walware.ecommons.collections.IntArrayMap;
 import de.walware.ecommons.ts.ISystemRunnable;
 import de.walware.ecommons.ts.ITool;
 
@@ -130,7 +130,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 	
 	public IStatus resizeGraphic(final int devId, final Runnable beforeResize) {
 		synchronized (fResizeTasks) {
-			if (fResizeTasks.getAndPut(devId, Boolean.TRUE) == Boolean.TRUE) {
+			if (fResizeTasks.put(devId, Boolean.TRUE) == Boolean.TRUE) {
 				return Status.OK_STATUS;
 			}
 		}
@@ -139,7 +139,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 	
 	public IStatus closeGraphic(final int devId) {
 		synchronized (fCloseTasks) {
-			if (fCloseTasks.getAndPut(devId, Boolean.TRUE) == Boolean.TRUE) {
+			if (fCloseTasks.put(devId, Boolean.TRUE) == Boolean.TRUE) {
 				return Status.OK_STATUS;
 			}
 		}

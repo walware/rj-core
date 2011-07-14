@@ -11,9 +11,7 @@
 
 package de.walware.rj.eclient.internal.graphics;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.eclipse.core.runtime.CoreException;
@@ -22,7 +20,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 
 import de.walware.rj.graphic.utils.CachedMapping;
@@ -33,9 +30,9 @@ import de.walware.rj.server.client.RClientGraphicFactory;
 import de.walware.rj.services.RService;
 import de.walware.rj.services.RServiceControlExtension;
 
-import de.walware.ecommons.ConstList;
 import de.walware.ecommons.FastList;
 import de.walware.ecommons.IStatusChangeListener;
+import de.walware.ecommons.collections.ConstList;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.util.UIAccess;
 
@@ -212,8 +209,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private double[] fLastStringWidth;
 	
 	private final Display fDisplay;
-	private final Map<Integer, Color> fColors = new HashMap<Integer, Color>();
-	private final FontManager fFontManager;
+	private boolean fIsDisposed;
+	private final FontManager fSWTFontManager;
+	private final ColorManager fSWTColorManager;
 	
 	private String fSerifFontName;
 	private String fSansFontName;
@@ -258,10 +256,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		fOptions = options;
 		
 		fDisplay = UIAccess.getDisplay();
-		fColors.put(0x000000, new Color(fDisplay, 0, 0, 0));
-		fColors.put(0xffffff, new Color(fDisplay, 0xff, 0xff, 0xff));
-		fFontManager = manager.getFontManager(fDisplay);
+		fSWTFontManager = manager.getFontManager(fDisplay);
 //		fFontManager = new FontManager(fDisplay); // -> dispose!
+		fSWTColorManager = manager.getColorManager(fDisplay);
 		
 		fSize = fNextSize = new double[] { w, h };
 		initPanel(w, h);
@@ -331,16 +328,20 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	public void reset(final double w, final double h) {
 		synchronized (fStateLock) {
-			fInstructionsNew = null;
-			fInstructionsNewSize = 0;
-			fDrawingStoppedStamp = System.nanoTime();
-			fInstructionsNotifiedStamp = fDrawingStoppedStamp - 1000 * MILLI_NANOS;
-			fInstructionsUpdate = null;
-			fInstructionsUpdateStart = 0;
-			fInstructionsUpdateSize = 0;
+			internalReset();
 		}
 		
 		initPanel(w, h);
+	}
+	
+	private void internalReset() {
+		fInstructionsNew = null;
+		fInstructionsNewSize = 0;
+		fDrawingStoppedStamp = System.nanoTime();
+		fInstructionsNotifiedStamp = fDrawingStoppedStamp - 1000 * MILLI_NANOS;
+		fInstructionsUpdate = null;
+		fInstructionsUpdateStart = 0;
+		fInstructionsUpdateSize = 0;
 	}
 	
 	public int getDevId() {
@@ -353,6 +354,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 		synchronized (fStateLock) {
 			fIsActive = active;
+			if (fIsDisposed) {
+				return;
+			}
 			if (!fStateNotificationDirectScheduled) {
 				fStateNotificationDirectScheduled = true;
 				fDisplay.asyncExec(fStateNotificationRunnable);
@@ -393,6 +397,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 				}
 			}
 			fMode = mode;
+			if (fIsDisposed) {
+				return;
+			}
 			if (mode == 1 && fModeNotified != 1 // need start
 					&& !fStateNotificationDirectScheduled) {
 				fStateNotificationDirectScheduled = true;
@@ -444,28 +451,14 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	public void addSetColor(final int color) {
-		Color swtColor = fColors.get((color & 0xffffff));
-		if (swtColor == null) {
-			swtColor = new Color(fDisplay,
-					(color & 0xff),
-					((color >> 8) & 0xff),
-					((color >> 16) & 0xff) );
-			fColors.put((color & 0xffffff), swtColor);
-		}
-		final ColorSetting instr = new ColorSetting(color, swtColor);
+		final ColorSetting instr = new ColorSetting(color,
+				fSWTColorManager.getColor((color & 0xffffff)) );
 		add(instr);
 	}
 	
 	public void addSetFill(final int color) {
-		Color swtColor = fColors.get((color & 0xffffff));
-		if (swtColor == null) {
-			swtColor = new Color(fDisplay,
-					(color & 0xff),
-					((color >> 8) & 0xff),
-					((color >> 16) & 0xff) );
-			fColors.put((color & 0xffffff), swtColor);
-		}
-		final FillSetting instr = new FillSetting(color, swtColor);
+		final FillSetting instr = new FillSetting(color,
+				fSWTColorManager.getColor((color & 0xffffff)) );
 		add(instr);
 	}
 	
@@ -494,9 +487,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			fCurrentFontMapping = null;
 			break;
 		}
-		fCurrentFontFamily = fFontManager.getFamily(family);
+		fCurrentFontFamily = fSWTFontManager.getFamily(family);
 		fCurrentFontRFace = face;
-		fCurrentFontSize = (int) (pointSize * cex + 0.5);
+		fCurrentFontSize = (int) (pointSize + 0.5);
 		
 		fLastStringEnc = null;
 		
@@ -615,16 +608,16 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	protected void dispose() {
 		fGraphicListeners.clear();
-		fDisplay.asyncExec(new Runnable() {
-			public void run() {
-				for (final Color color : fColors.values()) {
-					if (!color.isDisposed()) {
-						color.dispose();
-					}
+		synchronized (fStateLock) {
+			if (!fIsDisposed) {
+				fIsDisposed = true;
+				internalReset();
+				synchronized (fInstructionsLock) {
+					fInstructionsSize = 0;
+					fInstructions = null;
 				}
-				fColors.clear();
 			}
-		});
+		}
 	}
 	
 	
