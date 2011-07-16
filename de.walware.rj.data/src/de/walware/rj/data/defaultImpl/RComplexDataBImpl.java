@@ -64,14 +64,9 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		final ObjectInput in = io.in;
-		this.length = in.readInt();
-		this.realValues = new double[this.length];
-		this.imaginaryValues = new double[this.length];
-		for (int i = 0; i < this.length; i++) {
-			this.realValues[i] = Double.longBitsToDouble(in.readLong());
-			this.imaginaryValues[i] = Double.longBitsToDouble(in.readLong());
-		}
+		this.realValues = io.readDoubleArrayPair1();
+		this.imaginaryValues = io.readDoubleArrayPair2();
+		this.length = this.realValues.length;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -85,12 +80,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		final ObjectOutput out = io.out;
-		out.writeInt(this.length);
-		for (int i = 0; i < this.length; i++) {
-			out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
-			out.writeLong(Double.doubleToRawLongBits(this.imaginaryValues[i]));
-		}
+		io.writeDoubleArrayPair(this.realValues, this.imaginaryValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {

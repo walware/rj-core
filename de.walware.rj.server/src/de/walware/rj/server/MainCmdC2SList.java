@@ -46,7 +46,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 		final RJIO io;
 		if (this.privateIO != null) {
 			io = this.privateIO;
-			io.out = out;
+			io.connect(out);
 		}
 		else {
 			io = RJIO.get(out);
@@ -63,7 +63,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 		out.writeByte(MainCmdItem.T_NONE);
 		
 		io.writeCheck2(check);
-		io.out = null;
+		io.disconnect(out);
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -76,7 +76,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_NONE:
 				this.first = null;
 				io.readCheck2(check);
-				io.in = null;
+				io.disconnect(in);
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				this.first = new ConsoleReadCmdItem(io);
@@ -100,7 +100,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 				this.first = new GraOpCmdItem(io);
 				break;
 			default:
-				io.in = null;
+				io.disconnect(in);
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
 			}
 		}
@@ -111,7 +111,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			switch (type) {
 			case MainCmdItem.T_NONE:
 				io.readCheck2(check);
-				io.in = null;
+				io.disconnect(in);
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				item = item.next = new ConsoleReadCmdItem(io);
@@ -135,7 +135,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 				item = item.next = new GraOpCmdItem(io);
 				continue;
 			default:
-				io.in = null;
+				io.disconnect(in);
 				throw new ClassNotFoundException("Unknown cmdtype id: "+type);
 			}
 		}

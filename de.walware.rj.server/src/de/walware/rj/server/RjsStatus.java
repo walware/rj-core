@@ -72,11 +72,30 @@ public final class RjsStatus implements RjsComObject, Externalizable, RJIOExtern
 	}
 	
 	public RjsStatus(final RJIO io) throws IOException {
-		readExternal(io.in);
+		if (io.readBoolean()) {
+			this.severity = io.readByte();
+			this.code = io.readInt();
+			this.text = io.readString();
+		}
+		else {
+			this.severity = io.readByte();
+			this.code = io.readInt();
+			this.text = null;
+		}
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		writeExternal(io.out);
+		if (this.text != null) {
+			io.writeBoolean(true);
+			io.writeByte(this.severity);
+			io.writeInt(this.code);
+			io.writeString(this.text);
+		}
+		else {
+			io.writeBoolean(false);
+			io.writeByte(this.severity);
+			io.writeInt(this.code);
+		}
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException {

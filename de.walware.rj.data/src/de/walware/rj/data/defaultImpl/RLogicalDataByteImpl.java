@@ -94,9 +94,8 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		this.length = io.in.readInt();
-		this.boolValues = new byte[this.length];
-		io.in.readFully(this.boolValues, 0, this.length);
+		this.boolValues = io.readByteArray();
+		this.length = this.boolValues.length;
 	}
 	
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
@@ -106,8 +105,7 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		io.out.writeInt(this.length);
-		io.out.write(this.boolValues, 0, this.length);
+		io.writeByteArray(this.boolValues, this.length);
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {

@@ -90,7 +90,7 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	public MainCmdItem next;
 	
 	public int requestId;
-	public byte slot = 0;
+	public byte slot;
 	
 	
 	public abstract byte getCmdType();

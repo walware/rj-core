@@ -60,7 +60,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = io.in.readInt();
+		final int options = io.readInt();
 		final boolean customClass = ((options & RObjectFactory.O_CLASS_NAME) != 0);
 		//-- special attributes
 		if (customClass) {
@@ -104,7 +104,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		if (attributes != null) {
 			options |= RObjectFactory.O_WITH_ATTR;
 		}
-		io.out.writeInt(options);
+		io.writeInt(options);
 		//-- special attributes
 		if (customClass) {
 			io.writeString(this.className1);

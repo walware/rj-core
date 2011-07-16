@@ -12,8 +12,6 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import de.walware.rj.data.RJIO;
 
@@ -65,11 +63,10 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		final ObjectInput in = io.in;
-		this.length = in.readInt();
+		this.length = io.readInt();
 		this.boolValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
-			final byte b = in.readByte();
+			final byte b = io.readByte();
 			if (b == TRUE_BYTE) {
 				this.boolValues[i] = TRUE_INT;
 			}
@@ -83,18 +80,17 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		final ObjectOutput out = io.out;
-		out.writeInt(this.length);
+		io.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
 			switch (this.boolValues[i]) {
 			case FALSE_INT:
-				out.writeByte(FALSE_BYTE);
+				io.writeByte(FALSE_BYTE);
 				continue;
 			case NA_logical_INT:
-				out.writeByte(NA_logical_BYTE);
+				io.writeByte(NA_logical_BYTE);
 				continue;
 			default:
-				out.writeByte(TRUE_BYTE);
+				io.writeByte(TRUE_BYTE);
 				continue;
 			}
 		}

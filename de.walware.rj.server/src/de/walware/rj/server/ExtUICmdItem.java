@@ -47,17 +47,17 @@ public final class ExtUICmdItem extends MainCmdItem {
 	/**
 	 * Constructor for deserialization
 	 */
-	public ExtUICmdItem(final RJIO in) throws IOException {
-		this.requestId = in.readInt();
-		this.command = in.readString();
-		this.options = in.readInt();
+	public ExtUICmdItem(final RJIO io) throws IOException {
+		this.requestId = io.readInt();
+		this.command = io.readString();
+		this.options = io.readInt();
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(in.in);
+			this.status = new RjsStatus(io);
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {
-			in.flags = 0;
-			this.data = (RList) DataCmdItem.gDefaultFactory.readObject(in);
+			io.flags = 0;
+			this.data = (RList) DataCmdItem.gDefaultFactory.readObject(io);
 		}
 	}
 	
@@ -67,7 +67,7 @@ public final class ExtUICmdItem extends MainCmdItem {
 		out.writeString(this.command);
 		out.writeInt(this.options);
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status.writeExternal(out.out);
+			this.status.writeExternal(out);
 			return;
 		}
 		if ((this.options & OV_WITHMAP) != 0) {

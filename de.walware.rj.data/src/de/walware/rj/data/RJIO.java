@@ -40,13 +40,13 @@ public final class RJIO {
 	
 	public static RJIO get(final ObjectOutput out) {
 		final RJIO io = INSTANCES.get();
-		io.out = out;
+		io.connect(out);
 		return io;
 	}
 	
 	public static RJIO get(final ObjectInput in) {
 		final RJIO io = INSTANCES.get();
-		io.in = in;
+		io.connect(in);
 		return io;
 	}
 	
@@ -63,6 +63,9 @@ public final class RJIO {
 	private static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	
+	private static final byte MODE_BBARRAY = 0;
+	private static final byte MODE_IPARRAY = 1;
+	
 	
 	private final ByteBuffer bb;
 	private final byte[] ba;
@@ -70,10 +73,13 @@ public final class RJIO {
 	private final char[] ca;
 	private final IntBuffer ib;
 	private final DoubleBuffer db;
+	private final byte mode;
 	
-	public ObjectInput in;
+	private ObjectInput in;
 	
-	public ObjectOutput out;
+	private ObjectOutput out;
+	
+	private int temp;
 	
 	public int flags;
 	
@@ -83,9 +89,11 @@ public final class RJIO {
 	public RJIO() {
 		this.bb = ByteBuffer.allocateDirect(BB_LENGTH);
 		if (this.bb.hasArray()) {
+			this.mode = MODE_BBARRAY;
 			this.ba = this.bb.array();
 		}
 		else {
+			this.mode = MODE_IPARRAY;
 			this.ba = new byte[BB_LENGTH];
 		}
 		this.cb = this.bb.asCharBuffer();
@@ -97,8 +105,84 @@ public final class RJIO {
 	}
 	
 	
+	public void connect(final ObjectOutput out) {
+		this.out = out;
+	}
+	
+	public void connect(final ObjectInput in) {
+		this.in = in;
+	}
+	
+	public void disconnect(final ObjectOutput out) throws IOException {
+		this.out.flush();
+		this.out = null;
+	}
+	
+	public void disconnect(final ObjectInput in) throws IOException {
+		this.in = null;
+	}
+	
+	
+	private void writeFullyBB(final int bn) throws IOException {
+		switch (this.mode) {
+		case MODE_BBARRAY:
+			this.out.write(this.ba, 0, bn);
+			return;
+//		case MODE_IPARRAY:
+		default:
+			this.bb.clear();
+			this.bb.get(this.ba, 0, bn);
+			this.out.write(this.ba, 0, bn);
+			return;
+		}
+	}
+	
+	private void readFullyBB(final int bn)  throws IOException {
+		switch (this.mode) {
+		case MODE_BBARRAY:
+			this.in.readFully(this.ba, 0, bn);
+			return;
+//		case MODE_IPARRAY:
+		default:
+			this.in.readFully(this.ba, 0, bn);
+			this.bb.clear();
+			this.bb.put(this.ba, 0, bn);
+			return;
+		}
+	}
+	
+	private void readFullyBB(final int pos, final int bn) throws IOException {
+		switch (this.mode) {
+		case MODE_BBARRAY:
+			this.in.readFully(this.ba, pos, bn);
+			return;
+//		case MODE_IPARRAY:
+		default:
+			this.in.readFully(this.ba, pos, bn);
+			this.bb.clear();
+			this.bb.put(this.ba, 0, pos+bn);
+//			this.bb.position(pos);
+//			this.bb.put(this.ba, pos, bn);
+			return;
+		}
+	}
+	
+	
+	public void writeDirectly(final byte[] bytes, final int off, final int n) throws IOException {
+		this.out.write(bytes, off, n);
+	}
+	
+	
 	public void writeByte(final byte value) throws IOException {
 		this.out.writeByte(value);
+	}
+	
+	public void writeByte(final int value) throws IOException {
+		this.out.writeByte(value);
+	}
+	
+	public void writeBoolean(final boolean value) throws IOException {
+		this.out.writeByte(value ? 0x1 : 0x0);
 	}
 	
 	public void writeInt(final int value) throws IOException {
@@ -114,27 +198,17 @@ public final class RJIO {
 			}
 		}
 		else if (length <= IB_LENGTH) {
-			final int bcount = (length << 2);
 			this.ib.clear();
 			this.ib.put(array, 0, length);
-			if (!this.bb.hasArray()) {
-				this.bb.clear();
-				this.bb.get(this.ba, 0, bcount);
-			}
-			out.write(this.ba, 0, bcount);
+			writeFullyBB((length << 2));
 		}
 		else {
 			int iw = 0;
 			while (iw < length) {
 				final int icount = Math.min(length - iw, IB_LENGTH);
-				final int bcount = (icount << 2);
 				this.ib.clear();
 				this.ib.put(array, iw, icount);
-				if (!this.bb.hasArray()) {
-					this.bb.clear();
-					this.bb.get(this.ba, 0, bcount);
-				}
-				out.write(this.ba, 0, bcount);
+				writeFullyBB((icount << 2));
 				iw += icount;
 			}
 		}
@@ -157,27 +231,62 @@ public final class RJIO {
 			}
 		}
 		else if (length <= DB_LENGTH) {
-			final int bcount = (length << 3);
 			this.db.clear();
 			this.db.put(array, 0, length);
-			if (!this.bb.hasArray()) {
-				this.bb.clear();
-				this.bb.get(this.ba, 0, bcount);
-			}
-			out.write(this.ba, 0, bcount);
+			writeFullyBB((length << 3));
 		}
 		else {
 			int dw = 0;
 			while (dw < length) {
 				final int dcount = Math.min(length - dw, DB_LENGTH);
-				final int bcount = (dcount << 3);
 				this.db.clear();
 				this.db.put(array, dw, dcount);
-				if (!this.bb.hasArray()) {
-					this.bb.clear();
-					this.bb.get(this.ba, 0, bcount);
-				}
-				out.write(this.ba, 0, bcount);
+				writeFullyBB((dcount << 3));
+				dw += dcount;
+			}
+		}
+	}
+	
+	public void writeDoubleArrayPair(final double[] array1, final double[] array2, final int length) throws IOException {
+		final ObjectOutput out = this.out;
+		out.writeInt(length);
+		if (length <= 16) {
+			for (int i = 0; i < length; i++) {
+				out.writeLong(Double.doubleToRawLongBits(array1[i]));
+			}
+			for (int i = 0; i < length; i++) {
+				out.writeLong(Double.doubleToRawLongBits(array2[i]));
+			}
+		}
+		else if (length <= DB_LENGTH / 2) {
+			this.db.clear();
+			this.db.put(array1, 0, length);
+			this.db.put(array2, 0, length);
+			writeFullyBB((length << 4));
+		}
+		else if (length <= DB_LENGTH) {
+			this.db.clear();
+			this.db.put(array1, 0, length);
+			writeFullyBB((length << 3));
+			this.db.clear();
+			this.db.put(array2, 0, length);
+			writeFullyBB((length << 3));
+		}
+		else {
+			int dw = 0;
+			while (dw < length) {
+				final int dcount = Math.min(length - dw, DB_LENGTH);
+				this.db.clear();
+				this.db.put(array1, dw, dcount);
+				writeFullyBB((dcount << 3));
+				dw += dcount;
+			}
+			dw = 0;
+			while (dw < length) {
+				final int dcount = Math.min(length - dw, DB_LENGTH);
+				this.db.clear();
+				this.db.put(array2, dw, dcount);
+				writeFullyBB((dcount << 3));
 				dw += dcount;
 			}
 		}
@@ -272,13 +381,13 @@ public final class RJIO {
 		}
 	}
 	
-	public void flush() throws IOException {
-		this.out.flush();
-	}
-	
 	
 	public byte readByte() throws IOException {
 		return this.in.readByte();
+	}
+	
+	public boolean readBoolean() throws IOException {
+		return (this.in.readByte() == 0x1);
 	}
 	
 	public int readInt() throws IOException {
@@ -317,12 +426,7 @@ public final class RJIO {
 			}
 		}
 		else if (length <= IB_LENGTH) {
-			final int bn = length << 2;
-			in.readFully(this.ba, 0, bn);
-			if (!this.bb.hasArray()) {
-				this.bb.clear();
-				this.bb.put(this.ba, 0, bn);
-			}
+			readFullyBB((length << 2));
 			final int[] array = new int[length];
 			this.ib.clear();
 			this.ib.get(array, 0, length);
@@ -338,7 +442,7 @@ public final class RJIO {
 				if (position >= BB_PART) {
 					final int icount = (position >>> 2);
 					final int bcount = (icount << 2);
-					if (!this.bb.hasArray()) {
+					if (this.mode != MODE_BBARRAY) {
 						this.bb.clear();
 						this.bb.put(this.ba, 0, bcount);
 					}
@@ -374,11 +478,7 @@ public final class RJIO {
 				}
 			}
 			if (bToComplete > 0) {
-				in.readFully(this.ba, position, bToComplete-position);
-				if (!this.bb.hasArray()) {
-					this.bb.clear();
-					this.bb.put(this.ba, 0, bToComplete);
-				}
+				readFullyBB(position, bToComplete-position);
 				this.ib.clear();
 				this.ib.get(array, ir, bToComplete >>> 2);
 			}
@@ -394,9 +494,8 @@ public final class RJIO {
 		return this.in.readDouble();
 	}
 	
-	public double[] readDoubleArray() throws IOException {
+	private double[] readDoubleArray(final int length) throws IOException {
 		final ObjectInput in = this.in;
-		final int length = in.readInt();
 		if (length <= 32) {
 			switch (length) {
 			case 0:
@@ -427,12 +526,7 @@ public final class RJIO {
 			}
 		}
 		else if (length <= DB_LENGTH) {
-			final int bn = length << 3;
-			in.readFully(this.ba, 0, bn);
-			if (!this.bb.hasArray()) {
-				this.bb.clear();
-				this.bb.put(this.ba, 0, bn);
-			}
+			readFullyBB((length << 3));
 			final double[] array = new double[length];
 			this.db.clear();
 			this.db.get(array, 0, length);
@@ -448,7 +542,7 @@ public final class RJIO {
 				if (position >= BB_PART) {
 					final int dcount = (position >>> 3);
 					final int bcount = (dcount << 3);
-					if (!this.bb.hasArray()) {
+					if (this.mode != MODE_BBARRAY) {
 						this.bb.clear();
 						this.bb.put(this.ba, 0, bcount);
 					}
@@ -521,16 +615,24 @@ public final class RJIO {
 				}
 			}
 			if (bToComplete > 0) {
-				in.readFully(this.ba, position, bToComplete-position);
-				if (!this.bb.hasArray()) {
-					this.bb.clear();
-					this.bb.put(this.ba, 0, bToComplete);
-				}
+				readFullyBB(position, bToComplete-position);
 				this.db.clear();
 				this.db.get(array, dr, bToComplete >>> 3);
 			}
 			return array;
 		}
+	}
+	
+	public double[] readDoubleArray() throws IOException {
+		return readDoubleArray(this.in.readInt());
+	}
+	
+	public double[] readDoubleArrayPair1() throws IOException {
+		return readDoubleArray(this.temp = this.in.readInt());
+	}
+	
+	public double[] readDoubleArrayPair2() throws IOException {
+		return readDoubleArray(this.temp);
 	}
 	
 	public byte[] readByteArray() throws IOException {
@@ -549,7 +651,7 @@ public final class RJIO {
 			if (position >= BB_PART) {
 				final int icount = (position >>> 1);
 				final int bcount = (icount << 1);
-				if (!this.bb.hasArray()) {
+				if (this.mode != MODE_BBARRAY) {
 					this.bb.clear();
 					this.bb.put(this.ba, 0, bcount);
 				}
@@ -569,11 +671,7 @@ public final class RJIO {
 			}
 		}
 		if (bToComplete > 0) {
-			in.readFully(this.ba, position, bToComplete-position);
-			if (!this.bb.hasArray()) {
-				this.bb.clear();
-				this.bb.put(this.ba, 0, bToComplete);
-			}
+			readFullyBB(position, bToComplete-position);
 			this.cb.clear();
 			this.cb.get(ca, cr, bToComplete >>> 1);
 		}
@@ -595,12 +693,7 @@ public final class RJIO {
 				return new String(this.ca, 0, cn);
 			}
 			else if (cn <= CB_LENGTH) {
-				final int bn = cn << 1;
-				in.readFully(this.ba, 0, bn);
-				if (!this.bb.hasArray()) {
-					this.bb.clear();
-					this.bb.put(this.ba, 0, bn);
-				}
+				readFullyBB((cn << 1));
 				this.cb.clear();
 				this.cb.get(this.ca, 0, cn);
 				return new String(this.ca, 0, cn);
@@ -648,12 +741,7 @@ public final class RJIO {
 					continue;
 				}
 				else if (cn <= CB_LENGTH) {
-					final int bn = cn << 1;
-					in.readFully(this.ba, 0, bn);
-					if (!this.bb.hasArray()) {
-						this.bb.clear();
-						this.bb.put(this.ba, 0, bn);
-					}
+					readFullyBB((cn << 1));
 					this.cb.clear();
 					this.cb.get(this.ca, 0, cn);
 					array[i] = new String(this.ca, 0, cn);
@@ -712,7 +800,7 @@ public final class RJIO {
 		return this.serialKey;
 	}
 	
-	public void writeCheck2(int check) throws IOException {
+	public void writeCheck2(final int check) throws IOException {
 		this.out.writeInt(check);
 	}
 	
@@ -720,7 +808,7 @@ public final class RJIO {
 		return this.in.readInt();
 	}
 	
-	public void readCheck2(int check) throws IOException {
+	public void readCheck2(final int check) throws IOException {
 		if (check != this.in.readInt()) {
 			throw new IOException("Corrupted stream detected.");
 		}

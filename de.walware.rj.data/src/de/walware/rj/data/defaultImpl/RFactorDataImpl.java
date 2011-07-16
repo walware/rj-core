@@ -57,7 +57,7 @@ public class RFactorDataImpl extends AbstractFactorData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		this.isOrdered = io.in.readBoolean();
+		this.isOrdered = io.readBoolean();
 		this.codes = io.readIntArray();
 		this.length = this.codes.length;
 		this.codeLabels = readLabels(io);
@@ -77,7 +77,7 @@ public class RFactorDataImpl extends AbstractFactorData
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		io.out.writeBoolean(this.isOrdered);
+		io.writeBoolean(this.isOrdered);
 		io.writeIntArray(this.codes, this.length);
 		this.codeLabels.writeExternal(io);
 	}

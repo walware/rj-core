@@ -39,14 +39,14 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	}
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
-		this.handle = io.in.readLong();
-		this.type = io.in.readInt();
+		this.handle = io.readLong();
+		this.type = io.readInt();
 		this.baseClassName = io.readString();
 	}
 	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
-		io.out.writeLong(this.handle);
-		io.out.writeInt(this.type);
+		io.writeLong(this.handle);
+		io.writeInt(this.type);
 		io.writeString(this.baseClassName);
 	}
 	

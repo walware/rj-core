@@ -69,7 +69,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	
 	@Override
 	public RObject readObject(final RJIO io) throws IOException {
-		final byte type = io.in.readByte();
+		final byte type = io.readByte();
 		switch (type) {
 		case -1:
 			return null;
@@ -105,7 +105,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	@Override
 	public RStore readStore(final RJIO io) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
-			final byte storeType = io.in.readByte();
+			final byte storeType = io.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
 				return new JRILogicalDataImpl(io);
@@ -126,7 +126,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			}
 		}
 		else {
-			final byte storeType = io.in.readByte();
+			final byte storeType = io.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
 				return LOGI_STRUCT_DUMMY;
@@ -141,7 +141,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 			case RStore.RAW:
 				return RAW_STRUCT_DUMMY;
 			case RStore.FACTOR:
-				return new RFactorDataStruct(io.in.readBoolean(), io.in.readInt());
+				return new RFactorDataStruct(io.readBoolean(), io.readInt());
 			default:
 				throw new IOException("store type = " + storeType);
 			}
@@ -150,7 +150,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	
 	@Override
 	public RStore readNames(final RJIO io) throws IOException {
-		final byte type = io.in.readByte();
+		final byte type = io.readByte();
 		if (type == RStore.CHARACTER) {
 			return new JRICharacterDataImpl(io);
 		}

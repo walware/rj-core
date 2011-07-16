@@ -36,12 +36,12 @@ public class RFunctionImpl extends AbstractRObject
 	}
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
-		/*final int options =*/ io.in.readInt();
+		/*final int options =*/ io.readInt();
 		this.headerSource = io.readString();
 	}
 	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
-		io.out.writeInt(/*options*/ 0);
+		io.writeInt(/*options*/ 0);
 		io.writeString(this.headerSource);
 	}
 	

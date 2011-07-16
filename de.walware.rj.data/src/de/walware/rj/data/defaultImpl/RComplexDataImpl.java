@@ -64,13 +64,11 @@ public class RComplexDataImpl extends AbstractComplexData
 	}
 	
 	public void readExternal(final RJIO io) throws IOException {
-		final ObjectInput in = io.in;
-		this.length = in.readInt();
 		this.naIdxs = new int[0];
+		this.length = io.readInt();
 		this.realValues = new double[this.length];
-		this.imaginaryValues = new double[this.length];
 		for (int i = 0; i < this.length; i++) {
-			final long l = in.readLong();
+			final long l = io.readLong();
 			if ((l & NA_numeric_LONG_MASK) == NA_numeric_LONG_MATCH) {
 				this.realValues[i] = Double.NaN;
 				this.naIdxs = addIdx(this.naIdxs, i);
@@ -78,7 +76,9 @@ public class RComplexDataImpl extends AbstractComplexData
 			else {
 				this.realValues[i] = Double.longBitsToDouble(l);
 			}
-			this.imaginaryValues[i] = Double.longBitsToDouble(in.readLong());
+		}
+		for (int i = 0; i < this.length; i++) {
+			this.realValues[i] = Double.longBitsToDouble(io.readLong());
 		}
 	}
 	
@@ -101,21 +101,22 @@ public class RComplexDataImpl extends AbstractComplexData
 	}
 	
 	public void writeExternal(final RJIO io) throws IOException {
-		final ObjectOutput out = io.out;
-		out.writeInt(this.length);
+		io.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
 			if (Double.isNaN(this.realValues[i])) {
 				if (Arrays.binarySearch(this.naIdxs, i) >= 0) {
-					out.writeLong(NA_numeric_LONG);
+					io.writeLong(NA_numeric_LONG);
 				}
 				else {
-					out.writeLong(NaN_numeric_LONG);
+					io.writeLong(NaN_numeric_LONG);
 				}
 			}
 			else {
-				out.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
+				io.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
 			}
-			out.writeLong(Double.doubleToRawLongBits(this.imaginaryValues[i]));
+		}
+		for (int i = 0; i < this.length; i++) {
+			io.writeLong(Double.doubleToRawLongBits(this.realValues[i]));
 		}
 	}
 	

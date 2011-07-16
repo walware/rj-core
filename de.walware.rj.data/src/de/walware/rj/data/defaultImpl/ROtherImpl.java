@@ -47,7 +47,7 @@ public class ROtherImpl extends AbstractRObject
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		final int options = io.in.readInt();
+		final int options = io.readInt();
 		//-- special attributes
 		this.className1 = io.readString();
 		//-- attributes
@@ -58,7 +58,7 @@ public class ROtherImpl extends AbstractRObject
 	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
-		io.out.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
+		io.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
 		io.writeString(this.className1);
 		if (attributes != null) {
 			factory.writeAttributeList(attributes, io);
