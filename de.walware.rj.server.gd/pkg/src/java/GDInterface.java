@@ -40,6 +40,7 @@ package org.rosuda.javaGD;
  public double[] gdMetricInfo(int ch);
  public void     gdMode(int mode);
  public void     gdNewPage();
+ public boolean  gdNewPageConfirm();
  public void     gdPolygon(int n, double[] x, double[] y);
  public void     gdPolyline(int n, double[] x, double[] y);
  public void     gdRect(double x0, double y0, double x1, double y1);
@@ -219,7 +220,11 @@ public abstract class GDInterface {
      *  @param devNr device number assigned to this device by R */
     public void gdNewPage() {
     }
-
+	
+	public boolean gdNewPageConfirm() {
+		return false;
+	}
+	
     public abstract void gdPolygon(int n, double[] x, double[] y);
 
     public abstract void gdPolyline(int n, double[] x, double[] y);

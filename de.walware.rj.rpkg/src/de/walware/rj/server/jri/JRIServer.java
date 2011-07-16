@@ -80,7 +80,6 @@ import de.walware.rj.server.ConsoleWriteOutCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
-import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
@@ -107,7 +106,7 @@ import de.walware.rj.server.srvext.ServerRuntimePlugin;
 /**
  * Remove server based on
  */
-public class JRIServer extends RJ
+public final class JRIServer extends RJ
 		implements InternalEngine, RMainLoopCallbacks, ExtServer {
 	
 	
@@ -2910,13 +2909,8 @@ public class JRIServer extends RJ
 	}
 	
 	@Override
-	public double[] execGDCommand(final GDCmdItem cmd) {
-		final MainCmdItem answer = internalMainFromR(cmd);
-		if (cmd.waitForClient() && answer instanceof GDCmdItem
-				&& answer.isOK() ) {
-			return ((GDCmdItem) answer).getData();
-		}
-		return null;
+	public MainCmdItem sendMainCmd(final MainCmdItem cmd) {
+		return internalMainFromR(cmd);
 	}
 	
 }

@@ -112,7 +112,7 @@ public class RJ {
 		}
 	}
 	
-	public double[] execGDCommand(final GDCmdItem cmd) {
+	public MainCmdItem sendMainCmd(final MainCmdItem cmd) {
 		throw new UnsupportedOperationException();
 	}
 	

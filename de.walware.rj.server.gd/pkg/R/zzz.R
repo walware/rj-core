@@ -8,6 +8,8 @@
 	if (!file.exists(.pkg$cp)) {
 		error("gd.jar file for classpath is missing")
 	}
+	
+	deviceIsInteractive("rj.GD")
 }
 
 initLib <- function() {

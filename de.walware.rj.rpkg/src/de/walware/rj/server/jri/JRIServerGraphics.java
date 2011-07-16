@@ -23,7 +23,7 @@ import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.srvext.RjsGraphic;
 
 
-public class JRIServerGraphics {
+public final class JRIServerGraphics {
 	
 	
 	private static final Comparator<RjsGraphic> GRAPHIC_COMPARATOR = new Comparator<RjsGraphic>() {

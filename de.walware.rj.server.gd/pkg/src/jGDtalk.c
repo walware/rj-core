@@ -30,16 +30,17 @@ static void newJavaGD_Clip(double x0, double x1, double y0, double y1,
 			NewDevDesc *dd);
 static void newJavaGD_Close(NewDevDesc *dd);
 static void newJavaGD_Deactivate(NewDevDesc *dd);
-static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd);
 static void newJavaGD_Line(double x1, double y1, double x2, double y2,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd);
+static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd);
 static void newJavaGD_MetricInfo(int c, 
 			      R_GE_gcontext *gc,
 			      double* ascent, double* descent,
 			      double* width, NewDevDesc *dd);
 static void newJavaGD_Mode(int mode, NewDevDesc *dd);
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
+static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd);
 static void newJavaGD_Polygon(int n, double *x, double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
@@ -86,6 +87,7 @@ static jmethodID jmGDInterfaceLine;
 static jmethodID jmGDInterfaceMetricInfo;
 static jmethodID jmGDInterfaceMode;
 static jmethodID jmGDInterfaceNewPage;
+static jmethodID jmGDInterfaceNewPageConfirm;
 static jmethodID jmGDInterfaceOpen;
 static jmethodID jmGDInterfacePolygon;
 static jmethodID jmGDInterfacePolyline;
@@ -320,6 +322,18 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     sendAllGC(env, xd, gc);
 }
 
+static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd)
+{
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return FALSE;
+	
+	jboolean handled = (*env)->CallBooleanMethod(env, xd->talk, jmGDInterfaceNewPageConfirm);
+	
+	return (handled == JNI_TRUE) ? TRUE : FALSE;
+}
+
 static jarray newDoubleArray(JNIEnv *env, int n, double *ct)
 {
     jdoubleArray da=(*env)->NewDoubleArray(env,n);
@@ -484,26 +498,29 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->close = newJavaGD_Close;
     dd->activate = newJavaGD_Activate;
     dd->deactivate = newJavaGD_Deactivate;
+    dd->mode = newJavaGD_Mode;
     dd->size = newJavaGD_Size;
     dd->newPage = newJavaGD_NewPage;
     dd->canClip = TRUE;
     dd->clip = newJavaGD_Clip;
-    dd->canHAdj = 2;
-    dd->strWidth = newJavaGD_StrWidth;
-    dd->text = newJavaGD_Text;
     dd->rect = newJavaGD_Rect;
     dd->circle = newJavaGD_Circle;
     dd->line = newJavaGD_Line;
     dd->polyline = newJavaGD_Polyline;
     dd->polygon = newJavaGD_Polygon;
-    dd->locator = newJavaGD_Locator;
-    dd->mode = newJavaGD_Mode;
-    dd->metricInfo = newJavaGD_MetricInfo;
-    dd->hasTextUTF8 = TRUE;
-    dd->strWidthUTF8 = newJavaGD_StrWidthUTF8;
-    dd->textUTF8 = newJavaGD_TextUTF8;
-    dd->wantSymbolUTF8 = TRUE;
-    dd->useRotatedTextInContour = TRUE;
+	
+	dd->canHAdj = 2;
+	dd->useRotatedTextInContour = TRUE;
+	dd->metricInfo = newJavaGD_MetricInfo;
+	dd->strWidth = newJavaGD_StrWidth;
+	dd->text = newJavaGD_Text;
+	dd->hasTextUTF8 = TRUE;
+	dd->wantSymbolUTF8 = TRUE;
+	dd->strWidthUTF8 = newJavaGD_StrWidthUTF8;
+	dd->textUTF8 = newJavaGD_TextUTF8;
+	
+	dd->locator = newJavaGD_Locator;
+	dd->newFrameConfirm = newJavaGD_NewPageConfirm;
 }
 
 /*--------- Java Initialization -----------*/
@@ -622,6 +639,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceMetricInfo = getJMethod(env, jc, "gdMetricInfo", "(I)[D", RJ_ERROR_RERROR);
 		jmGDInterfaceMode = getJMethod(env, jc, "gdMode", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceNewPage = getJMethod(env, jc, "gdNewPage", "()V", RJ_ERROR_RERROR);
+		jmGDInterfaceNewPageConfirm = getJMethod(env, jc, "gdNewPageConfirm", "()Z", RJ_ERROR_RERROR);
 		jmGDInterfaceOpen = getJMethod(env, jc, "gdOpen", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolygon = getJMethod(env, jc, "gdPolygon", "(I[D[D)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolyline = getJMethod(env, jc, "gdPolyline", "(I[D[D)V", RJ_ERROR_RERROR);
