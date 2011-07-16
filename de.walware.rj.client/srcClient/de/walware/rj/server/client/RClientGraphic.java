@@ -99,7 +99,7 @@ public interface RClientGraphic {
 	/**
 	 * @see RFontSetting#RFontSetting(String, int, double, double, double)
 	 */
-	void addSetFont(String family, int face, double pointSize, double cex, double lineHeight);
+	void addSetFont(String family, int face, double pointSize, double lineHeight);
 	/**
 	 * @see RLine#RLine(double, double, double, double)
 	 */
@@ -123,7 +123,7 @@ public interface RClientGraphic {
 	/**
 	 * @see RText#RText(double, double, double, double, String)
 	 */
-	void addDrawText(double x, double y, double hAdj, double rDeg, String txt);
+	void addDrawText(double x, double y, double rDeg, double hAdj, String txt);
 	
 	
 	double[] runRLocator(RService r, IProgressMonitor monitor);

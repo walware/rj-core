@@ -35,7 +35,7 @@ public class RText extends RGraphicElement {
 	 * @param rDeg degrees to rotate
 	 * @param text text
 	 */
-	public RText(final double x, final double y, final double hAdj, final double rDeg,
+	public RText(final double x, final double y, final double rDeg, final double hAdj,
 			final String text) {
 		this.x = x;
 		this.y = y;

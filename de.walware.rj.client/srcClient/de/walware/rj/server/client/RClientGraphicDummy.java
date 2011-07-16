@@ -78,7 +78,7 @@ public class RClientGraphicDummy implements RClientGraphic {
 	public void addSetLine(final int type, final double width) {
 	}
 	
-	public void addSetFont(final String family, final int face, final double pointSize, final double cex, final double lineHeight) {
+	public void addSetFont(final String family, final int face, final double pointSize, final double lineHeight) {
 	}
 	
 	public void addDrawLine(final double x0, final double y0, final double x1, final double y1) {
@@ -96,7 +96,7 @@ public class RClientGraphicDummy implements RClientGraphic {
 	public void addDrawCircle(final double x, final double y, final double r) {
 	}
 	
-	public void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String text) {
+	public void addDrawText(final double x, final double y, final double rDeg, final double hAdj, final String text) {
 	}
 	
 	

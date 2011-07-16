@@ -341,7 +341,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			}
 		}
 		
-		this.mainIO.in = in;
+		this.mainIO.connect(in);
 		final int check = this.mainIO.readCheck1();
 		
 		while (true) {
@@ -349,7 +349,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			switch (type) {
 			case MainCmdItem.T_NONE:
 				this.mainIO.readCheck2(check);
-				this.mainIO.in = null;
+				this.mainIO.disconnect(in);
 				this.mainRunGC = runGC;
 				return;
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
@@ -384,7 +384,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 				processGraphicsOpCmd(this.mainIO);
 				continue;
 			default:
-				this.mainIO.in = null;
+				this.mainIO.disconnect(in);
 				throw new IOException("Unknown cmdtype id: " + type);
 			}
 		}
@@ -425,23 +425,26 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	
 	public final void processGDCmd(final RJIO io) throws IOException {
-		byte requestId = 0;
-		final int options = io.in.readInt();
-		final int devId = io.in.readInt();
+		final int devId;
+		final int options;
+		{	final int i = io.readInt();
+			options = (i & MainCmdItem.OV_WAITFORCLIENT);
+			devId = (i & ~MainCmdItem.OV_WAITFORCLIENT);
+		}
+		byte requestId = -1;
 		try {
-			int n; 
-			switch (io.in.readByte()) {
+			switch (io.readByte()) {
 			case GDCmdItem.C_NEW_PAGE:
 				addGraphic(devId,
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readBoolean());
+						io.readDouble(),
+						io.readDouble(),
+						io.readBoolean() );
 				return;
 			case GDCmdItem.C_CLOSE_DEVICE:
 				removeGraphic(devId);
 				return;
 			case GDCmdItem.C_GET_SIZE:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeSize() ));
 				return;
 			case GDCmdItem.C_SET_ACTIVE_OFF:
@@ -451,91 +454,88 @@ public abstract class AbstractRJComClient implements ComHandler {
 				getGraphic(devId).setActive(true);
 				return;
 			case GDCmdItem.C_SET_MODE:
-				getGraphic(devId).setMode(io.in.readByte());
+				getGraphic(devId).setMode(io.readByte());
 				return;
 			case GDCmdItem.C_GET_FONTMETRIC:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeFontMetric(
-								io.in.readInt() )));
+								io.readInt() )));
 				return;
 			case GDCmdItem.C_GET_STRINGWIDTH:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.in.readByte(),
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeStringWidth(
 								io.readString() )));
 				return;
 				
 			case GDCmdItem.SET_CLIP:
 				getGraphic(devId).addSetClip(
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble() );
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble() );
 				return;
 			case GDCmdItem.SET_COLOR:
 				getGraphic(devId).addSetColor(
-						io.in.readInt() );
+						io.readInt() );
 				return;
 			case GDCmdItem.SET_FILL:
 				getGraphic(devId).addSetFill(
-						io.in.readInt() );
+						io.readInt() );
 				return;
 			case GDCmdItem.SET_LINE:
 				getGraphic(devId).addSetLine(
-						io.in.readInt(),
-						io.in.readDouble() );
+						io.readInt(),
+						io.readDouble() );
 				return;
 			case GDCmdItem.SET_FONT:
 				getGraphic(devId).addSetFont(
 						io.readString(),
-						io.in.readInt(),
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble() );
+						io.readInt(),
+						io.readDouble(),
+						io.readDouble() );
 				return;
 				
 			case GDCmdItem.DRAW_LINE:
 				getGraphic(devId).addDrawLine(
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble() );
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble() );
 				return;
 			case GDCmdItem.DRAW_RECTANGLE:
 				getGraphic(devId).addDrawRect(
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble() );
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble() );
 				return;
 			case GDCmdItem.DRAW_POLYLINE:
-				n = io.in.readInt();
 				getGraphic(devId).addDrawPolyline(
-						readDouble(io.in, n),
-						readDouble(io.in, n) );
+						io.readDoubleArrayPair1(),
+						io.readDoubleArrayPair2() );
 				return;
 			case GDCmdItem.DRAW_POLYGON:
-				n = io.in.readInt();
 				getGraphic(devId).addDrawPolygon(
-						readDouble(io.in, n),
-						readDouble(io.in, n) );
+						io.readDoubleArrayPair1(),
+						io.readDoubleArrayPair2() );
 				return;
 			case GDCmdItem.DRAW_CIRCLE:
 				getGraphic(devId).addDrawCircle(
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble() );
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble() );
 				return;
 			case GDCmdItem.DRAW_TEXT:
 				getGraphic(devId).addDrawText(
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble(),
-						io.in.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
 						io.readString() );
 				return;
 				
 			case GDCmdItem.U_LOCATOR: {
-				final byte fid = requestId = io.in.readByte();
+				final byte fid = requestId = io.readByte();
 				processCmdDeferred(new Runnable() {
 					public void run() {
 						addC2SCmd(new GDCmdItem.Answer(fid,
@@ -547,6 +547,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 				return; }
 				
 			default:
+				if ((options & MainCmdItem.OV_WAITFORCLIENT) != 0) {
+					requestId = io.readByte();
+				}
 				throw new UnsupportedOperationException("Unknown GD command.");
 			}
 		}
@@ -555,17 +558,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		catch (final Throwable e) {
 			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing graphic command.", e));
-			if ((options & MainCmdItem.OV_WAITFORCLIENT) != 0) {
-//				if (requestId > 0) {
-					addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus()));
-//				}
-//				else {
-//					throw new IllegalStateException();
-//				}
+			if (requestId >= 0) {
+				addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus()));
 			}
-			else {
-				return;
-			}
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -626,7 +622,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		if ((item.requestId & 0xff00 >>> 8) != (this.randomId & 0xff)) {
 			// other client
-			System.out.println("Other client: " + item);
+//			System.out.println("Other client: " + item);
+			return;
 		}
 		throw new RjException("Unexpected server answer: " + item);
 	}
@@ -870,14 +867,6 @@ public abstract class AbstractRJComClient implements ComHandler {
 		finally {
 			this.dataLevelIgnore = loopDataLevelIgnore;
 		}
-	}
-	
-	private final double[] readDouble(final ObjectInput in, final int n) throws IOException {
-		final double[] data = new double[n];
-		for (int i = 0; i < n; i++) {
-			data[i] = in.readDouble();
-		}
-		return data;
 	}
 	
 	

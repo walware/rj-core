@@ -576,7 +576,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	public void addSetFont(String family, final int face, final double pointSize,
-			final double cex, final double lineHeight) {
+			final double lineHeight) {
 //		System.out.println("==\nSetFont: \"" + family + "\" " + face + " " + pointSize + " (cex= " + cex + ")");
 		switch (face) {
 		case 2:
@@ -606,7 +606,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		
 		fLastStringEnc = null;
 		
-		final FontSetting instr = new FontSetting(family, face, pointSize, cex, lineHeight,
+		final FontSetting instr = new FontSetting(family, face, pointSize, lineHeight,
 				fCurrentFontFamily.getSWTFont(fCurrentFontStyle, fCurrentFontSize),
 				fCurrentFontFamily.getSWTFontProperties(fCurrentFontStyle, fCurrentFontSize) );
 		add(instr);
@@ -657,10 +657,10 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
-	public void addDrawText(final double x, final double y, final double hAdj, final double rDeg, final String txt) {
+	public void addDrawText(final double x, final double y, final double rDeg, final double hAdj, final String txt) {
 //		System.out.println("==\nDrawText: " + x + ", " + y + " " + hAdj + " \"" + txt + "\""); printFont();
 		final String text = (fCurrentFontMapping != null) ? fCurrentFontMapping.encode(txt) : txt;
-		final TextElement instr = new TextElement(x, y, hAdj, rDeg, text,
+		final TextElement instr = new TextElement(x, y, rDeg, hAdj, text,
 				(hAdj != 0) ? computeStringWidthEnc(text)[0] : 0);
 		add(instr);
 	}
