@@ -177,8 +177,16 @@ public class RGraphicComposite extends Composite
 //				checkContentSize();
 			}
 		});
-		
 		createCanvas();
+		final Listener updateListener = new Listener() {
+			public void handleEvent(final Event event) {
+				if (fChangedContent) {
+					updateGraphic();
+				}
+			}
+		};
+		addListener(SWT.Show, updateListener);
+		addListener(SWT.Activate, updateListener);
 		
 		setGraphic(graphic);
 		
@@ -225,14 +233,6 @@ public class RGraphicComposite extends Composite
 		fCanvas.setLocation(location.x, -vSelection);
 	}
 	
-	
-	@Override
-	public void setVisible(final boolean visible) {
-		super.setVisible(visible);
-		if (visible && fChangedContent) {
-			updateGraphic();
-		}
-	}
 	
 	protected void disconnect() {
 		if (fGraphic != null) {

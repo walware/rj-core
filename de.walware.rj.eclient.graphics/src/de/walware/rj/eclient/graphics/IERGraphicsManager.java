@@ -28,6 +28,27 @@ public interface IERGraphicsManager {
 		
 	}
 	
+	interface ListenerShowExtension extends Listener {
+		
+		/**
+		 * If the listener can show the graphic
+		 * 
+		 * <code>-1</code> not supported
+		 * <code>&gt;= 0</code> priority (higher more appropriate)
+		 * @param graphic the graphic to show
+		 * @return
+		 */
+		int canShowGraphic(IERGraphic graphic);
+		
+		/**
+		 * If the listener was selected (highest priority) to show the graphic
+		 * 
+		 * @param graphic the graphic to show
+		 */
+		void showGraphic(IERGraphic graphic);
+		
+	}
+	
 	
 	void addListener(Listener listener);
 	

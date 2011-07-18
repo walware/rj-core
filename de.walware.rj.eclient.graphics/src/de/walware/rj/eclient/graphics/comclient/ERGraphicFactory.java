@@ -22,6 +22,6 @@ import de.walware.rj.eclient.internal.graphics.EclipseRGraphicFactory;
  * Factory and manager for R graphics under Eclipse.
  */
 public class ERGraphicFactory extends EclipseRGraphicFactory
-		implements RClientGraphicFactory, IERGraphicsManager {
+		implements IERGraphicsManager, RClientGraphicFactory {
 	
 }

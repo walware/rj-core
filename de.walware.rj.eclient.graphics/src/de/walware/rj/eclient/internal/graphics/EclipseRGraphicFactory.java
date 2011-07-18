@@ -76,12 +76,41 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		
 	}
 	
+	private static class ShowSafeRunnable implements ISafeRunnable {
+		
+		IERGraphic fGraphic;
+		IERGraphicsManager.ListenerShowExtension fListener;
+		
+		int fBestPriority;
+		IERGraphicsManager.ListenerShowExtension fBestListener;
+		
+		public void run() {
+			if (fListener != null) {
+				final int priority = fListener.canShowGraphic(fGraphic);
+				if (priority > fBestPriority) {
+					fBestPriority = priority;
+					fBestListener = fListener;
+				}
+			}
+			else {
+				fBestListener.showGraphic(fGraphic);
+			}
+		}
+		
+		public void handleException(final Throwable exception) {
+//			RGraphicsPlugin.getDefault().getLog().log(new Status(IStatus.ERROR, RGraphicsPlugin.PLUGIN_ID,
+//					ICommonStatusConstants.INTERNAL_PLUGGED_IN, "An error occurred when notifying.", exception));  //$NON-NLS-1$
+		}
+		
+	}
+	
 	
 	private final FastList<EclipseRGraphic> fGraphics = new FastList<EclipseRGraphic>(EclipseRGraphic.class, FastList.IDENTITY);
 	
 	private final FastList<IERGraphicsManager.Listener> fListeners = new FastList<IERGraphicsManager.Listener>(IERGraphicsManager.Listener.class, FastList.IDENTITY);
 	private final AddedSafeRunnable fAddedRunnable = new AddedSafeRunnable();
 	private final RemovedSafeRunnable fRemovedRunnable = new RemovedSafeRunnable();
+	private final ShowSafeRunnable fShowRunnable = new ShowSafeRunnable();
 	
 	private final Display fDefaultDisplay;
 	private final FontManager fFontManager;
@@ -135,12 +164,30 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 			fDefaultDisplay.syncExec(new Runnable() {
 				public void run() {
 					fGraphics.add(egraphic);
-					fAddedRunnable.fGraphic = egraphic;
 					final Listener[] listeners = fListeners.toArray();
+					
+					fShowRunnable.fGraphic = egraphic;
+					fShowRunnable.fBestPriority = Integer.MIN_VALUE;
+					for (final Listener listener : listeners) {
+						if (listener instanceof ListenerShowExtension) {
+							fShowRunnable.fListener = (ListenerShowExtension) listener;
+							SafeRunner.run(fShowRunnable);
+						}
+					}
+					fShowRunnable.fListener = null;
+					if (fShowRunnable.fBestPriority >= 0) {
+						SafeRunner.run(fShowRunnable);
+					}
+					fShowRunnable.fBestListener = null;
+					fShowRunnable.fGraphic = null;
+					
+					fAddedRunnable.fGraphic = egraphic;
 					for (final Listener listener : listeners) {
 						fAddedRunnable.fListener = listener;
 						SafeRunner.run(fAddedRunnable);
 					}
+					fAddedRunnable.fListener = null;
+					fAddedRunnable.fGraphic = null;
 				}
 			});
 		}
@@ -158,12 +205,15 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 			fDefaultDisplay.syncExec(new Runnable() {
 				public void run() {
 					fGraphics.remove(graphic);
-					fRemovedRunnable.fGraphic = graphic;
 					final Listener[] listeners = fListeners.toArray();
+					
+					fRemovedRunnable.fGraphic = graphic;
 					for (final Listener listener : listeners) {
 						fRemovedRunnable.fListener = listener;
 						SafeRunner.run(fRemovedRunnable);
 					}
+					fRemovedRunnable.fListener = null;
+					fRemovedRunnable.fGraphic = null;
 				}
 			});
 		}

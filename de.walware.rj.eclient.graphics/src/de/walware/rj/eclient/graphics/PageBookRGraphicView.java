@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.StatusLineContributionItem;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -33,6 +34,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
+import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
@@ -52,6 +54,7 @@ import de.walware.ecommons.ui.actions.HandlerContributionItem;
 import de.walware.ecommons.ui.actions.SimpleContributionItem;
 import de.walware.ecommons.ui.mpbv.ISession;
 import de.walware.ecommons.ui.mpbv.ManagedPageBookView;
+import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.AbstractRServiceRunnable;
 
@@ -61,8 +64,7 @@ import de.walware.rj.eclient.AbstractRServiceRunnable;
  * <p>
  * No view is registered by this plug-in.</p>
  */
-public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookRGraphicView.RGraphicSession>
-		implements IERGraphicsManager.Listener {
+public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookRGraphicView.RGraphicSession> {
 	
 	
 	public class RGraphicSession implements ISession {
@@ -89,6 +91,65 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		}
 		
 	}
+	
+	public static class ShowRequiredViewListener implements IERGraphicsManager.ListenerShowExtension {
+		
+		
+		private final String fViewId;
+		
+		
+		public ShowRequiredViewListener(final String viewId) {
+			fViewId = viewId;
+		}
+		
+		
+		public int canShowGraphic(final IERGraphic graphic) {
+			return 0;
+		}
+		
+		public void showGraphic(final IERGraphic graphic) {
+			try {
+				final IWorkbenchPage page = getBestPage(graphic);
+				String secondaryId = ""; //$NON-NLS-1$
+				final IViewReference[] refs = page.getViewReferences();
+				for (int i = 0; i < refs.length; i++) { // search views not yet instanced
+					if (fViewId.equals(refs[i].getId()) && refs[i].getView(false) == null) {
+						if (refs[i].getSecondaryId() == null) {
+							secondaryId = null;
+							break;
+						}
+						if (secondaryId == "") { //$NON-NLS-1$
+							secondaryId = refs[i].getSecondaryId();
+						}
+					}
+				}
+				if (secondaryId == "") { //$NON-NLS-1$
+					secondaryId = "t"+System.currentTimeMillis(); //$NON-NLS-1$
+				}
+				gNewViewGraphic = graphic;
+				page.showView(fViewId, secondaryId, IWorkbenchPage.VIEW_VISIBLE );
+			}
+			catch (final PartInitException e) {
+				StatusManager.getManager().handle(new Status(IStatus.ERROR, RGraphics.PLUGIN_ID,
+						"An error occurred when opening a new R Graphics view.", e ));
+			}
+			finally {
+				gNewViewGraphic = null;
+			}
+		}
+		
+		protected IWorkbenchPage getBestPage(final IERGraphic graphic) {
+			return UIAccess.getActiveWorkbenchPage(true);
+		}
+		
+		public void graphicAdded(final IERGraphic graphic) {
+		}
+		
+		public void graphicRemoved(final IERGraphic graphic) {
+		}
+		
+	}
+	
 	
 	protected static abstract class NewDevHandler extends AbstractHandler {
 		
@@ -157,19 +218,19 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	}
 	
 	
-	private static class OpenAdditionalView extends AbstractHandler {
-		
-		private static int gViewCounter;
+	private static class OpenAdditionalViewHandler extends AbstractHandler {
 		
 		private final IViewSite fViewSite;
 		
-		public OpenAdditionalView(final IViewSite viewSite) {
+		public OpenAdditionalViewHandler(final IViewSite viewSite) {
 			fViewSite = viewSite;
 		}
 		
 		public Object execute(final ExecutionEvent event) throws ExecutionException {
 			try {
-				fViewSite.getWorkbenchWindow().getActivePage().showView(fViewSite.getId(), "#" + gViewCounter++, IWorkbenchPage.VIEW_ACTIVATE);
+				final String secondaryId = "t" + System.currentTimeMillis(); //$NON-NLS-1$
+				fViewSite.getWorkbenchWindow().getActivePage().showView(fViewSite.getId(),
+						secondaryId, IWorkbenchPage.VIEW_ACTIVATE );
 			}
 			catch (final PartInitException e) {
 				StatusManager.getManager().handle(new Status(IStatus.ERROR, RGraphics.PLUGIN_ID, -1,
@@ -180,8 +241,54 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		
 	}
 	
+	private class PinPageAction extends SimpleContributionItem {
+		
+		public PinPageAction() {
+			super(SharedUIResources.getImages().getDescriptor(SharedUIResources.LOCTOOL_PIN_PAGE_IMAGE_ID),
+					SharedUIResources.getImages().getDescriptor(SharedUIResources.LOCTOOLD_PIN_PAGE_IMAGE_ID),
+					"Pin Graphic Page", "P", SimpleContributionItem.STYLE_CHECK);
+			setChecked(fPinPage);
+		}
+		
+		@Override
+		protected void execute() throws ExecutionException {
+			fPinPage = !fPinPage;
+			setChecked(fPinPage);
+		}
+		
+	}
+	
+	
+	private static IERGraphic gNewViewGraphic;
 	
 	private IERGraphicsManager fManager;
+	private final IERGraphicsManager.ListenerShowExtension fManagerListener = new IERGraphicsManager.ListenerShowExtension() {
+		private IERGraphic toShow;
+		public int canShowGraphic(final IERGraphic graphic) {
+			return PageBookRGraphicView.this.canShowGraphic(graphic);
+		}
+		public void showGraphic(final IERGraphic graphic) {
+			toShow = graphic;
+			final IViewSite site = getViewSite();
+			try {
+				site.getPage().showView(site.getId(), site.getSecondaryId(), IWorkbenchPage.VIEW_VISIBLE);
+			}
+			catch (final PartInitException e) {}
+		}
+		public void graphicAdded(final IERGraphic graphic) {
+			add(graphic, graphic == toShow
+					|| (graphic.isActive() && (!fPinPage || getCurrentSession() == null)) );
+			toShow = null;
+		}
+		public void graphicRemoved(final IERGraphic graphic) {
+			final RGraphicSession session = getSession(graphic);
+			if (session != null) {
+				PageBookRGraphicView.super.closePage(session);
+			}
+		}
+	};
+	
+	private boolean fPinPage;
 	
 	private final IERGraphic.Listener fGraphicListener = new IERGraphic.ListenerLocatorExtension() {
 		public void activated() {
@@ -222,26 +329,65 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	public void createPartControl(final Composite parent) {
 		super.createPartControl(parent);
 		if (fManager != null) {
-			fManager.addListener(this);
-			final List<? extends IERGraphic> graphics = fManager.getAllGraphics();
-			for (final IERGraphic graphic : graphics) {
-				graphicAdded(graphic);
+			fManager.addListener(fManagerListener);
+			IERGraphic active = gNewViewGraphic;
+			if (active != null) {
+				final List<? extends IERGraphic> graphics = fManager.getAllGraphics();
+				for (final IERGraphic graphic : graphics) {
+					add(graphic, false);
+				}
+			}
+			else {
+				final List<? extends IERGraphic> graphics = fManager.getAllGraphics();
+				for (final IERGraphic graphic : graphics) {
+					add(graphic, false);
+					if (graphic.isActive()) {
+						active = graphic;
+					}
+				}
+				if (active == null && !graphics.isEmpty()) {
+					active = graphics.get(graphics.size()-1);
+				}
+			}
+			if (active != null) {
+				final RGraphicSession session = getSession(active);
+				if (session != null) {
+					showPage(session);
+				}
 			}
 		}
 	}
 	
-	public void graphicAdded(final IERGraphic graphic) {
-		super.newPage(new RGraphicSession(graphic), graphic.isActive());
-	}
-	
-	public void graphicRemoved(final IERGraphic graphic) {
+	public RGraphicSession getSession(final IERGraphic graphic) {
 		final List<RGraphicSession> sessions = getSessions();
 		for (final RGraphicSession session : sessions) {
 			if (session.getGraphic() == graphic) {
-				super.closePage(session);
-				return;
+				return session;
 			}
 		}
+		return null;
+	}
+	
+	protected int canShowGraphic(final IERGraphic graphic) {
+		final RGraphicSession session = getCurrentSession();
+		int canShow;
+		if (session != null && session.getGraphic() == graphic) {
+			canShow = (fPinPage) ? 20 : 10;
+		}
+		else if (fPinPage && session != null) {
+			return -1;
+		}
+		else {
+			canShow = 1;
+		}
+		if (getViewSite().getPage().isPartVisible(this)) {
+			canShow+=2;
+		}
+		return canShow;
+	}
+	
+	protected void add(final IERGraphic graphic, final boolean show) {
+		super.newPage(new RGraphicSession(graphic), show);
 	}
 	
 	@Override
@@ -259,7 +405,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	protected void initActions(final IServiceLocator serviceLocator, final HandlerCollection handlers) {
 		super.initActions(serviceLocator, handlers);
 		
-		final OpenAdditionalView openViewHandler = new OpenAdditionalView(getViewSite());
+		final OpenAdditionalViewHandler openViewHandler = new OpenAdditionalViewHandler(getViewSite());
 		handlers.add(".OpenView", openViewHandler);
 	}
 	
@@ -289,6 +435,9 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 				}
 			}
 		});
+		
+		final IToolBarManager toolBarManager = actionBars.getToolBarManager();
+		toolBarManager.insertAfter("page_control.change_page", new PinPageAction()); //$NON-NLS-1$
 		
 		final IStatusLineManager lineManager = actionBars.getStatusLineManager();
 		fPositionStatusLineItem = new StatusLineContributionItem(RGraphicCompositeActionSet.POSITION_STATUSLINE_ITEM_ID, 20);
@@ -341,7 +490,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	@Override
 	public void dispose() {
 		if (fManager != null) {
-			fManager.removeListener(this);
+			fManager.removeListener(fManagerListener);
 		}
 		final RGraphicSession session = getCurrentSession();
 		if (session != null) {
