@@ -37,6 +37,9 @@ public class RGraphicsPlugin extends AbstractUIPlugin {
 	
 	public static final String IMG_LOCTOOL_RESIZE_FIT_R = RGraphics.PLUGIN_ID + "/image/loctool/resize-fit-r"; //$NON-NLS-1$
 	
+	public static final String IMG_LOCTOOL_LOCATOR_DONE = RGraphics.PLUGIN_ID + "/image/loctool/locator-done"; //$NON-NLS-1$
+	public static final String IMG_LOCTOOL_LOCATOR_CANCEL = RGraphics.PLUGIN_ID + "/image/loctool/locator-cancel"; //$NON-NLS-1$
+	
 	
 	/** The shared instance */
 	private static RGraphicsPlugin gPlugin;
@@ -99,6 +102,9 @@ public class RGraphicsPlugin extends AbstractUIPlugin {
 		final ImageRegistryUtil util = new ImageRegistryUtil(this);
 		
 		util.register(IMG_LOCTOOL_RESIZE_FIT_R, T_LOCTOOL, "resize-fit-r.png");
+		
+		util.register(IMG_LOCTOOL_LOCATOR_DONE, T_LOCTOOL, "locator-done.png");
+		util.register(IMG_LOCTOOL_LOCATOR_CANCEL, T_LOCTOOL, "locator-cancel.png");
 	}
 	
 	public void registerPluginDisposable(final IDisposable listener) {

@@ -154,17 +154,19 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	}
 	
 	void close(final EclipseRGraphic graphic) {
-		fDefaultDisplay.syncExec(new Runnable() {
-			public void run() {
-				fGraphics.remove(graphic);
-				fRemovedRunnable.fGraphic = graphic;
-				final Listener[] listeners = fListeners.toArray();
-				for (final Listener listener : listeners) {
-					fRemovedRunnable.fListener = listener;
-					SafeRunner.run(fRemovedRunnable);
+		if (!fDefaultDisplay.isDisposed()) {
+			fDefaultDisplay.syncExec(new Runnable() {
+				public void run() {
+					fGraphics.remove(graphic);
+					fRemovedRunnable.fGraphic = graphic;
+					final Listener[] listeners = fListeners.toArray();
+					for (final Listener listener : listeners) {
+						fRemovedRunnable.fListener = listener;
+						SafeRunner.run(fRemovedRunnable);
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 	
 	

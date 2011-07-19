@@ -11,6 +11,8 @@
 
 package de.walware.rj.server.client;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+
 import de.walware.rj.graphic.RCircle;
 import de.walware.rj.graphic.RClipSetting;
 import de.walware.rj.graphic.RColorSetting;
@@ -22,6 +24,7 @@ import de.walware.rj.graphic.RPolygon;
 import de.walware.rj.graphic.RPolyline;
 import de.walware.rj.graphic.RRect;
 import de.walware.rj.graphic.RText;
+import de.walware.rj.services.RService;
 
 
 /**
@@ -122,5 +125,7 @@ public interface RClientGraphic {
 	 */
 	void addDrawText(double x, double y, double hAdj, double rDeg, String txt);
 	
+	
+	double[] runRLocator(RService r, IProgressMonitor monitor);
 	
 }

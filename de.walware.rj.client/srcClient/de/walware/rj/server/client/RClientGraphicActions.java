@@ -34,5 +34,9 @@ public interface RClientGraphicActions {
 	
 	void copy(int devId, String toDev, String toDevFile, String toDevArgs,
 			IProgressMonitor monitor) throws CoreException;
+	double[] convertGraphic2User(int devId, double[] xy,
+			IProgressMonitor monitor) throws CoreException;
+	double[] convertUser2Graphic(int devId, double[] xy,
+			IProgressMonitor monitor) throws CoreException;
 	
 }

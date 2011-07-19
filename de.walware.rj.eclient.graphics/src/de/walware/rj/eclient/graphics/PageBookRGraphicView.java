@@ -24,7 +24,9 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.StatusLineContributionItem;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Composite;
@@ -181,7 +183,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	
 	private IERGraphicsManager fManager;
 	
-	private final IERGraphic.Listener fGraphicListener = new IERGraphic.Listener() {
+	private final IERGraphic.Listener fGraphicListener = new IERGraphic.ListenerLocatorExtension() {
 		public void activated() {
 			updateTitle();
 		}
@@ -192,7 +194,15 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		}
 		public void drawingStopped() {
 		}
+		public void locatorStarted() {
+			updateTitle();
+		}
+		public void locatorStopped() {
+			updateTitle();
+		}
 	};
+	
+	private StatusLineContributionItem fPositionStatusLineItem;
 	
 	
 	public PageBookRGraphicView() {
@@ -279,6 +289,10 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 				}
 			}
 		});
+		
+		final IStatusLineManager lineManager = actionBars.getStatusLineManager();
+		fPositionStatusLineItem = new StatusLineContributionItem(RGraphicCompositeActionSet.POSITION_STATUSLINE_ITEM_ID, 20);
+		lineManager.add(fPositionStatusLineItem);
 	}
 	
 	private String[] collectContextMenuPreferencePages() {
@@ -317,6 +331,9 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	protected void onPageHiding(final IPageBookViewPage page, final RGraphicSession session) {
 		if (session != null) {
 			session.getGraphic().removeListener(fGraphicListener);
+		}
+		if (fPositionStatusLineItem != null) {
+			fPositionStatusLineItem.setText(""); //$NON-NLS-1$
 		}
 		super.onPageHiding(page, session);
 	}

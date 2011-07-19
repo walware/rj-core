@@ -16,10 +16,13 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Listener;
@@ -30,7 +33,7 @@ import org.eclipse.swt.widgets.ScrollBar;
  * Composite to display an R graphic.
  */
 public class RGraphicComposite extends Composite
-		implements IERGraphic.ListenerInstructionsExtension {
+		implements IERGraphic.ListenerInstructionsExtension, IERGraphic.ListenerLocatorExtension {
 	
 	
 	/**
@@ -146,6 +149,8 @@ public class RGraphicComposite extends Composite
 	private boolean fChangedLayout;
 	private boolean fChangedContent;
 	
+	private MouseListener fLocatorMouseListener;
+	
 	
 	public RGraphicComposite(final Composite parent, final IERGraphic graphic) {
 		super(parent, checkStyle(SWT.H_SCROLL | SWT.V_SCROLL));
@@ -233,6 +238,7 @@ public class RGraphicComposite extends Composite
 		if (fGraphic != null) {
 			fGraphic.removeListener(this);
 		}
+		locatorStopped();
 	}
 	
 	public void setGraphic(final IERGraphic graphic) {
@@ -244,6 +250,10 @@ public class RGraphicComposite extends Composite
 		}
 		
 		instructionsChanged(true, null);
+		
+		if (fGraphic != null && fGraphic.isLocatorStarted()) {
+			locatorStarted();
+		}
 	}
 	
 	/**
@@ -275,6 +285,49 @@ public class RGraphicComposite extends Composite
 	}
 	
 	public void drawingStopped() {
+	}
+	
+	public void locatorStarted() {
+		if (fLocatorMouseListener == null) {
+			fLocatorMouseListener = new MouseListener() {
+				public void mouseDown(final MouseEvent e) {
+					switch (e.button) { 
+					case 1:
+						fGraphic.returnLocator(
+								fCanvas.widget2graphicsX(e.x), fCanvas.widget2graphicY(e.y));
+						break;
+					case 3:
+						fGraphic.stopLocator(IERGraphic.LOCATOR_DONE);
+						break;
+					default:
+						break;
+					}
+				}
+				public void mouseUp(final MouseEvent e) {
+				}
+				public void mouseDoubleClick(final MouseEvent e) {
+				}
+			};
+			fCanvas.addMouseListener(fLocatorMouseListener);
+			updateCursor();
+		}
+	}
+	
+	public void locatorStopped() {
+		if (fLocatorMouseListener != null) {
+			fCanvas.removeMouseListener(fLocatorMouseListener);
+			fLocatorMouseListener = null;
+			updateCursor();
+		}
+	}
+	
+	private void updateCursor() {
+		if (fLocatorMouseListener != null) {
+			fCanvas.setCursor(Display.getCurrent().getSystemCursor(SWT.CURSOR_CROSS));
+		}
+		else {
+			fCanvas.setCursor(null);
+		}
 	}
 	
 	private void checkContentSize() {
@@ -318,14 +371,33 @@ public class RGraphicComposite extends Composite
 		return this;
 	}
 	
+	/**
+	 * Returns the control on which the graphic is painted
+	 * 
+	 * @since 1.0
+	 */
 	public Control getGraphicWidget() {
 		return fCanvas;
 	}
 	
+	/**
+	 * Converts a horizontal display coordinate of the {@link #getGraphicWidget() graphic widget}
+	 * to its graphic coordinate value.
+	 * 
+	 * @since 1.0
+	 * @see IERGraphic Coordinate systems of R graphics
+	 */
 	public double convertWidget2GraphicX(final int x) {
 		return fCanvas.widget2graphicsX(x);
 	}
 	
+	/**
+	 * Converts a vertical display coordinate of the {@link #getGraphicWidget() graphic widget}
+	 * to its graphic coordinate value.
+	 * 
+	 * @since 1.0
+	 * @see IERGraphic Coordinate systems of R graphics
+	 */
 	public double convertWidget2GraphicY(final int y) {
 		return fCanvas.widget2graphicY(y);
 	}

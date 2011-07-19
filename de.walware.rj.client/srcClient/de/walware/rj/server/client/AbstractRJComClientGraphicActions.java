@@ -14,6 +14,7 @@ package de.walware.rj.server.client;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
+import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
 
 
@@ -53,7 +54,7 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 	public void copy(final int devId, final String toDev, final String toDevFile, final String toDevArgs,
 			final IProgressMonitor monitor) throws CoreException {
 		final StringBuilder sb = new StringBuilder(64);
-		sb.append("rj::.rj.copyGD(");
+		sb.append("rj.gd::.rj.copyGD(");
 		sb.append("devNr=").append((devId + 1)).append("L,");
 		sb.append("device=").append(toDev).append(",");
 		if (toDevFile != null) {
@@ -65,6 +66,38 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 		}
 		sb.replace(sb.length()-1, sb.length(), ")");
 		this.rjs.evalVoid(sb.toString(), monitor);
+	}
+	
+	public double[] convertGraphic2User(final int devId, final double[] xy,
+			final IProgressMonitor monitor) throws CoreException {
+		if (xy == null) {
+			throw new NullPointerException("xy");
+		}
+		if (xy.length != 2) {
+			throw new IllegalArgumentException("length of xy");
+		}
+		final Coord coord = (Coord) this.rjs.execSyncGraphicOp(devId, GraOp.OP_CONVERT_DEV2USER,
+				new Coord(xy[0], xy[1]), monitor );
+		if (coord != null && !Double.isNaN(coord.getX()) && !Double.isNaN(coord.getY())) {
+			return new double[] { coord.getX(), coord.getY() };
+		}
+		return null;
+	}
+	
+	public double[] convertUser2Graphic(final int devId, final double[] xy,
+			final IProgressMonitor monitor) throws CoreException {
+		if (xy == null) {
+			throw new NullPointerException("xy");
+		}
+		if (xy.length != 2) {
+			throw new IllegalArgumentException("length of xy");
+		}
+		final Coord coord = (Coord) this.rjs.execSyncGraphicOp(devId, GraOp.OP_CONVERT_USER2DEV,
+				new Coord(xy[0], xy[1]), monitor );
+		if (coord != null && !Double.isNaN(coord.getX()) && !Double.isNaN(coord.getY())) {
+			return new double[] { coord.getX(), coord.getY() };
+		}
+		return null;
 	}
 	
 }

@@ -534,6 +534,18 @@ public abstract class AbstractRJComClient implements ComHandler {
 						io.readString() );
 				return;
 				
+			case GDCmdItem.U_LOCATOR: {
+				final byte fid = requestId = io.in.readByte();
+				processCmdDeferred(new Runnable() {
+					public void run() {
+						addC2SCmd(new GDCmdItem.Answer(fid,
+								devId, getGraphic(devId).runRLocator(
+										AbstractRJComClient.this.rService,
+										AbstractRJComClient.this.progressMonitor )));
+					}
+				});
+				return; }
+				
 			default:
 				throw new UnsupportedOperationException("Unknown GD command.");
 			}

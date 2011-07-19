@@ -11,6 +11,10 @@
 
 package de.walware.rj.eclient.graphics;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -18,6 +22,7 @@ import org.eclipse.core.commands.IHandler2;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.StatusLineContributionItem;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IActionBars;
@@ -28,6 +33,8 @@ import org.eclipse.ui.services.IServiceLocator;
 
 import de.walware.ecommons.IStatusChangeListener;
 import de.walware.ecommons.ui.SharedUIResources;
+
+import de.walware.rj.eclient.graphics.RGraphicCompositeActionSet.LocationListener;
 
 
 /**
@@ -43,6 +50,9 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 	private RGraphicCompositeActionSet fActions;
 	
 	private boolean fActivated;
+	private StatusLineContributionItem fLocationStatusItem;
+	private String fLocationStatusText;
+	private LocationListener fMouseLocationListener;
 	
 	
 	public RGraphicPage(final IERGraphic graphic) {
@@ -90,6 +100,36 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		fActions.initActions(serviceLocator);
 		fActions.contributeToActionsBars(serviceLocator, actionBars);
 		
+		fLocationStatusItem = (StatusLineContributionItem) actionBars.getStatusLineManager().find(RGraphicCompositeActionSet.POSITION_STATUSLINE_ITEM_ID);
+		if (fLocationStatusItem != null) {
+			fMouseLocationListener = new LocationListener() {
+				
+				final DecimalFormat format = new DecimalFormat("0.0####", new DecimalFormatSymbols(Locale.US));
+				
+				public void loading() {
+					if (fLocationStatusItem != null) {
+						fLocationStatusItem.setText("..."); //$NON-NLS-1$
+					}
+				}
+				
+				public void located(final double x, final double y) {
+					if (fLocationStatusItem != null) {
+						if (Double.isNaN(x) || Double.isInfinite(x)
+								|| Double.isNaN(y) || Double.isInfinite(y) ) {
+							fLocationStatusText = "NA";
+						}
+						else {
+							fLocationStatusText = "(" + format.format(x) + ", " + format.format(y) + ")"; //$NON-NLS-1$
+						}
+						if (fActivated) {
+							fLocationStatusItem.setText(fLocationStatusText);
+						}
+					}
+				}
+			};
+			fActions.addMouseClickLocationListener(fMouseLocationListener);
+		}
+		
 		updateState();
 	}
 	
@@ -101,6 +141,9 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		if (fControl != null && !fControl.isDisposed() && fControl.isVisible()) {
 			if (!fActivated) {
 				fActivated = true;
+				if (fLocationStatusItem != null) {
+					fLocationStatusItem.setText((fLocationStatusText != null) ? fLocationStatusText : ""); //$NON-NLS-1$
+				}
 			}
 		}
 		else {

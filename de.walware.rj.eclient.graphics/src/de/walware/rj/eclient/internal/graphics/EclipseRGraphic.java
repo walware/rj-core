@@ -11,6 +11,8 @@
 
 package de.walware.rj.eclient.internal.graphics;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -38,6 +40,7 @@ import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.IERGraphicInstruction;
+import de.walware.rj.eclient.graphics.LocatorCallback;
 import de.walware.rj.eclient.graphics.RGraphics;
 import de.walware.rj.eclient.graphics.comclient.IERClientGraphicActions;
 import de.walware.rj.eclient.graphics.utils.CopyToDevRunnable;
@@ -55,6 +58,24 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			new Unicode2AdbSymbolMapping() );
 	
 	private static final long MILLI_NANOS = 1000000L;
+	
+	private static final LocatorCallback R_LOCATOR_CALLBACK = new LocatorCallback() {
+		
+		@Override
+		public String getMessage() {
+			return "→ Locate a point by mouse click (request from R)";
+		}
+		
+		@Override
+		public int located(final double x, final double y) {
+			return NEXT;
+		}
+		
+		@Override
+		public void stopped(final String type) {
+		}
+		
+	};
 	
 	
 	private final int fDevId;
@@ -194,6 +215,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	};
 	
+	
 	private final int fOptions;
 	private final IERClientGraphicActions fActions;
 	private volatile double[] fNextSize;
@@ -240,10 +262,93 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private String fUserExchangeRType;
 	private RServiceControlExtension fUserExchangeRCallback;
 	
+	private volatile LocatorCallback fLocatorCallback; // != null => started
+	private LocatorCallback fLocatorNotified;
+	private IStatus fLocatorMessage;
+	private Collection<String> fLocatorStopTypes = Collections.emptySet();
+	private double[] fLocatorLocationValue; // only used for R
+	private final Object fLocatorAnswerLock = new Object(); // pipe for answers
+	
 	private final FastList<IERGraphic.Listener> fGraphicListeners = new FastList<IERGraphic.Listener>(IERGraphic.Listener.class, FastList.IDENTITY);
 	
 	private IStatus fMessage = Status.OK_STATUS;
 	private final FastList<IStatusChangeListener> fMessageListeners = new FastList<IStatusChangeListener>(IStatusChangeListener.class, FastList.IDENTITY);
+	
+	private boolean fLocatorNotificationDirectScheduled;
+	private boolean fLocatorNotificationDeferredScheduled;
+	private long fLocatorDeferredStamp;
+	private final Runnable fLocatorNotificationRunnable = new Runnable() {
+		public void run() {
+			int type = 0;
+			try {
+				while (true) {
+					synchronized (fUserExchangeLock) {
+						if (type == 0
+								&& !fLocatorNotificationDirectScheduled
+								&& fLocatorNotificationDeferredScheduled) {
+							fLocatorNotificationDirectScheduled = true;
+							fLocatorNotificationDeferredScheduled = false;
+						}
+						if (fLocatorCallback != null && fLocatorNotified == null
+								&& fLocatorDeferredStamp == Long.MIN_VALUE) {
+							fLocatorNotified = fLocatorCallback;
+							type = 1;
+						}
+						else if (fLocatorNotified != null
+								&& (fLocatorCallback != fLocatorNotified || fLocatorCallback == null) ){
+							fLocatorNotified = null;
+							type = 2;
+						}
+						else if (fLocatorDeferredStamp != Long.MIN_VALUE
+								&& fLocatorCallback != null) {
+							final int t = (int) ((fLocatorDeferredStamp - System.nanoTime()) / 1000000);
+							if (t <= 10) {
+								internalStopLocator(false);
+								type = 3;
+								continue;
+							}
+							else {
+								if (!fLocatorNotificationDeferredScheduled) {
+									fLocatorNotificationDeferredScheduled = true;
+									fDisplay.timerExec(t + 10, this);
+								}
+								fLocatorNotificationDirectScheduled = false;
+								type = 0;
+								return;
+							}
+						}
+						else {
+							fLocatorNotificationDirectScheduled = false;
+							type = 0;
+							return;
+						}
+					}
+					
+					final Listener[] listeners = fGraphicListeners.toArray();
+					for (final Listener listener : listeners) {
+						if (listener instanceof ListenerLocatorExtension) {
+							switch (type) {
+							case 1:
+								((ListenerLocatorExtension) listener).locatorStarted();
+								continue;
+							case 2:
+								((ListenerLocatorExtension) listener).locatorStopped();
+								continue;
+							}
+						}
+					}
+					updateMessage();
+				}
+			}
+			finally {
+				if (type != 0) {
+					synchronized (fUserExchangeLock) {
+						fLocatorNotificationDirectScheduled = false;
+					}
+				}
+			}
+		}
+	};
 	
 	
 	public EclipseRGraphic(final int devId, final double w, final double h,
@@ -276,8 +381,16 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 				sb.append(rLabel);
 			}
 		}
-		if (fIsActive) {
-			sb.append("<active>"); //$NON-NLS-1$
+		final boolean locator = isLocatorStarted();
+		if (fIsActive || locator) {
+			sb.append(" \t<"); //$NON-NLS-1$
+			if (fIsActive) {
+				sb.append("active+"); //$NON-NLS-1$
+			}
+			if (locator) {
+				sb.append("locator+"); //$NON-NLS-1$
+			}
+			sb.replace(sb.length()-1, sb.length(), ">"); //$NON-NLS-1$
 		}
 		return sb.toString();
 	}
@@ -401,7 +514,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 				return;
 			}
 			if (mode == 1 && fModeNotified != 1 // need start
-					&& !fStateNotificationDirectScheduled) {
+					&& !fStateNotificationDirectScheduled ) {
 				fStateNotificationDirectScheduled = true;
 				fDisplay.asyncExec(fStateNotificationRunnable);
 			}
@@ -597,12 +710,178 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	
+	private void internalStartLocator(final LocatorCallback callback) {
+		fLocatorCallback = callback;
+		fLocatorMessage = new Status(IStatus.INFO, RGraphics.PLUGIN_ID, callback.getMessage());
+		fLocatorStopTypes = callback.getStopTypes();
+		fLocatorDeferredStamp = Long.MIN_VALUE;
+		
+		if (fDisplay.isDisposed()) {
+			return;
+		}
+		if (!fLocatorNotificationDirectScheduled) {
+			fDisplay.asyncExec(fLocatorNotificationRunnable);
+		}
+	}
+	
+	private void internalStopLocator(final boolean deferred) {
+		if (deferred) {
+			fLocatorDeferredStamp = System.nanoTime() + 500 * MILLI_NANOS;
+			if (fDisplay.isDisposed()) {
+				return;
+			}
+			if (!(fLocatorNotificationDirectScheduled || fLocatorNotificationDeferredScheduled)) {
+				fLocatorNotificationDirectScheduled = true;
+				fDisplay.asyncExec(fLocatorNotificationRunnable);
+			}
+			return;
+		}
+		
+		fLocatorCallback = null;
+		fLocatorMessage = null;
+		fLocatorStopTypes = Collections.emptySet();
+		fLocatorDeferredStamp = Long.MIN_VALUE;
+		
+		if (fDisplay.isDisposed()) {
+			return;
+		}
+		if (!fLocatorNotificationDirectScheduled) {
+			fLocatorNotificationDirectScheduled = true;
+			fDisplay.asyncExec(fLocatorNotificationRunnable);
+		}
+	}
+	
+	public double[] runRLocator(final RService r, final IProgressMonitor monitor) {
+		synchronized (fUserExchangeLock) {
+			if (fLocatorCallback != null && fLocatorCallback != R_LOCATOR_CALLBACK) {
+				return null;
+			}
+			fUserExchangeRType = "locator";
+			internalStartLocator(R_LOCATOR_CALLBACK);
+			
+			fLocatorLocationValue = null;
+		}
+		waitRUserExchange("locator", r, monitor, new Callable<Boolean>() {
+			public Boolean call() {
+				return Boolean.valueOf(answerLocator(null, null, true));
+			}
+		});
+		final double[] value;
+		synchronized (fUserExchangeLock) {
+			value = fLocatorLocationValue;
+			if (fUserExchangeRType == "locator") {
+				fUserExchangeRType = null;
+			}
+			// avoid flickering as well as stale locators
+			internalStopLocator(value != null);
+		}
+		return value;
+	}
+	
+	public IStatus startLocalLocator(final LocatorCallback callback) {
+		if (callback == null) {
+			throw new NullPointerException("callback"); //$NON-NLS-1$
+		}
+		synchronized (fUserExchangeLock) {
+			if (fLocatorCallback != null && fLocatorCallback != callback) {
+				return new Status(IStatus.ERROR, RGraphics.PLUGIN_ID, "Another locator is already started.");
+			}
+			internalStartLocator(callback);
+		}
+		return Status.OK_STATUS;
+	}
+	
+	public boolean isLocatorStarted() {
+		return (fLocatorCallback != null);
+	}
+	
+	public Collection<String> getLocatorStopTypes() {
+		return fLocatorStopTypes;
+	}
+	
+	public void returnLocator(final double x, final double y) {
+		answerLocator(null, new double[] { x, y }, false);
+	}
+	
+	public void stopLocator(final String type) {
+		answerLocator(type, null, false);
+	}
+	
+	private boolean answerLocator(final String type, final double[] xy,
+			final boolean onlyR) {
+		synchronized (fLocatorAnswerLock) {
+			RServiceControlExtension rControl = null;
+			LocatorCallback callback;
+			synchronized (fUserExchangeLock) {
+				if (fLocatorCallback == null || fLocatorDeferredStamp != Long.MIN_VALUE) {
+					return false;
+				}
+				if (fLocatorCallback == R_LOCATOR_CALLBACK) {
+					if (fUserExchangeRType == "locator") { //$NON-NLS-1$
+						fUserExchangeRType = null;
+						rControl = fUserExchangeRCallback;
+					}
+					else {
+						return false;
+					}
+				}
+				else if (onlyR) {
+					return false;
+				}
+				if (xy == null && type != null && !fLocatorStopTypes.contains(type)) {
+					return false;
+				}
+				fLocatorLocationValue = xy;
+				callback = fLocatorCallback;
+			}
+			
+			final int code;
+			if (callback == R_LOCATOR_CALLBACK) {
+				if (xy != null) {
+					code = -1;
+				}
+				else {
+					code = LocatorCallback.STOP;
+				}
+				if (rControl != null) {
+					rControl.getWaitLock().lock();
+					try {
+						rControl.resume();
+					}
+					finally {
+						rControl.getWaitLock().unlock();
+					}
+				}
+			}
+			else {
+				if (xy != null) {
+					code = callback.located(xy[0], xy[1]);
+				}
+				else {
+					code = LocatorCallback.STOP;
+					callback.stopped(type);
+				}
+			}
+			synchronized (fUserExchangeLock) {
+				if (code == LocatorCallback.NEXT) {
+					internalStartLocator(callback);
+				}
+				else {
+					internalStopLocator((code == -1));
+				}
+			}
+			return true;
+		}
+	}
+	
+	
 	public void closeFromR() {
 		fIsRClosed = true;
 		if (fIsLocalClosed
 				|| (fOptions & RClientGraphicFactory.R_CLOSE_OFF) == 0) {
 			dispose();
 		}
+		answerLocator(null, null, true);
 		setActive(false);
 	}
 	
@@ -654,10 +933,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			dispose();
 		}
 		if (fActions != null) {
+			answerLocator(null, null, false);
 			return fActions.closeGraphic(fDevId);
 		}
 		else {
 			fIsLocalClosed = true;
+			answerLocator(null, null, false);
 			fManager.close(this);
 			dispose();
 		}
@@ -673,7 +954,13 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	protected void updateMessage() {
-		IStatus message = Status.OK_STATUS;
+		IStatus message;
+		if (fLocatorMessage != null) {
+			message = fLocatorMessage;
+		}
+		else {
+			message = Status.OK_STATUS;
+		}
 		if (!fMessage.equals(message)) {
 			fMessage = message;
 			final IStatusChangeListener[] listeners = fMessageListeners.toArray();
@@ -718,6 +1005,18 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			final IProgressMonitor monitor) throws CoreException {
 		preAction();
 		fActions.copy(fDevId, toDev, toDevFile, toDevArgs, monitor);
+	}
+	
+	public double[] convertGraphic2User(final double[] xy,
+			final IProgressMonitor monitor) throws CoreException {
+		preAction();
+		return fActions.convertGraphic2User(fDevId, xy, monitor);
+	}
+	
+	public double[] convertUser2Graphic(final double[] xy,
+			final IProgressMonitor monitor) throws CoreException {
+		preAction();
+		return fActions.convertUser2Graphic(fDevId, xy, monitor);
 	}
 	
 }
