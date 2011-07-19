@@ -132,6 +132,108 @@ public class RGraphicComposite extends Composite
 		
 	}
 	
+	private class PanListener implements Listener {
+		
+		private boolean started;
+		private Point startMouse;
+		
+		public void handleEvent(final Event event) {
+			switch (event.type) {
+			case SWT.MouseDown:
+				if (event.button == 2) {
+					started = true;
+					updateCursor();
+					
+					startMouse = checkedPoint(event);
+					return;
+				}
+				else {
+					started = false;
+					return;
+				}
+			case SWT.MouseExit:
+			case SWT.MouseMove:
+				if (started) {
+					pan(checkedPoint(event));
+					return;
+				}
+				else {
+					return;
+				}
+			case SWT.MouseUp:
+				if (started && event.button == 2) {
+					started = false;
+					updateCursor();
+					return;
+				}
+				else {
+					return;
+				}
+			case SWT.KeyDown:
+				switch (event.keyCode) {
+				case SWT.ARROW_DOWN:
+					if (update(getVerticalBar(), fPanIncrement)) {
+						scrollV();
+					}
+					return;
+				case SWT.ARROW_UP:
+					if (update(getVerticalBar(), -fPanIncrement)) {
+						scrollV();
+					}
+					return;
+				case SWT.ARROW_RIGHT:
+					if (update(getHorizontalBar(), fPanIncrement)) {
+						scrollH();
+					}
+					return;
+				case SWT.ARROW_LEFT:
+					if (update(getHorizontalBar(), -fPanIncrement)) {
+						scrollH();
+					}
+					return;
+				default:
+					return;
+				}
+			}
+		}
+		
+		private Point checkedPoint(final Event event) {
+			if (event.item == RGraphicComposite.this) {
+				return new Point(event.x, event.y);
+			}
+			else {
+				final Point point = ((Control) event.widget).toDisplay(event.x, event.y);
+				return RGraphicComposite.this.toControl(point);
+			}
+		}
+		
+		private void pan(Point point) {
+			if (update(getHorizontalBar(), startMouse.x - point.x)) {
+				scrollH();
+			}
+			if (update(getVerticalBar(), startMouse.y - point.y)) {
+				scrollV();
+			}
+			startMouse = point;
+		}
+		
+		private boolean update(ScrollBar bar, int step) {
+			if (bar != null && bar.isVisible()) {
+				int selection = bar.getSelection() + step;
+				if (selection < 0) {
+					selection = 0;
+				}
+				else if (selection > bar.getMaximum()) {
+					selection = bar.getMaximum() - bar.getThumb();
+				}
+				bar.setSelection(selection);
+				return true;
+			}
+			return false;
+		}
+		
+	}
+	
 	
 	private static int checkStyle (final int style) {
 		final int mask = SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
@@ -149,12 +251,17 @@ public class RGraphicComposite extends Composite
 	private boolean fChangedLayout;
 	private boolean fChangedContent;
 	
-	private MouseListener fLocatorMouseListener;
+	private int fPanIncrement;
+	private final PanListener fPanListener;
+	
+	private MouseListener fLocatorListener;
 	
 	
 	public RGraphicComposite(final Composite parent, final IERGraphic graphic) {
 		super(parent, checkStyle(SWT.H_SCROLL | SWT.V_SCROLL));
 		super.setLayout(new ScrolledCompositeLayout());
+		
+		fPanIncrement = 10;
 		
 		final ScrollBar hBar = getHorizontalBar();
 		hBar.setVisible(false);
@@ -163,7 +270,7 @@ public class RGraphicComposite extends Composite
 				scrollH();
 			}
 		});
-		hBar.setIncrement(10);
+		hBar.setIncrement(fPanIncrement);
 		final ScrollBar vBar = getVerticalBar();
 		vBar.setVisible(false);
 		vBar.addListener(SWT.Selection, new Listener() {
@@ -171,7 +278,7 @@ public class RGraphicComposite extends Composite
 				scrollV();
 			}
 		});
-		vBar.setIncrement(10);
+		vBar.setIncrement(fPanIncrement);
 		addListener(SWT.Resize, new Listener() {
 			public void handleEvent(final Event event) {
 //				checkContentSize();
@@ -187,6 +294,18 @@ public class RGraphicComposite extends Composite
 		};
 		addListener(SWT.Show, updateListener);
 		addListener(SWT.Activate, updateListener);
+		
+		fPanListener = new PanListener();
+		addListener(SWT.MouseDown, fPanListener);
+		addListener(SWT.MouseMove, fPanListener);
+		addListener(SWT.MouseExit, fPanListener);
+		addListener(SWT.MouseUp, fPanListener);
+		addListener(SWT.KeyDown, fPanListener);
+		fCanvas.addListener(SWT.MouseDown, fPanListener);
+		fCanvas.addListener(SWT.MouseMove, fPanListener);
+		fCanvas.addListener(SWT.MouseExit, fPanListener);
+		fCanvas.addListener(SWT.MouseUp, fPanListener);
+		fCanvas.addListener(SWT.KeyDown, fPanListener);
 		
 		setGraphic(graphic);
 		
@@ -288,8 +407,8 @@ public class RGraphicComposite extends Composite
 	}
 	
 	public void locatorStarted() {
-		if (fLocatorMouseListener == null) {
-			fLocatorMouseListener = new MouseListener() {
+		if (fLocatorListener == null) {
+			fLocatorListener = new MouseListener() {
 				public void mouseDown(final MouseEvent e) {
 					switch (e.button) { 
 					case 1:
@@ -308,21 +427,24 @@ public class RGraphicComposite extends Composite
 				public void mouseDoubleClick(final MouseEvent e) {
 				}
 			};
-			fCanvas.addMouseListener(fLocatorMouseListener);
+			fCanvas.addMouseListener(fLocatorListener);
 			updateCursor();
 		}
 	}
 	
 	public void locatorStopped() {
-		if (fLocatorMouseListener != null) {
-			fCanvas.removeMouseListener(fLocatorMouseListener);
-			fLocatorMouseListener = null;
+		if (fLocatorListener != null) {
+			fCanvas.removeMouseListener(fLocatorListener);
+			fLocatorListener = null;
 			updateCursor();
 		}
 	}
 	
 	private void updateCursor() {
-		if (fLocatorMouseListener != null) {
+		if (fPanListener.started) {
+			fCanvas.setCursor(Display.getCurrent().getSystemCursor(SWT.CURSOR_HAND));
+		}
+		else if (fLocatorListener != null) {
 			fCanvas.setCursor(Display.getCurrent().getSystemCursor(SWT.CURSOR_CROSS));
 		}
 		else {
