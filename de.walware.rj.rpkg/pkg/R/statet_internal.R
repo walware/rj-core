@@ -78,6 +78,7 @@
 	tmpout <- textConnection("rdHTML", open = "w", local = TRUE, encoding = "UTF-8")
 	tools:::Rd2HTML(rd, out = tmpout, dynamic = TRUE, package = pkg.name)
 	close(tmpout)
+	Encoding(rdHTML) <- "UTF-8"
 	return (rdHTML)
 }
 
