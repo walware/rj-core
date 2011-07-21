@@ -46,7 +46,7 @@ import de.walware.rj.graphic.RGraphic;
  * <p>
  * Especially for longer evaluations, it is recommended that the application implements
  * this synchronization in a way that the GUI is not blocked.
- * In StatET both is guaranteed by a queue and an single execution thread for runnables.</p>
+ * In StatET both is guaranteed by a queue and a single execution thread for runnables.</p>
  * <p>
  * All data exchange methods are copy operations. So changes on R data objects in Java
  * are not reflected in R and the other way round.</p>
@@ -248,10 +248,10 @@ public interface RService {
 	 * 
 	 * @name name of the function
 	 * @return a new function creator
-	 * @throws CoreException if the operation was canceled or failed; the status
+	 * @throws CoreException if the operation failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	FunctionCall createFunctionCall(String name);
+	FunctionCall createFunctionCall(String name) throws CoreException;
 	
 	/**
 	 * Creates a new creator for {@link RGraphic}s.
@@ -263,10 +263,12 @@ public interface RService {
 	 * 
 	 * @param options optional options, <code>0</code> for default
 	 * @return a new graphic creator
+	 * @throws CoreException if the operation failed; the status
+	 *     of the exception contains detail about the cause
 	 * 
 	 * @since 0.5.0
 	 */
-	RGraphicCreator createRGraphicCreator(int options);
+	RGraphicCreator createRGraphicCreator(int options) throws CoreException;
 //	void beginCatchRGraphics(int options);
 //	Map<String, RGraphic> endCatchRGraphics();
 	
