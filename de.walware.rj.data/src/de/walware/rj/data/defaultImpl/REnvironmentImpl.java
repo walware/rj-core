@@ -136,6 +136,10 @@ public class REnvironmentImpl extends AbstractRObject
 		return this.id;
 	}
 	
+	public long getHandle() {
+		return this.handle;
+	}
+	
 	
 	public int getLength() {
 		return this.length;

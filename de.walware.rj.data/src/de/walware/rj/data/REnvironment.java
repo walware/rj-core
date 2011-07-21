@@ -88,4 +88,6 @@ public interface REnvironment extends RList {
 	 */
 	String getEnvironmentName();
 	
+	long getHandle();
+	
 }

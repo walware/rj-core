@@ -11,7 +11,6 @@
 
 package de.walware.rj.server.jri;
 
-import static de.walware.rj.data.RObjectFactory.F_ONLY_STRUCT;
 import static de.walware.rj.server.RjsComObject.V_ERROR;
 import static de.walware.rj.server.RjsComObject.V_FALSE;
 import static de.walware.rj.server.RjsComObject.V_OK;
@@ -20,8 +19,16 @@ import static de.walware.rj.server.Server.S_CONNECTED;
 import static de.walware.rj.server.Server.S_DISCONNECTED;
 import static de.walware.rj.server.Server.S_NOT_STARTED;
 import static de.walware.rj.server.Server.S_STOPPED;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_CTRL_COMMON;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_CTRL_REQUEST_CANCEL;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_CTRL_REQUEST_HOT_MODE;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_ASSIGN_DATA;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_COMMON;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_EVAL_DATA;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_RESOLVE_DATA;
+import static de.walware.rj.server.jri.JRIServerErrors.LOGGER;
+import static de.walware.rj.server.jri.JRIServerRni.EVAL_MODE_DEFAULT;
 
-import java.lang.reflect.Field;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -36,43 +43,18 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.rosuda.JRI.RConfig;
-import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.RMainLoopCallbacks;
 import org.rosuda.JRI.Rengine;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInitFailedException;
-import de.walware.rj.data.RCharacterStore;
-import de.walware.rj.data.RComplexStore;
-import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RDataUtil;
-import de.walware.rj.data.RFactorStore;
-import de.walware.rj.data.RIntegerStore;
-import de.walware.rj.data.RLanguage;
 import de.walware.rj.data.RList;
-import de.walware.rj.data.RLogicalStore;
-import de.walware.rj.data.RNumericStore;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
-import de.walware.rj.data.RRawStore;
-import de.walware.rj.data.RReference;
-import de.walware.rj.data.RS4Object;
 import de.walware.rj.data.RStore;
-import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
-import de.walware.rj.data.defaultImpl.RFactorDataImpl;
-import de.walware.rj.data.defaultImpl.RFactorDataStruct;
-import de.walware.rj.data.defaultImpl.RFunctionImpl;
-import de.walware.rj.data.defaultImpl.RMissing;
-import de.walware.rj.data.defaultImpl.RNull;
-import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
-import de.walware.rj.data.defaultImpl.ROtherImpl;
-import de.walware.rj.data.defaultImpl.RPromise;
-import de.walware.rj.data.defaultImpl.RReferenceImpl;
-import de.walware.rj.data.defaultImpl.RS4ObjectImpl;
-import de.walware.rj.data.defaultImpl.SimpleRListImpl;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
@@ -93,7 +75,6 @@ import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
-import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
 import de.walware.rj.server.srvImpl.InternalEngine;
@@ -127,28 +108,10 @@ public final class JRIServer extends RJ
 	private static final int MEGA = 1048576;
 	private static final int GIGA = 1073741824;
 	
-	private static final Logger LOGGER = Logger.getLogger("de.walware.rj.server.jri");
-	
-	private static final int STDOUT_BUFFER_SIZE = 0x1FFF;
+	private static final int STDOUT_BUFFER_SIZE = 0x2000;
 	
 	private static final long REQUIRED_JRI_API = 0x010a;
 	
-	private static final byte EVAL_MODE_DEFAULT = 0;
-	private static final byte EVAL_MODE_FORCE = 1;
-	private static final byte EVAL_MODE_DATASLOT = 2;
-	
-	private static final int CODE_CTRL_COMMON = 0x2000;
-	private static final int CODE_CTRL_REQUEST_CANCEL = 0x2010;
-	private static final int CODE_CTRL_REQUEST_HOT_MODE = 0x2020;
-	
-	private static final int CODE_DATA_COMMON = 0x1000;
-	private static final int CODE_DATA_EVAL_DATA = 0x1010;
-	private static final int CODE_DATA_RESOLVE_DATA = 0x1020;
-	private static final int CODE_DATA_ASSIGN_DATA = 0x1030;
-	
-	private static final String[] EMPTY_STRING_ARRAY = new String[0];
-	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
-	private static final String[] DATA_NAME_ARRAY = new String[] { ".Data" };
 	
 	private static long s2long(final String s, final long defaultValue) {
 		if (s != null && s.length() > 0) {
@@ -274,7 +237,7 @@ public final class JRIServer extends RJ
 	private RJClassLoader rClassLoader;
 	private Rengine rEngine;
 	private List<String> rArgs;
-	private RConfig rConfig;
+	private final RConfig rConfig;
 	private long rMemSize;
 	
 	private final ReentrantLock mainExchangeLock = new ReentrantLock();
@@ -317,62 +280,16 @@ public final class JRIServer extends RJ
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
-	private int rniDepth;
-	private boolean rniEvalTempAssigned;
-	private int rniMaxDepth;
-	private boolean rniInterrupted;
-	private int rniProtectedCounter;
-	private int rniListsMaxLength = 10000;
-	private int rniEnvsMaxLength = 10000;
-	
-	private long rniP_NULL;
-	private long rniP_Unbound;
-	private long rniP_MissingArg;
-	private long rniP_BaseEnv;
-	private long rniP_AutoloadEnv;
-	private long rniP_RJTempEnv;
-	
-	private long rniP_functionSymbol;
-	private long rniP_AssignSymbol;
-	private long rniP_xSymbol;
-	private long rniP_zSymbol;
-	private long rniP_envSymbol;
-	private long rniP_nameSymbol;
-	private long rniP_namesSymbol;
-	private long rniP_dimNamesSymbol;
-	private long rniP_rowNamesSymbol;
-	private long rniP_levelsSymbol;
-	private long rniP_realSymbol;
-	private long rniP_imaginarySymbol;
-	private long rniP_newSymbol;
-	private long rniP_ClassSymbol;
-	private long rniP_classSymbol;
-	private long rniP_exprSymbol;
-	private long rniP_errorSymbol;
-	
-	private long rniP_factorClassString;
-	private long rniP_orderedClassString;
-	private long rniP_dataframeClassString;
-	private long rniP_complexFun;
-	private long rniP_envNameFun;
-	private long rniP_headerFun;
-	private long rniP_deparseLineXCall;
-	private long rniP_slotNamesFun;
-	private long rniP_ReFun;
-	private long rniP_ImFun;
-	private long rniP_tryCatchFun;
-	
-	private long rniP_evalTryCatch_errorExpr;
-	private long rniP_evalTemp_classExpr;
-	private long rniP_evalTemp_rmExpr;
-	private long rniP_evalDummyExpr;
-	
 	private RObjectFactory rObjectFactory;
 	
 	private JRIServerGraphics graphics;
 	
 	private Map<String, String> platformDataCommands;
 	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
+	
+	private int rniListsMaxLength = 10000;
+	private int rniEnvsMaxLength = 10000;
+	private JRIServerRni rni;
 	
 	
 	public JRIServer() {
@@ -637,196 +554,8 @@ public final class JRIServer extends RJ
 		RjsComConfig.setDefaultRObjectFactory(this.rObjectFactory);
 		
 		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
-		final int savedProtectedCounter = this.rniProtectedCounter;
 		try {
-			this.rniP_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
-			this.rniP_Unbound = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
-			this.rniP_MissingArg = this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
-			this.rniP_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
-			
-			this.rniP_AutoloadEnv = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"),
-					this.rniP_BaseEnv );
-			if (this.rniP_AutoloadEnv != 0 && this.rEngine.rniExpType(this.rniP_AutoloadEnv) != REXP.ENVSXP) {
-				this.rniP_AutoloadEnv = 0;
-			}
-			
-			this.rniP_functionSymbol = this.rEngine.rniInstallSymbol("function");
-			this.rniP_AssignSymbol = this.rEngine.rniInstallSymbol("<-");
-			this.rniP_xSymbol = this.rEngine.rniInstallSymbol("x");
-			this.rniP_zSymbol = this.rEngine.rniInstallSymbol("z");
-			this.rniP_envSymbol = this.rEngine.rniInstallSymbol("env");
-			this.rniP_nameSymbol = this.rEngine.rniInstallSymbol("name");
-			this.rniP_namesSymbol = this.rEngine.rniInstallSymbol("names");
-			this.rniP_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames");
-			this.rniP_rowNamesSymbol = this.rEngine.rniInstallSymbol("row.names");
-			this.rniP_levelsSymbol = this.rEngine.rniInstallSymbol("levels");
-			this.rniP_classSymbol = this.rEngine.rniInstallSymbol("class");
-			this.rniP_realSymbol = this.rEngine.rniInstallSymbol("real");
-			this.rniP_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
-			this.rniP_newSymbol = this.rEngine.rniInstallSymbol("new");
-			this.rniP_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
-			this.rniP_exprSymbol = this.rEngine.rniInstallSymbol("expr");
-			this.rniP_errorSymbol = this.rEngine.rniInstallSymbol("error");
-			
-			this.rniP_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rEngine.rniInstallSymbol("new.env"), this.rniP_NULL, 0, true ),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_RJTempEnv);
-			this.rniP_orderedClassString = this.rEngine.rniPutStringArray(
-					new String[] { "ordered", "factor" } );
-			this.rEngine.rniPreserve(this.rniP_orderedClassString);
-			this.rniP_factorClassString = this.rEngine.rniPutString("factor");
-			this.rEngine.rniPreserve(this.rniP_factorClassString);
-			this.rniP_dataframeClassString = this.rEngine.rniPutString("data.frame");
-			this.rEngine.rniPreserve(this.rniP_dataframeClassString);
-			
-			this.rniP_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_complexFun);
-			this.rniP_envNameFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("environmentName"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_envNameFun);
-			this.rniP_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_ReFun);
-			this.rniP_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_ImFun);
-			this.rniP_tryCatchFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("tryCatch"),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_tryCatchFun);
-			
-			{	final long pasteFun = rniProtect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("paste"),
-						this.rniP_BaseEnv ));
-				final long deparseFun = rniProtect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("deparse"),
-						this.rniP_BaseEnv ));
-				
-				final long exprSymbol = this.rEngine.rniInstallSymbol("expr");
-				final long controlSymbol = this.rEngine.rniInstallSymbol("control");
-				final long widthcutoffSymbol = this.rEngine.rniInstallSymbol("width.cutoff");
-				final long collapseSymbol = this.rEngine.rniInstallSymbol("collapse");
-				
-				final long deparseControlValue = rniProtect(this.rEngine.rniPutStringArray(
-						new String[] { "keepInteger", "keepNA" } ));
-				final long deparseWidthcutoffValue = rniProtect(this.rEngine.rniPutIntArray(
-						new int[] { 500 } ));
-				final long collapseValue = rniProtect(this.rEngine.rniPutString(""));
-				
-				{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
-					final long argList = rniProtect(this.rEngine.rniCons(
-							this.rniP_MissingArg, this.rniP_NULL,
-							this.rniP_xSymbol, false ));
-					final long argsFun = rniProtect(this.rEngine.rniEval(
-							this.rEngine.rniInstallSymbol("args"),
-							this.rniP_BaseEnv ));
-					final long argsCall = rniProtect(this.rEngine.rniCons(
-							argsFun, this.rEngine.rniCons(
-									this.rniP_xSymbol, this.rniP_NULL,
-									this.rniP_nameSymbol, false ),
-							0, true ));
-					final long deparseCall = rniProtect(this.rEngine.rniCons(
-							deparseFun, this.rEngine.rniCons(
-									argsCall, this.rEngine.rniCons(
-											deparseControlValue, this.rEngine.rniCons(
-													this.rEngine.rniPutIntArray(new int[] { 500 }), this.rniP_NULL,
-													widthcutoffSymbol, false ),
-											controlSymbol, false ),
-									exprSymbol, false ),
-							0, true ));
-					final long body = this.rEngine.rniCons(
-							pasteFun, this.rEngine.rniCons(
-									deparseCall, this.rEngine.rniCons(
-											collapseValue, this.rniP_NULL,
-											collapseSymbol, false ),
-									0, false ),
-							0, true );
-					
-					this.rniP_headerFun = this.rEngine.rniEval(this.rEngine.rniCons(
-							this.rniP_functionSymbol, this.rEngine.rniCons(
-									argList, this.rEngine.rniCons(
-											body, this.rniP_NULL,
-											0, false ),
-									0, false ),
-							0, true ),
-							this.rniP_BaseEnv );
-					this.rEngine.rniPreserve(this.rniP_headerFun);
-				}
-				
-				{	// paste(deparse(expr=x,control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
-					final long deparseCall = rniProtect(this.rEngine.rniCons(
-							deparseFun, this.rEngine.rniCons(
-									this.rniP_xSymbol, this.rEngine.rniCons(
-											deparseControlValue, this.rEngine.rniCons(
-													deparseWidthcutoffValue, this.rniP_NULL,
-													widthcutoffSymbol, false ),
-											controlSymbol, false ),
-									exprSymbol, false ),
-							0, true ));
-					this.rEngine.rniPreserve(deparseCall);
-					this.rniP_deparseLineXCall = this.rEngine.rniCons(
-							pasteFun, this.rEngine.rniCons(
-									deparseCall, this.rEngine.rniCons(
-											collapseValue, this.rniP_NULL,
-											collapseSymbol, false ),
-									0, false ),
-							0, true );
-					this.rEngine.rniPreserve(this.rniP_deparseLineXCall);
-				}
-			}
-			this.rniP_slotNamesFun = this.rEngine.rniEval(
-					this.rEngine.rniParse("methods::.slotNames", 1),
-					this.rniP_BaseEnv );
-			this.rEngine.rniPreserve(this.rniP_slotNamesFun);
-			
-			this.rniP_evalTryCatch_errorExpr = this.rEngine.rniCons(
-					this.rEngine.rniEval(this.rEngine.rniParse("function(e){" +
-							"s<-raw(5);" +
-							"class(s)<-\".rj.eval.error\";" +
-							"attr(s,\"error\")<-e;" +
-							"attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");" +
-							"invisible(s);}", 1 ), 0 ), this.rniP_NULL,
-					this.rniP_errorSymbol, false );
-			this.rEngine.rniPreserve(this.rniP_evalTryCatch_errorExpr);
-			
-			this.rniP_evalTemp_classExpr = this.rEngine.rniParse("class(x);", 1);
-			this.rEngine.rniPreserve(this.rniP_evalTemp_classExpr);
-			this.rniP_evalTemp_rmExpr = this.rEngine.rniParse("rm(x);", 1);
-			this.rEngine.rniPreserve(this.rniP_evalTemp_rmExpr);
-			
-			this.rniP_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
-			this.rEngine.rniPreserve(this.rniP_evalDummyExpr);
-			
-			if (LOGGER.isLoggable(Level.FINER)) {
-				final StringBuilder sb = new StringBuilder("Pointers:");
-				
-				final Field[] fields = getClass().getDeclaredFields();
-				for (final Field field : fields) {
-					final String name = field.getName();
-					if (name.startsWith("rniP_") && Long.TYPE.equals(field.getType())) {
-						sb.append("\n\t");
-						sb.append(name.substring(5));
-						sb.append(" = ");
-						try {
-							final long p = field.getLong(this);
-							sb.append("0x");
-							sb.append(Long.toHexString(p));
-						}
-						catch (final Exception e) {
-							sb.append(e.getMessage());
-						}
-					}
-				}
-				
-				LOGGER.log(Level.FINER, sb.toString());
-			}
-			
-			if (this.rniP_tryCatchFun == 0) {
-				LOGGER.log(Level.SEVERE, "Failed to initialize engine: Base functions are missing (check 'Renviron').");
-				AbstractServerControl.exit(162);
-				return;
-			}
+			this.rni = new JRIServerRni(this.rEngine);
 			
 			loadPlatformData();
 			
@@ -857,11 +586,6 @@ public final class JRIServer extends RJ
 			}
 		}
 		finally {
-			if (this.rniProtectedCounter > savedProtectedCounter) {
-				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-				this.rniProtectedCounter = savedProtectedCounter;
-			}
-			
 			this.rEngine.addMainLoopCallbacks(JRIServer.this);
 		}
 		
@@ -1137,14 +861,14 @@ public final class JRIServer extends RJ
 		}
 	}
 	
-	private RjsStatus internalCtrl(final byte slot, final CtrlCmdItem command) {
-		switch (command.getCtrlId()) {
+	private RjsStatus internalCtrl(final byte slot, final CtrlCmdItem cmd) {
+		switch (cmd.getCtrlId()) {
 		
 		case CtrlCmdItem.REQUEST_CANCEL:
 			try {
 				if (this.mainInterruptLock.tryLock(1L, TimeUnit.SECONDS)) {
 					try {
-						this.rniInterrupted = true;
+						this.rni.rniInterrupted = true;
 						this.rEngine.rniStop(0);
 						return RjsStatus.OK_STATUS;
 					}
@@ -1234,7 +958,7 @@ public final class JRIServer extends RJ
 			}
 		}
 		if (mainC2SCmdList != null) {
-			this.rniInterrupted = false;
+			this.rni.rniInterrupted = false;
 			if (this.mainLoopC2SCommandFirst == null) {
 				this.mainLoopC2SCommandFirst = mainC2SCmdList.getItems();
 			}
@@ -1434,7 +1158,7 @@ public final class JRIServer extends RJ
 //			System.out.println("fromR evalDATA");
 			
 			if (item == null) {
-				rProcessJEvents(null);
+				rProcessJEvents(this.rEngine);
 				continue;
 			}
 			switch (item.getCmdType()) {
@@ -1513,13 +1237,11 @@ public final class JRIServer extends RJ
 		final byte savedSlot = this.currentSlot;
 		this.currentSlot = cmd.slot;
 		final boolean ownLock = this.rEngine.getRsync().safeLock();
-		final int savedDepth = this.rniDepth;
-		final int savedMaxDepth = this.rniMaxDepth;
 		{	final byte depth = cmd.getDepth();
-			this.rniDepth = 0;
-			this.rniMaxDepth = (depth >= 0) ? depth : 128;
+			this.rni.newDataLevel((depth >= 0) ? depth : 128,
+					this.rniEnvsMaxLength, this.rniListsMaxLength );
 		}
-		final int savedProtectedCounter = this.rniProtectedCounter;
+		final int savedProtected = this.rni.saveProtected();
 		final int savedSafeMode = beginSafeMode();
 		try {
 			final String input = cmd.getDataText();
@@ -1527,10 +1249,10 @@ public final class JRIServer extends RJ
 				throw new IllegalStateException("Missing input.");
 			}
 			final RObject data = cmd.getData();
-			DATA_CMD: switch (cmd.getOp()) {
+			CMD_OP: switch (cmd.getOp()) {
 			
 			case DataCmdItem.EVAL_VOID: {
-				if (this.rniInterrupted) {
+				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
 				if (data == null) {
@@ -1539,14 +1261,14 @@ public final class JRIServer extends RJ
 				else {
 					rniEval(input, (RList) data);
 				}
-				if (this.rniInterrupted) {
+				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
 				cmd.setAnswer(RjsStatus.OK_STATUS); }
-				break DATA_CMD;
+				break CMD_OP;
 			
 			case DataCmdItem.EVAL_DATA: {
-				if (this.rniInterrupted) {
+				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
 				final long objP;
@@ -1556,39 +1278,40 @@ public final class JRIServer extends RJ
 				else {
 					objP = rniEval(input, (RList) data);
 				}
-				if (this.rniInterrupted) {
+				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
-				cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption()));
-				break DATA_CMD; }
+				cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()));
+				break CMD_OP; }
 			
 			case DataCmdItem.RESOLVE_DATA: {
 				final long objP = Long.parseLong(input);
 				if (objP != 0) {
-					if (this.rniInterrupted) {
+					if (this.rni.rniInterrupted) {
 						throw new CancellationException();
 					}
-					cmd.setAnswer(rniCreateDataObject(objP, cmd.getCmdOption()));
+					cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()));
 				}
 				else {
 					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
 							"Invalid reference." ));
 				}
-				break DATA_CMD; }
+				break CMD_OP; }
 			
 			case DataCmdItem.ASSIGN_DATA: {
-				if (this.rniInterrupted) {
+				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
 				rniAssign(input, data);
 				cmd.setAnswer(RjsStatus.OK_STATUS);
-				break DATA_CMD; }
+				break CMD_OP; }
+			
 			
 			default:
 				throw new IllegalStateException("Unsupported command.");
 			
 			}
-			if (this.rniInterrupted) {
+			if (this.rni.rniInterrupted) {
 				throw new CancellationException();
 			}
 		}
@@ -1607,27 +1330,19 @@ public final class JRIServer extends RJ
 		finally {
 			this.currentSlot = savedSlot;
 			endSafeMode(savedSafeMode);
-			if (this.rniProtectedCounter > savedProtectedCounter) {
-				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-				this.rniProtectedCounter = savedProtectedCounter;
-			}
-			this.rniDepth = savedDepth;
-			this.rniMaxDepth = savedMaxDepth;
+			this.rni.looseProtected(savedProtected);
+			this.rni.exitDataLevel();
 			
-			if (this.rniInterrupted || this.rniEvalTempAssigned) {
+			if (this.rni.rniInterrupted) {
 				this.mainInterruptLock.lock();
 				try {
-					if (this.rniInterrupted) {
+					if (this.rni.rniInterrupted) {
 						try {
 							Thread.sleep(10);
 						}
 						catch (final InterruptedException e) {}
-						this.rEngine.rniEval(this.rniP_evalDummyExpr, 0);
-						this.rniInterrupted = false;
-					}
-					if (this.rniEvalTempAssigned) {
-						this.rEngine.rniEval(this.rniP_evalTemp_rmExpr, this.rniP_RJTempEnv);
-						this.rniEvalTempAssigned = false;
+						this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
+						this.rni.rniInterrupted = false;
 					}
 				}
 				finally {
@@ -1646,52 +1361,14 @@ public final class JRIServer extends RJ
 		return cmd.waitForClient() ? cmd : null;
 	}
 	
-	private long rniProtect(final long p) {
-		this.rEngine.rniProtect(p);
-		this.rniProtectedCounter++;
-		return p;
-	}
-	
 	private long rniEval(final String expression) throws RjsException {
-		final long exprP = rniResolveExpression(expression);
-		return rniEvalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x3));
+		final long exprP = this.rni.resolveExpression(expression);
+		return this.rni.evalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x3));
 	}
 	
 	private long rniEval(final String name, final RList args) throws RjsException {
-		final long exprP = rniCreateFCall(name, args);
-		return rniEvalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x4));
-	}
-	
-	private long rniCreateFCall(final String name, final RList args) throws RjsException {
-		long argsP = this.rniP_NULL;
-		for (int i = args.getLength() - 1; i >= 0; i--) {
-			final String argName = args.getName(i);
-			final RObject argValue = args.get(i);
-			final long argValueP;
-			if (argValue != null) {
-				argValueP = rniAssignDataObject(argValue);
-			}
-			else {
-				argValueP = this.rniP_MissingArg;
-			}
-			argsP = rniProtect(this.rEngine.rniCons(argValueP, argsP,
-					(argName != null) ? this.rEngine.rniInstallSymbol(argName) : 0, false ));
-		}
-		long funP;
-		if (name.indexOf(':') > 0) {
-			funP = this.rEngine.rniParse(name, 1);
-			long[] list;
-			if (funP != 0 && (list = this.rEngine.rniGetVector(funP)) != null && list.length == 1) {
-				funP = list[0];
-			}
-			else {
-				throw new RjsException(CODE_DATA_COMMON | 0x4, "The reference to the function is invalid.");
-			}
-		}
-		else {
-			funP = this.rEngine.rniInstallSymbol(name);
-		}
-		return this.rEngine.rniCons(funP, argsP, 0, true);
+		final long exprP = this.rni.createFCall(name, args);
+		return this.rni.evalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x4));
 	}
 	
 	/**
@@ -1706,870 +1383,16 @@ public final class JRIServer extends RJ
 			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x2),
 					"The R object to assign is missing." );
 		}
-		long exprP = rniProtect(rniResolveExpression(expression));
-		final long objP = rniAssignDataObject(obj);
+		long exprP = this.rni.protect(this.rni.resolveExpression(expression));
+		final long objP = this.rni.assignDataObject(obj);
 		exprP = this.rEngine.rniCons(
-				this.rniP_AssignSymbol, this.rEngine.rniCons(
+				this.rni.p_AssignSymbol, this.rEngine.rniCons(
 						exprP, this.rEngine.rniCons(
-								objP, this.rniP_NULL,
+								objP, this.rni.p_NULL,
 								0, false ),
 						0, false ),
 				0, true );
-		rniEvalExpr(exprP, (CODE_DATA_ASSIGN_DATA | 0x3));
-	}
-	
-	private long rniResolveExpression(final String expression) throws RjsException {
-		final long exprP = this.rEngine.rniParse(expression, 1);
-		if (this.rEngine.rniExpType(exprP) != REXP.EXPRSXP) {
-			throw new RjsException((CODE_DATA_COMMON | 0x3),
-					"The specified expression is invalid (syntax error)." );
-		}
-		final long[] expressionsP = this.rEngine.rniGetVector(exprP);
-		if (expressionsP == null || expressionsP.length != 1) {
-			throw new RjsException((CODE_DATA_COMMON | 0x3),
-					"The specified expression is invalid (not a single expression)." );
-		}
-		return expressionsP[0];
-	}
-	
-	private long rniEvalExpr(long exprP, final int code) throws RjsException {
-		exprP = this.rEngine.rniCons(
-				this.rniP_tryCatchFun, this.rEngine.rniCons(
-						exprP, this.rniP_evalTryCatch_errorExpr,
-						this.rniP_exprSymbol, false ),
-				0, true );
-		final long objP = this.rEngine.rniEval(exprP, 0);
-		if (objP == 0) {
-			if (this.rniInterrupted) {
-				throw new CancellationException();
-			}
-			throw new IllegalStateException("JRI returned error code " + objP + " (pointer = 0x" + Long.toHexString(exprP) + ")");
-		}
-		this.rEngine.rniProtect(objP);
-		this.rniProtectedCounter++;
-		if (this.rEngine.rniExpType(objP) == REXP.RAWSXP) {
-			final String className1 = this.rEngine.rniGetClassAttrString(objP);
-			if (className1 != null && className1.equals(".rj.eval.error")) {
-				String message = null;
-				final long outputP = this.rEngine.rniGetAttr(objP, "output");
-				if (outputP != 0) {
-					message = this.rEngine.rniGetString(outputP);
-				}
-				if (message == null) {
-					message = "<no information available>";
-				}
-				switch (code) {
-				case (CODE_DATA_EVAL_DATA | 0x3):
-					message = "An error occurred when evaluation the specified expression in R " + message + ".";
-					break;
-				case (CODE_DATA_EVAL_DATA | 0x4):
-					message = "An error occurred when evaluation the function in R " + message + ".";
-					break;
-				case (CODE_DATA_ASSIGN_DATA | 0x3):
-					message = "An error occurred when assigning the value to the specified expression in R " + message + ".";
-					break;
-				case (CODE_DATA_ASSIGN_DATA | 0x8):
-					message = "An error occurred when instancing an S4 object in R " + message + ".";
-					break;
-				default:
-					message = message + ".";
-					break;
-				}
-				throw new RjsException(code, message);
-			}
-		}
-		return objP;
-	}
-	
-	/**
-	 * Put an {@link RObject RJ R object} into JRI, and get back the pointer to the object
-	 * (Java to R).
-	 * 
-	 * @param obj an R object
-	 * @return long protected R pointer
-	 * @throws RjsException 
-	 */ 
-	private long rniAssignDataObject(final RObject obj) throws RjsException {
-		RStore names;
-		long objP;
-		switch(obj.getRObjectType()) {
-		case RObject.TYPE_NULL:
-		case RObject.TYPE_MISSING:
-			return this.rniP_NULL;
-		case RObject.TYPE_VECTOR:
-			objP = rniAssignDataStore(obj.getData());
-			return objP;
-		case RObject.TYPE_ARRAY:
-			objP = rniAssignDataStore(obj.getData());
-			this.rEngine.rniSetAttr(objP, "dim",
-					this.rEngine.rniPutIntArray(((JRIArrayImpl<?>) obj).getJRIDimArray()));
-			return objP;
-		case RObject.TYPE_DATAFRAME: {
-			final RDataFrame list = (RDataFrame) obj;
-			final int length = list.getLength();
-			final long[] itemPs = new long[length];
-			for (int i = 0; i < length; i++) {
-				itemPs[i] = rniAssignDataStore(list.getColumn(i));
-			}
-			objP = rniProtect(this.rEngine.rniPutVector(itemPs));
-			names = list.getNames();
-			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "names", rniAssignDataStore(names));
-			}
-			names = list.getRowNames();
-			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "row.names", rniAssignDataStore(names));
-			}
-			else {
-				final int[] rownames = new int[list.getRowCount()];
-				for (int i = 0; i < rownames.length; ) {
-					rownames[i] = ++i;
-				}
-				this.rEngine.rniSetAttr(objP, "row.names", this.rEngine.rniPutIntArray(rownames));
-			}
-			this.rEngine.rniSetAttr(objP, "class", this.rniP_dataframeClassString);
-			return objP; }
-		case RObject.TYPE_LIST: {
-			final RList list = (RList) obj;
-			final int length = list.getLength();
-			final long[] itemPs = new long[length];
-			final int savedProtectedCounter = this.rniProtectedCounter;
-			for (int i = 0; i < length; i++) {
-				itemPs[i] = rniAssignDataObject(list.get(i));
-			}
-			if (this.rniProtectedCounter > savedProtectedCounter) {
-				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-				this.rniProtectedCounter = savedProtectedCounter;
-			}
-			objP = rniProtect(this.rEngine.rniPutVector(itemPs));
-			names = list.getNames();
-			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "names", rniAssignDataStore(names));
-			}
-			return objP; }
-		case RObject.TYPE_REFERENCE:
-			return ((RReference) obj).getHandle();
-		case RObject.TYPE_S4OBJECT: {
-			final RS4Object s4obj = (RS4Object) obj;
-			objP = this.rniP_NULL;
-			for (int i = s4obj.getLength()-1; i >= 0; i--) {
-				final RObject slotObj = s4obj.get(i);
-				if (slotObj != null && slotObj.getRObjectType() != RObject.TYPE_MISSING) {
-					objP = rniProtect(this.rEngine.rniCons(
-							rniAssignDataObject(slotObj), objP,
-							this.rEngine.rniInstallSymbol(s4obj.getName(i)), false ));
-				}
-			}
-			return rniProtect(rniEvalExpr(this.rEngine.rniCons(
-					this.rniP_newSymbol, this.rEngine.rniCons(
-							this.rEngine.rniPutString(s4obj.getRClassName()), objP,
-							this.rniP_ClassSymbol, false ),
-					0, true ),
-					(CODE_DATA_ASSIGN_DATA | 0x8) )); }
-		case RObject.TYPE_LANGUAGE: {
-			final RLanguage lang = (RLanguage) obj;
-			if (lang.getLanguageType() == RLanguage.NAME) {
-				return this.rEngine.rniInstallSymbol(lang.getSource());
-			}
-			objP = this.rEngine.rniParse(lang.getSource(), -1);
-			if (objP == 0) {
-				throw new RjsException(CODE_DATA_ASSIGN_DATA | 0x9, "The language data is invalid.");
-			}
-			if (lang.getLanguageType() == RLanguage.CALL) {
-				final long[] list = this.rEngine.rniGetVector(objP);
-				if (list != null && list.length == 1
-						&& this.rEngine.rniExpType(list[0]) == REXP.LANGSXP ) {
-					return rniProtect(list[0]);
-				}
-			}
-			else {
-				return rniProtect(objP);
-			}
-			break; }
-		default:
-			break;
-		}
-		throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x7),
-				"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
-	}
-	
-	private long rniAssignDataStore(final RStore data) {
-		switch (data.getStoreType()) {
-		case RStore.LOGICAL:
-			return rniProtect(this.rEngine.rniPutBoolArrayI(
-					((JRILogicalDataImpl) data).getJRIValueArray() ));
-		case RStore.INTEGER:
-			return rniProtect(this.rEngine.rniPutIntArray(
-					((JRIIntegerDataImpl) data).getJRIValueArray() ));
-		case RStore.NUMERIC:
-			return rniProtect(this.rEngine.rniPutDoubleArray(
-					((JRINumericDataImpl) data).getJRIValueArray() ));
-		case RStore.COMPLEX: {
-			final JRIComplexDataImpl complex = (JRIComplexDataImpl) data;
-			final long realP = rniProtect(this.rEngine.rniPutDoubleArray(complex.getJRIRealValueArray()));
-			final long imaginaryP = this.rEngine.rniPutDoubleArray(complex.getJRIImaginaryValueArray());
-			return rniProtect(this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rniP_complexFun, this.rEngine.rniCons(
-							realP, this.rEngine.rniCons(
-									imaginaryP, this.rniP_NULL,
-									this.rniP_imaginarySymbol, false ),
-							this.rniP_realSymbol, false ),
-					0, true ),
-					this.rniP_BaseEnv )); }
-		case RStore.CHARACTER:
-			return rniProtect(this.rEngine.rniPutStringArray(
-					((JRICharacterDataImpl) data).getJRIValueArray() ));
-		case RStore.RAW:
-			return rniProtect(this.rEngine.rniPutRawArray(
-					((JRIRawDataImpl) data).getJRIValueArray() ));
-		case RStore.FACTOR: {
-			final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
-			final long objP = rniProtect(this.rEngine.rniPutIntArray(factor.getJRIValueArray()));
-			this.rEngine.rniSetAttr(objP, "levels",
-					this.rEngine.rniPutStringArray(factor.getJRILevelsArray()) );
-			this.rEngine.rniSetAttr(objP, "class",
-					factor.isOrdered() ? this.rniP_orderedClassString : this.rniP_factorClassString );
-			return objP; }
-		default:
-			throw new UnsupportedOperationException();
-		}
-	}
-	
-	private RObject rniCreateDataObject(final long objP, final int flags) {
-		if (this.rniMaxDepth > 0) {
-			return rniCreateDataObject(objP, flags, EVAL_MODE_FORCE);
-		}
-		else {
-			final RObject rObject = rniCreateDataObject(objP, (flags | F_ONLY_STRUCT), EVAL_MODE_FORCE);
-			return new RReferenceImpl(objP, rObject.getRObjectType(), rObject.getRClassName());
-		}
-	}
-	
-	/**
-	 * Returns {@link RObject RJ/R object} for the given R pointer
-	 * (R to Java).
-	 * 
-	 * @param objP a valid pointer to an object in R
-	 * @param objTmp an optional R expression pointing to the same object in R
-	 * @param flags to configure the data to create
-	 * @param force forces the creation of the object (ignoring the depth etc.)
-	 * @return new created R object
-	 */ 
-	private RObject rniCreateDataObject(long objP, final int flags, final byte mode) {
-		if (mode == EVAL_MODE_DEFAULT && (this.rniDepth >= this.rniMaxDepth)) {
-			return null;
-		}
-		this.rniDepth++;
-		try {
-			int rType = this.rEngine.rniExpType(objP);
-			if (rType == REXP.PROMSXP) {
-				objP = this.rEngine.rniGetPromise(objP, 
-						((flags & RObjectFactory.F_LOAD_PROMISE) != 0) ? 2 : 1);
-				if (objP == 0) {
-					return RPromise.INSTANCE;
-				}
-				rType = this.rEngine.rniExpType(objP);
-			}
-			switch (rType) {
-			case REXP.NILSXP:
-				return RNull.INSTANCE;
-			
-			case REXP.LGLSXP: { // logical vector / array
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.LGLSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RLogicalStore>(
-									RObjectFactoryImpl.LOGI_STRUCT_DUMMY,
-									className1, dim ) :
-							new JRIArrayImpl<RLogicalStore>(
-									new JRILogicalDataImpl(this.rEngine.rniGetBoolArrayI(objP)),
-									className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RLogicalStore>(
-									RObjectFactoryImpl.LOGI_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RLogicalStore>(
-									new JRILogicalDataImpl(this.rEngine.rniGetBoolArrayI(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.INTSXP: { // integer vector / array
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.INTSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				if (className1 != null
-						&& (className1.equals("factor")
-								|| className1.equals("ordered")
-								|| this.rEngine.rniInherits(objP, "factor")) ) {
-					final String[] levels;
-					{	final long levelsP = this.rEngine.rniGetAttrBySym(objP, this.rniP_levelsSymbol);
-						levels = (levelsP != 0) ? this.rEngine.rniGetStringArray(levelsP) : null;
-					}
-					if (levels != null) {
-						final boolean isOrdered = className1.equals("ordered") || this.rEngine.rniInherits(objP, "ordered");
-						final RFactorStore factorData = ((flags & F_ONLY_STRUCT) != 0) ?
-								new RFactorDataStruct(isOrdered, levels.length) :
-								new RFactorDataImpl(this.rEngine.rniGetIntArray(objP), isOrdered, levels);
-						return ((flags & F_ONLY_STRUCT) != 0) ?
-								new JRIVectorImpl<RIntegerStore>(
-										factorData,
-										this.rEngine.rniGetLength(objP), className1, null ) :
-								new JRIVectorImpl<RIntegerStore>(
-										factorData,
-										className1, rniGetNames(objP) );
-					}
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RIntegerStore>(
-									RObjectFactoryImpl.INT_STRUCT_DUMMY,
-									className1, dim ) :
-							new JRIArrayImpl<RIntegerStore>(
-									new JRIIntegerDataImpl(this.rEngine.rniGetIntArray(objP)),
-									className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RIntegerStore>(
-									RObjectFactoryImpl.INT_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RIntegerStore>(
-									new JRIIntegerDataImpl(this.rEngine.rniGetIntArray(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.REALSXP: { // numeric vector / array
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.REALSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RNumericStore>(
-									RObjectFactoryImpl.NUM_STRUCT_DUMMY,
-									className1, dim ) :
-							new JRIArrayImpl<RNumericStore>(
-									new JRINumericDataImpl(this.rEngine.rniGetDoubleArray(objP)),
-									className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RNumericStore>(
-									RObjectFactoryImpl.NUM_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RNumericStore>(
-									new JRINumericDataImpl(this.rEngine.rniGetDoubleArray(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.CPLXSXP: { // complex vector / array
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.CPLXSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-						new JRIArrayImpl<RComplexStore>(
-								RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
-								className1, dim ) :
-						new JRIArrayImpl<RComplexStore>(
-								new JRIComplexDataImpl(rniGetComplexRe(objP), rniGetComplexIm(objP)),
-								className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RComplexStore>(
-									RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RComplexStore>(
-									new JRIComplexDataImpl(rniGetComplexRe(objP), rniGetComplexIm(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.STRSXP: { // character vector / array
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.STRSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RCharacterStore>(
-									RObjectFactoryImpl.CHR_STRUCT_DUMMY,
-									className1, dim ) :
-							new JRIArrayImpl<RCharacterStore>(
-									new JRICharacterDataImpl(this.rEngine.rniGetStringArray(objP)),
-									className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RCharacterStore>(
-									RObjectFactoryImpl.CHR_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RCharacterStore>(
-									new JRICharacterDataImpl(this.rEngine.rniGetStringArray(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.RAWSXP: { // raw/byte vector
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					if (this.rEngine.rniIsS4(objP)) {
-						return rniCreateS4Obj(objP, REXP.RAWSXP, flags);
-					}
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final int[] dim = this.rEngine.rniGetArrayDim(objP);
-				
-				if (dim != null) {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RRawStore>(
-									RObjectFactoryImpl.RAW_STRUCT_DUMMY,
-									className1, dim ) :
-							new JRIArrayImpl<RRawStore>(
-									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
-									className1, dim, rniGetDimNames(objP, dim.length) );
-				}
-				else {
-					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RRawStore>(
-									RObjectFactoryImpl.RAW_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
-							new JRIVectorImpl<RRawStore>(
-									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
-									className1, rniGetNames(objP) );
-				}
-			}
-			case REXP.VECSXP: { // generic vector / list
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				
-				final String[] itemNames = rniGetNames(objP);
-				
-				final long[] itemP = this.rEngine.rniGetVector(objP);
-				final RObject[] itemObjects = new RObject[itemP.length];
-				DATA_FRAME: if (itemNames != null && className1 != null &&
-						(className1.equals("data.frame") || this.rEngine.rniInherits(objP, "data.frame")) ) {
-					int length = -1;
-					for (int i = 0; i < itemP.length; i++) {
-						if (this.rniInterrupted) {
-							throw new CancellationException();
-						}
-						itemObjects[i] = rniCreateDataObject(itemP[i], flags, EVAL_MODE_FORCE);
-						if (itemObjects[i] == null || itemObjects[i].getRObjectType() != RObject.TYPE_VECTOR) {
-							break DATA_FRAME;
-						}
-						else if (length == -1) {
-							length = itemObjects[i].getLength();
-						}
-						else if (length != itemObjects[i].getLength()){
-							break DATA_FRAME;
-						}
-					}
-					final String[] rowNames = ((flags & F_ONLY_STRUCT) != 0) ? null : rniGetRowNames(objP);
-					if (rowNames != null && length != -1 && rowNames.length != length) {
-						break DATA_FRAME;
-					}
-					return new JRIDataFrameImpl(itemObjects, className1, itemNames, rowNames);
-				}
-				if ((flags & F_ONLY_STRUCT) != 0 && itemP.length > this.rniListsMaxLength) {
-					return new JRIListImpl(itemP.length, className1, itemNames);
-				}
-				for (int i = 0; i < itemP.length; i++) {
-					if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					itemObjects[i] = rniCreateDataObject(itemP[i], flags, EVAL_MODE_DEFAULT);
-				}
-				return new JRIListImpl(itemObjects, className1, itemNames);
-			}
-			case REXP.LISTSXP:   // pairlist
-			/*case REXP.LANGSXP: */{
-				String className1;
-				if (mode == EVAL_MODE_DATASLOT
-						|| (className1 = this.rEngine.rniGetClassAttrString(objP)) == null ) {
-					className1 = RObject.CLASSNAME_PAIRLIST;
-				}
-				
-				long cdr = objP;
-				final int length = this.rEngine.rniGetLength(objP);
-				final String[] itemNames = new String[length];
-				final RObject[] itemObjects = new RObject[length];
-				for (int i = 0; i < length && cdr != 0; i++) {
-					if (this.rniInterrupted) {
-						throw new CancellationException();
-					}
-					final long car = this.rEngine.rniCAR(cdr);
-					final long tag = this.rEngine.rniTAG(cdr);
-					itemNames[i] = (tag != 0) ? this.rEngine.rniGetSymbolName(tag) : null;
-					itemObjects[i] = rniCreateDataObject(car, flags, EVAL_MODE_DEFAULT);
-					cdr = this.rEngine.rniCDR(cdr);
-				}
-				return new JRIListImpl(itemObjects, className1, itemNames);
-			}
-			case REXP.ENVSXP: {
-				if (this.rniDepth > 1 && (flags & RObjectFactory.F_LOAD_ENVIR) == 0) {
-					return new RReferenceImpl(objP, RObject.TYPE_REFERENCE, "environment");
-				}
-				final String[] names = this.rEngine.rniGetStringArray(this.rEngine.rniListEnv(objP, true));
-				if (names != null) {
-					final String className1;
-					if (mode != EVAL_MODE_DATASLOT) {
-						className1 = this.rEngine.rniGetClassAttrString(objP);
-					}
-					else {
-						className1 = null;
-					}
-					
-					// env name
-					String name;
-					final long nameP;
-					if ((nameP = this.rEngine.rniEval(this.rEngine.rniCons(
-									this.rniP_envNameFun, this.rEngine.rniCons(
-											objP, this.rniP_NULL,
-											this.rniP_envSymbol, false ),
-									0, true ),
-									this.rniP_BaseEnv )) == 0
-							|| (name = this.rEngine.rniGetString(nameP)) == null ) {
-						name = "";
-					}
-					
-					if ((objP == this.rniP_AutoloadEnv)
-							|| names.length > this.rniEnvsMaxLength) {
-						return new JRIEnvironmentImpl(name, objP, null, null, names.length, className1);
-					}
-					
-					final RObject[] itemObjects = new RObject[names.length];
-					for (int i = 0; i < names.length; i++) {
-						if (this.rniInterrupted) {
-							throw new CancellationException();
-						}
-						final long itemP = this.rEngine.rniGetVar(objP, names[i]);
-						if (itemP != 0) {
-							itemObjects[i] = rniCreateDataObject(itemP, flags, EVAL_MODE_DEFAULT);
-							continue;
-						}
-						else {
-							itemObjects[i] = RMissing.INSTANCE;
-							continue;
-						}
-					}
-					return new JRIEnvironmentImpl(name, objP, itemObjects, names, names.length, className1);
-				}
-				break;
-			}
-			case REXP.CLOSXP: {
-				if (mode != EVAL_MODE_DATASLOT && this.rEngine.rniIsS4(objP)) {
-					return rniCreateS4Obj(objP, REXP.CLOSXP, flags);
-				}
-				
-				final String header = rniGetFHeader(objP);
-				return new RFunctionImpl(header);
-			}
-			case REXP.SPECIALSXP:
-			case REXP.BUILTINSXP: {
-				final String header = rniGetFHeader(objP);
-				return new RFunctionImpl(header);
-			}
-			case REXP.S4SXP: {
-				if (mode != EVAL_MODE_DATASLOT) {
-					return rniCreateS4Obj(objP, REXP.S4SXP, flags);
-				}
-				break; // invalid
-			}
-			case REXP.SYMSXP: {
-				if (objP == this.rniP_MissingArg) {
-					return RMissing.INSTANCE;
-				}
-				return ((flags & F_ONLY_STRUCT) != 0) ? 
-						new JRILanguageImpl(RLanguage.NAME, null) :
-						new JRILanguageImpl(RLanguage.NAME, this.rEngine.rniGetSymbolName(objP), null);
-			}
-			case REXP.LANGSXP: {
-				final String className1;
-				if (mode != EVAL_MODE_DATASLOT) {
-					className1 = this.rEngine.rniGetClassAttrString(objP);
-				}
-				else {
-					className1 = null;
-				}
-				return ((flags & F_ONLY_STRUCT) != 0) ? 
-						new JRILanguageImpl(RLanguage.CALL, className1) :
-						new JRILanguageImpl(RLanguage.CALL, rniGetSource(objP), className1);
-			}
-			case REXP.EXPRSXP: {
-				String className1;
-				if (mode == EVAL_MODE_DATASLOT
-						|| (className1 = this.rEngine.rniGetClassAttrString(objP)) == null ) {
-					className1 = null;
-				}
-				return ((flags & F_ONLY_STRUCT) != 0) ? 
-						new JRILanguageImpl(RLanguage.EXPRESSION, className1) :
-						new JRILanguageImpl(RLanguage.EXPRESSION, rniGetSource(objP), className1);
-			}
-			case REXP.EXTPTRSXP: {
-				String className1;
-				if (mode == EVAL_MODE_DATASLOT
-						|| (className1 = this.rEngine.rniGetClassAttrString(objP)) == null ) {
-					className1 = "externalptr";
-				}
-				return new ROtherImpl(className1);
-			}
-			}
-//				final long classP = this.rEngine.rniEval(this.rEngine.rniCons(this.rniP_classFun,
-//						this.rEngine.rniCons(objP, this.rniP_NULL, this.rniP_xSymbol, false), 0, true),
-//						this.rniP_BaseEnv);
-			{	// Other type and fallback
-				final String className1 = rniGetClassSave(objP);
-				return new ROtherImpl(className1);
-			}
-		}
-		finally {
-			this.rniDepth--;
-		}
-	}
-	
-	private RObject rniCreateS4Obj(final long objP, final int rType, final int flags) {
-		final long classP = this.rEngine.rniGetAttrBySym(objP, this.rniP_classSymbol);
-		String className = null;
-		if (classP != 0 && classP != this.rniP_NULL) {
-			className = this.rEngine.rniGetString(classP);
-			final long slotNamesP = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rniP_slotNamesFun, this.rEngine.rniCons(
-							classP, this.rniP_NULL,
-							this.rniP_xSymbol, false ),
-					0, true ),
-					0 );
-			if (slotNamesP != 0) {
-				final String[] slotNames = this.rEngine.rniGetStringArray(slotNamesP);
-				if (slotNames != null && slotNames.length > 0) {
-					final RObject[] slotValues = new RObject[slotNames.length];
-					for (int i = 0; i < slotNames.length; i++) {
-						if (this.rniInterrupted) {
-							throw new CancellationException();
-						}
-						if (".Data".equals(slotNames[i])) {
-							slotValues[i] = rniCreateDataObject(objP, flags, EVAL_MODE_DATASLOT);
-							if (className == null && slotValues[i] != null) {
-								className = slotValues[i].getRClassName();
-							}
-							continue;
-						}
-						else {
-							final long slotValueP;
-							if ((slotValueP = this.rEngine.rniGetAttr(objP, slotNames[i])) != 0) {
-								slotValues[i] = rniCreateDataObject(slotValueP, flags, EVAL_MODE_FORCE);
-								continue;
-							}
-							else {
-								slotValues[i] = RMissing.INSTANCE;
-								continue;
-							}
-						}
-					}
-					if (className == null) {
-						className = rniGetClassSave(objP);
-					}
-					return new RS4ObjectImpl(className, slotNames, slotValues);
-				}
-			}
-		}
-		if (rType != REXP.S4SXP) {
-			final RObject dataSlot = rniCreateDataObject(objP, flags, EVAL_MODE_DATASLOT);
-			if (dataSlot != null) {
-				if (className == null) {
-					className = dataSlot.getRClassName();
-					if (className == null) {
-						className = rniGetClassSave(objP);
-					}
-				}
-				return new RS4ObjectImpl(className, DATA_NAME_ARRAY, new RObject[] { dataSlot });
-			}
-			if (className == null) {
-				className = rniGetClassSave(objP);
-			}
-		}
-		else if (className == null) {
-			className = "S4";
-		}
-		return new RS4ObjectImpl(className, EMPTY_STRING_ARRAY, EMPTY_ROBJECT_ARRAY);
-	}
-	
-	private String rniGetClassSave(final long objP) {
-		if (objP != 0) {
-			final String className1;
-			final long classP;
-			this.rniEvalTempAssigned = true;
-			if (this.rEngine.rniAssign("x", objP, this.rniP_RJTempEnv)
-					&& (classP = this.rEngine.rniEval(this.rniP_evalTemp_classExpr, this.rniP_RJTempEnv)) != 0
-					&& (className1 = this.rEngine.rniGetString(classP)) != null ) {
-				return className1;
-			}
-		}
-		return "<unknown>";
-	}
-	
-	private String[] rniGetNames(final long objP) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.rniP_namesSymbol);
-		return (namesP != 0) ? this.rEngine.rniGetStringArray(namesP) : null;
-	}
-	
-	private SimpleRListImpl<RStore> rniGetDimNames(final long objP, final int length) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.rniP_dimNamesSymbol);
-		if (this.rEngine.rniExpType(namesP) == REXP.VECSXP) {
-			final long[] names1P = this.rEngine.rniGetVector(namesP);
-			if (names1P != null && names1P.length == length) {
-				String[] s = rniGetNames(namesP);
-				final RCharacterStore names0 = (s != null) ? new RCharacterDataImpl(s) :
-					new RCharacterDataImpl(names1P.length);
-				final RCharacterStore[] names1 = new RCharacterStore[names1P.length];
-				for (int i = 0; i < names1P.length; i++) {
-					s = this.rEngine.rniGetStringArray(names1P[i]);
-					if (s != null) {
-						names1[i] = new RCharacterDataImpl(s);
-					}
-				}
-				return new SimpleRListImpl<RStore>(names0, names1);
-			}
-		}
-		return null;
-	}
-	
-	private String[] rniGetRowNames(final long objP) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.rniP_rowNamesSymbol);
-		return (namesP != 0) ? this.rEngine.rniGetStringArray(namesP) : null;
-	}
-	
-	private double[] rniGetComplexRe(final long objP) {
-		final double[] num;
-		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(
-				this.rniP_ReFun, this.rEngine.rniCons(
-						objP, this.rniP_NULL,
-						this.rniP_zSymbol, false ),
-				0, true ),
-				this.rniP_BaseEnv );
-		if (numP == 0) {
-			if (this.rniInterrupted) {
-				throw new CancellationException();
-			}
-			throw new IllegalStateException("JRI returned error code " + numP);
-		}
-		if ((num = this.rEngine.rniGetDoubleArray(numP)) != null) {
-			return num;
-		}
-		throw new IllegalStateException();
-	}
-	
-	private double[] rniGetComplexIm(final long objP) {
-		final double[] num;
-		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(
-				this.rniP_ImFun, this.rEngine.rniCons(
-						objP, this.rniP_NULL,
-						this.rniP_zSymbol, false ),
-				0, true ),
-				this.rniP_BaseEnv );
-		if (numP == 0) {
-			if (this.rniInterrupted) {
-				throw new CancellationException();
-			}
-			throw new IllegalStateException("JRI returned error code " + numP);
-		}
-		if ((num = this.rEngine.rniGetDoubleArray(numP)) != null) {
-			return num;
-		}
-		throw new IllegalStateException();
-	}
-	
-	private String rniGetFHeader(final long objP) {
-		final String args;
-		final long argsP;
-		if ((argsP = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.rniP_headerFun, this.rEngine.rniCons(
-								objP, this.rniP_NULL,
-								this.rniP_xSymbol, false ),
-						0, true ),
-						this.rniP_BaseEnv )) != 0
-				&& (args = this.rEngine.rniGetString(argsP)) != null
-				&& args.length() >= 11 ) { // "function ()".length
-//			return args.substring(9,);
-			return args;
-		}
-		return null;
-	}
-	
-	private String rniGetSource(final long objP) {
-		this.rniEvalTempAssigned = true;
-		if (this.rEngine.rniAssign("x", objP, this.rniP_RJTempEnv)) {
-			final String args;
-			final long argsP;
-			if ((argsP = this.rEngine.rniEval(this.rniP_deparseLineXCall, this.rniP_RJTempEnv)) != 0
-					&& (args = this.rEngine.rniGetString(argsP)) != null
-					&& args.length() > 0 ) {
-	//			return args.substring(9,);
-				return args;
-			}
-		}
-		return null;
+		this.rni.evalExpr(exprP, (CODE_DATA_ASSIGN_DATA | 0x3));
 	}
 	
 	
@@ -2583,7 +1406,7 @@ public final class JRIServer extends RJ
 	private GraOpCmdItem internalExecGraOp(final GraOpCmdItem cmd) {
 		final byte savedSlot = this.currentSlot;
 		this.currentSlot = cmd.slot;
-		final int savedProtectedCounter = this.rniProtectedCounter;
+		final int savedProtected = this.rni.saveProtected();
 		final int savedSafeMode = beginSafeMode();
 		try {
 			CMD_OP: switch (cmd.getOp()) {
@@ -2640,10 +1463,7 @@ public final class JRIServer extends RJ
 		finally {
 			this.currentSlot = savedSlot;
 			endSafeMode(savedSafeMode);
-			if (this.rniProtectedCounter > savedProtectedCounter) {
-				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-				this.rniProtectedCounter = savedProtectedCounter;
-			}
+			this.rni.looseProtected(savedProtected);
 		}
 	}
 	
@@ -2762,23 +1582,18 @@ public final class JRIServer extends RJ
 		try {
 			RList args = null;
 			if (argsExpr != 0) {
-				final int savedMaxDepth = this.rniMaxDepth;
-				this.rniMaxDepth += 255;
-				final int savedProtectedCounter = this.rniProtectedCounter;
+				this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
+				final int savedProtected = this.rni.saveProtected();
 				try {
-					this.rEngine.rniProtect(argsExpr);
-					this.rniProtectedCounter++;
-					final RObject rObject = rniCreateDataObject(argsExpr, 0, EVAL_MODE_DEFAULT);
+					this.rni.protect(argsExpr);
+					final RObject rObject = this.rni.createDataObject(argsExpr, 0, EVAL_MODE_DEFAULT);
 					if (rObject.getRObjectType() == RObject.TYPE_LIST) {
 						args = (RList) rObject;
 					}
 				}
 				finally {
-					if (this.rniProtectedCounter > savedProtectedCounter) {
-						this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-						this.rniProtectedCounter = savedProtectedCounter;
-					}
-					this.rniMaxDepth = savedMaxDepth;
+					this.rni.looseProtected(savedProtected);
+					this.rni.exitDataLevel();
 				}
 			}
 			
@@ -2796,18 +1611,14 @@ public final class JRIServer extends RJ
 			}
 			
 			if (answer != null) {
-				final int savedMaxDepth = this.rniMaxDepth;
-				this.rniMaxDepth += 255;
-				final int savedProtectedCounter = this.rniProtectedCounter;
+				this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
+				final int savedProtected = this.rni.saveProtected();
 				try {
-					return rniAssignDataObject(answer);
+					return this.rni.assignDataObject(answer);
 				}
 				finally {
-					if (this.rniProtectedCounter > savedProtectedCounter) {
-						this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
-						this.rniProtectedCounter = savedProtectedCounter;
-					}
-					this.rniMaxDepth = savedMaxDepth;
+					this.rni.looseProtected(savedProtected);
+					this.rni.exitDataLevel();
 				}
 			}
 		}
