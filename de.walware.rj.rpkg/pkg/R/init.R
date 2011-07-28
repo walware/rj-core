@@ -9,6 +9,7 @@
 	
 	baseEnv <- .BaseNamespaceEnv
 	assign("file.choose", envir = .rj.originals, value = get("file.choose", envir = baseEnv))
+	assign("srcfile", envir = .rj.originals, value = get("srcfile", envir = baseEnv))
 	
 	return (invisible(TRUE))
 }
@@ -32,6 +33,7 @@
 	if (!is.null(ns)) {
 		assignInNamespace(name, value, ns= ns)
 	}
+	return (invisible(TRUE))
 }
 
 
@@ -53,5 +55,14 @@
 			return(name); 
 		}
 		i <- i + 1L; 
+	}
+}
+
+
+.rj.tmp$Debug <- FALSE
+
+.rj.errorHandler <- function(e) {
+	if (.rj.tmp$Debug) {
+		print(e)
 	}
 }

@@ -81,22 +81,53 @@ final class JRIServerRni {
 	public final long p_RJTempEnv;
 	
 	public final long p_AssignSymbol;
+	public final long p_BlockSymbol;
+	public final long p_DotsSymbol;
+	public final long p_DotAllMTable;
+	public final long p_atSymbol;
 	public final long p_ClassSymbol;
 	public final long p_classSymbol;
 	public final long p_dimNamesSymbol;
+	public final long p_editSymbol;
 	public final long p_envSymbol;
 	public final long p_exprSymbol;
 	public final long p_errorSymbol;
 	public final long p_imaginarySymbol;
+	public final long p_idSymbol;
+	public final long p_isGenericSymbol;
+	public final long p_fdefSymbol;
+	public final long p_filenameSymbol;
+	public final long p_flagsSymbol;
 	public final long p_functionSymbol;
 	public final long p_levelsSymbol;
+	public final long p_linesSymbol;
+	public final long p_linesSrcrefSymbol;
 	public final long p_nameSymbol;
 	public final long p_namesSymbol;
 	public final long p_newSymbol;
+	public final long p_onExitSymbol;
+	public final long p_originalSymbol;
 	public final long p_realSymbol;
 	public final long p_rowNamesSymbol;
+	public final long p_signatureSymbol;
+	public final long p_srcfileSymbol;
+	public final long p_srcrefSymbol;
+	public final long p_timestampSymbol;
+	public final long p_traceSymbol;
+	public final long p_untraceSymbol;
+	public final long p_valueSymbol;
+	public final long p_whatSymbol;
+	public final long p_whereSymbol;
+	public final long p_wdSymbol;
 	public final long p_xSymbol;
 	public final long p_zSymbol;
+	
+	public final long p_appFilePathSymbol;
+	public final long p_appElementIdSymbol;
+	public final long p_dbgElementIdSymbol;
+	
+	public final long p_TRUE;
+	public final long p_FALSE;
 	
 	public final long p_factorClassString;
 	public final long p_orderedClassString;
@@ -110,6 +141,7 @@ final class JRIServerRni {
 	private final long deparseLineXCallP;
 	private final long deparseLinesXCallP;
 	private final long getEnvNameFunP;
+	private final long getTopFrameCallP;
 	
 	public final long p_evalTryCatch_errorExpr;
 	public final long p_evalTemp_classExpr;
@@ -152,22 +184,55 @@ final class JRIServerRni {
 			}
 			
 			this.p_AssignSymbol = this.rEngine.rniInstallSymbol("<-");
+			this.p_BlockSymbol = this.rEngine.rniInstallSymbol("{");
+			this.p_DotsSymbol = this.rEngine.rniInstallSymbol("...");
+			this.p_DotAllMTable = this.rEngine.rniInstallSymbol(".AllMTable");
+			this.p_atSymbol = this.rEngine.rniInstallSymbol("at");
 			this.p_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
 			this.p_classSymbol = this.rEngine.rniInstallSymbol("class");
 			this.p_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames");
+			this.p_editSymbol = this.rEngine.rniInstallSymbol("edit");
 			this.p_envSymbol = this.rEngine.rniInstallSymbol("env");
 			this.p_errorSymbol = this.rEngine.rniInstallSymbol("error");
 			this.p_exprSymbol = this.rEngine.rniInstallSymbol("expr");
+			this.p_fdefSymbol = this.rEngine.rniInstallSymbol("fdef");
+			this.p_filenameSymbol = this.rEngine.rniInstallSymbol("filename");
+			this.p_flagsSymbol = this.rEngine.rniInstallSymbol("flags");
 			this.p_functionSymbol = this.rEngine.rniInstallSymbol("function");
+			this.p_idSymbol = this.rEngine.rniInstallSymbol("id");
+			this.p_isGenericSymbol = this.rEngine.rniInstallSymbol("isGeneric");
 			this.p_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
 			this.p_levelsSymbol = this.rEngine.rniInstallSymbol("levels");
+			this.p_linesSymbol = this.rEngine.rniInstallSymbol("lines");
+			this.p_linesSrcrefSymbol = this.rEngine.rniInstallSymbol("linesSrcref");
 			this.p_nameSymbol = this.rEngine.rniInstallSymbol("name");
 			this.p_namesSymbol = this.rEngine.rniInstallSymbol("names");
 			this.p_newSymbol = this.rEngine.rniInstallSymbol("new");
+			this.p_onExitSymbol = this.rEngine.rniInstallSymbol("on.exit");
+			this.p_originalSymbol = this.rEngine.rniInstallSymbol("original");
 			this.p_realSymbol = this.rEngine.rniInstallSymbol("real");
 			this.p_rowNamesSymbol = this.rEngine.rniInstallSymbol("row.names");
+			this.p_signatureSymbol = this.rEngine.rniInstallSymbol("signature");
+			this.p_srcfileSymbol = this.rEngine.rniInstallSymbol("srcfile");
+			this.p_srcrefSymbol = this.rEngine.rniInstallSymbol("srcref");
+			this.p_timestampSymbol = this.rEngine.rniInstallSymbol("timestamp");
+			this.p_traceSymbol = this.rEngine.rniInstallSymbol("trace");
+			this.p_untraceSymbol = this.rEngine.rniInstallSymbol("untrace");
+			this.p_valueSymbol = this.rEngine.rniInstallSymbol("value");
+			this.p_whatSymbol = this.rEngine.rniInstallSymbol("what");
+			this.p_whereSymbol = this.rEngine.rniInstallSymbol("where");
+			this.p_wdSymbol = this.rEngine.rniInstallSymbol("wd");
 			this.p_xSymbol = this.rEngine.rniInstallSymbol("x");
 			this.p_zSymbol = this.rEngine.rniInstallSymbol("z");
+			
+			this.p_appFilePathSymbol = this.rEngine.rniInstallSymbol("statet.Path");
+			this.p_appElementIdSymbol = this.rEngine.rniInstallSymbol("statet.ElementId");
+			this.p_dbgElementIdSymbol = this.rEngine.rniInstallSymbol("dbg.ElementId");
+			
+			this.p_TRUE = this.rEngine.rniPutBoolArray(new boolean[] { true });
+			this.rEngine.rniPreserve(this.p_TRUE);
+			this.p_FALSE = this.rEngine.rniPutBoolArray(new boolean[] { false });
+			this.rEngine.rniPreserve(this.p_FALSE);
 			
 			this.p_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniCons(
 					this.rEngine.rniInstallSymbol("new.env"), this.p_NULL, 0, true ),
@@ -292,6 +357,20 @@ final class JRIServerRni {
 							0, true);
 					this.rEngine.rniPreserve(this.deparseLinesXCallP);
 				}
+			}
+			
+			{	final long sysFrameFunP = protect(this.rEngine.rniEval(
+						this.rEngine.rniInstallSymbol("sys.frame"), this.p_BaseEnv ));
+				final long sysNFrameCallP = protect(this.rEngine.rniCons(
+						this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.nframe"),
+								this.p_BaseEnv ), this.p_NULL,
+						0, true ));
+				this.getTopFrameCallP = this.rEngine.rniCons(
+						sysFrameFunP, this.rEngine.rniCons(
+								sysNFrameCallP, this.p_NULL,
+								0, false), // which
+						0, true );
+				this.rEngine.rniPreserve(this.getTopFrameCallP);
 			}
 			
 			this.p_evalTryCatch_errorExpr = this.rEngine.rniCons(
@@ -441,13 +520,39 @@ final class JRIServerRni {
 		return expressionsP[0];
 	}
 	
-	public long evalExpr(long exprP, final int code) throws RjsException {
+	public long resolveEnvironment(final RObject data) throws RjsException {
+		if (data == null) {
+			return this.p_GlobalEnv;
+		}
+		try {
+			long envP = 0;
+			switch (data.getRObjectType()) {
+			case RObject.TYPE_REFERENCE:
+				envP = ((RReference) data).getHandle();
+				break;
+			case RObject.TYPE_LANGUAGE:
+				envP = evalExpr(assignDataObject(data), 0, CODE_DATA_COMMON);
+				break;
+			default:
+				throw new RjsException(CODE_DATA_COMMON, "Unsupported specification.");
+			}
+			if (envP == 0 || this.rEngine.rniExpType(envP) != REXP.ENVSXP) {
+				throw new RjsException(CODE_DATA_COMMON, "Not an environment.");
+			}
+			return envP;
+		}
+		catch (final RjsException e) {
+			throw new RjsException(CODE_DATA_COMMON | 0xa, "Could not resolve the environment.", e);
+		}
+	}
+	
+	public long evalExpr(long exprP, final long envP, final int code) throws RjsException {
 		exprP = this.rEngine.rniCons(
 				this.tryCatchFunP, this.rEngine.rniCons(
 						exprP, this.p_evalTryCatch_errorExpr,
 						this.p_exprSymbol, false ),
 				0, true );
-		final long objP = this.rEngine.rniEval(exprP, 0);
+		final long objP = this.rEngine.rniEval(exprP, envP);
 		if (objP == 0) {
 			if (this.rniInterrupted) {
 				throw new CancellationException();
@@ -574,7 +679,7 @@ final class JRIServerRni {
 							this.rEngine.rniPutString(s4obj.getRClassName()), objP,
 							this.p_ClassSymbol, false ),
 					0, true ),
-					(CODE_DATA_ASSIGN_DATA | 0x8) )); }
+					0, (CODE_DATA_ASSIGN_DATA | 0x8) )); }
 		case RObject.TYPE_LANGUAGE: {
 			final RLanguage lang = (RLanguage) obj;
 			if (lang.getLanguageType() == RLanguage.NAME) {
@@ -990,10 +1095,9 @@ final class JRIServerRni {
 						className1 = null;
 					}
 					
-					final String name = getEnvName(objP);
-					if ((objP == this.p_AutoloadEnv)
-							|| names.length > this.maxEnvsLength) {
-						return new JRIEnvironmentImpl(name, objP, null, null, names.length, className1);
+					if (objP == this.p_AutoloadEnv || names.length > this.maxEnvsLength) {
+						return new JRIEnvironmentImpl(getEnvName(objP), objP, null, null,
+								names.length, className1 );
 					}
 					
 					final RObject[] itemObjects = new RObject[names.length];
@@ -1011,7 +1115,8 @@ final class JRIServerRni {
 							continue;
 						}
 					}
-					return new JRIEnvironmentImpl(name, objP, itemObjects, names, names.length, className1);
+					return new JRIEnvironmentImpl(getEnvName(objP), objP, itemObjects, names,
+							names.length, className1 );
 				}
 				break;
 			}
@@ -1299,6 +1404,10 @@ final class JRIServerRni {
 			}
 			return null;
 		}
+	}
+	
+	public long getTopFrame() {
+		return this.rEngine.rniEval(this.getTopFrameCallP, this.p_BaseEnv);
 	}
 	
 }

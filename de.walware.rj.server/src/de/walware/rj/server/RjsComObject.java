@@ -42,6 +42,11 @@ public interface RjsComObject {
 	 */
 	public static final int T_CTRL =                 5;
 	
+	/**
+	 * {@link DbgCmdItem}
+	 */
+	public static final int T_DBG =                  6;
+	
 	
 	// Same value as in IStatus
 	public static final int V_OK =               RjsStatus.OK;

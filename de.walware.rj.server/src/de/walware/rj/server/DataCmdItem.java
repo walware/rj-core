@@ -31,9 +31,11 @@ public final class DataCmdItem extends MainCmdItem {
 	public static final byte EVAL_DATA = 0x02;
 	public static final byte RESOLVE_DATA = 0x04;
 	public static final byte ASSIGN_DATA = 0x06;
+	public static final byte FIND_DATA = 0x08;
 	
 	private static final int OV_WITHTEXT =                  0x01000000;
 	private static final int OV_WITHDATA =                  0x02000000;
+	private static final int OV_WITHRHO =                   0x04000000;
 	private static final int OV_WITHSTATUS =                0x08000000;
 	
 	
@@ -62,6 +64,7 @@ public final class DataCmdItem extends MainCmdItem {
 	private byte depth;
 	private String text;
 	private RObject rdata;
+	private RObject rho;
 	
 	private String factoryId;
 	
@@ -76,7 +79,7 @@ public final class DataCmdItem extends MainCmdItem {
 	 * </ul>
 	 */
 	public DataCmdItem(final byte type, final int options, final byte depth,
-			final String text, final RObject data,
+			final String text, final RObject data, final RObject rho,
 			final String factoryId) {
 		assert (text != null);
 		assert (factoryId == null || gFactories.containsKey(factoryId));
@@ -86,6 +89,10 @@ public final class DataCmdItem extends MainCmdItem {
 		if (data != null) {
 			this.rdata = data;
 			this.options |= OV_WITHDATA;
+		}
+		if (rho != null) {
+			this.rho = rho;
+			this.options |= OV_WITHRHO;
 		}
 		this.depth = depth;
 		this.factoryId = (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
@@ -100,7 +107,7 @@ public final class DataCmdItem extends MainCmdItem {
 	 * </ul>
 	 */
 	public DataCmdItem(final byte type, final int options,
-			final String text, final RObject data) {
+			final String text, final RObject data, final RObject rho) {
 		assert (text != null);
 		this.op = type;
 		this.text = text;
@@ -108,6 +115,10 @@ public final class DataCmdItem extends MainCmdItem {
 		if (data != null) {
 			this.rdata = data;
 			this.options |= OV_WITHDATA;
+		}
+		if (rho != null) {
+			this.rho = rho;
+			this.options |= OV_WITHRHO;
 		}
 		this.factoryId = "";
 	}
@@ -139,6 +150,16 @@ public final class DataCmdItem extends MainCmdItem {
 				this.rdata = gDefaultFactory.readObject(in);
 			}
 		}
+		if ((this.options & OV_WITHRHO) != 0) {
+			if ((this.options & OV_ANSWER) != 0) {
+				in.flags = 0;
+				this.rho = getFactory(this.factoryId).readObject(in);
+			}
+			else {
+				in.flags = 0;
+				this.rho = gDefaultFactory.readObject(in);
+			}
+		}
 	}
 	
 	@Override
@@ -165,6 +186,10 @@ public final class DataCmdItem extends MainCmdItem {
 				gDefaultFactory.writeObject(this.rdata, out);
 			}
 		}
+		if ((this.options & OV_WITHRHO) != 0) {
+			out.flags = 0;
+			gDefaultFactory.writeObject(this.rho, out);
+		}
 	}
 	
 	
@@ -182,23 +207,29 @@ public final class DataCmdItem extends MainCmdItem {
 			this.status = null;
 			this.text = null;
 			this.rdata = null;
+			this.rho = null;
 		}
 		else {
 			this.options = ((this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHSTATUS));
 			this.status = status;
 			this.text = null;
 			this.rdata = null;
+			this.rho = null;
 		}
 	}
 	
-	public void setAnswer(final RObject rdata) {
+	public void setAnswer(final RObject rdata, final RObject rho) {
 		this.options = ((this.options & OM_CLEARFORANSWER) | OV_ANSWER);
 		if (rdata != null) {
 			this.options |= OV_WITHDATA;
 		}
+		if (rho != null) {
+			this.options |= OV_WITHRHO;
+		}
 		this.status = null;
 		this.text = null;
 		this.rdata = rdata;
+		this.rho = rho;
 	}
 	
 	
@@ -219,6 +250,10 @@ public final class DataCmdItem extends MainCmdItem {
 	
 	public RObject getData() {
 		return this.rdata;
+	}
+	
+	public RObject getRho() {
+		return this.rho;
 	}
 	
 	@Override
@@ -267,6 +302,9 @@ public final class DataCmdItem extends MainCmdItem {
 		case ASSIGN_DATA:
 			sb.append("ASSIGN_DATA");
 			break;
+		case FIND_DATA:
+			sb.append("FIND_DATA");
+			break;
 		default:
 			sb.append(this.op);
 			break;
@@ -287,6 +325,11 @@ public final class DataCmdItem extends MainCmdItem {
 		}
 		else {
 			sb.append("\n<DATA/>");
+		}
+		if ((this.options & OV_WITHRHO) != 0) {
+			sb.append("\n<RHO>\n");
+			sb.append(this.rho.toString());
+			sb.append("\n</RHO>");
 		}
 		return sb.toString();
 	}

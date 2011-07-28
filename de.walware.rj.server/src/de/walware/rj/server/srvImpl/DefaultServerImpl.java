@@ -251,7 +251,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 			return file;
 		}
 		final RObject rwd = runServerLoopCommand(null, new DataCmdItem(DataCmdItem.EVAL_DATA, 0,
-				"getwd()", null));
+				(byte) 0, "getwd()", null, null, null ));
 		return new File(rwd.getData().getChar(0), file.getPath());
 	}
 	

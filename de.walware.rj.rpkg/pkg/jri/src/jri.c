@@ -350,27 +350,31 @@ SEXP jri_getStringArray(JNIEnv *env, jarray o) {
 
 /** get contents of the integer array object (int) */
 SEXP jri_getIntArray(JNIEnv *env, jarray o) {
-  SEXP ar;
-  int l;
-  jint *ap;
-
-  profStart();
-  _dbg(rjprintf(" jarray %d\n",o));
-  if (!o) return R_NilValue;
-  l=(int)(*env)->GetArrayLength(env, o);
-  _dbg(rjprintf("convert int array of length %d\n",l));
-  if (l<1) return R_NilValue;
-  ap=(jint*)(*env)->GetIntArrayElements(env, o, 0);
-  if (!ap) {
-      jri_error("RgetIntArrayCont: can't fetch array contents");
-      return 0;
-  }
-  PROTECT(ar=allocVector(INTSXP,l));
-  memcpy(INTEGER(ar),ap,sizeof(jint)*l);
-  UNPROTECT(1);
-  (*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
-  _prof(profReport("RgetIntArrayCont[%d]:",o));
-  return ar;
+	SEXP ar;
+	int l;
+	jint *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	l=(int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert int array of length %d\n",l));
+	if (l < 0) return R_NilValue;
+	else if (l == 0) {
+		ar = allocVector(INTSXP, 0);
+	} else {
+		ap=(jint*)(*env)->GetIntArrayElements(env, o, 0);
+		if (!ap) {
+			jri_error("RgetIntArrayCont: can't fetch array contents");
+			return 0;
+		}
+		PROTECT(ar=allocVector(INTSXP,l));
+		memcpy(INTEGER(ar),ap,sizeof(jint)*l);
+		UNPROTECT(1);
+		(*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
+	}
+	_prof(profReport("RgetIntArrayCont[%d]:",o));
+	return ar;
 }
 
 /** get contents of the integer array object (int) */

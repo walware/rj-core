@@ -38,10 +38,14 @@ __declspec(dllimport) int UserBreak;
 extern int UserBreak;
 #endif
 #else
+
 /* for R_runHandlers */
 #include <R_ext/eventloop.h>
 #include <signal.h>
 #include <unistd.h>
+
+#include <Rinternals.h>
+
 #endif
 
 #include <R_ext/GraphicsEngine.h>
@@ -236,6 +240,45 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindVar
 	return SEXP2L(Rf_findVar(sym, rho ? L2SEXP(rho) : R_GlobalEnv));
 }
 
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindFunBySym
+(JNIEnv *env, jobject this, jlong name, jlong rho)
+{	
+	SEXP s;
+	SEXP sRho = rho ? L2SEXP(rho) : R_GlobalEnv;
+	while (sRho != R_EmptyEnv) {
+		s = findVarInFrame3(sRho, L2SEXP(name), TRUE);
+		if (s != R_UnboundValue) {
+			if (TYPEOF(s) == PROMSXP) {
+				if (PRVALUE(s) != R_UnboundValue) {
+					s = PRVALUE(s);
+				} else {
+					switch (TYPEOF(PRCODE(s))) {
+					case SPECIALSXP:
+					case BUILTINSXP:
+					case CLOSXP:
+						s = Rf_eval(s, R_BaseEnv);
+					}
+				}
+				if (s == R_UnboundValue) {
+					return 0;
+				}
+			}
+			switch (TYPEOF(s)) {
+			case CLOSXP:
+			case BUILTINSXP:
+			case SPECIALSXP:
+				return SEXP2L(s);
+			default:
+				if (s == R_MissingArg) {
+					return 0;
+				}
+			}
+		}
+		sRho = ENCLOS(sRho);
+	}
+	return 0;
+}
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
 (JNIEnv *env, jobject this, jlong rho, jboolean all)
 {
@@ -318,6 +361,28 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniSpecialObject
   return 0;
 }
 
+
+//--- dbg ---
+
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGetDebug(
+		JNIEnv *env, jobject this, jlong s)
+{	
+	return RDEBUG((s) ? L2SEXP(s) : R_GlobalEnv);
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniSetDebug(
+		JNIEnv *env, jobject this, jlong p, jint v)
+{	SEXP s = (p) ? L2SEXP(p) : R_GlobalEnv;
+	if (RDEBUG(s) != v) {
+		SET_RDEBUG(s, v);
+		return JNI_TRUE;
+	}
+	return JNI_FALSE;
+}
+
+
+//---
+
 JNIEXPORT jobject JNICALL Java_org_rosuda_JRI_Rengine_rniXrefToJava
 (JNIEnv *env, jobject this, jlong exp)
 {
@@ -394,6 +459,17 @@ JNIEXPORT jbyteArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetRawArray
       return jri_putByteArray(env, L2SEXP(exp));
 }
 
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniIsTrue(
+		JNIEnv *env, jobject this, jlong p)
+{
+	SEXP s = L2SEXP(p);
+	if (TYPEOF(s) != LGLSXP || LENGTH(s) != 1) {
+		return JNI_FALSE;
+	}
+	// LOGICAL(s)[0] != 0 && LOGICAL(s)[0] != 2
+	return (LOGICAL(s)[0] == TRUE) ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT jintArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetBoolArrayI
   (JNIEnv *env, jobject this, jlong exp)
 {
@@ -425,6 +501,37 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVectorElt(
 		return 0;
 	}
 	return SEXP2L(VECTOR_ELT(s, index));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetCloBodyExpr(
+		JNIEnv *env, jobject this, jlong clo)
+{	
+	SEXP s = L2SEXP(clo);
+	if (TYPEOF(s) != CLOSXP) {
+		return 0;
+	}
+	return SEXP2L(BODY_EXPR(s));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetCloEnv(
+		JNIEnv *env, jobject this, jlong clo)
+{	
+	SEXP s = L2SEXP(clo);
+	if (TYPEOF(s) != CLOSXP) {
+		return 0;
+	}
+	return SEXP2L(CLOENV(s));
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniSetCloBody(
+		JNIEnv *env, jobject this, jlong clo, jlong p)
+{	
+	SEXP s = L2SEXP(clo);
+	if (TYPEOF(s) != CLOSXP) {
+		return JNI_FALSE;
+	}
+	SET_BODY(s, L2SEXP(p));
+	return JNI_TRUE;
 }
 
 
@@ -490,6 +597,12 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniPutVector
 (JNIEnv *env, jobject this, jlongArray a)
 {
     return SEXP2L(jri_getSEXPLArray(env, a));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniDuplicate(
+		JNIEnv *env, jobject this, jlong p)
+{
+	return SEXP2L(Rf_duplicate(L2SEXP(p)));
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttr(
@@ -599,6 +712,12 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniCons
   
   if (tag) SET_TAG(l, L2SEXP(tag));
   return SEXP2L(l);
+}
+
+JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetCAR(
+		JNIEnv *env, jobject this, jlong lang, jlong v)
+{
+	SETCAR(L2SEXP(lang), L2SEXP(v));
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniCAR

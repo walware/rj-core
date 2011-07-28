@@ -253,6 +253,16 @@ public class Rengine extends Thread {
 	@param exp reference to LGLSXP
 	@return contents or <code>null</code> if the reference is not LGLSXP */
     public synchronized native int[] rniGetBoolArrayI(long exp);
+	
+	/**
+	 * RNI:
+	 * Tests if the reference points to a logical vector of length 1 with the R value TRUE
+	 * 
+	 * @param p reference to LGLSXP
+	 * @return <code>true</code> if it is identical to TRUE, otherwise <code>false</code>
+	 */
+	public synchronized native boolean rniIsTrue(long p);
+	
     /** RNI: get the contents of a numeric vector
 	@param exp reference to REALSXP
 	@return contents or <code>null</code> if the reference is not REALSXP */
@@ -278,6 +288,16 @@ public class Rengine extends Thread {
 	 * @return the reference or <code>0</code> if the reference is not VECSXP/EXPRSXP or the index is invalid
 	 */
 	public synchronized native long rniGetVectorElt(long p, int index);
+	
+	/** RNI:
+	 * Gets the body expression of a closure (common function)
+	 * 
+	 * @param clo reference to CLOSXP
+	 * @return the reference or <code>0</code> if the reference is not CLOSXP
+	 */
+	public synchronized native long rniGetCloBodyExpr(long clo);
+	public synchronized native long rniGetCloEnv(long clo);
+	public synchronized native boolean rniSetCloBody(long clo, long p);
 	
     /** RNI: create a character vector of the length 1
 	@param s initial contents of the first entry
@@ -314,7 +334,9 @@ public class Rengine extends Thread {
 	@param exps initial contents of the vector consisiting of an array of references
 	@return reference to the resulting VECSXP */
     public synchronized native long rniPutVector(long[] exps);
-    
+	
+	public synchronized native long rniDuplicate(long p);
+	
 	/** RNI:
 	 * Gets an attribute
 	 * 
@@ -386,6 +408,8 @@ public class Rengine extends Thread {
     */
     public long rniLCons(long head, long tail) { return rniCons(head, tail, 0, true); }
 
+    public synchronized native void rniSetCAR(long lang, long v);
+
     /** RNI: get CAR of a dotted-pair list (LISTSXP)
 	@param exp reference to the list
 	@return reference to CAR of the list (head) */
@@ -450,6 +474,8 @@ public class Rengine extends Thread {
 		@param rho reference to environment
 		@return reference to the value or UnboundValue if not found */
 	public synchronized native long rniFindVar(String sym, long rho);
+	
+	public synchronized native long rniFindFunBySym(long sym, long rho);
 
 	/** RNI: return the list of variable names of an environment
 		@since API 1.9, JRI 0.5
@@ -483,6 +509,10 @@ public class Rengine extends Thread {
 		@param which constant referring to a particular special object (see SO_xxx constants)
 		@return reference to a special object or 0 if the kind of object it unknown/unsupported */
 	public synchronized native long rniSpecialObject(int which);
+	
+	//--- dbg ---
+	public synchronized native int rniGetDebug(long p);
+	public synchronized native boolean rniSetDebug(long p, int v);
 	
 	//--- was API 1.4 but it only caused portability problems, so we got rid of it
     //public static native void rniSetEnv(String key, String val);

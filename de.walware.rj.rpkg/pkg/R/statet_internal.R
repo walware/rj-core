@@ -170,3 +170,161 @@
 	return (data)
 }
 
+
+.statet.prepareSrcfile <- function(filename, path) {
+	map <- .rj.tmp$statet.SrcfileMap
+	if (is.null(map)) {
+		map <- list()
+	}
+	map[[filename]] <- NULL
+	map[[filename]] <- path
+	if (length(map) > 20) {
+		map[[1]] <- NULL
+	}
+	.rj.tmp$statet.SrcfileMap <- map
+	return (invisible(NULL))
+}
+
+.statet.extSrcfile <- function(srcfile) {
+	map <- .rj.tmp$statet.SrcfileMap
+	path <- NULL
+	if (is.null(map) || is.null(srcfile$filename)) {
+		return (srcfile)
+	}
+	idx <- which(names(map) == srcfile$filename)
+	if (length(idx) != 1) {
+		return (srcfile)
+	}
+	path <- map[[idx]]
+	
+	if (idx <= 10) {
+		map[[idx]] <- NULL
+		map[[srcfile$filename]] <- path
+		.rj.tmp$statet.SrcfileMap <- map
+	}
+	
+	srcfile$statet.Path <- path
+	return (srcfile)
+}
+
+.addElementIds <- function(expr, elementIds) {
+	names <- names(elementIds)
+	for (i in seq_along(names)) {
+		if (!is.na(names[i])) {
+			path <- elementIds[[i]]
+			tryCatch(attr(expr[[path]], "statet.ElementId") <- names[i],
+					error = .rj.errorHandler )
+		}
+	}
+	return (expr)
+}
+
+.statet.prepareCommand <- function(lines, filename = "<text>",
+		srcfileAttributes, elementIds) {
+	# create srcfile object
+	srcfile <- srcfilecopy(filename, lines)
+	if (!missing(srcfileAttributes)) {
+		names <- names(srcfileAttributes)
+		for (i in seq_along(names)) {
+			if (!is.na(names[i])) {
+				assign(names[i], srcfileAttributes[[i]], envir= srcfile)
+			}
+		}
+	}
+	
+	# parse command
+	expr <- parse(text= lines, srcfile= srcfile, encoding= "UTF-8")
+	
+	# attach element ids
+	if (!missing(elementIds)) {
+		expr <- .addElementIds(expr, elementIds)
+	}
+	
+	# finish
+	.rj.tmp$statet.CommandExpr <- expr
+	invisible(expr)
+}
+
+.statet.evalCommand <- function() {
+	expr <- .rj.tmp$statet.CommandExpr
+	if (is.null(expr)) {
+		stop("Commands not available.")
+	}
+	srcrefs <- attr(expr, "srcref")
+	exi <- call("{", expr[[1]])
+	if (1 <= length(srcrefs)) {
+		attr(exi, "srcref") <- list(NULL, srcrefs[[1]])
+	}
+	eval(exi, parent.frame())
+}
+
+.statet.prepareSource <- function(info) {
+	assign("statet.NextSourceInfo", info, envir= .rj.tmp)
+}
+
+.statet.extSource <- function(expr) {
+	info <- .rj.tmp$statet.NextSourceInfo
+	if (is.null(info)) {
+		return (expr)
+	}
+	on.exit(rm("statet.NextSourceInfo", envir= .rj.tmp))
+	if (is.null(expr)) {
+		return (expr)
+	}
+	srcfile <- attr(expr, "srcfile")
+	if (is.null(srcfile)
+			|| is.null(srcfile$statet.Path) || is.null(srcfile$timestamp)
+			|| srcfile$statet.Path != info$path
+			|| (unclass(srcfile$timestamp) != info$timestamp
+				&& abs(unclass(srcfile$timestamp) - info$timestamp) != 3600 )
+			|| length(expr) != info$exprsLength ) {
+		return (expr)
+	}
+	expr <- .addElementIds(expr, info$elementIds)
+	return (expr)
+}
+
+
+#' Initializes the debug tools
+.statet.initDebug <- function() {
+	if (options("keep.source") != TRUE) {
+		options("keep.source" = TRUE)
+	}
+	baseEnv <- as.environment("package:base")
+	
+	# ext base::srcfile
+	.injectSrcfile <- function(fname, envir) {
+		ffun <- get(fname, envir= envir)
+		fbody <- body(ffun)
+		l <- length(fbody)
+		if (length(fbody[[l]]) == 2 && fbody[[l]][[1]] == "return") {
+			c1 <- quote(rj:::.statet.extSrcfile(x))
+			c1[[2]] <- fbody[[l]][[2]]
+			fbody[[l]][[2]] <- c1
+			body(ffun) <- fbody
+			return (.patchPackage(fname, ffun, envir= envir))
+		}
+		cat("Could not install rj extension for '", fname, "'.\n", sep= "")
+		return (FALSE)
+	}
+	.injectSource <- function(fname, envir) {
+		ffun <- get(fname, envir= envir)
+		fbody <- body(ffun)
+		l <- length(fbody)
+		for (i in 1L:l) {
+			if (length(fbody[[i]]) == 3 && fbody[[i]][[1]] == "<-" && fbody[[i]][[2]] == "exprs") {
+				c1 <- quote(rj:::.statet.extSource(x))
+				c1[[2]] <- fbody[[i]][[3]]
+				fbody[[i]][[3]] <- c1
+				body(ffun) <- fbody
+				return (.patchPackage(fname, ffun, envir= envir))
+			}
+		}
+		cat("Could not install rj extension for '", fname, "'.\n", sep= "")
+		return (FALSE)
+	}
+	.injectSource("source", baseEnv)
+	.injectSrcfile("srcfile", baseEnv)
+	.injectSrcfile("srcfilecopy", baseEnv)
+	return (invisible())
+}

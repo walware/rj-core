@@ -1,4 +1,4 @@
-AC_INIT(jri, 0.5, simon.urbanek@r-project.org)
+AC_INIT([JRI],[0.3],[simon.urbanek@r-project.org])
 AC_CONFIG_SRCDIR([src/jri.h])
 AC_CONFIG_HEADER([src/config.h])
 AC_CONFIG_AUX_DIR([tools])

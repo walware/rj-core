@@ -13,6 +13,7 @@ package de.walware.rj.data;
 
 
 
+
 public class RDataUtil {
 	
 	/**
@@ -651,6 +652,31 @@ public class RDataUtil {
 			}
 		}
 		return 0; // equal
+	}
+	
+	
+	public static final byte[] encodeLongToRaw(final long id) {
+		final byte[] raw = new byte[8];
+		raw[0] = (byte) (id >>> 56);
+		raw[1] = (byte) (id >>> 48);
+		raw[2] = (byte) (id >>> 40);
+		raw[3] = (byte) (id >>> 32);
+		raw[4] = (byte) (id >>> 24);
+		raw[5] = (byte) (id >>> 16);
+		raw[6] = (byte) (id >>> 8);
+		raw[7] = (byte) (id);
+		return raw;
+	}
+	
+	public static final long decodeLongFromRaw(final byte[] raw) {
+		return(	((long) (raw[0] & 0xff) << 56) |
+				((long) (raw[1] & 0xff) << 48) |
+				((long) (raw[2] & 0xff) << 40) |
+				((long) (raw[3] & 0xff) << 32) |
+				((long) (raw[4] & 0xff) << 24) |
+				((raw[5] & 0xff) << 16) |
+				((raw[6] & 0xff) << 8) |
+				((raw[7] & 0xff)) );
 	}
 	
 }

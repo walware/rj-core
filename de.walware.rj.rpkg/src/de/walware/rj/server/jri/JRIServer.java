@@ -26,6 +26,7 @@ import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_ASSIGN_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_EVAL_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_RESOLVE_DATA;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_DBG_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.LOGGER;
 import static de.walware.rj.server.jri.JRIServerRni.EVAL_MODE_DEFAULT;
 
@@ -62,6 +63,7 @@ import de.walware.rj.server.ConsoleWriteErrCmdItem;
 import de.walware.rj.server.ConsoleWriteOutCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
+import de.walware.rj.server.DbgCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
@@ -73,6 +75,14 @@ import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.dbg.DbgEnablement;
+import de.walware.rj.server.dbg.DbgFilterState;
+import de.walware.rj.server.dbg.ElementTracepointInstallationRequest;
+import de.walware.rj.server.dbg.FrameContextDetailRequest;
+import de.walware.rj.server.dbg.SetDebugRequest;
+import de.walware.rj.server.dbg.TracepointEvent;
+import de.walware.rj.server.dbg.TracepointListener;
+import de.walware.rj.server.dbg.TracepointStatesUpdate;
 import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
@@ -89,7 +99,7 @@ import de.walware.rj.server.srvext.ServerRuntimePlugin;
  * Remove server based on
  */
 public final class JRIServer extends RJ
-		implements InternalEngine, RMainLoopCallbacks, ExtServer {
+		implements InternalEngine, RMainLoopCallbacks, ExtServer, TracepointListener {
 	
 	
 	private static final int ENGINE_NOT_STARTED = 0;
@@ -280,6 +290,8 @@ public final class JRIServer extends RJ
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
+	private final JRIServerUtils utils = new JRIServerUtils();
+	
 	private RObjectFactory rObjectFactory;
 	
 	private JRIServerGraphics graphics;
@@ -290,6 +302,8 @@ public final class JRIServer extends RJ
 	private int rniListsMaxLength = 10000;
 	private int rniEnvsMaxLength = 10000;
 	private JRIServerRni rni;
+	
+	private JRIServerDbg dbgSupport;
 	
 	
 	public JRIServer() {
@@ -557,6 +571,8 @@ public final class JRIServer extends RJ
 		try {
 			this.rni = new JRIServerRni(this.rEngine);
 			
+			this.dbgSupport = new JRIServerDbg(re, this.rni, this.utils, this);
+			
 			loadPlatformData();
 			
 			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
@@ -597,7 +613,7 @@ public final class JRIServer extends RJ
 		try {
 			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
 				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA,
-						1, dataEntry.getValue(), null ));
+						0, (byte) 1, dataEntry.getValue(), null, null, null ));
 				if (dataCmd != null && dataCmd.isOK()) {
 					final RObject data = dataCmd.getData();
 					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
@@ -849,6 +865,9 @@ public final class JRIServer extends RJ
 			case RjsComObject.T_CTRL:
 				return internalCtrl(client.slot, (CtrlCmdItem) command);
 			
+			case RjsComObject.T_DBG:
+				return internalAsyncDbg(client.slot, (DbgCmdItem) command);
+				
 			case RjsComObject.T_FILE_EXCHANGE:
 				return command;
 			
@@ -870,6 +889,11 @@ public final class JRIServer extends RJ
 					try {
 						this.rni.rniInterrupted = true;
 						this.rEngine.rniStop(0);
+						
+						if (this.dbgSupport != null) {
+							this.dbgSupport.rCancelled();
+						}
+						
 						return RjsStatus.OK_STATUS;
 					}
 					catch (final Throwable e) {
@@ -908,8 +932,8 @@ public final class JRIServer extends RJ
 			finally {
 				this.mainExchangeLock.unlock();
 			}
+			
 		}
-		
 		return new RjsStatus(RjsStatus.ERROR, CODE_CTRL_COMMON | 0x2);
 	}
 	
@@ -1169,6 +1193,9 @@ public final class JRIServer extends RJ
 			case MainCmdItem.T_GRAPHICS_OP_ITEM:
 				item = internalExecGraOp((GraOpCmdItem) item);
 				continue;
+			case MainCmdItem.T_DBG_ITEM:
+				item = internalEvalDbg((DbgCmdItem) item);
+				continue;
 				
 			default:
 				continue;
@@ -1206,6 +1233,7 @@ public final class JRIServer extends RJ
 		try {
 			// TODO disable
 			this.safeMode = true;
+			this.dbgSupport.beginSafeMode();
 			return 1;
 		}
 		catch (final Exception e) {
@@ -1218,7 +1246,7 @@ public final class JRIServer extends RJ
 		if (mode > 0) {
 			try {
 				this.safeMode = false;
-				// TODO enable
+				this.dbgSupport.endSafeMode();
 			}
 			catch (final Exception e) {
 				LOGGER.log(Level.SEVERE, "An error occurred when running 'endSafeMode' command.", e);
@@ -1249,6 +1277,7 @@ public final class JRIServer extends RJ
 				throw new IllegalStateException("Missing input.");
 			}
 			final RObject data = cmd.getData();
+			final RObject envir = cmd.getRho();
 			CMD_OP: switch (cmd.getOp()) {
 			
 			case DataCmdItem.EVAL_VOID: {
@@ -1256,10 +1285,10 @@ public final class JRIServer extends RJ
 					throw new CancellationException();
 				}
 				if (data == null) {
-					rniEval(input);
+					rniEval(input, envir);
 				}
 				else {
-					rniEval(input, (RList) data);
+					rniEval(input, (RList) data, envir);
 				}
 				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
@@ -1273,15 +1302,15 @@ public final class JRIServer extends RJ
 				}
 				final long objP;
 				if (data == null) {
-					objP = rniEval(input);
+					objP = rniEval(input, envir);
 				}
 				else {
-					objP = rniEval(input, (RList) data);
+					objP = rniEval(input, (RList) data, envir);
 				}
 				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
-				cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()));
+				cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()), null);
 				break CMD_OP; }
 			
 			case DataCmdItem.RESOLVE_DATA: {
@@ -1290,7 +1319,7 @@ public final class JRIServer extends RJ
 					if (this.rni.rniInterrupted) {
 						throw new CancellationException();
 					}
-					cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()));
+					cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()), null);
 				}
 				else {
 					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
@@ -1302,10 +1331,23 @@ public final class JRIServer extends RJ
 				if (this.rni.rniInterrupted) {
 					throw new CancellationException();
 				}
-				rniAssign(input, data);
+				rniAssign(input, data, envir);
 				cmd.setAnswer(RjsStatus.OK_STATUS);
 				break CMD_OP; }
 			
+			case DataCmdItem.FIND_DATA: {
+				final long[] foundP = rniFind(input, envir, (cmd.getCmdOption() & 0x1000) != 0);
+				if (foundP != null) {
+					cmd.setAnswer(
+							this.rni.createDataObject(foundP[1], cmd.getCmdOption() & 0xfff),
+							new JRIEnvironmentImpl(this.rni.getEnvName(foundP[0]), foundP[0],
+									null, null, this.rEngine.rniGetLength(foundP[0]),
+									this.rEngine.rniGetClassAttrString(foundP[0]) ));
+				}
+				else {
+					cmd.setAnswer(null, null);
+				}
+				break CMD_OP; }
 			
 			default:
 				throw new IllegalStateException("Unsupported command.");
@@ -1361,14 +1403,29 @@ public final class JRIServer extends RJ
 		return cmd.waitForClient() ? cmd : null;
 	}
 	
-	private long rniEval(final String expression) throws RjsException {
+	private long rniEval(final String expression, final RObject envir) throws RjsException {
+		final long envP = this.rni.resolveEnvironment(envir);
 		final long exprP = this.rni.resolveExpression(expression);
-		return this.rni.evalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x3));
+		return this.rni.evalExpr(exprP, envP, (CODE_DATA_EVAL_DATA | 0x3));
 	}
 	
-	private long rniEval(final String name, final RList args) throws RjsException {
+	private long rniEval(final String name, final RList args, final RObject envir) throws RjsException {
+		final long envP = this.rni.resolveEnvironment(envir);
 		final long exprP = this.rni.createFCall(name, args);
-		return this.rni.evalExpr(exprP, (CODE_DATA_EVAL_DATA | 0x4));
+		return this.rni.evalExpr(exprP, envP, (CODE_DATA_EVAL_DATA | 0x4));
+	}
+	
+	private long[] rniFind(final String name, final RObject envir, final boolean inherits) throws RjsException {
+		long envP = this.rni.resolveEnvironment(envir);
+		final long symbolP = this.rEngine.rniInstallSymbol(name);
+		long p = this.rEngine.rniGetVarBySym(envP, symbolP);
+		if (inherits) {
+			while (p == 0 && (envP = this.rEngine.rniParentEnv(envP)) != 0
+					&& envP != this.rni.p_EmptyEnv ) {
+				p = this.rEngine.rniGetVarBySym(envP, symbolP);
+			}
+		}
+		return (p != 0) ? new long[] { envP, p } : null;
 	}
 	
 	/**
@@ -1378,7 +1435,8 @@ public final class JRIServer extends RJ
 	 * @param obj an R object to assign
 	 * @throws RjException
 	*/ 
-	private void rniAssign(final String expression, final RObject obj) throws RjsException {
+	private void rniAssign(final String expression, final RObject obj, final RObject envir) throws RjsException {
+		final long envP = this.rni.resolveEnvironment(envir); // TODO
 		if (obj == null) {
 			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x2),
 					"The R object to assign is missing." );
@@ -1392,7 +1450,7 @@ public final class JRIServer extends RJ
 								0, false ),
 						0, false ),
 				0, true );
-		this.rni.evalExpr(exprP, (CODE_DATA_ASSIGN_DATA | 0x3));
+		this.rni.evalExpr(exprP, 0, (CODE_DATA_ASSIGN_DATA | 0x3));
 	}
 	
 	
@@ -1468,13 +1526,161 @@ public final class JRIServer extends RJ
 	}
 	
 	
-	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
-		if (this.safeMode) {
-			if (prompt.startsWith("Browse")) {
-				return "c\n";
+	private DbgCmdItem internalEvalDbg(final DbgCmdItem cmd) {
+		final byte savedSlot = this.currentSlot;
+		this.currentSlot = cmd.slot;
+		final boolean ownLock = this.rEngine.getRsync().safeLock();
+		this.rni.newDataLevel(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+		final int savedProtected = this.rni.saveProtected();
+		final int savedSafeMode = beginSafeMode();
+		final RMainLoopCallbacks savedCallback = this.rEngine.getMainLoopCallbacks();
+		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
+		try {
+			if (this.rni.rniInterrupted) { // TODO
+				this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
 			}
+			CMD_OP: switch (cmd.getOp()) {
+			
+			case DbgCmdItem.OP_LOAD_FRAME_LIST:
+				cmd.setAnswer(this.dbgSupport.loadCallStack());
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_LOAD_FRAME_CONTEXT:
+				cmd.setAnswer(this.dbgSupport.loadFrameDetail(
+						(FrameContextDetailRequest) cmd.getData() ));
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_SET_DEBUG:
+				if (savedSafeMode != 0) { // was already inSafeMode
+					cmd.setAnswer(this.dbgSupport.setDebug(
+							(SetDebugRequest) cmd.getData() ));
+				}
+				else {
+					cmd.setAnswer(new RjsStatus(RjsStatus.WARNING, 0, "Debug must not be set in data mode."));
+				}
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_REQUEST_SUSPEND:
+				this.dbgSupport.requestSuspend();
+				cmd.setAnswer(RjsStatus.OK_STATUS);
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_INSTALL_TP_POSITIONS:
+				cmd.setAnswer(this.dbgSupport.installTracepoints(
+						(ElementTracepointInstallationRequest) cmd.getData() ));
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_RESET_FILTER_STATE:
+				cmd.setAnswer(this.dbgSupport.setFilterState(
+						(DbgFilterState) cmd.getData() ));
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_UPDATE_TP_STATES:
+				cmd.setAnswer(this.dbgSupport.updateTracepointStates(
+						(TracepointStatesUpdate) cmd.getData() ));
+				break CMD_OP;
+			
+			case DbgCmdItem.OP_SET_ENABLEMENT:
+				this.dbgSupport.setEnablement((DbgEnablement) cmd.getData());
+				cmd.setAnswer(RjsStatus.OK_STATUS);
+				break CMD_OP;
+				
+			default:
+				throw new IllegalStateException("Unsupported command.");
+			
+			}
+			if (this.rni.rniInterrupted) {
+				throw new CancellationException();
+			}
+		}
+		catch (final RjsException e) {
+			final String message = "Eval dbg failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.WARNING, message, e);
+			cmd.setAnswer(e.getStatus());
+		}
+		catch (final CancellationException e) {
+			cmd.setAnswer(RjsStatus.CANCEL_STATUS);
+		}
+		catch (final Throwable e) {
+			final String message = "Eval dbg failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.SEVERE, message, e);
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DBG_COMMON | 0x1),
+					"Internal server error (see server log)." ));
+		}
+		finally {
+			this.rEngine.addMainLoopCallbacks(savedCallback);
+			endSafeMode(savedSafeMode);
+			this.rni.looseProtected(savedProtected);
+			this.rni.exitDataLevel();
+			this.currentSlot = savedSlot;
+			
+			if (this.rni.rniInterrupted) {
+				this.mainInterruptLock.lock();
+				try {
+					if (this.rni.rniInterrupted) {
+						try {
+							Thread.sleep(10);
+						}
+						catch (final InterruptedException e) {
+							e.printStackTrace();
+						}
+						this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
+						this.rni.rniInterrupted = false;
+					}
+				}
+				finally {
+					this.mainInterruptLock.unlock();
+					if (ownLock) {
+						this.rEngine.getRsync().unlock();
+					}
+				}
+			}
+			else {
+				if (ownLock) {
+					this.rEngine.getRsync().unlock();
+				}
+			}
+		}
+		return cmd.waitForClient() ? cmd : null;
+	}
+	
+	private RjsStatus internalAsyncDbg(final byte slot, final DbgCmdItem cmd) {
+		switch (cmd.getOp()) {
+		
+		case DbgCmdItem.OP_RESET_FILTER_STATE:
+			return this.dbgSupport.setFilterState(
+					(DbgFilterState) cmd.getData() );
+		
+		case DbgCmdItem.OP_SET_ENABLEMENT:
+			this.dbgSupport.setEnablement((DbgEnablement) cmd.getData());
+			return RjsStatus.OK_STATUS;
+		
+		case DbgCmdItem.OP_UPDATE_TP_STATES:
+			return this.dbgSupport.updateTracepointStates(
+					(TracepointStatesUpdate) cmd.getData() );
+		
+		}
+		return new RjsStatus(RjsStatus.ERROR, CODE_DBG_COMMON | 0x2);
+	}
+	
+	public void handle(final TracepointEvent event) {
+		internalMainFromR(new DbgCmdItem(DbgCmdItem.OP_NOTIFY_TP_EVENT, 0, event));
+	}
+	
+	
+	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
+		if (prompt.startsWith("Browse")) {
+			final String input = this.dbgSupport.handleBrowserPrompt(prompt);
+			if (input != null) {
+				return input;
+			}
+		}
+		else if (inSafeMode()) {
 			return "\n";
 		}
+		
+		this.dbgSupport.clearContext();
+		
 		final MainCmdItem cmd = internalMainFromR(new ConsoleReadCmdItem(
 				(addToHistory == 1) ? V_TRUE : V_FALSE, prompt ));
 		if (cmd.isOK()) {
@@ -1578,54 +1784,61 @@ public final class JRIServer extends RJ
 		execUICommand("common/saveHistory", args, true);
 	}
 	
-	public long rExecJCommand(final Rengine re, String commandId, final long argsExpr, final int options) {
+	public long rExecJCommand(final Rengine re, String commandId, final long argsP, final int options) {
 		try {
-			RList args = null;
-			if (argsExpr != 0) {
-				this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
-				final int savedProtected = this.rni.saveProtected();
-				try {
-					this.rni.protect(argsExpr);
-					final RObject rObject = this.rni.createDataObject(argsExpr, 0, EVAL_MODE_DEFAULT);
-					if (rObject.getRObjectType() == RObject.TYPE_LIST) {
-						args = (RList) rObject;
-					}
-				}
-				finally {
-					this.rni.looseProtected(savedProtected);
-					this.rni.exitDataLevel();
-				}
+			final int idx = commandId.indexOf(':');
+			if (idx <= 0) {
+				return 0;
 			}
+			final String commandGroup = commandId.substring(0, idx);
+			commandId = commandId.substring(idx+1);
 			
-			final boolean wait = ((options | 1) != 0);
-			
-			final String commandGroup;
-			{	final int idx = commandId.indexOf(':');
-				commandGroup = (idx > 0) ? commandId.substring(0, idx) : null;
-				commandId = commandId.substring(idx+1);
-			}
-			
-			RList answer = null;
 			if (commandGroup.equals("ui")) {
-				answer = execUICommand(commandId, args, wait);
+				final boolean wait = ((options | 1) != 0);
+				final RList answer = execUICommand(commandId, createJCommandArgs(argsP), wait);
+				return createJCommandAnswer(answer);
 			}
-			
-			if (answer != null) {
-				this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
-				final int savedProtected = this.rni.saveProtected();
-				try {
-					return this.rni.assignDataObject(answer);
-				}
-				finally {
-					this.rni.looseProtected(savedProtected);
-					this.rni.exitDataLevel();
-				}
+			if (commandGroup.equals("dbg") && this.dbgSupport != null) {
+				return this.dbgSupport.execRJCommand(commandId, argsP);
 			}
 		}
 		catch (final Exception e) {
-			LOGGER.log(Level.WARNING, "An error occurred when executing java command.", e);
+			LOGGER.log(Level.WARNING, "An error occurred when executing java command '" + commandId + "'.", e);
 		}
-		
+		return 0;
+	}
+	
+	private RList createJCommandArgs(final long p) {
+		if (p != 0) {
+			this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
+			final int savedProtected = this.rni.saveProtected();
+			try {
+				this.rni.protect(p);
+				final RObject rObject = this.rni.createDataObject(p, 0, EVAL_MODE_DEFAULT);
+				if (rObject.getRObjectType() == RObject.TYPE_LIST) {
+					return (RList) rObject;
+				}
+			}
+			finally {
+				this.rni.looseProtected(savedProtected);
+				this.rni.exitDataLevel();
+			}
+		}
+		return null;
+	}
+	
+	private long createJCommandAnswer(final RList answer) throws RjsException {
+		if (answer != null) {
+			this.rni.newDataLevel(255, this.rniEnvsMaxLength, this.rniListsMaxLength);
+			final int savedProtected = this.rni.saveProtected();
+			try {
+				return this.rni.assignDataObject(answer);
+			}
+			finally {
+				this.rni.looseProtected(savedProtected);
+				this.rni.exitDataLevel();
+			}
+		}
 		return 0;
 	}
 	
