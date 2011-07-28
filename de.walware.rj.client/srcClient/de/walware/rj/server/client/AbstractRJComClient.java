@@ -51,6 +51,8 @@ import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleReadCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
+import de.walware.rj.server.DbgCmdItem;
+import de.walware.rj.server.DbgCmdItem.CustomDataReader;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.GraOpCmdItem;
@@ -216,6 +218,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private final int[] dataRequestId = new int[32];
 	private final MainCmdItem[] dataAnswer = new MainCmdItem[32];
 	
+	private boolean dbgOpRequest;
+	private DbgCmdItem dbgOpAnswer;
+	private CustomDataReader dbgOpCustomReader;
+	
 	private int hotModeState;
 	private ConsoleReadCmdItem hotModeReadCallbackBackup;
 	private MainCmdItem hotModeC2SFirstBackup;
@@ -232,6 +238,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private RClientGraphic lastGraphic;
 	
 	private ConsoleEngine rjConsoleServer;
+	
+	private List<Runnable> defferedRunnables;
 	
 	private boolean closed;
 	private ScheduledFuture<?> keepAliveJob;
@@ -271,10 +279,24 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
+	public void setDbgCustomCmdReader(final DbgCmdItem.CustomDataReader reader) {
+		this.dbgOpCustomReader = reader;
+	}
+	
 	public final void setServer(final ConsoleEngine rjServer, final int client) {
-		this.rjConsoleServer = rjServer;
-		if (client == 0) {
-			this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
+		final List<Runnable> runnables;
+		synchronized (this) {
+			this.rjConsoleServer = rjServer;
+			if (client == 0) {
+				this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
+			}
+			runnables = defferedRunnables;
+			defferedRunnables = null;
+		}
+		if (runnables != null) {
+			for (int i = 0; i < runnables.size(); i++) {
+				RJHelper_EXECUTOR.execute(runnables.get(i));
+			}
 		}
 	}
 	
@@ -290,8 +312,22 @@ public abstract class AbstractRJComClient implements ComHandler {
 		return this.rjConsoleServer;
 	}
 	
+	protected void execAsync(final Runnable runnable) {
+		synchronized (this) {
+			if (this.rjConsoleServer == null) {
+				if (this.defferedRunnables == null) {
+					this.defferedRunnables = new ArrayList<Runnable>(8);
+				}
+				this.defferedRunnables.add(runnable);
+				return;
+			}
+		}
+		RJHelper_EXECUTOR.execute(runnable);
+	}
+	
 	protected void initGraphicFactory() {
 	}
+	
 	
 	public final void setGraphicFactory(final RClientGraphicFactory factory, final RClientGraphicActions actions) {
 		if (factory == null) {
@@ -382,6 +418,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case MainCmdItem.T_GRAPHICS_OP_ITEM:
 				runGC = true;
 				processGraphicsOpCmd(this.mainIO);
+				continue;
+			case MainCmdItem.T_DBG_ITEM:
+				runGC = true;
+				processDbgCmd(this.mainIO);
 				continue;
 			default:
 				this.mainIO.disconnect(in);
@@ -634,6 +674,24 @@ public abstract class AbstractRJComClient implements ComHandler {
 		this.dataLevelAnswer = (this.dataAnswer[this.dataLevelRequest] != null) ? this.dataLevelRequest : 0;
 	}
 	
+	public final int getDataLevel() {
+		return this.dataLevelRequest;
+	}
+	
+	
+	protected final void processDbgCmd(final RJIO io) throws IOException {
+		final DbgCmdItem item = new DbgCmdItem(io, this.dbgOpCustomReader);
+		if (item.getOp() > DbgCmdItem.OP_C2S_S2C) {
+			handleDbgEvent(item.getOp(), item.getData());
+		}
+		else if (this.dbgOpRequest) {
+			this.dbgOpAnswer = item;
+		}
+	}
+	
+	protected void handleDbgEvent(final byte dbgOp, final Object event) {
+	}
+	
 	
 	protected abstract void log(IStatus status);
 	
@@ -747,7 +805,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 				this.dataLevelIgnore = this.dataLevelRequest;
 				processExtraMode(EXTRA_BEFORE);
 			}
-			if (this.hotModeRequested.get() && this.hotModeState < 1) {
+			while (this.hotModeRequested.get()
+					&& this.hotModeState < 1 && !this.dbgOpRequest) {
 				this.dataLevelIgnore = this.dataLevelRequest;
 				startHotMode();
 			}
@@ -814,7 +873,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 									&& (loopReadCallbackIgnore || this.consoleReadCallback != null)
 									&& (this.dataLevelRequest <= loopDataLevelIgnore
 											|| this.dataLevelRequest == this.dataLevelAnswer
-											|| (this.extraModeRequested & EXTRA_NESTED) != 0 ) ) {
+											|| (this.extraModeRequested & EXTRA_NESTED) != 0 )
+									&& (this.dbgOpRequest == (this.dbgOpAnswer != null))) {
 								if (this.mainRunGC) {
 									this.mainRunGC = false;
 									this.rjConsoleServer.runMainLoop(RjsPing.INSTANCE);
@@ -1066,14 +1126,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public final void evalVoid(final String expression, final IProgressMonitor monitor) throws CoreException {
+	public final void evalVoid(final String expression, final RObject envir,
+			final IProgressMonitor monitor) throws CoreException {
 		if (expression == null) {
 			throw new NullPointerException("expression");
 		}
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
-					0, expression, null )), monitor);
+					0, expression, null, envir )), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1091,7 +1152,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public final void evalVoid(final String name, final RList args, final IProgressMonitor monitor) throws CoreException {
+	public final void evalVoid(final String name, final RList args, final RObject envir,
+			final IProgressMonitor monitor) throws CoreException {
 		if (name == null) {
 			throw new NullPointerException("name");
 		}
@@ -1101,7 +1163,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
-					0, (byte) 0, name, args, null )), monitor );
+					0, name, args, envir )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1119,8 +1181,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public RObject evalData(final String expression, final String factoryId,
-			final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+	public RObject evalData(final String expression, final RObject envir,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
 		if (expression == null) {
 			throw new NullPointerException("expression");
 		}
@@ -1128,7 +1191,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
-					options, checkedDepth, expression, null, factoryId )), monitor);
+					options, checkedDepth, expression, null, envir, factoryId )), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1146,8 +1209,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public RObject evalData(final String name, final RObject args, final String factoryId,
-			final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+	public RObject evalData(final String name, final RObject args, final RObject envir,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
 		if (name == null) {
 			throw new NullPointerException("name");
 		}
@@ -1158,7 +1222,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
-					options, checkedDepth, name, args, factoryId )), monitor );
+					options, checkedDepth, name, args, envir, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1176,14 +1240,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public final RObject evalData(final RReference reference, final String factoryId,
-			final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+	public final RObject evalData(final RReference reference,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
 			final long handle = reference.getHandle();
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.RESOLVE_DATA,
-					options, checkedDepth, Long.toString(handle), null, factoryId )), monitor );
+					options, checkedDepth, Long.toString(handle), null, null, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1201,7 +1266,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 	}
 	
-	public final void assignData(final String expression, final RObject data, final IProgressMonitor monitor) throws CoreException {
+	public final void assignData(final String expression, final RObject data, final RObject envir,
+			final IProgressMonitor monitor) throws CoreException {
 		if (expression == null) {
 			throw new NullPointerException("expression");
 		}
@@ -1211,7 +1277,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_DATA,
-					0, expression, data )), monitor );
+					0, expression, data, envir )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1223,6 +1289,38 @@ public abstract class AbstractRJComClient implements ComHandler {
 				}
 			}
 			return;
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public RObject[] findData(final String symbol, final RObject envir, final boolean inherits,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
+		if (symbol == null) {
+			throw new NullPointerException("symbol");
+		}
+		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.FIND_DATA,
+					(inherits) ? (options | 0x1000) : options, checkedDepth,
+					symbol, null, envir, factoryId )), monitor );
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Evaluation failed: " + status.getMessage(), null));
+				}
+			}
+			final DataCmdItem dataItem = (DataCmdItem) this.dataAnswer[level];
+			return (dataItem.getRho() != null) ?
+					new RObject[] { dataItem.getData(), dataItem.getRho() } :
+					null;
 		}
 		finally {
 			finalizeDataLevel();
@@ -1293,6 +1391,50 @@ public abstract class AbstractRJComClient implements ComHandler {
 			}
 		}
 	}
+	
+	
+	public Object execSyncDbgOp(final byte dbgOp, final RJIOExternalizable request,
+			final IProgressMonitor monitor) throws CoreException {
+		if (this.dbgOpRequest) {
+			throw new IllegalStateException();
+		}
+		this.dbgOpRequest = true;
+		try {
+			runMainLoop(null, new DbgCmdItem(dbgOp, 0, request), monitor);
+			if (this.dbgOpAnswer == null || !this.dbgOpAnswer.isOK()) {
+				final RjsStatus status = (this.dbgOpAnswer != null) ? this.dbgOpAnswer.getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Dbg operation failed: " + status.getMessage(), null));
+				}
+			}
+			return this.dbgOpAnswer.getData();
+		}
+		finally {
+			this.dbgOpRequest = false;
+			this.dbgOpAnswer = null;
+		}
+	}
+	
+	public void execAsyncDbgOp(final byte op, final RJIOExternalizable request)
+			throws CoreException {
+		execAsync(new Runnable() {
+			public void run() {
+				try {
+					runAsync(new DbgCmdItem(op, 0, request));
+					// in future check returned status if required
+				}
+				catch (final CoreException e) {
+					log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1,
+							"An error occurred when executing background dbg operation.", e));
+				}
+			}
+		});
+	}
+	
 	
 	public int getGraphicOptions() {
 		return this.currentGraphicOptions;

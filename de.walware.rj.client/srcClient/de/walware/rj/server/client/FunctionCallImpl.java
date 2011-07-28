@@ -153,7 +153,7 @@ public class FunctionCallImpl implements FunctionCall {
 	
 	public void evalVoid(final IProgressMonitor monitor) throws CoreException {
 		final RList args = prepareArgs(monitor);
-		this.rjs.evalVoid(this.name, args, monitor);
+		this.rjs.evalVoid(this.name, args, null, monitor);
 	}
 	
 	public RObject evalData(final IProgressMonitor monitor) throws CoreException {
@@ -163,7 +163,7 @@ public class FunctionCallImpl implements FunctionCall {
 	
 	public RObject evalData(final String factoryId, final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
 		final RList args = prepareArgs(monitor);
-		return this.rjs.evalData(this.name, args, factoryId, options, depth, monitor);
+		return this.rjs.evalData(this.name, args, null, factoryId, options, depth, monitor);
 	}
 	
 	@Override

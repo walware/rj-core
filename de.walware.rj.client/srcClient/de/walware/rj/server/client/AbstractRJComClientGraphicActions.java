@@ -65,7 +65,7 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 			sb.append(",");
 		}
 		sb.replace(sb.length()-1, sb.length(), ")");
-		this.rjs.evalVoid(sb.toString(), monitor);
+		this.rjs.evalVoid(sb.toString(), null, monitor);
 	}
 	
 	public double[] convertGraphic2User(final int devId, final double[] xy,
