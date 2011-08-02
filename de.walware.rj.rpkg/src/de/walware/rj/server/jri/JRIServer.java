@@ -576,7 +576,8 @@ public final class JRIServer extends RJ
 			loadPlatformData();
 			
 			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
-				if (this.rArgs.contains("--internet2")) {
+				if (this.rArgs.contains("--internet2")
+						|| "2".equals(System.getenv("R_NETWORK")) ) {
 					this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
 				}
 				if (this.rMemSize != 0) {
