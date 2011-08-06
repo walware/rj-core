@@ -15,6 +15,8 @@ import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.logging.Logger;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInvalidConfigurationException;
+import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.jri.loader.JRIServerLoader;
 import de.walware.rj.server.srvext.ServerAuthMethod;
@@ -116,6 +119,10 @@ public class AbstractServerControl {
 		System.exit(status);
 	}
 	
+	public static Remote exportObject(Remote obj) throws RemoteException {
+		return UnicastRemoteObject.exportObject(obj, 0, RjsComConfig.getRMIServerClientSocketFactory(), null);
+	}
+	
 	
 	protected final String logPrefix;
 	
@@ -181,7 +188,7 @@ public class AbstractServerControl {
 	protected void publishServer(final Server server) {
 		try {
 			System.setSecurityManager(new SecurityManager());
-			final Server stub = (Server) UnicastRemoteObject.exportObject(server, 0);
+			final Server stub = (Server) AbstractServerControl.exportObject(server);
 			this.mainServer = server;
 			try {
 				Naming.bind(this.name, stub);

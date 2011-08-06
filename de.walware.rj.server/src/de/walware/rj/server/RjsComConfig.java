@@ -11,8 +11,17 @@
 
 package de.walware.rj.server;
 
+import java.io.Externalizable;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.rmi.Remote;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMISocketFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -93,6 +102,111 @@ public class RjsComConfig {
 	
 	public static final Object getProperty(final String key) {
 		return PROPERTIES.get(key);
+	}
+	
+	
+	private static final ThreadLocal<RMIClientSocketFactory> gRMIClientSocketFactoriesInit = new ThreadLocal<RMIClientSocketFactory>();
+	private static final ConcurrentHashMap<String, RMIClientSocketFactory> gRMIClientSocketFactories = new ConcurrentHashMap<String, RMIClientSocketFactory>();
+	
+	
+	private static RMIClientSocketFactory getSystemRMIClientSocketFactory() {
+		RMIClientSocketFactory factory = RMISocketFactory.getSocketFactory();
+		if (factory == null) {
+			factory = RMISocketFactory.getDefaultSocketFactory();
+		}
+		return factory;
+	}
+	
+	private static final class RjRMIClientSocketFactory implements RMIClientSocketFactory, Externalizable {
+		
+		
+		private static final long serialVersionUID = -2470426070934072117L;
+		
+		
+		private String id;
+		private RMIClientSocketFactory resolvedFactory;
+		
+		
+		@SuppressWarnings("unused")
+		public RjRMIClientSocketFactory() {
+		}
+		
+		public RjRMIClientSocketFactory(final String init) {
+			final StringBuilder sb = new StringBuilder(init);
+			try {
+				sb.append(InetAddress.getLocalHost().getCanonicalHostName());
+			}
+			catch (UnknownHostException e) {
+				sb.append("unknown");
+			}
+			sb.append('/').append(System.nanoTime()).append('/').append(Math.random());
+			this.id = sb.toString();
+		}
+		
+		
+		public void writeExternal(ObjectOutput out) throws IOException {
+			out.writeUTF(this.id);
+		}
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+			this.id = in.readUTF();
+		}
+		
+		
+		public Socket createSocket(final String host, final int port) throws IOException {
+			RMIClientSocketFactory factory = null;
+			factory = gRMIClientSocketFactoriesInit.get();
+			if (factory != null) {
+				this.resolvedFactory = factory;
+				gRMIClientSocketFactories.put(this.id, factory);
+			}
+			else {
+				factory = this.resolvedFactory;
+				if (factory == null) {
+					factory = gRMIClientSocketFactories.get(this.id);
+					if (factory != null) {
+						this.resolvedFactory = factory;
+					}
+					else {
+						factory = getSystemRMIClientSocketFactory();
+					}
+				}
+			}
+			return factory.createSocket(host, port);
+		}
+		
+		
+		@Override
+		public int hashCode() {
+			return this.id.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return (this == obj
+					|| (obj instanceof RjRMIClientSocketFactory
+							&& this.id.equals(((RjRMIClientSocketFactory) obj).id) ));
+		}
+		
+	}
+	
+	private static RMIClientSocketFactory RMISERVER_CLIENTSOCKET_FACTORY;
+	
+	public static synchronized final RMIClientSocketFactory getRMIServerClientSocketFactory() {
+		if (RMISERVER_CLIENTSOCKET_FACTORY == null) {
+			RMISERVER_CLIENTSOCKET_FACTORY = new RjRMIClientSocketFactory("S/");
+		}
+		return RMISERVER_CLIENTSOCKET_FACTORY;
+	}
+	
+	public static final void setRMIClientSocketFactory(RMIClientSocketFactory factory) {
+		if (factory == null) {
+			factory = getSystemRMIClientSocketFactory();
+		}
+		gRMIClientSocketFactoriesInit.set(factory);
+	}
+	
+	public static final void clearRMIClientSocketFactory() {
+		gRMIClientSocketFactoriesInit.set(null);
 	}
 	
 }

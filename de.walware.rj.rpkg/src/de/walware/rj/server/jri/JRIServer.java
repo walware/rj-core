@@ -85,6 +85,7 @@ import de.walware.rj.server.dbg.TracepointListener;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
 import de.walware.rj.server.gd.Coord;
 import de.walware.rj.server.gd.GraOp;
+import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
 import de.walware.rj.server.srvImpl.InternalEngine;
@@ -463,7 +464,7 @@ public final class JRIServer extends RJ
 			}
 			
 			final ConsoleEngineImpl consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-			final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
+			final ConsoleEngine export = (ConsoleEngine) AbstractServerControl.exportObject(consoleEngine);
 			
 			final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 			try {
@@ -679,7 +680,7 @@ public final class JRIServer extends RJ
 				return this.client0ExpRef;
 			}
 			final ConsoleEngine consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-			final ConsoleEngine export = (ConsoleEngine) UnicastRemoteObject.exportObject(consoleEngine, 0);
+			final ConsoleEngine export = (ConsoleEngine) AbstractServerControl.exportObject(consoleEngine);
 			
 			this.mainExchangeLock.lock();
 			try {
