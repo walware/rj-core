@@ -5,13 +5,18 @@
 # Usually you have to change only the CONFIG sections. You should set at least:
 #     R_HOME
 #     JAVA_HOME
-#     HOSTADDRESS
+# Depending on the system configuration, it can be required to set:
+#     S_HOSTADDRESS
 # 
 # The authentication is set to 'fx' (method using SSH) by default.
 ##
 # Usage of this script:
-#     startup.sh <address or name> [options]
+#     startup.sh <address> [options]
+#     startup.sh <name> [options]
 # It starts the R server asynchronously in background by default.
+#     <address>                        the complete RMI-address
+#     <name>                           the session name only (the hostname
+#                                      should be set in this file)
 # Options:
 #     -wd=<working directory>          initial R working directory
 #     -debug                           enables debug output and
@@ -33,7 +38,14 @@ then
 	exit -1
 fi
 ADDRESS=$1
-NAME=`basename $ADDRESS`
+S_NAME=`basename $ADDRESS`
+S_HOSTADDRESS=
+S_REGISTRYPORT=
+if [ "$ADDRESS" != "$S_NAME" ]
+then
+	S_HOSTADDRESS=`expr "$ADDRESS" : "[^/]*\/\/\([^:/]*\).*"`
+	S_REGISTRYPORT=`expr "$ADDRESS" : "[^/]*\/\/[^:/]*:\([0-9]\+\)\/.*"`
+fi
 shift
 WD=~
 SCRIPT=`readlink -f "$0"`
@@ -45,7 +57,7 @@ do
 		WD=${1##-wd=}
 		;;
 #	-host=*)
-#		HOSTADDRESS=${1##-host=}
+#		S_HOSTADDRESS=${1##-host=}
 #		;;
 	-debug*)
 		DEBUG=1
@@ -81,7 +93,7 @@ done
 #     R_DOC_DIR=/usr/share/doc/R
 #     R_SHARE_DIR=/usr/share/R
 #     R_INCLUDE_DIR=/usr/include/R
-#     R_LIBS_SITE=/usr/local/lib/site-library
+#     R_LIBS_SITE=/usr/local/lib/R/site-library
 #     JAVA_HOME=/usr/lib/jvm/java-6-sun
 R_HOME=
 JAVA_HOME=
@@ -99,20 +111,31 @@ RJS_HOME=`dirname "$SCRIPT"`
 RJS_WORK=~/.RJServer
 
 ###############################################################################
-# Set the hostname you want to use to access the server
-# It is recommended to use the ip address instead of a name
+# Set explicitly the hostname and port you want to use to access the RMI 
+# registry/R server.
+# It is recommended to use the IP address instead of a name.
+# By default, the hostname is extracted form the specified RMI address 
+# (script parameter). Nevertheless there are some reasons to set it explicitly
+# here, e.g.:
+#  - For SSH tunnel connections '127.0.0.1' (localhost) is sufficient;
+#    recommend, if no other network connections are used; and required if the 
+#    public IP address is blocked by the firewall.
+#  - To make sure that the correct IP address is set even the hostname is 
+#    used in the RMI address.
 ##
 # Usage:
-#     HOSTADDRESS=<ip or hostname>
+#     S_HOSTADDRESS=<ip or hostname>
+#     S_REGISTRYPORT=<port of rmi-registry>
 # Example:
-#     HOSTADDRESS=192.168.1.80
-HOSTADDRESS=
+#     S_HOSTADDRESS=192.168.1.80
+#S_HOSTADDRESS=
+
 
 ###############################################################################
 # Add additional java options here
 ##
 # Example:
-#     JAVA_OPTS="-server -Drjava.path=<path-to-rjava>"
+#     JAVA_OPTS="-server -Djava.net.preferIPv4Stack=true"
 JAVA_OPTS="-server"
 JAVA_OPTS_LIB=
 
@@ -211,7 +234,7 @@ JAVA_OPTS_LIB=
 #     the permission is set according to AUTH_FX_USER and AUTH_FX_MASK
 
 AUTH=fx:file
-AUTH_FX_FILE="$RJS_WORK/session-$NAME.lock"
+AUTH_FX_FILE="$RJS_WORK/session-$S_NAME.lock"
 AUTH_FX_USER=$USER
 AUTH_FX_MASK=600
 
@@ -224,6 +247,19 @@ AUTH_FX_MASK=600
 #$JAVA_HOME/bin/rmiregistry &
 
 mkdir -p "$RJS_WORK"
+
+## Final RMI address
+if [ -n "$S_HOSTADDRESS" ]
+then
+	S_ADDRESS="//$S_HOSTADDRESS"
+	if [ -n "$S_REGISTRYPORT" ]
+	then
+		S_ADDRESS="$S_ADDRESS:$S_REGISTRYPORT"
+	fi
+	S_ADDRESS="$S_ADDRESS/$S_NAME"
+else
+	S_ADDRESS="//$S_NAME"
+fi
 
 ## Finish auth configuration
 if [ "$FORCE_AUTH" ]
@@ -277,12 +313,16 @@ else
 	RJAVA_CP=
 fi
 
-JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$HOSTADDRESS -Djava.security.policy=$RJS_HOME/security.policy -Djava.rmi.server.codebase=$RMI_BASE"
-if [ "$JAVA_OPTS_LIB" ]
+JAVA_OPTS="$JAVA_OPTS -Djava.security.policy=$RJS_HOME/security.policy -Djava.rmi.server.codebase=$RMI_BASE"
+if [ -n "$S_HOSTADDRESS" ]
+then
+	JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$S_HOSTADDRESS"
+fi
+if [ -n "$JAVA_OPTS_LIB" ]
 then
 	JAVA_OPTS="$JAVA_OPTS -Djava.library.path=$JAVA_OPTS_LIB"
 fi
-if [ "$RJAVA_CP" ]
+if [ -n "$RJAVA_CP" ]
 then
 	JAVA_OPTS="$JAVA_OPTS -Drjava.class.path=$RJAVA_CP"
 fi
@@ -305,12 +345,13 @@ export LC_ALL
 
 cd "$WD"
 
-START_EXEC="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start $ADDRESS $OPTS"
+START_EXEC="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start $S_ADDRESS $OPTS"
 #echo $START_EXEC
 
 if [ $DEBUG ]
 then
-	echo HOSTADDRESS = $HOSTADDRESS
+	echo S_HOSTADDRESS = $S_HOSTADDRESS
+	echo S_REGISTRYPORT = $S_REGISTRY_PORT
 	echo PATH = $PATH
 	echo LD_LIBRARY_PATH = $LD_LIBRARY_PATH
 	echo R_HOME = $R_HOME
@@ -326,7 +367,7 @@ then
 	exit $START_EXIT
 else
 	# First check if running or dead server is already bound
-	CLEAN_EXEC="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl clean $ADDRESS"
+	CLEAN_EXEC="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl clean $S_ADDRESS"
 	$CLEAN_EXEC
 	CLEAN_EXIT=$?
 	if [ $CLEAN_EXIT -ne 0 ]
@@ -336,7 +377,7 @@ else
 	fi
 	
 	# Start server detached
-	nohup $START_EXEC > "$RJS_WORK/session-$NAME.out" 2>&1 < /dev/null &
+	nohup $START_EXEC > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
 	START_EXIT=$?
 	START_PID=$!
 	if [ $START_EXIT -eq 0 ]
