@@ -175,7 +175,6 @@ public class RSetupUtil {
 					log(IStatus.WARNING, "Invalid R setup element: " +
 							"Unknown library group '" + groupId + "', the library is ignored", element);
 				}
-				return;
 			}
 		}
 	}
