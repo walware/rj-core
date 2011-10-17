@@ -717,7 +717,7 @@ public final class JRIServer extends RJ
 						}
 						this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CLastCommands[0].getItems();
 					}
-					if (this.mainLoopS2CNextCommandsFirst[0] == null) {
+					if (this.mainLoopS2CNextCommandsFirst[0] == null && !this.mainLoopS2CRequest.isEmpty()) {
 						this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CRequest.get(this.mainLoopS2CRequest.size()-1);
 					}
 					// restore mainLoopS2CNextCommandsLast, if necessary
