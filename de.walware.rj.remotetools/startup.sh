@@ -135,7 +135,7 @@ RJS_WORK=~/.RJServer
 # Add additional java options here
 ##
 # Example:
-#     JAVA_OPTS="-server -Djava.net.preferIPv4Stack=true"
+#     JAVA_OPTS="-server -Dde.walware.rj.rmi.disableSocketFactory=true"
 JAVA_OPTS="-server"
 JAVA_OPTS_LIB=
 

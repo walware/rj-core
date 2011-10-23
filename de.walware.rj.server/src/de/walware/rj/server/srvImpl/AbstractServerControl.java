@@ -11,12 +11,14 @@
 
 package de.walware.rj.server.srvImpl;
 
+import java.io.StreamCorruptedException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.rmi.UnmarshalException;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -188,7 +190,7 @@ public class AbstractServerControl {
 	protected void publishServer(final Server server) {
 		try {
 			System.setSecurityManager(new SecurityManager());
-			final Server stub = (Server) AbstractServerControl.exportObject(server);
+			Server stub = (Server) AbstractServerControl.exportObject(server);
 			this.mainServer = server;
 			try {
 				Naming.bind(this.name, stub);
@@ -200,6 +202,29 @@ public class AbstractServerControl {
 				else {
 					throw boundException;
 				}
+			}
+			catch (final RemoteException remoteException) {
+				if (remoteException.getCause() instanceof UnmarshalException
+						&& remoteException.getCause().getCause() instanceof StreamCorruptedException
+						&& RjsComConfig.getRMIServerClientSocketFactory() != null) {
+					stub = null;
+					try {
+						UnicastRemoteObject.unexportObject(server, true);
+						stub = (Server) UnicastRemoteObject.exportObject(server, 0, null, null);
+					}
+					catch (Exception testException) {}
+					if (stub != null) {
+						final LogRecord record = new LogRecord(Level.SEVERE,
+								"{0} caught StreamCorruptedException \nretrying without socket factory to reveal other potential problems.");
+						record.setParameters(new Object[] { this.logPrefix });
+						record.setThrown(remoteException);
+						LOGGER.log(record);
+						Naming.bind(this.name, stub);
+						Naming.unbind(this.name);
+						throw new RjException("No error without socket factory, use the Java property 'de.walware.rj.rmi.disableSocketFactory' to disable the factory.");
+					}
+				}
+				throw remoteException;
 			}
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override

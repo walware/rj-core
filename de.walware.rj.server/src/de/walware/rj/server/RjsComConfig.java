@@ -189,10 +189,12 @@ public class RjsComConfig {
 		
 	}
 	
+	private final static boolean RMISERVER_CLIENTSOCKET_FACTORY_ENABLED =
+			!"true".equalsIgnoreCase(System.getProperty("de.walware.rj.rmi.disableSocketFactory"));
 	private static RMIClientSocketFactory RMISERVER_CLIENTSOCKET_FACTORY;
 	
 	public static synchronized final RMIClientSocketFactory getRMIServerClientSocketFactory() {
-		if (RMISERVER_CLIENTSOCKET_FACTORY == null) {
+		if (RMISERVER_CLIENTSOCKET_FACTORY_ENABLED && RMISERVER_CLIENTSOCKET_FACTORY == null) {
 			RMISERVER_CLIENTSOCKET_FACTORY = new RjRMIClientSocketFactory("S/");
 		}
 		return RMISERVER_CLIENTSOCKET_FACTORY;
