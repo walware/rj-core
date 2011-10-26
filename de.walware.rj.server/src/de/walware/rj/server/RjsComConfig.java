@@ -22,6 +22,7 @@ import java.net.UnknownHostException;
 import java.rmi.Remote;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMISocketFactory;
+import java.security.AccessControlException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -189,9 +190,22 @@ public class RjsComConfig {
 		
 	}
 	
-	private final static boolean RMISERVER_CLIENTSOCKET_FACTORY_ENABLED =
-			!"true".equalsIgnoreCase(System.getProperty("de.walware.rj.rmi.disableSocketFactory"));
+	private final static boolean RMISERVER_CLIENTSOCKET_FACTORY_ENABLED;
+	
 	private static RMIClientSocketFactory RMISERVER_CLIENTSOCKET_FACTORY;
+	
+	static {
+		{	boolean enabled = true;
+			try {
+				if ("true".equalsIgnoreCase(System.getProperty("de.walware.rj.rmi.disableSocketFactory"))) {
+					enabled = false;
+				}
+			}
+			catch (final AccessControlException e) { // in RMI registry
+			}
+			RMISERVER_CLIENTSOCKET_FACTORY_ENABLED = enabled;
+		}
+	}
 	
 	public static synchronized final RMIClientSocketFactory getRMIServerClientSocketFactory() {
 		if (RMISERVER_CLIENTSOCKET_FACTORY_ENABLED && RMISERVER_CLIENTSOCKET_FACTORY == null) {
