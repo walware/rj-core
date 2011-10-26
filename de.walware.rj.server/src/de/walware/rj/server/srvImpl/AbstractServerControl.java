@@ -81,6 +81,12 @@ public class AbstractServerControl {
 	}
 	
 	public static void initVerbose() {
+		if (VERBOSE) {
+			return;
+		}
+		VERBOSE = true;
+		VERBOSE_ON_ERROR = false;
+		
 		LOGGER.setLevel(Level.ALL); // default is Level.INFO
 //		System.setProperty("java.rmi.server.logCalls", "true");
 //		RemoteServer.setLog(System.err);
@@ -115,10 +121,20 @@ public class AbstractServerControl {
 		LOGGER.log(Level.CONFIG, sb.toString());
 	}
 	
+	private static boolean VERBOSE;
+	private static boolean VERBOSE_ON_ERROR;
+	
 	public static void exit(final int status) {
-		System.err.flush();
-		System.out.flush();
-		System.exit(status);
+		try {
+			if (status != 0 && VERBOSE_ON_ERROR) {
+				initVerbose();
+			}
+			System.err.flush();
+			System.out.flush();
+		}
+		finally {
+			System.exit(status);
+		}
 	}
 	
 	public static Remote exportObject(Remote obj) throws RemoteException {
@@ -142,8 +158,18 @@ public class AbstractServerControl {
 		this.logPrefix = "[Control:"+((lastSegment >= 0) ? name.substring(lastSegment+1) : name)+"]";
 		this.args = args;
 		
-		if (args != null && args.containsKey("verbose")) {
-			initVerbose();
+		if (args != null) {
+			if (args.containsKey("verbose")) {
+				initVerbose();
+			}
+			if (args.containsKey("embedded")) {
+				if (System.getProperty("de.walware.rj.rmi.disableSocketFactory") == null) {
+					System.setProperty("de.walware.rj.rmi.disableSocketFactory", "true");
+				}
+				if (!VERBOSE) {
+					VERBOSE_ON_ERROR = true;
+				}
+			}
 		}
 	}
 	
