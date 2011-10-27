@@ -188,7 +188,10 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	}
 	
 	
-	protected RObject runServerLoopCommand(RjsComObject sendCom, final MainCmdItem sendItem) throws RjException {
+	protected RObject runServerLoopCommand(RjsComObject sendCom, final DataCmdItem sendItem) throws RjException {
+		if (sendCom != null) {
+			throw new UnsupportedOperationException("sendComd");
+		}
 		DataCmdItem answer = null;
 		try {
 			this.serverC2SList.setObjects(sendItem);
@@ -219,7 +222,14 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 					}
 				case RjsComObject.T_MAIN_LIST:
 					final MainCmdS2CList list = (MainCmdS2CList) receivedCom;
-					answer = (DataCmdItem) list.getItems();
+					MainCmdItem item = list.getItems();
+					while (item != null) {
+						if (item == sendItem) {
+							answer = sendItem;
+							break COM_TYPE;
+						}
+						item = item.next;
+					}
 					break COM_TYPE;
 				}
 			}
@@ -251,7 +261,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 			return file;
 		}
 		final RObject rwd = runServerLoopCommand(null, new DataCmdItem(DataCmdItem.EVAL_DATA, 0,
-				(byte) 0, "getwd()", null, null, null ));
+				(byte) -1, "getwd()", null, null, null ));
 		return new File(rwd.getData().getChar(0), file.getPath());
 	}
 	
