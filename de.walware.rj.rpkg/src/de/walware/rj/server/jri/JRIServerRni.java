@@ -689,14 +689,21 @@ final class JRIServerRni {
 			if (objP == 0) {
 				throw new RjsException(CODE_DATA_ASSIGN_DATA | 0x9, "The language data is invalid.");
 			}
-			if (lang.getLanguageType() == RLanguage.CALL) {
+			switch (lang.getLanguageType()) {
+			case RLanguage.CALL: {
 				final long[] list = this.rEngine.rniGetVector(objP);
 				if (list != null && list.length == 1
 						&& this.rEngine.rniExpType(list[0]) == REXP.LANGSXP ) {
 					return protect(list[0]);
 				}
-			}
-			else {
+				break; }
+			case 0: // auto
+				final long[] list = this.rEngine.rniGetVector(objP);
+				if (list != null && list.length == 1) {
+					return protect(list[0]);
+				}
+				//$FALL-THROUGH$
+			default:
 				return protect(objP);
 			}
 			break; }
