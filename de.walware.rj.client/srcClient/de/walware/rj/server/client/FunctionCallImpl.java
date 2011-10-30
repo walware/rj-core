@@ -20,6 +20,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
+import de.walware.rj.data.defaultImpl.RLanguageImpl;
 import de.walware.rj.data.defaultImpl.RNull;
 import de.walware.rj.services.FunctionCall;
 import de.walware.rj.services.RService;
@@ -50,7 +51,7 @@ public class FunctionCallImpl implements FunctionCall {
 			throw new NullPointerException();
 		}
 		this.argNames.add(arg);
-		final RObject data = this.rObjectFactory.createExpression(expression);
+		final RObject data = new RLanguageImpl((byte) 0, expression, null);
 		this.argValues.add(data);
 		return this;
 	}
@@ -158,7 +159,7 @@ public class FunctionCallImpl implements FunctionCall {
 	
 	public RObject evalData(final IProgressMonitor monitor) throws CoreException {
 		final RList args = prepareArgs(monitor);
-		return this.rjs.evalData(this.name, args, null, 0, RService.DEPTH_INFINITE, monitor);
+		return this.rjs.evalData(this.name, args, null, null, 0, RService.DEPTH_INFINITE, monitor);
 	}
 	
 	public RObject evalData(final String factoryId, final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
