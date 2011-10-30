@@ -22,6 +22,8 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.Display;
 
 import de.walware.rj.graphic.utils.CachedMapping;
@@ -457,6 +459,17 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		fInstructionsUpdateSize = 0;
 	}
 	
+	private void execInDisplay(final Runnable runnable) {
+		try {
+			fDisplay.asyncExec(runnable);
+		}
+		catch (final SWTException e) {
+			if (e.code != SWT.ERROR_DEVICE_DISPOSED) {
+				throw e;
+			}
+		}
+	}
+	
 	public int getDevId() {
 		return fDevId;
 	}
@@ -472,7 +485,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			}
 			if (!fStateNotificationDirectScheduled) {
 				fStateNotificationDirectScheduled = true;
-				fDisplay.asyncExec(fStateNotificationRunnable);
+				execInDisplay(fStateNotificationRunnable);
 			}
 		}
 	}
@@ -516,12 +529,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			if (mode == 1 && fModeNotified != 1 // need start
 					&& !fStateNotificationDirectScheduled ) {
 				fStateNotificationDirectScheduled = true;
-				fDisplay.asyncExec(fStateNotificationRunnable);
+				execInDisplay(fStateNotificationRunnable);
 			}
 			else if (mode != 1 // stop
 					&& !(fStateNotificationDirectScheduled || fStateNotificationDelayedScheduled) ) {
 				fStateNotificationDirectScheduled = true;
-				fDisplay.asyncExec(fStateNotificationRunnable);
+				execInDisplay(fStateNotificationRunnable);
 			}
 		}
 	}
@@ -720,7 +733,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			return;
 		}
 		if (!fLocatorNotificationDirectScheduled) {
-			fDisplay.asyncExec(fLocatorNotificationRunnable);
+			execInDisplay(fLocatorNotificationRunnable);
 		}
 	}
 	
@@ -732,7 +745,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			}
 			if (!(fLocatorNotificationDirectScheduled || fLocatorNotificationDeferredScheduled)) {
 				fLocatorNotificationDirectScheduled = true;
-				fDisplay.asyncExec(fLocatorNotificationRunnable);
+				execInDisplay(fLocatorNotificationRunnable);
 			}
 			return;
 		}
@@ -747,7 +760,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 		if (!fLocatorNotificationDirectScheduled) {
 			fLocatorNotificationDirectScheduled = true;
-			fDisplay.asyncExec(fLocatorNotificationRunnable);
+			execInDisplay(fLocatorNotificationRunnable);
 		}
 	}
 	

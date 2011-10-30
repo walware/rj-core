@@ -290,8 +290,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 			if (client == 0) {
 				this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
 			}
-			runnables = defferedRunnables;
-			defferedRunnables = null;
+			runnables = this.defferedRunnables;
+			this.defferedRunnables = null;
 		}
 		if (runnables != null) {
 			for (int i = 0; i < runnables.size(); i++) {
@@ -1061,7 +1061,13 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private void removeGraphic(final int devId) {
 		if (devId >= 0 && devId < this.graphics.length) {
 			if (this.graphics[devId] != null) {
-				this.graphicFactory.closeGraphic(this.graphics[devId]);
+				try {
+					this.graphicFactory.closeGraphic(this.graphics[devId]);
+				}
+				catch (final Exception e) {
+					log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1,
+							"An error occurred when closing R graphic (Device " + (devId+1) + ").", e ));
+				}
 				this.graphics[devId] = null;
 			}
 		}
@@ -1079,12 +1085,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	public void disposeAllGraphics() {
 		for (int devId = 0; devId < this.graphics.length; devId++) {
-			try {
-				removeGraphic(devId);
-			}
-			catch (final Exception e) {
-				log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when disposing open R graphics.", e));
-			}
+			removeGraphic(devId);
 		}
 	}
 	
