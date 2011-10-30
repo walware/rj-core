@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: R Graphics for Eclipse
 Bundle-SymbolicName: de.walware.rj.eclient.graphics;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.0.2.qualifier
 Bundle-Activator: de.walware.rj.eclient.internal.graphics.RGraphicsPlugin
 Bundle-ActivationPolicy: lazy
 Bundle-Localization: plugin

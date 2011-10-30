@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.walware.rj</groupId>
 		<artifactId>rj-client</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>1.0-SNAPSHOT</version>
 	</parent>
 	
 	<groupId>de.walware.rj-packaging</groupId>
