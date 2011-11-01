@@ -976,6 +976,7 @@ final class JRIServerDbg {
 			throws RjsException {
 		final List<? extends ElementTracepointPositions> elementList = request.getRequests();
 		final int[] resultCodes = new int[elementList.size()];
+		Arrays.fill(resultCodes, ElementTracepointInstallationReport.NOTFOUND);
 		
 		final List<Long> envTodo = new ArrayList<Long>();
 		final List<Long> envDone = new ArrayList<Long>();
@@ -1307,7 +1308,7 @@ final class JRIServerDbg {
 				if (funInfo.subIndex != null && funInfo.subIndex.length > 0) {
 					for (int i = 0; i < funInfo.subIndex.length; i++) {
 						if (this.rEngine.rniExpType(newBodyP) != REXP.LANGSXP
-								|| this.rEngine.rniGetLength(newBodyP) <= funInfo.subIndex[i]) {
+								|| this.rEngine.rniGetLength(newBodyP) < funInfo.subIndex[i]) {
 							throw new IllegalStateException();
 						}
 						for (int idx = 1; idx < funInfo.subIndex[i]; idx++) {
