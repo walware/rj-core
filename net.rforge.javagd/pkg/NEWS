@@ -1,6 +1,10 @@
  NEWS/Changelog for JavaGD
 ---------------------------
 
+0.5-4	2011-06-21
+    o	copies WinRegistry.dll in the build directory so
+	it can be picked up by multi-arch installs.
+
 0.5-3	2010-10-18
     o	substitute $(JAVA_HOME) when testing JNI
 
