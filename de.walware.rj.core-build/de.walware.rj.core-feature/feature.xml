@@ -2,7 +2,7 @@
 <feature
       id="de.walware.rj.core"
       label="RJ Library (Java-R) - Java Core"
-      version="1.0.3.qualifier"
+      version="1.1.0.qualifier"
       provider-name="WalWare.de"
       license-feature="de.walware.opensource.license"
       license-feature-version="1.0.0">

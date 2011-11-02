@@ -105,6 +105,8 @@ public final class JRIServer extends RJ
 		implements InternalEngine, RMainLoopCallbacks, ExtServer, TracepointListener {
 	
 	
+	private static final int[] VERSION = new int[] { 1, 1, 0 };
+	
 	private static final int ENGINE_NOT_STARTED = 0;
 	private static final int ENGINE_RUN_IN_R = 1;
 	private static final int ENGINE_WAIT_FOR_CLIENT = 2;
@@ -326,7 +328,7 @@ public final class JRIServer extends RJ
 	
 	
 	public int[] getVersion() {
-		return new int[] { 1, 0, 0 };
+		return VERSION;
 	}
 	
 	public void init(final String name, final Server publicServer, final RJClassLoader loader) throws Exception {

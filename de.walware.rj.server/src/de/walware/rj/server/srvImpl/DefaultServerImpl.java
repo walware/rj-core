@@ -122,7 +122,10 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	}
 	
 	public int[] getVersion() throws RemoteException {
-		return this.internalEngine.getVersion();
+		final int[] internalVersion = this.internalEngine.getVersion();
+		final int[] version = new int[internalVersion.length];
+		System.arraycopy(internalVersion, 0, version, 0, internalVersion.length);
+		return version;
 	}
 	
 	public ServerInfo getInfo() throws RemoteException {
