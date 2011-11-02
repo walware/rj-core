@@ -194,6 +194,11 @@ public class GDContainerGD extends GDInterface {
         c.add(new GDText(x, y, rot, hadj, str));
     }
 
+    public void     gdRaster(byte[] img, boolean imgAlpha, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate) {
+        if (c == null) return;
+        c.add(new GDRaster(img, img_w, img_h, x, y, w, h, rot, interpolate));
+    }
+
     /*-- GDC - manipulation of the current graphics state */
     /** set drawing color
      *  @param cc color */

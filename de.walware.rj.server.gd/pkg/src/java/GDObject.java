@@ -19,7 +19,7 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
-//  $Id: GDObject.java 3163 2009-09-01 22:10:47Z urbanek $
+//  $Id: GDObject.java 3410 2011-09-30 01:56:46Z ifellows $
 
 package org.rosuda.javaGD;
 
@@ -30,6 +30,20 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.PixelInterleavedSampleModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 
 
 /** GDObject is an arbitrary object that can be painted */
@@ -299,5 +313,48 @@ class GDLinePar extends GDObject {
     public void paint(Component c, GDState gs, Graphics g) {
         if (bs!=null)
             ((Graphics2D)g).setStroke(bs);
+    }
+}
+
+
+class GDRaster extends GDObject {
+    boolean interpolate;
+    Image image;
+    AffineTransform atrans;
+
+    public GDRaster(byte[] img, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate) {
+        this.interpolate = interpolate;
+        atrans = new AffineTransform();
+        // R seems to use flipped y coordinates
+        y += h;
+        h = -h;
+
+        double sx = w / (double) img_w, sy = h / (double) img_h;
+        atrans.translate(x, y);
+        atrans.rotate(-rot / 180 * Math.PI, 0, y);
+        atrans.scale(sx, sy);
+
+        //System.out.println("GDRaster(["+img.length+": "+img_w+" x "+img_h+", ("+x+","+y+") - ("+w+","+h+"), "+rot+", "+interpolate);
+        //System.out.println(" - at = "+atrans);
+
+        DataBuffer dbuf = new DataBufferByte(img, img_w * img_h, 0);
+        int comp_off[]  = { 0, 1, 2, 3 };
+        SampleModel sm = new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE, img_w, img_h, 4, img_w * 4, comp_off);
+        WritableRaster raster = Raster.createWritableRaster(sm, dbuf, null);
+        ColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB), // FIXME: does R use sRGB or linear RGB?
+                true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+        image = new BufferedImage(cm, raster, false, null);
+        //System.out.println(" - image = "+image);
+    }
+
+    public void paint(Component c, GDState gs, Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        Object oh = g2.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+        try {
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolate ? RenderingHints.VALUE_INTERPOLATION_BILINEAR : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            ((Graphics2D)g).drawImage(image, atrans, null);
+        } finally {
+            if (oh != null) g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, oh);
+        }
     }
 }

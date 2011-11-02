@@ -190,7 +190,14 @@ public final class JavaGD extends GDInterface {
 	@Override
 	public void gdText(final double x, final double y, final String str, final double rot, final double hadj) {
 //		System.out.println("Text: " + str);
-		this.rjsGraphic.drawText(x, y, rot, hadj, str);
+		this.rjsGraphic.drawText(str, x, y, rot, hadj);
+	}
+	
+	@Override
+	public void gdRaster(final byte[] img, final boolean imgAlpha, final int img_w, final int img_h,
+			final double x, final double y, final double w, final double h,
+			final double rot, final boolean interpolate) {
+		this.rjsGraphic.drawRaster(img, imgAlpha, img_w, img_h, x, y, w, h, rot, interpolate);
 	}
 	
 	

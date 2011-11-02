@@ -203,9 +203,17 @@ public final class RjsGraphic {
 				this.devId, ch, this.slot ));
 	}
 	
-	public void drawText(final double x, final double y, final double rot, final double hadj, final String str) {
+	public void drawText(final String str, final double x, final double y, final double rDeg, final double hAdj) {
 		this.rj.sendMainCmd(new GDCmdItem.DrawText(
-				this.devId, x, y, rot, hadj, str, this.slot ));
+				this.devId, str, x, y, rDeg, hAdj, this.slot ));
+	}
+	
+	
+	public void drawRaster(final byte[] imgData, final boolean imgAlpha, final int imgW, final int imgH,
+			final double x, final double y, final double w, final double h,
+			final double rDeg, final boolean interpolate) {
+		this.rj.sendMainCmd(new GDCmdItem.DrawRaster(this.devId, imgData, imgAlpha, imgW, imgH, x, y, w, h,
+				rDeg, interpolate, this.slot ));
 	}
 	
 	

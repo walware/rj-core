@@ -23,29 +23,30 @@ import de.walware.rj.data.RJIO;
 public abstract class GDCmdItem extends MainCmdItem {
 	
 	
-	public static final byte SET_CLIP = 1;
-	public static final byte SET_COLOR = 2;
-	public static final byte SET_FILL = 3;
-	public static final byte SET_LINE = 4;
-	public static final byte SET_FONT = 5;
+	public static final byte SET_CLIP =                     0x01;
+	public static final byte SET_COLOR =                    0x02;
+	public static final byte SET_FILL =                     0x03;
+	public static final byte SET_LINE =                     0x04;
+	public static final byte SET_FONT =                     0x05;
 	
-	public static final byte DRAW_LINE = 6;
-	public static final byte DRAW_RECTANGLE = 7;
-	public static final byte DRAW_POLYLINE = 8;
-	public static final byte DRAW_POLYGON = 9;
-	public static final byte DRAW_CIRCLE = 10;
-	public static final byte DRAW_TEXT = 11;
+	public static final byte DRAW_LINE =                    0x11;
+	public static final byte DRAW_RECTANGLE =               0x12;
+	public static final byte DRAW_POLYLINE =                0x13;
+	public static final byte DRAW_POLYGON =                 0x14;
+	public static final byte DRAW_CIRCLE =                  0x15;
+	public static final byte DRAW_TEXT =                    0x16;
+	public static final byte DRAW_RASTER =                  0x17;
 	
-	public static final byte C_NEW_PAGE = 12;
-	public static final byte C_CLOSE_DEVICE = 13;
-	public static final byte C_GET_SIZE = 14;
-	public static final byte C_SET_ACTIVE_OFF = 15;
-	public static final byte C_SET_ACTIVE_ON = 16;
-	public static final byte C_SET_MODE = 17;
-	public static final byte C_GET_FONTMETRIC = 18;
-	public static final byte C_GET_STRINGWIDTH = 19;
+	public static final byte C_NEW_PAGE =                   0x21;
+	public static final byte C_CLOSE_DEVICE =               0x22;
+	public static final byte C_GET_SIZE =                   0x23;
+	public static final byte C_SET_ACTIVE_OFF =             0x24;
+	public static final byte C_SET_ACTIVE_ON =              0x25;
+	public static final byte C_SET_MODE =                   0x26;
+	public static final byte C_GET_FONTMETRIC =             0x27;
+	public static final byte C_GET_STRINGWIDTH =            0x28;
 	
-	public static final byte U_LOCATOR =                    0x20;
+	public static final byte U_LOCATOR =                    0x31;
 	
 	
 	private static final double[] NO_DATA = new double[0];
@@ -1067,23 +1068,23 @@ public abstract class GDCmdItem extends MainCmdItem {
 	public static final class DrawText extends GDCmdItem {
 		
 		
-		private final double x;
-		private final double y;
+		private final String text;
+		private final double x, y;
 		private final double rDeg;
 		private final double hAdj;
-		private final String text;
 		
 		
-		public DrawText(final int devId, final double x, final double y,
-				final double rDeg, final double hAdj, final String text,
+		public DrawText(final int devId, final String text,
+				final double x, final double y, final double rDeg, final double hAdj, 
 				final byte slot) {
 			this.options = 0;
 			this.devId = devId;
+			
+			this.text = text;
 			this.x = x;
 			this.y = y;
 			this.rDeg = rDeg;
 			this.hAdj = hAdj;
-			this.text = text;
 			
 			this.slot = slot;
 		}
@@ -1092,11 +1093,11 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_TEXT);
+			io.writeString(this.text);
 			io.writeDouble(this.x);
 			io.writeDouble(this.y);
 			io.writeDouble(this.rDeg);
 			io.writeDouble(this.hAdj);
-			io.writeString(this.text);
 		}
 		
 		
@@ -1121,6 +1122,85 @@ public abstract class GDCmdItem extends MainCmdItem {
 			sb.append(this.devId);
 			sb.append(", commandId=");
 			sb.append(DRAW_TEXT);
+			sb.append(")\n<GD-DATA>\n");
+			sb.append("\n</GD-DATA>");
+			return sb.toString();
+		}
+		
+	}
+	
+	public static final class DrawRaster extends GDCmdItem {
+		
+		
+		private final byte[] imgData;
+		private final boolean imgAlpha;
+		private final int imgW, imgH;
+		private final double x, y;
+		private final double w, h;
+		private final double rDeg;
+		private final boolean interpolate;
+		
+		
+		public DrawRaster(final int devId,
+				final byte[] imgData, final boolean imgAlpha, final int imgW, final int imgH,
+				final double x, final double y, final double w, final double h,
+				final double rDeg, final boolean interpolate,
+				final byte slot) {
+			this.options = 0;
+			this.devId = devId;
+			
+			this.imgData = imgData;
+			this.imgAlpha = imgAlpha;
+			this.imgW = imgW;
+			this.imgH = imgH;
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			this.rDeg = rDeg;
+			this.interpolate = interpolate;
+			
+			this.slot = slot;
+		}
+		
+		@Override
+		public void writeExternal(final RJIO io) throws IOException {
+			io.writeInt(this.devId);
+			io.writeByte(DRAW_RASTER);
+			io.writeByteArray(this.imgData, this.imgData.length);
+			io.writeBoolean(this.imgAlpha);
+			io.writeInt(this.imgW);
+			io.writeInt(this.imgH);
+			io.writeDouble(this.x);
+			io.writeDouble(this.y);
+			io.writeDouble(this.w);
+			io.writeDouble(this.h);
+			io.writeDouble(this.rDeg);
+			io.writeBoolean(this.interpolate);
+		}
+		
+		
+		@Override
+		public void setAnswer(final RjsStatus status) {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public double[] getData() {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public String toString() {
+			final StringBuffer sb = new StringBuffer();
+			sb.append("GDCmdItem (options=0x");
+			sb.append(Integer.toHexString(this.options));
+			sb.append(", device=");
+			sb.append(this.devId);
+			sb.append(", commandId=");
+			sb.append(DRAW_RASTER);
 			sb.append(")\n<GD-DATA>\n");
 			sb.append("\n</GD-DATA>");
 			return sb.toString();

@@ -67,6 +67,10 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,
 			 double rot, double hadj,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd);
+static void newJavaGD_Raster(unsigned int *raster, int w, int h,
+			   double x, double y, double width, double height,
+			   double rot, Rboolean interpolate,
+			   R_GE_gcontext *gc, NewDevDesc *dd);
 
 
 static R_GE_gcontext lastGC; /** last graphics context. the API send changes, not the entire context, so we cache it for comparison here */
@@ -95,6 +99,7 @@ static jmethodID jmGDInterfaceRect;
 static jmethodID jmGDInterfaceSize;
 static jmethodID jmGDInterfaceStrWidth;
 static jmethodID jmGDInterfaceText;
+static jmethodID jmGDInterfaceRaster;
 static jmethodID jmGDInterfaceSetColor;
 static jmethodID jmGDInterfaceSetFill;
 static jmethodID jmGDInterfaceSetLine;
@@ -498,6 +503,44 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,  double ro
 	chkX(env);
 }
 
+static void newJavaGD_Raster(unsigned int *raster, int w, int h,
+		double x, double y, double width, double height,
+		double rot, Rboolean interpolate,
+		R_GE_gcontext *gc, NewDevDesc *dd) {
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	jbyteArray jData;
+	jbyte* ba;
+	int i, j;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	int withAlpha = 0;
+	int count = w * h;
+	jData = (*env)->NewByteArray(env, count * 4);
+	if (!jData) {
+		handleJNewArrayError(env, "gdRaster");
+	}
+	ba = (*env)->GetByteArrayElements(env, jData, 0);
+	if (!ba) {
+		handleJGetArrayError(env, jData, "gdRaster");
+	}
+	for (i = 0, j = 0; i < count; i++, j+=4) {
+		ba[j] = R_BLUE(raster[i]);
+		ba[j+1] = R_GREEN(raster[i]);
+		ba[j+2] = R_RED(raster[i]);
+		if ((ba[j+3] = R_ALPHA(raster[i])) != (jbyte) 0xff) {
+			withAlpha = 1;
+		}
+	}
+	(*env)->ReleaseByteArrayElements(env, jData, ba, 0);
+	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRaster, jData, (withAlpha) ? JNI_TRUE : JNI_FALSE,
+			w, h, x, y, width, height, rot, interpolate );
+	(*env)->DeleteLocalRef(env, jData);
+	chkX(env);
+}
+
+
 /*-----------------------------------------------------------------------*/
 
 /** fill the R device structure with callback functions */
@@ -515,6 +558,7 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->line = newJavaGD_Line;
     dd->polyline = newJavaGD_Polyline;
     dd->polygon = newJavaGD_Polygon;
+	dd->raster = newJavaGD_Raster;
 	
 	dd->canHAdj = 2;
 	dd->useRotatedTextInContour = TRUE;
@@ -654,6 +698,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceSize = getJMethod(env, jc, "gdSize", "()[D", RJ_ERROR_RERROR);
 		jmGDInterfaceStrWidth = getJMethod(env, jc, "gdStrWidth", "(Ljava/lang/String;)D", RJ_ERROR_RERROR);
 		jmGDInterfaceText = getJMethod(env, jc, "gdText", "(DDLjava/lang/String;DD)V", RJ_ERROR_RERROR);
+		jmGDInterfaceRaster = getJMethod(env, jc, "gdRaster", "([BZIIDDDDDZ)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetColor = getJMethod(env, jc, "gdcSetColor", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetFill = getJMethod(env, jc, "gdcSetFill", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetLine = getJMethod(env, jc, "gdcSetLine", "(DI)V", RJ_ERROR_RERROR);

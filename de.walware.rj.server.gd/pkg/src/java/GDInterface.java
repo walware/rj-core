@@ -47,7 +47,8 @@ package org.rosuda.javaGD;
  public double[] gdSize();
  public double   gdStrWidth(String str);
  public void     gdText(double x, double y, String str, double rot, double hadj);
- </pre>
+ public void     gdRaster(byte[] rgb, byte[] a, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
+  </pre>
  <p>
  <b>GDC - manipulation of the current graphics state</b>
  <p>
@@ -247,6 +248,9 @@ public abstract class GDInterface {
      *  @param rot rotation (in degrees)
      *  @param hadj horizontal adjustment with respect to the text size (0=left-aligned wrt origin, 0.5=centered, 1=right-aligned wrt origin) */
     public abstract void gdText(double x, double y, String str, double rot, double hadj);
+
+	public abstract void gdRaster(byte[] img, boolean imgAlpha, int img_w, int img_h,
+			double x, double y, double w, double h, double rot, boolean interpolate);
 
     /*-- GDC - manipulation of the current graphics state */
     /** set drawing color
