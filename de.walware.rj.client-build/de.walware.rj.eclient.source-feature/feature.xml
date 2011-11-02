@@ -2,7 +2,7 @@
 <feature
       id="de.walware.rj.eclient.source"
       label="RJ Library (Java-R) - Sources of E-Client"
-      version="1.0.3.qualifier"
+      version="1.1.0.qualifier"
       provider-name="WalWare.de"
       license-feature="de.walware.opensource.license"
       license-feature-version="1.0.0">
