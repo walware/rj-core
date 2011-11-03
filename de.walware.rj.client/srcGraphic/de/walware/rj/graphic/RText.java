@@ -18,30 +18,40 @@ package de.walware.rj.graphic;
  */
 public class RText extends RGraphicElement {
 	
-	
-	public final double x;
-	public final double y;
-	public final double horizontalAdjust;
-	public final double rotateDegree;
+	/**
+	 * The text to draw.
+	 */
 	public final String text;
+	/**
+	 * The position where to draw the text.
+	 */
+	public final double x, y;
+	/**
+	 * The factor for the horizontal adjustment of the text.
+	 */
+	public final double horizontalAdjust;
+	/**
+	 * The degrees for rotation of the text.
+	 */
+	public final double rotateDegree;
 	
 	
 	/**
-	 * Creates a new line.
+	 * Creates a new text element.
 	 * 
-	 * @param x x coordinate of point 1
-	 * @param y y coordinate of point 1
-	 * @param hAdj horizontal adjust factor
-	 * @param rDeg degrees to rotate
-	 * @param text text
+	 * @param x {@link #x}
+	 * @param y {@link #y}
+	 * @param hAdj {@link #horizontalAdjust}
+	 * @param rDeg {@link #rotateDegree}
+	 * @param text {@link #text}
 	 */
-	public RText(final double x, final double y, final double rDeg, final double hAdj,
-			final String text) {
+	public RText(final String text,
+			final double x, final double y, final double rDeg, final double hAdj) {
+		this.text = text;
 		this.x = x;
 		this.y = y;
 		this.horizontalAdjust = hAdj;
 		this.rotateDegree = rDeg;
-		this.text = text;
 	}
 	
 	
@@ -50,9 +60,6 @@ public class RText extends RGraphicElement {
 	}
 	
 	
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder(50 + this.text.length());

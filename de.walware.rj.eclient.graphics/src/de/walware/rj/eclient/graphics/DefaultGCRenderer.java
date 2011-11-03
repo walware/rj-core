@@ -31,6 +31,7 @@ import de.walware.rj.eclient.internal.graphics.LineElement;
 import de.walware.rj.eclient.internal.graphics.LineSetting;
 import de.walware.rj.eclient.internal.graphics.PolygonElement;
 import de.walware.rj.eclient.internal.graphics.PolylineElement;
+import de.walware.rj.eclient.internal.graphics.RasterElement;
 import de.walware.rj.eclient.internal.graphics.RectElement;
 import de.walware.rj.eclient.internal.graphics.TextElement;
 
@@ -67,6 +68,7 @@ public class DefaultGCRenderer {
 		final Transform tempTransform = new Transform(gc.getDevice());
 		final float scale = fScale;
 		int currentAlpha = -1;
+		int currentInterpolation = -1;
 		Color lineColor = fLineColor;
 		int lineAlpha = fLineAlpha;
 		Color fillColor = fFillColor;
@@ -76,7 +78,6 @@ public class DefaultGCRenderer {
 			gc.setAdvanced(true);
 			gc.setAntialias(SWT.ON);
 			gc.setTextAntialias(SWT.ON);
-			gc.setInterpolation(SWT.HIGH);
 			gc.setLineAttributes(fLineAttributes);
 			gc.setTransform(defaultTransform);
 			gc.setAlpha(currentAlpha);
@@ -298,6 +299,57 @@ public class DefaultGCRenderer {
 						
 						continue;
 					} }
+				case RGraphicInstruction.DRAW_RASTER: {
+					final RasterElement element = (RasterElement) instr;
+					
+					if (0xff != currentAlpha) {
+						gc.setAlpha(currentAlpha = 0xff);
+					}
+					{	final int interpolation = (element.interpolate) ? SWT.LOW : SWT.NONE;
+						if (interpolation != currentInterpolation) {
+							gc.setInterpolation(currentInterpolation = interpolation);
+						}
+					}
+					
+					final int ix,iy;
+					final int ih, iw;
+					if (element.width >= 0) {
+						ix = (int) Math.floor(element.x * scale + 0.5);
+						iw = (int) (element.width * scale + 0.5);
+					}
+					else {
+						ix = (int) Math.floor((element.x + element.height) * scale + 0.5);
+						iw = (int) (-element.width * scale + 0.5);
+					}
+					if (element.height >= 0) {
+						iy = (int) Math.floor(element.y * scale + 0.5);
+						ih = (int) (element.height * scale + 0.5);
+					}
+					else {
+						iy = (int) Math.floor((element.y + element.height) * scale + 0.5);
+						ih = (int) (-element.height * scale + 0.5);
+					}
+					if (element.rotateDegree != 0.0) {
+						tempTransform.setElements(1, 0, 0, 1,
+								(float) element.x * scale,
+								(float) element.y * scale );
+						tempTransform.rotate(-(float) element.rotateDegree);
+						if (element.width < 0 || element.height < 0) {
+							tempTransform.translate(
+									(element.width < 0) ? -iw : 0,
+									(element.height < 0) ? -ih : 0 );
+						}
+						gc.setTransform(tempTransform);
+						gc.drawImage(element.swtImage, 0, 0, element.imgWidth, element.imgHeight,
+								0, 0, iw, ih );
+						gc.setTransform(defaultTransform);
+					}
+					else {
+						gc.drawImage(element.swtImage, 0, 0, element.imgWidth, element.imgHeight,
+								ix, iy, iw, ih );
+					}
+					continue;
+					}
 				}
 			}
 			

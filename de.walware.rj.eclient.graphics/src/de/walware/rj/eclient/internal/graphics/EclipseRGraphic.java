@@ -24,7 +24,11 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.statushandlers.StatusManager;
 
 import de.walware.rj.graphic.utils.CachedMapping;
 import de.walware.rj.graphic.utils.CharMapping;
@@ -61,6 +65,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	private static final long MILLI_NANOS = 1000000L;
 	
+	private static final PaletteData DIRECT_PALETTE = new PaletteData(0xFF00, 0xFF0000, 0xFF000000);
+	
 	private static final LocatorCallback R_LOCATOR_CALLBACK = new LocatorCallback() {
 		
 		@Override
@@ -78,6 +84,50 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 		
 	};
+	
+	
+	private static void disposeElements(final IERGraphicInstruction[] instructions,
+			final int beginIdx, final int endIdx) {
+		try {
+			for (int i = beginIdx; i < endIdx; i++) {
+				if (instructions[i].getInstructionType() == IERGraphicInstruction.DRAW_RASTER) {
+					final Image image = ((RasterElement) instructions[i]).swtImage;
+					if (image != null && !image.isDisposed()) {
+						image.dispose();
+					}
+				}
+			}
+		}
+		catch (final SWTException e) {
+			if (e.code != SWT.ERROR_DEVICE_DISPOSED) {
+				StatusManager.getManager().handle(new Status(IStatus.ERROR, RGraphics.PLUGIN_ID,
+						"An error occurred when disposing SWT resources.", e ));
+			}
+		}
+	}
+	
+	private static class DisposeRunnable implements Runnable {
+		
+		private final IERGraphicInstruction[] fInstructions;
+		private final int fSize;
+		
+		private boolean fDelay;
+		
+		public DisposeRunnable(final IERGraphicInstruction[] instructions, final int size) {
+			fInstructions = instructions;
+			fSize = size;
+		}
+		
+		public void run() {
+			if (fDelay) {
+				fDelay = false;
+				Display.getCurrent().timerExec(5000, this);
+			}
+			
+			disposeElements(fInstructions, 0, fSize);
+		}
+		
+	}
 	
 	
 	private final int fDevId;
@@ -101,6 +151,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private final Runnable fStateNotificationRunnable = new Runnable() {
 		public void run() {
 			int type = 0;
+			Runnable runnable = null;
 			try {
 				while (true) {
 					boolean reset = false;
@@ -131,7 +182,11 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 							}
 							if (t <= 10) {
 								reset = (fInstructionsUpdateStart == 0);
+								
 								synchronized (fInstructionsLock) {
+									if (reset && fInstructionsSize > 0) {
+										runnable = new DisposeRunnable(fInstructions, fInstructionsSize);
+									}
 									fInstructions = fInstructionsUpdate;
 									fInstructionsSize = fInstructionsUpdateStart + fInstructionsUpdateSize;
 								}
@@ -209,6 +264,9 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 					synchronized (fStateLock) {
 						fStateNotificationDirectScheduled = false;
 					}
+				}
+				if (runnable != null) {
+					execInDisplay(runnable);
 				}
 			}
 		}
@@ -447,13 +505,23 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	private void internalReset() {
-		fInstructionsNew = null;
-		fInstructionsNewSize = 0;
+		if (fInstructionsNew != null) {
+			if (fInstructionsNewSize > 0) {
+				disposeElements(fInstructionsNew, 0, fInstructionsNewSize);
+			}
+			fInstructionsNew = null;
+			fInstructionsNewSize = 0;
+		}
+		if (fInstructionsUpdate != null) {
+			if (fInstructionsUpdateSize > 0) {
+				disposeElements(fInstructionsUpdate, fInstructionsUpdateStart, fInstructionsUpdateStart+fInstructionsUpdateSize);
+			}
+			fInstructionsUpdate = null;
+			fInstructionsUpdateStart = 0;
+			fInstructionsUpdateSize = 0;
+		}
 		fDrawingStoppedStamp = System.nanoTime();
 		fInstructionsNotifiedStamp = fDrawingStoppedStamp - 1000 * MILLI_NANOS;
-		fInstructionsUpdate = null;
-		fInstructionsUpdateStart = 0;
-		fInstructionsUpdateSize = 0;
 	}
 	
 	private void execInDisplay(final Runnable runnable) {
@@ -667,11 +735,30 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
-	public void addDrawText(final double x, final double y, final double rDeg, final double hAdj, final String txt) {
+	public void addDrawText(final String txt,
+			final double x, final double y, final double rDeg, final double hAdj) {
 //		System.out.println("==\nDrawText: " + x + ", " + y + " " + hAdj + " \"" + txt + "\""); printFont();
 		final String text = (fCurrentFontMapping != null) ? fCurrentFontMapping.encode(txt) : txt;
-		final TextElement instr = new TextElement(x, y, rDeg, hAdj, text,
+		final TextElement instr = new TextElement(text, x, y, rDeg, hAdj,
 				(hAdj != 0) ? computeStringWidthEnc(text)[0] : 0);
+		add(instr);
+	}
+	
+	public void addDrawRaster(final byte[] imgData, final boolean hasAlpha,
+			final int imgWidth, final int imgHeight,
+			final double x, final double y, final double w, final double h,
+			final double rDeg, final boolean interpolate) {
+		final ImageData imageData = new ImageData(imgWidth, imgHeight, 32, DIRECT_PALETTE, 4, imgData);
+		if (hasAlpha) {
+			final byte[] alpha = new byte[imgWidth*imgHeight];
+			for (int i = 0; i < alpha.length; i++) {
+				alpha[i] = imgData[i*4 + 3];
+			}
+			imageData.alphaData = alpha;
+		}
+		final Image swtImage = new Image(fDisplay, imageData);
+		final RasterElement instr = new RasterElement(imgData, imgWidth, imgHeight, x, y, w, h,
+				rDeg, interpolate, swtImage );
 		add(instr);
 	}
 	
@@ -897,15 +984,22 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	protected void dispose() {
 		fGraphicListeners.clear();
+		Runnable runnable = null;
 		synchronized (fStateLock) {
 			if (!fIsDisposed) {
 				fIsDisposed = true;
 				internalReset();
 				synchronized (fInstructionsLock) {
+					if (fInstructionsSize > 0) {
+						runnable = new DisposeRunnable(fInstructions, fInstructionsSize);
+					}
 					fInstructionsSize = 0;
 					fInstructions = null;
 				}
 			}
+		}
+		if (runnable != null) {
+			execInDisplay(runnable);
 		}
 	}
 	

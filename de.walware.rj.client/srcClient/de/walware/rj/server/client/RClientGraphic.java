@@ -22,6 +22,7 @@ import de.walware.rj.graphic.RLine;
 import de.walware.rj.graphic.RLineSetting;
 import de.walware.rj.graphic.RPolygon;
 import de.walware.rj.graphic.RPolyline;
+import de.walware.rj.graphic.RRaster;
 import de.walware.rj.graphic.RRect;
 import de.walware.rj.graphic.RText;
 import de.walware.rj.services.RService;
@@ -121,9 +122,14 @@ public interface RClientGraphic {
 	 */
 	void addDrawCircle(double x, double y, double r);
 	/**
-	 * @see RText#RText(double, double, double, double, String)
+	 * @see RText
 	 */
-	void addDrawText(double x, double y, double rDeg, double hAdj, String txt);
+	void addDrawText(String txt, double x, double y, double rDeg, double hAdj);
+	/**
+	 * @see RRaster
+	 */
+	void addDrawRaster(byte[] imgData, boolean imgAlpha, int imgWidth, int imgHeight,
+			double x, double y, double w, double h, double rDeg, boolean interpolate);
 	
 	
 	double[] runRLocator(RService r, IProgressMonitor monitor);

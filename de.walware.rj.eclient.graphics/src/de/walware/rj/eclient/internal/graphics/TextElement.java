@@ -22,9 +22,10 @@ public class TextElement extends RText implements IERGraphicInstruction {
 	public final double swtStrWidth;
 	
 	
-	public TextElement(final double x, final double y, final double rDeg, final double hAdj,
-			final String text, final double swtStrWidth) {
-		super(x, y, rDeg, hAdj, text);
+	public TextElement(final String text,
+			final double x, final double y, final double rDeg, final double hAdj,
+			final double swtStrWidth) {
+		super(text, x, y, rDeg, hAdj);
 		this.swtStrWidth = swtStrWidth;
 	}
 	

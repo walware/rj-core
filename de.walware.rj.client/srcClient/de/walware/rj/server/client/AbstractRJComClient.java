@@ -576,11 +576,24 @@ public abstract class AbstractRJComClient implements ComHandler {
 				return;
 			case GDCmdItem.DRAW_TEXT:
 				getGraphic(devId).addDrawText(
+						io.readString(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble(),
+						io.readDouble() );
+				return;
+			case GDCmdItem.DRAW_RASTER:
+				getGraphic(devId).addDrawRaster(
+						io.readByteArray(),
+						io.readBoolean(),
+						io.readInt(),
+						io.readInt(),
 						io.readDouble(),
 						io.readDouble(),
 						io.readDouble(),
 						io.readDouble(),
-						io.readString() );
+						io.readDouble(),
+						io.readBoolean() );
 				return;
 				
 			case GDCmdItem.U_LOCATOR: {

@@ -96,7 +96,13 @@ public class RClientGraphicDummy implements RClientGraphic {
 	public void addDrawCircle(final double x, final double y, final double r) {
 	}
 	
-	public void addDrawText(final double x, final double y, final double rDeg, final double hAdj, final String text) {
+	public void addDrawText(final String text,
+			final double x, final double y, final double rDeg, final double hAdj) {
+	}
+	
+	public void addDrawRaster(final byte[] imgData, final boolean imgAlpha, final int imgWidth, final int imgHeight,
+			final double x, final double y, final double w, final double h,
+			final double rDeg, final boolean interpolate) {
 	}
 	
 	
