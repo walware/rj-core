@@ -101,8 +101,8 @@ public class DefaultGCRenderer {
 					continue;
 				case RGraphicInstruction.SET_CLIP: {
 					final ClipSetting setting = (ClipSetting) instr;
-					final int ix0 = (int) ((setting.x0 * scale) + 0.5);
-					final int iy0 = (int) ((setting.y0 * scale) + 0.5);
+					final int ix0 = (int) ((setting.x0 * scale) + 1.5);
+					final int iy0 = (int) ((setting.y0 * scale) + 1.5);
 					gc.setClipping(ix0, iy0,
 							(int) Math.min(((setting.x1 * scale) + 0.5), ixmax) - ix0,
 							(int) Math.min(((setting.y1 * scale) + 0.5), iymax) - iy0 );
@@ -173,10 +173,10 @@ public class DefaultGCRenderer {
 						gc.setAlpha(currentAlpha = lineAlpha);
 					}
 					gc.drawLine(
-							(int) (element.x0 + 0.5),
-							(int) (element.y0 + 0.5),
-							(int) (element.x1 + 0.5),
-							(int) (element.y1 + 0.5) );
+							(int) (element.x0 * scale + 0.5),
+							(int) (element.y0 * scale + 0.5),
+							(int) (element.x1 * scale + 0.5),
+							(int) (element.y1 * scale + 0.5) );
 					continue; }
 				case RGraphicInstruction.DRAW_RECTANGLE: {
 					final RectElement element = (RectElement) instr;
@@ -260,8 +260,8 @@ public class DefaultGCRenderer {
 					}
 					if (element.rotateDegree != 0.0) {
 						tempTransform.setElements(1, 0, 0, 1,
-								(float) element.x,
-								(float) element.y );
+								(float) element.x * scale,
+								(float) element.y * scale );
 						tempTransform.rotate((float) -element.rotateDegree);
 						tempTransform.translate(
 								(float) Math.floor(1.1111 - hShift),

@@ -341,15 +341,19 @@ public class RGraphicComposite extends Composite
 	private void scrollH() {
 		final Point location = fCanvas.getLocation();
 		final ScrollBar hBar = getHorizontalBar();
-		final int hSelection = hBar.getSelection();
-		fCanvas.setLocation(-hSelection, location.y);
+		if (hBar != null && hBar.isVisible()) {
+			final int hSelection = hBar.getSelection();
+			fCanvas.setLocation(-hSelection, location.y);
+		}
 	}
 	
 	private void scrollV() {
 		final Point location = fCanvas.getLocation();
 		final ScrollBar vBar = getVerticalBar();
-		final int vSelection = vBar.getSelection();
-		fCanvas.setLocation(location.x, -vSelection);
+		if (vBar != null && vBar.isVisible()) {
+			final int vSelection = vBar.getSelection();
+			fCanvas.setLocation(location.x, -vSelection);
+		}
 	}
 	
 	

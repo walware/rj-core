@@ -130,11 +130,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 								t = Math.min(t, fDrawingStopDelay - (int) ((stamp - fDrawingStoppedStamp) / MILLI_NANOS));
 							}
 							if (t <= 10) {
+								reset = (fInstructionsUpdateStart == 0);
 								synchronized (fInstructionsLock) {
-									if (fInstructions == null) {
-										reset = true;
-										fInstructionsSize = 0;
-									}
 									fInstructions = fInstructionsUpdate;
 									fInstructionsSize = fInstructionsUpdateStart + fInstructionsUpdateSize;
 								}
