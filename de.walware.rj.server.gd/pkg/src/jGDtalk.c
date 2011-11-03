@@ -207,8 +207,18 @@ static void newJavaGD_Clip(double x0, double x1, double y0, double y1,  NewDevDe
     newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
     JNIEnv *env = getJNIEnv();
     
-    if(!env || !xd || !xd->talk) return;
-	
+    if (!env || !xd || !xd->talk) return;
+    
+	if (x0 > x1) {
+		double tmp = x0;
+		x0 = x1;
+		x1 = tmp;
+	}
+	if (y0 > y1) {
+		double tmp = y0;
+		y0 = y1;
+		y1 = tmp;
+	}
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceClip, x0, x1, y0, y1);
 	chkX(env);
 }
