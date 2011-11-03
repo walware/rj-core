@@ -203,3 +203,18 @@ void handleJError(JNIEnv *env, int flags, const char *message, ...) {
 		}
 	}
 }
+
+void handleJNewArrayError(JNIEnv *env, const char *operation) {
+	handleJError(env, RJ_ERROR_RERROR, "%s: Cannot create Java array.", operation);
+}
+
+void handleJGetArrayError(JNIEnv *env, jobject jArray, const char *operation) {
+	if (jArray) {
+		(*env)->DeleteLocalRef(env, jArray);
+	}
+	handleJError(env, RJ_ERROR_RERROR, "%s: Cannot access Java array.", operation);
+}
+
+void handleJNewStringError(JNIEnv *env, const char *operation) {
+	handleJError(env, RJ_ERROR_RERROR, "%s: Cannot create Java string.", operation);
+}

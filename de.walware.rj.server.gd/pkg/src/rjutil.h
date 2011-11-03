@@ -43,3 +43,8 @@ jmethodID getJMethod(JNIEnv *env, jclass class, const char *name, const char *si
 jclass getJClass(JNIEnv *env, const char *name, int flags);
 
 void handleJError(JNIEnv *env, int flags, const char *message, ...);
+
+void handleJNewArrayError(JNIEnv *env, const char *operation);
+void handleJGetArrayError(JNIEnv *env, jobject jArray, const char *operation);
+void handleJNewStringError(JNIEnv *env, const char *operation);
+

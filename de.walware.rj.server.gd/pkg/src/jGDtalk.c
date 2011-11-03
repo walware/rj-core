@@ -256,8 +256,7 @@ static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd)
 	if (o) {
 		jdouble *ac=(jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
 		if (!ac) {
-			(*env)->DeleteLocalRef(env, o);
-			return FALSE;
+			handleJGetArrayError(env, o, "gdLocator");
 		}
 		*x=ac[0]; *y=ac[1];
 		(*env)->ReleaseDoubleArrayElements(env, o, ac, 0);
@@ -297,8 +296,7 @@ static void newJavaGD_MetricInfo(int c,  R_GE_gcontext *gc,  double* ascent, dou
 	if (o) {
 		jdouble *ac=(jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
 		if (!ac) {
-			(*env)->DeleteLocalRef(env, o);
-			return;
+			handleJGetArrayError(env, o, "gdMetricInfo");
 		}
 		*ascent=ac[0]; *descent=ac[1]; *width=ac[2];
 		(*env)->ReleaseDoubleArrayElements(env, o, ac, 0);
@@ -344,19 +342,18 @@ static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd)
 	return (handled == JNI_TRUE) ? TRUE : FALSE;
 }
 
-static jarray newDoubleArray(JNIEnv *env, int n, double *ct)
+static jarray newDoubleArrayPoly(JNIEnv *env, int n, double *ct)
 {
-    jdoubleArray da=(*env)->NewDoubleArray(env,n);
-    
-    if (!da) return 0;
+    jdoubleArray da = (*env)->NewDoubleArray(env,n);
+	if (!da) {
+		handleJNewArrayError(env, "gdPoly*");
+	}
     if (n>0) {
         jdouble *dae;
-        dae=(*env)->GetDoubleArrayElements(env, da, 0);
-        if (!dae) {
-            (*env)->DeleteLocalRef(env,da);
-			chkX(env);
-            return 0;
-        }
+        dae = (*env)->GetDoubleArrayElements(env, da, 0);
+		if (!dae) {
+			handleJGetArrayError(env, da, "gdPoly*");
+		}
         memcpy(dae,ct,sizeof(double)*n);
         (*env)->ReleaseDoubleArrayElements(env, da, dae, 0);
     }
@@ -374,10 +371,8 @@ static void newJavaGD_Polygon(int n, double *x, double *y,  R_GE_gcontext *gc,  
 
     checkGC(env,xd, gc);
 
-    xa=newDoubleArray(env, n, x);
-    if (!xa) return;
-    ya=newDoubleArray(env, n, y);
-    if (!ya) return;
+    xa=newDoubleArrayPoly(env, n, x);
+    ya=newDoubleArrayPoly(env, n, y);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePolygon, n, xa, ya);
     (*env)->DeleteLocalRef(env, xa); 
@@ -395,10 +390,8 @@ static void newJavaGD_Polyline(int n, double *x, double *y,  R_GE_gcontext *gc, 
     
     checkGC(env,xd, gc);
     
-    xa=newDoubleArray(env, n, x);
-    if (!xa) return;
-    ya=newDoubleArray(env, n, y);
-    if (!ya) return;
+    xa=newDoubleArrayPoly(env, n, x);
+    ya=newDoubleArrayPoly(env, n, y);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePolyline, n, xa, ya);
     (*env)->DeleteLocalRef(env, xa); 
@@ -430,9 +423,7 @@ static void newJavaGD_Size(double *left, double *right,  double *bottom, double 
 	if (o) {
 		jdouble *ac=(jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
 		if (!ac) {
-			(*env)->DeleteLocalRef(env, o);
-			gdWarning("gdSize: cant's get double*");
-			return;
+			handleJGetArrayError(env, o, "gdSize");
 		}
 		*left=ac[0]; *right=ac[1]; *bottom=ac[2]; *top=ac[3];
 		(*env)->ReleaseDoubleArrayElements(env, o, ac, 0);
@@ -472,8 +463,11 @@ static double newJavaGD_StrWidthUTF8(constxt char *str,  R_GE_gcontext *gc,  New
     if(!env || !xd || !xd->talk) return 0.0;
     
     checkGC(env,xd, gc);
-    
+
     s = (*env)->NewStringUTF(env, str);
+	if (!s) {
+		handleJNewStringError(env, "gdStrWidth");
+	}
 	width = (*env)->CallDoubleMethod(env, xd->talk, jmGDInterfaceStrWidth, s);
     /* s not released! */
 	chkX(env);
@@ -496,6 +490,9 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,  double ro
     checkGC(env,xd, gc);
     
     s = (*env)->NewStringUTF(env, str);
+	if (!s) {
+		handleJNewStringError(env, "gdText");
+	}
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceText, x, y, s, rot, hadj);
 	(*env)->DeleteLocalRef(env, s);  
 	chkX(env);
@@ -701,13 +698,11 @@ void initJavaGD(newJavaGDDesc *xd, double *width, double *height, int *unit, dou
 	if (jo) {
 		jdouble *ac = (jdouble*)(*env)->GetDoubleArrayElements(env, jo, 0);
 		if (!ac) {
-			(*env)->DeleteLocalRef(env, jo);
-			gdWarning("gdInit: cant's get double*");
 			if (*unit != 1) {
 				*width = 672.0;
 				*height = 672.0;
 			}
-			return;
+			handleJGetArrayError(env, jo, "init");
 		}
 		*width = ac[0];
 		*height = ac[1];
@@ -750,9 +745,7 @@ void getJavaGDPPI(NewDevDesc *dd, double *xpi, double *ypi) {
 	if (jo) {
 		jdouble *ac = (jdouble*)(*env)->GetDoubleArrayElements(env, jo, 0);
 		if (!ac) {
-			(*env)->DeleteLocalRef(env, jo);
-			gdWarning("getPPI: cant's get double*, using default");
-			return;
+			handleJGetArrayError(env, jo, "getPPI");
 		}
 		if (ac[0] > 0.0 && ac[1] > 0.0) {
 			*xpi = ac[0];
