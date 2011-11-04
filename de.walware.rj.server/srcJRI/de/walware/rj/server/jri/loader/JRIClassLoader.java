@@ -484,8 +484,8 @@ public class JRIClassLoader extends RJClassLoader {
 			for (final String l : this.defaultLibPath) {
 				try {
 					final String p = l+'/'+name;
-					final File dir = new File(p);
-					if (dir.exists() && dir.isDirectory()) {
+					final File dir = new File(p, "DESCRIPTION");
+					if (dir.exists() && dir.isFile()) {
 						return p;
 					}
 				}
