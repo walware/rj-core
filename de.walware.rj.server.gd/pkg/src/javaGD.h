@@ -1,7 +1,7 @@
 #ifndef _DEV_JAVAGD_H
 #define _DEV_JAVAGD_H
 
-#define JAVAGD_VER 0x000503 /* JavaGD v0.5-3 */
+#define JAVAGD_VER 0x000504 /* JavaGD v0.5-4 */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
