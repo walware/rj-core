@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -30,6 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import de.walware.rj.server.srvImpl.RJClassLoader;
+import de.walware.rj.server.srvext.ServerUtil;
 
 
 public class JRIClassLoader extends RJClassLoader {
@@ -345,6 +347,7 @@ public class JRIClassLoader extends RJClassLoader {
 			addClassPath(jriJarFile);
 		}
 		else {
+			logEntries();
 			final String message = "JRI.jar not found.";
 			LOGGER.log(Level.SEVERE, message);
 			throw new RuntimeException(message);
@@ -357,10 +360,32 @@ public class JRIClassLoader extends RJClassLoader {
 			addClassPath(rjJarFile);
 		}
 		else {
+			logEntries();
 			final String message = "rj.jar not found.";
 			LOGGER.log(Level.SEVERE, message);
 			throw new RuntimeException(message);
 		}
+		
+		if (verbose) {
+			logEntries();
+		}
+	}
+	
+	protected void logEntries() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append("RJ/R-Java ClassLoader / Registery native libraries:");
+		ServerUtil.prettyPrint(this.libMap, sb);
+		LOGGER.log(Level.INFO, sb.toString());
+		
+		sb.setLength(0);
+		sb.append("RJ/R-Java ClassLoader / Registery class paths:");
+		if (this.useSystem) {
+			ServerUtil.prettyPrint(Arrays.asList(getURLs()), sb);
+		}
+		else {
+			ServerUtil.prettyPrint(this.classPath, sb);
+		}
+		LOGGER.log(Level.INFO, sb.toString());
 	}
 	
 	private String checkDirPath(String path) {
@@ -466,14 +491,8 @@ public class JRIClassLoader extends RJClassLoader {
 			
 			if (verbose) {
 				final StringBuilder sb = new StringBuilder((1+this.defaultLibPath.size())*32);
-				sb.append("JR library path: ");
-				final String sep = System.getProperty("line.separator")+"\t";
-				for (final String item : this.defaultLibPath) {
-					sb.append(sep);
-					if (item != null) {
-						sb.append(item);
-					}
-				}
+				sb.append("RJ/R-Java ClassLoader / R library path: ");
+				ServerUtil.prettyPrint(this.defaultLibPath, sb);
 				LOGGER.log(Level.CONFIG, sb.toString());
 			}
 		}
@@ -545,10 +564,16 @@ public class JRIClassLoader extends RJClassLoader {
 					ins = null;
 					if (cp instanceof UnixJarFile) {
 						ins = ((UnixJarFile) cp).getResourceAsStream(classNameToFile(name) + ".class");
+						if (verbose) {
+							System.out.println("   JAR file, can get '" + classNameToFile(name) + "'? " + ((ins == null) ? "YES" : "NO"));
+						}
 					} else if (cp instanceof UnixDirectory) {
 						final UnixFile class_f = new UnixFile(cp.getPath()+"/"+classNameToFile(name)+".class");
 						if (class_f.isFile()) {
 							ins = new FileInputStream(class_f);
+						}
+						if (verbose) {
+							System.out.println("   Directory, can get '" + class_f + "'? " + ((ins == null) ? "YES" : "NO"));
 						}
 					}
 					if (ins != null) {
@@ -582,10 +607,17 @@ public class JRIClassLoader extends RJClassLoader {
 							System.out.println("RJavaClassLoader: loaded class "
 									+ name + ", " + n + " bytes");
 						}
-						cl = defineClass(name, fc, 0, n);
-						// System.out.println(" - class = "+cl);
-						return cl;
+						try {
+							cl = defineClass(name, fc, 0, n);
+						} catch (final Exception dce) {
+							throw new ClassNotFoundException("Class not found - candidate class binary found but could not be loaded", dce);
+						}
+ 						if (verbose) {
+							System.out.println("  defineClass('" + name +"') returned " + cl);
+						}
 					}
+				} catch (final ClassNotFoundException ex) {
+					throw ex;
 				} catch (final Exception ex) {
 					// System.out.println(" * won't work: "+ex.getMessage());
 				}
