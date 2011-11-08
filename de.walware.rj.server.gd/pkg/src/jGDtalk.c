@@ -584,6 +584,14 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
 	
 	dd->locator = newJavaGD_Locator;
 	dd->newFrameConfirm = newJavaGD_NewPageConfirm;
+	
+#if R_GE_version >= 9
+	dd->haveTransparency = 2;
+	dd->haveTransparentBg = 3;
+	dd->haveRaster = 2;
+	dd->haveCapture = 1;
+	dd->haveLocator = 2;
+#endif
 }
 
 /*--------- Java Initialization -----------*/
