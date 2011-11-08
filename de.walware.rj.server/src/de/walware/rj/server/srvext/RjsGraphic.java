@@ -65,7 +65,8 @@ public final class RjsGraphic {
 	}
 	
 	
-	public void initPage(final int devId, final int state, final double width, final double height, final boolean isActive) {
+	public void initPage(final int devId, final int state, final double width, final double height,
+			final int canvasColor, final boolean isActive) {
 		if (this.devId != devId || this.state < STATE_OPENED) {
 			this.devId = devId;
 			this.rj.registerGraphic(this);
@@ -76,7 +77,7 @@ public final class RjsGraphic {
 		this.cachedStrWidthStr = null;
 		
 		this.rj.sendMainCmd(new GDCmdItem.CInit(
-				this.devId, width, height, isActive, this.slot ));
+				this.devId, width, height, canvasColor, isActive, this.slot ));
 	}
 	
 	public void close() {

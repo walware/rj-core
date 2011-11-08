@@ -61,11 +61,11 @@ static Rboolean newJavaGDDeviceDriver(NewDevDesc *dd, char *display,
 		return FALSE;
 	}
 	
-	initJavaGD(xd, &width, &height, &sizeUnit, &xpi, &ypi);
-	
 	xd->fill = 0xffffffff; /* transparent */
 	xd->col = R_RGB(0, 0, 0);
 	xd->canvas = canvas;
+	
+	initJavaGD(xd, &width, &height, &sizeUnit, &xpi, &ypi);
 	
 	/* Font will load at first use. */
 	if (pointsize < 6 || pointsize > 24) pointsize = 12;

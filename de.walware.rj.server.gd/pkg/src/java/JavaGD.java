@@ -42,7 +42,7 @@ public class JavaGD extends GDContainerGD implements WindowListener {
 
         f=new Frame("JavaGD ("+(getDeviceNumber()+1)+")"+(isActive()?" *active*":""));
         f.addWindowListener(this);
-        c=new GDCanvas(getWidth(), getHeight());
+        c=new GDCanvas(getWidth(), getHeight(), getCanvasColor());
         f.add((GDCanvas)c);
         f.pack();
         f.setVisible(true);

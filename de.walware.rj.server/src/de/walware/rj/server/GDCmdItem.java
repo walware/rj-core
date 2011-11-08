@@ -125,14 +125,17 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		private final double w;
 		private final double h;
+		private final int canvasColor;
 		private final boolean active;
 		
 		
-		public CInit(final int devId, final double w, final double h, final boolean activate, final byte slot) {
+		public CInit(final int devId, final double w, final double h, final int canvasColor,
+				final boolean activate, final byte slot) {
 			this.options = 0;
 			this.devId = devId;
 			this.w = w;
 			this.h = h;
+			this.canvasColor = canvasColor;
 			this.active = activate;
 			
 			this.slot = slot;
@@ -144,6 +147,7 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeByte(C_NEW_PAGE);
 			io.writeDouble(this.w);
 			io.writeDouble(this.h);
+			io.writeInt(this.canvasColor);
 			io.writeBoolean(this.active);
 		}
 		

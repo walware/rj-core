@@ -684,7 +684,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceClose = getJMethod(env, jc, "gdClose", "()V", RJ_ERROR_RERROR);
 		jmGDInterfaceDeactivate = getJMethod(env, jc, "gdDeactivate", "()V", RJ_ERROR_RERROR);
 		jmGDInterfaceGetPPI = getJMethod(env, jc, "gdPPI", "()[D", RJ_ERROR_RERROR);
-		jmGDInterfaceInit = getJMethod(env, jc, "gdInit", "(DDIDD)[D", RJ_ERROR_RERROR);
+		jmGDInterfaceInit = getJMethod(env, jc, "gdInit", "(DDIDDI)[D", RJ_ERROR_RERROR);
 		jmGDInterfaceLocator = getJMethod(env, jc, "gdLocator", "()[D", RJ_ERROR_RERROR);
 		jmGDInterfaceLine = getJMethod(env, jc, "gdLine", "(DDDD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceMetricInfo = getJMethod(env, jc, "gdMetricInfo", "(I)[D", RJ_ERROR_RERROR);
@@ -739,7 +739,8 @@ void initJavaGD(newJavaGDDesc *xd, double *width, double *height, int *unit, dou
 	if(!env || !xd || !xd->talk) return;
 	
 	jo = (*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceInit,
-			(jdouble) *width, (jdouble) *height, (jint) *unit, (jdouble) *xpi, (jdouble) *ypi);
+			(jdouble) *width, (jdouble) *height, (jint) *unit,
+			(jdouble) *xpi, (jdouble) *ypi, xd->canvas);
 	if (jo) {
 		jdouble *ac = (jdouble*)(*env)->GetDoubleArrayElements(env, jo, 0);
 		if (!ac) {

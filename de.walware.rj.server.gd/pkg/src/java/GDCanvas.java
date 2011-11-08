@@ -51,17 +51,17 @@ public class GDCanvas extends Canvas implements GDContainer, MouseListener {
 
     public int devNr=-1;
     
-    public GDCanvas(double w, double h) {
-        this((int)w, (int)h);
+    public GDCanvas(double w, double h, int canvasColor) {
+        this((int)w, (int)h, canvasColor);
     }
     
-    public GDCanvas(int w, int h) {
+    public GDCanvas(int w, int h, int canvasColor) {
         l=new Vector();
         gs=new GDState();
         gs.f=new Font(null,0,12);
         setSize(w,h);
         lastSize=getSize();
-        setBackground(Color.white);
+        setBackground(new Color((canvasColor & 255), ((canvasColor>>8) & 255), ((canvasColor>>16) & 255)));
 	addMouseListener(this);
         (r=new Refresher(this)).start();
     }

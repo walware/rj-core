@@ -29,7 +29,7 @@ public final class JavaGD extends GDInterface {
 	
 	@Override
 	public double[] gdInit(final double width, final double height, final int unit,
-			double xpi, double ypi) {
+			double xpi, double ypi, final int canvasColor) {
 		if (xpi <= 0.0 || ypi <= 0.0) {
 			try {
 				final double[] ppi = this.rjsGraphic.newPagePPI();
@@ -43,21 +43,21 @@ public final class JavaGD extends GDInterface {
 				ypi = 0.0;
 			}
 		}
-		return super.gdInit(width, height, unit, xpi, ypi);
+		return super.gdInit(width, height, unit, xpi, ypi, canvasColor);
 	}
 	
 	@Override
 	public void gdOpen(final int devNr) {
 		super.gdOpen(devNr);
 		this.rjsGraphic.initPage(devNr, RjsGraphic.STATE_OPENED,
-				getWidth(), getHeight(), isActive() );
+				getWidth(), getHeight(), getCanvasColor(), isActive() );
 		this.rjsGraphic.setMode(0);
 	}
 	
 	@Override
 	public void gdNewPage() {
 		this.rjsGraphic.initPage(getDeviceNumber(), RjsGraphic.STATE_PAGED,
-				getWidth(), getHeight(), isActive() );
+				getWidth(), getHeight(), getCanvasColor(), isActive() );
 	}
 	
 	@Override
@@ -103,7 +103,7 @@ public final class JavaGD extends GDInterface {
 		if (this.rjsGraphic.getState() == RjsGraphic.STATE_OPENED) {
 			gdMode(1);
 			this.rjsGraphic.initPage(getDeviceNumber(), RjsGraphic.STATE_OPENED,
-					getWidth(), getHeight(), isActive() );
+					getWidth(), getHeight(), getCanvasColor(), isActive() );
 			gdMode(0);
 		}
 	}

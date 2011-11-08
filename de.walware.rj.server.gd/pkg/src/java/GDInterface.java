@@ -87,6 +87,8 @@ public abstract class GDInterface {
 	private double xpi = 96.0;
 	private double ypi = 96.0;
 	
+	private int canvasColor;
+	
 	
 	/**
 	 * Returns the device number
@@ -127,6 +129,10 @@ public abstract class GDInterface {
 		return this.height;
 	}
 	
+	protected int getCanvasColor() {
+		return this.canvasColor;
+	}
+	
 	
 	/**
 	 * Returns the raster point per inch (dpi)
@@ -138,12 +144,15 @@ public abstract class GDInterface {
 	 * @param ypi
 	 * @return array with factor for x (horizontal) and y (vertical)
 	 */
-	public double[] gdInit(double width, double height, int unit, double xpi, double ypi) {
+	public double[] gdInit(double width, double height, int unit, double xpi, double ypi,
+			final int canvasColor) {
 		if (xpi > 0 && ypi > 0) {
 			this.xpi = xpi;
 			this.ypi = ypi;
 		}
 		setSize(width, height, unit);
+		
+		this.canvasColor = canvasColor;
 		
 		return new double[] { this.width, this.height };
 	}
