@@ -328,11 +328,23 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     
     if(!env || !xd || !xd->talk) return;
 	
-	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceNewPage);
+	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceNewPage, gc->fill);
 	chkX(env);
 	
-    /* this is an exception - we send all GC attributes just after the NewPage command */
-    sendAllGC(env, xd, gc);
+	if (R_ALPHA(gc->fill) != 0) { // bg
+		int savedCol = gc->col;
+		gc->col = 0x00ffffff;
+		sendAllGC(env, xd, gc);
+		gc->col = savedCol;
+		
+		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRect, 
+				dd->left, dd->top, dd->right, dd->bottom);
+		chkX(env);
+		
+		checkGC(env, xd, gc);
+	} else {
+		sendAllGC(env, xd, gc);
+	}
 }
 
 static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd)
