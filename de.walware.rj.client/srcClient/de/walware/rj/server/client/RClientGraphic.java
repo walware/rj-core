@@ -20,6 +20,7 @@ import de.walware.rj.graphic.RFillSetting;
 import de.walware.rj.graphic.RFontSetting;
 import de.walware.rj.graphic.RLine;
 import de.walware.rj.graphic.RLineSetting;
+import de.walware.rj.graphic.RPath;
 import de.walware.rj.graphic.RPolygon;
 import de.walware.rj.graphic.RPolyline;
 import de.walware.rj.graphic.RRaster;
@@ -119,13 +120,17 @@ public interface RClientGraphic {
 	 */
 	void addDrawRect(double x0, double y0, double x1, double y1);
 	/**
-	 * @see RPolyline#RPolyline(double[], double[])
+	 * @see RPolyline
 	 */
 	void addDrawPolyline(double[] x, double[] y);
 	/**
-	 * @see RPolygon#RPolygon(double[], double[])
+	 * @see RPolygon
 	 */
 	void addDrawPolygon(double[] x, double[] y);
+	/**
+	 * @see RPath
+	 */
+	void addDrawPath(int[] n, double[] x, double[] y, int winding);
 	/**
 	 * @see RCircle#RCircle(double, double, double)
 	 */

@@ -18,15 +18,17 @@ package de.walware.rj.graphic;
 public class RPolygon extends RGraphicElement {
 	
 	
-	public final double x[];
-	public final double y[];
+	/**
+	 * Coordinates of the vertices.
+	 */
+	public final double[] x, y;
 	
 	
 	/**
 	 * Creates a new polygon
 	 * 
-	 * @param x x coordinates
-	 * @param y y coordinates
+	 * @param x {@link #x}
+	 * @param y {@link #y}
 	 */
 	public RPolygon(final double[] x, final double[] y) {
 		this.x = x;

@@ -93,6 +93,9 @@ public class RClientGraphicDummy implements RClientGraphic {
 	public void addDrawPolygon(final double[] x, final double[] y) {
 	}
 	
+	public void addDrawPath(final int[] n, final double[] x, final double[] y, final int winding) {
+	}
+	
 	public void addDrawCircle(final double x, final double y, final double r) {
 	}
 	

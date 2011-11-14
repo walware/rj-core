@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009-2011 WalWare/RJ-Project (www.walware.de/goto/opensource).
+ * Copyright (c) 2011 WalWare/RJ-Project (www.walware.de/goto/opensource).
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,31 +13,42 @@ package de.walware.rj.graphic;
 
 
 /**
- * Polyline through <code>(x[0], y[0])</code>, ..., <code>(x[n-1], y[n-1])</code>.
+ * Path with vertices <code>(x[1], y[1])</code>, ..., <code>(x[n-1], y[n-1])</code>.
  */
-public class RPolyline extends RGraphicElement {
+public class RPath extends RGraphicElement {
 	
 	
 	/**
-	 * Coordinates of the vertices.
+	 * Number of vertices per segment
+	 */
+	public final int[] n;
+	
+	/**
+	 * Coordinates of the vertices
 	 */
 	public final double[] x, y;
 	
+	public final int mode;
+	
 	
 	/**
-	 * Creates a new polyline.
+	 * Creates a new path
 	 * 
+	 * @param n {@link #n}
 	 * @param x {@link #x}
 	 * @param y {@link #y}
+	 * @winding {@link #mode}
 	 */
-	public RPolyline(final double[] x, final double[] y) {
+	public RPath(final int[] n, final double[] x, final double[] y, final int mode) {
+		this.n = n;
 		this.x = x;
 		this.y = y;
+		this.mode = mode;
 	}
 	
 	
 	public final byte getInstructionType() {
-		return DRAW_POLYLINE;
+		return DRAW_PATH;
 	}
 	
 	
@@ -48,10 +59,10 @@ public class RPolyline extends RGraphicElement {
 	public String toString() {
 		final int n = this.x.length;
 		if (n == 0) {
-			return "RPolyline[]";
+			return "RPath[]";
 		}
 		final StringBuilder sb = new StringBuilder(14 + this.x.length*20);
-		sb.append("RPolyline[(");
+		sb.append("RPath[(");
 		sb.append(this.x[0]);
 		sb.append(",");
 		sb.append(this.y[0]);

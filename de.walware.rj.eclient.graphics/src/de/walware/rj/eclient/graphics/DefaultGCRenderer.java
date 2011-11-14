@@ -30,6 +30,7 @@ import de.walware.rj.eclient.internal.graphics.FontSetting;
 import de.walware.rj.eclient.internal.graphics.GraphicInitialization;
 import de.walware.rj.eclient.internal.graphics.LineElement;
 import de.walware.rj.eclient.internal.graphics.LineSetting;
+import de.walware.rj.eclient.internal.graphics.PathElement;
 import de.walware.rj.eclient.internal.graphics.PolygonElement;
 import de.walware.rj.eclient.internal.graphics.PolylineElement;
 import de.walware.rj.eclient.internal.graphics.RasterElement;
@@ -70,6 +71,7 @@ public class DefaultGCRenderer {
 		final float scale = fScale;
 		int currentAlpha = -1;
 		int currentInterpolation = -1;
+		int currentFillRule = -1;
 		Color lineColor = fLineColor;
 		int lineAlpha = fLineAlpha;
 		Color fillColor = fFillColor;
@@ -235,6 +237,9 @@ public class DefaultGCRenderer {
 						if (fillAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = fillAlpha);
 						}
+						if (SWT.FILL_EVEN_ODD != currentFillRule) {
+							gc.setFillRule(currentFillRule = SWT.FILL_EVEN_ODD);
+						}
 						gc.fillPolygon(icoord);
 					}
 					if (lineAlpha != 0) {
@@ -242,6 +247,27 @@ public class DefaultGCRenderer {
 							gc.setAlpha(currentAlpha = lineAlpha);
 						}
 						gc.drawPolygon(icoord);
+					}
+					continue; }
+				case RGraphicInstruction.DRAW_PATH: {
+					final PathElement element = (PathElement) instr;
+					{	final int fillRule = ((element.mode & 0x3) == 1) ?
+							SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
+						if (fillRule != currentFillRule) {
+							gc.setFillRule(currentFillRule = fillRule);
+						}
+					}
+					if (fillAlpha != 0) {
+						if (fillAlpha != currentAlpha) {
+							gc.setAlpha(currentAlpha = fillAlpha);
+						}
+						gc.fillPath(element.swtPath);
+					}
+					if (lineAlpha != 0) {
+						if (lineAlpha != currentAlpha) {
+							gc.setAlpha(currentAlpha = lineAlpha);
+						}
+						gc.drawPath(element.swtPath);
 					}
 					continue; }
 				case RGraphicInstruction.DRAW_CIRCLE: {

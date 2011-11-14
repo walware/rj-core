@@ -571,6 +571,13 @@ public abstract class AbstractRJComClient implements ComHandler {
 						io.readDoubleArrayPair1(),
 						io.readDoubleArrayPair2() );
 				return;
+			case GDCmdItem.DRAW_PATH:
+				getGraphic(devId).addDrawPath(
+						io.readIntArray(),
+						io.readDoubleArrayPair1(),
+						io.readDoubleArrayPair2(),
+						io.readInt() );
+				return;
 			case GDCmdItem.DRAW_CIRCLE:
 				getGraphic(devId).addDrawCircle(
 						io.readDouble(),

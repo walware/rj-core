@@ -37,6 +37,7 @@ public interface RGraphicInstruction {
 	byte DRAW_CIRCLE = 10;
 	byte DRAW_TEXT = 11;
 	byte DRAW_RASTER = 12;
+	byte DRAW_PATH = 13;
 	
 	
 	/**

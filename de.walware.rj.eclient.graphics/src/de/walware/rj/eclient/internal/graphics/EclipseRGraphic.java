@@ -27,6 +27,7 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.statushandlers.StatusManager;
 
@@ -90,11 +91,21 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			final int beginIdx, final int endIdx) {
 		try {
 			for (int i = beginIdx; i < endIdx; i++) {
-				if (instructions[i].getInstructionType() == IERGraphicInstruction.DRAW_RASTER) {
+				switch (instructions[i].getInstructionType()) {
+				case IERGraphicInstruction.DRAW_RASTER: {
 					final Image image = ((RasterElement) instructions[i]).swtImage;
 					if (image != null && !image.isDisposed()) {
 						image.dispose();
 					}
+					continue; }
+				case IERGraphicInstruction.DRAW_PATH: {
+					final Path path = ((PathElement) instructions[i]).swtPath;
+					if (path != null && !path.isDisposed()) {
+						path.dispose();
+					}
+					continue; }
+				default:
+					continue;
 				}
 			}
 		}
@@ -730,6 +741,21 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	public void addDrawPolygon(final double[] x, final double[] y) {
 		final PolygonElement instr = new PolygonElement(x, y);
+		add(instr);
+	}
+	
+	public void addDrawPath(final int[] n, final double[] x, final double[] y, final int winding) {
+		final Path path = new Path(fDisplay);
+		int k = 0, end = 0;
+		for (int i = 0; i < n.length; i++) {
+			end += n[i];
+			path.moveTo((float) Math.floor(x[k] + 0.5), (float) Math.floor(y[k++] + 0.5));
+			while (k < end) {
+				path.lineTo((float) Math.floor(x[k] + 0.5), (float) Math.floor(y[k++] + 0.5));
+			}
+			path.close();
+		}
+		final PathElement instr = new PathElement(n, x, y, winding, path);
 		add(instr);
 	}
 	
