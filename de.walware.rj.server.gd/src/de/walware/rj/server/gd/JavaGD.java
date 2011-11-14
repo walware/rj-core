@@ -94,7 +94,7 @@ public final class JavaGD extends GDInterface {
 		if (result != null && result.length == 2) {
 			setSize(result[0], result[1], PX);
 		}
-		return new double[] { 0.0, getWidth(), getHeight(), 0.0 };
+		return new double[] { 0.0, getWidth() - 1, getHeight() - 1, 0.0 };
 	}
 	
 	@Override

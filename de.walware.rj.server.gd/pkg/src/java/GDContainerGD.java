@@ -159,8 +159,8 @@ public class GDContainerGD extends GDInterface {
             height = d.getHeight();
         }
         res[0]=0d;
-        res[1]=width;
-        res[2]=height;
+        res[1]=width - 1;
+        res[2]=height - 1;
         res[3]=0;
         return res;
     }
