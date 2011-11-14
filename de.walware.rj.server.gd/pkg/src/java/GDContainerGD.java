@@ -43,6 +43,7 @@ public class GDContainerGD extends GDInterface {
 	 * @param devNr device number
 	 * @param w width of the device
 	 * @param h height of the device */
+	@Override
 	public void     gdOpen(int devNr) {
 		super.gdOpen(devNr);
 		
@@ -55,6 +56,7 @@ public class GDContainerGD extends GDInterface {
      *  @param x x coordinate of the center
      *  @param y y coordinate of the center
      *  @param r radius */
+    @Override
     public void     gdCircle(double x, double y, double r) {
         if (c==null) return;
         c.add(new GDCircle(x,y,r));
@@ -65,12 +67,14 @@ public class GDContainerGD extends GDInterface {
      *  @param x1 right coordinate
      *  @param y0 top coordinate
      *  @param y1 bottom coordinate */
+    @Override
     public void     gdClip(double x0, double x1, double y0, double y1) {
         if (c==null) return;
         c.add(new GDClip(x0, y0, x1, y1));
     }
 
     /** close the display */
+    @Override
     public void     gdClose() {
         super.gdClose();
         if (c!=null) c.closeDisplay();
@@ -78,6 +82,7 @@ public class GDContainerGD extends GDInterface {
 
     /** invoke the locator
      *  @return array of indices or <code>null</code> is cancelled */
+    @Override
     public double[] gdLocator() {
 	if (c==null) return null;
 	if (ls==null) ls=new LocatorSync();
@@ -133,16 +138,19 @@ public class GDContainerGD extends GDInterface {
         }
     }
 
+    @Override
     public void     gdPolygon(int n, double[] x, double[] y) {
         if (c==null) return;
         c.add(new GDPolygon(n, x, y, false));
     }
 
+    @Override
     public void     gdPolyline(int n, double[] x, double[] y) {
         if (c==null) return;
         c.add(new GDPolygon(n, x, y, true));
     }
 
+    @Override
     public void     gdRect(double x0, double y0, double x1, double y1) {
         if (c==null) return;
         c.add(new GDRect(x0, y0, x1, y1));
@@ -150,6 +158,7 @@ public class GDContainerGD extends GDInterface {
 
     /** retrieve the current size of the device
      *  @return an array of four doubles: 0, width, height, 0 */
+    @Override
     public double[] gdSize() {
         double[] res=new double[4];
         double width=0d, height=0d;
@@ -168,6 +177,7 @@ public class GDContainerGD extends GDInterface {
     /** retrieve width of the given text when drawn in the current font
      *  @param str text
      *  @return width of the text */
+    @Override
     public double   gdStrWidth(String str) {
         double width=(double)(8*str.length()); // rough estimate
         if (c!=null) { // if canvas is active, we can do better
@@ -189,11 +199,13 @@ public class GDContainerGD extends GDInterface {
      *  @param str text to draw
      *  @param rot rotation (in degrees)
      *  @param hadj horizontal adjustment with respect to the text size (0=left-aligned wrt origin, 0.5=centered, 1=right-aligned wrt origin) */
+    @Override
     public void     gdText(double x, double y, String str, double rot, double hadj) {
         if (c==null) return;
         c.add(new GDText(x, y, rot, hadj, str));
     }
 
+    @Override
     public void     gdRaster(byte[] img, boolean imgAlpha, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate) {
         if (c == null) return;
         c.add(new GDRaster(img, img_w, img_h, x, y, w, h, rot, interpolate));
@@ -202,6 +214,7 @@ public class GDContainerGD extends GDInterface {
     /*-- GDC - manipulation of the current graphics state */
     /** set drawing color
      *  @param cc color */
+    @Override
     public void gdcSetColor(int cc) {
         if (c==null) return;
         c.add(new GDColor(cc));
@@ -209,6 +222,7 @@ public class GDContainerGD extends GDInterface {
 
     /** set fill color
      *  @param cc color */
+    @Override
     public void gdcSetFill(int cc) {
         if (c==null) return;
         c.add(new GDFill(cc));
@@ -217,6 +231,7 @@ public class GDContainerGD extends GDInterface {
     /** set line width and type
      *  @param lwd line width (see <code>lwd</code> parameter in R)
      *  @param lty line type (see <code>lty</code> parameter in R) */
+    @Override
     public void gdcSetLine(double lwd, int lty) {
         if (c==null) return;
         c.add(new GDLinePar(lwd, lty));
@@ -228,6 +243,7 @@ public class GDContainerGD extends GDInterface {
      *  @param lineheight line height
      *  @param fontface font face (see <code>font</code> parameter in R: 1=plain, 2=bold, 3=italic, 4=bold-italic, 5=symbol)
      *  @param fontfamily font family (see <code>family</code> parameter in R) */
+    @Override
     public void gdcSetFont(double cex, double ps, double lineheight, int fontface, String fontfamily) {
         if (c==null) return;
         GDFont f=new GDFont(cex, ps, lineheight, fontface, fontfamily);

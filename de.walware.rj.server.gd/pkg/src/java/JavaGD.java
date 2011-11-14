@@ -36,6 +36,7 @@ public class JavaGD extends GDContainerGD implements WindowListener {
         super();
     }
     
+    @Override
     public void     gdOpen(int devNr) {
         super.gdOpen(devNr);
         if (f!=null) gdClose();
@@ -48,6 +49,7 @@ public class JavaGD extends GDContainerGD implements WindowListener {
         f.setVisible(true);
     }
 
+    @Override
     public void     gdActivate() {
         super.gdActivate();
         if (f!=null) {
@@ -56,6 +58,7 @@ public class JavaGD extends GDContainerGD implements WindowListener {
         }
     }
 
+    @Override
     public void     gdClose() {
         super.gdClose();
         if (f!=null) {
@@ -66,11 +69,13 @@ public class JavaGD extends GDContainerGD implements WindowListener {
         }
     }
 
+    @Override
     public void     gdDeactivate() {
         super.gdDeactivate();
         if (f!=null) f.setTitle("JavaGD ("+(getDeviceNumber()+1)+")");
     }
 
+    @Override
     public void     gdNewPage() {
         super.gdNewPage();
     }

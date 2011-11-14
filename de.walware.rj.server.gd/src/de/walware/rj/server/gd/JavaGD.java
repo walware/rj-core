@@ -204,8 +204,7 @@ public final class JavaGD extends GDInterface {
 	@Override
 	public double[] gdLocator() {
 		final double[] xy = this.rjsGraphic.execLocator();
-		return (xy != null && xy.length == 2) ? xy :
-				null;
+		return (xy != null && xy.length == 2) ? xy : null;
 	}
 	
 	
