@@ -39,7 +39,7 @@ public class RClientGraphicDummy implements RClientGraphic {
 		return this.devId;
 	}
 	
-	public void reset(final double w, final double h) {
+	public void reset(final double w, final double h, final InitConfig config) {
 		this.size = new double[] { w, h };
 	}
 	

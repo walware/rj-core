@@ -37,6 +37,14 @@ import de.walware.rj.services.RService;
  */
 public interface RClientGraphic {
 	
+	
+	class InitConfig {
+		
+		public int canvasColor;
+		
+	}
+	
+	
 	/**
 	 * Returns the device id of R
 	 * 
@@ -48,8 +56,9 @@ public interface RClientGraphic {
 	 * 
 	 * @param w the width of the graphic
 	 * @param h the height of the graphic
+	 * @param config initialization configuration
 	 */
-	void reset(double w, double h);
+	void reset(double w, double h, InitConfig config);
 	
 	/**
 	 * Sets if the graphic is the active device in R.

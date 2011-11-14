@@ -11,6 +11,8 @@
 
 package de.walware.rj.eclient.internal.graphics;
 
+import org.eclipse.swt.graphics.Color;
+
 import de.walware.rj.graphic.RGraphicInitialization;
 
 import de.walware.rj.eclient.graphics.IERGraphicInstruction;
@@ -19,8 +21,14 @@ import de.walware.rj.eclient.graphics.IERGraphicInstruction;
 public class GraphicInitialization extends RGraphicInitialization implements IERGraphicInstruction {
 	
 	
-	public GraphicInitialization(final double width, final double height) {
-		super(width, height);
+	public final Color swtCanvasColor;
+	
+	
+	public GraphicInitialization(final double width, final double height, final int canvasColor,
+			final Color swtCanvasColor) {
+		super(width, height, canvasColor);
+		
+		this.swtCanvasColor = swtCanvasColor;
 	}
 	
 	

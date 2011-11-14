@@ -13,6 +13,8 @@ package de.walware.rj.server.client;
 
 import java.util.Map;
 
+import de.walware.rj.server.client.RClientGraphic.InitConfig;
+
 
 /**
  * Factory interface used to create (and close) {@link RClientGraphic} objects.
@@ -65,12 +67,13 @@ public interface RClientGraphicFactory {
 	 * @param devId
 	 * @param w
 	 * @param h
+	 * @param config initialization configuration
 	 * @param active
 	 * @param actions
 	 * @return a new graphic object
 	 */
-	RClientGraphic newGraphic(final int devId, final double w, final double h,
-			final boolean active, RClientGraphicActions actions, int options);
+	RClientGraphic newGraphic(int devId, double w, double h, InitConfig config,
+			boolean active, RClientGraphicActions actions, int options);
 	
 	/**
 	 * Called if the graphic is closed by the R (<code>dev.off()</code>

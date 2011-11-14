@@ -156,8 +156,9 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	}
 	
 	public RClientGraphic newGraphic(final int devId, final double w, final double h,
+			final RClientGraphic.InitConfig config,
 			final boolean active, final RClientGraphicActions actions, final int options) {
-		final EclipseRGraphic egraphic = new EclipseRGraphic(devId, w, h, active,
+		final EclipseRGraphic egraphic = new EclipseRGraphic(devId, w, h, config, active,
 				(actions instanceof IERClientGraphicActions) ? (IERClientGraphicActions) actions : null,
 				options, this );
 		if ((options & MANAGED_OFF) == 0) {

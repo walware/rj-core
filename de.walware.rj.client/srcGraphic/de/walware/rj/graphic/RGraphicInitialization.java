@@ -28,10 +28,16 @@ public class RGraphicInitialization implements RGraphicInstruction {
 	 */
 	public final double height;
 	
+	/**
+	 * The color of the device background
+	 */
+	public final int canvasColor;
 	
-	public RGraphicInitialization(final double width, final double height) {
+	
+	public RGraphicInitialization(final double width, final double height, final int canvasColor) {
 		this.width = width;
 		this.height = height;
+		this.canvasColor = canvasColor;
 	}
 	
 	

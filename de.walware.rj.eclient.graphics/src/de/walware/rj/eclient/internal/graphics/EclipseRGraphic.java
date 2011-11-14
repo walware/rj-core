@@ -132,6 +132,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	private final int fDevId;
 	
+	private int fCanvasColor;
+	
 	private int fDrawingStopDelay = 33; // ms after stop
 	private int fDrawingForceDelay = 333; // ms after last update
 	
@@ -408,7 +410,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	};
 	
 	
-	public EclipseRGraphic(final int devId, final double w, final double h,
+	public EclipseRGraphic(final int devId, final double w, final double h, final InitConfig config,
 			final boolean active, final IERClientGraphicActions actions, final int options,
 			final EclipseRGraphicFactory manager) {
 		fDevId = devId;
@@ -423,7 +425,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		fSWTColorManager = manager.getColorManager(fDisplay);
 		
 		fSize = fNextSize = new double[] { w, h };
-		initPanel(w, h);
+		initPanel(w, h, config);
 	}
 	
 	
@@ -467,7 +469,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		fInstructionsNewSize++;
 	}
 	
-	protected void initPanel(final double w, final double h) {
+	protected void initPanel(final double w, final double h, final InitConfig config) {
 		fDrawingStopDelay = 33;
 		fDrawingForceDelay = 333;
 		
@@ -492,16 +494,17 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			fSymbolFontName = null;
 			fSymbolFontMapping = null;
 		}
+		fCanvasColor = (config.canvasColor & 0xffffff);
 		
-		add(new GraphicInitialization(w, h));
+		add(new GraphicInitialization(w, h, fCanvasColor, fSWTColorManager.getColor(fCanvasColor)));
 	}
 	
-	public void reset(final double w, final double h) {
+	public void reset(final double w, final double h, final InitConfig config) {
 		synchronized (fStateLock) {
 			internalReset();
 		}
 		
-		initPanel(w, h);
+		initPanel(w, h, config);
 	}
 	
 	private void internalReset() {

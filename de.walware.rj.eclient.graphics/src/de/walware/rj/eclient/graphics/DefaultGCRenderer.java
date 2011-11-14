@@ -17,6 +17,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.LineAttributes;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 
 import de.walware.rj.graphic.RGraphicInstruction;
@@ -96,10 +97,12 @@ public class DefaultGCRenderer {
 					final GraphicInitialization init = (GraphicInitialization) instr;
 					ixmax = (int) (init.width * scale + 0.5);
 					iymax = (int) (init.height * scale + 0.5);
+					gc.setBackground(init.swtCanvasColor);
+					gc.setAlpha(currentAlpha = 0xff);
+					gc.setClipping((Rectangle) null);
+					gc.fillRectangle(0, 0, ixmax, iymax);
 					gc.setBackground(fillColor = gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
 					gc.setForeground(lineColor = gc.getDevice().getSystemColor(SWT.COLOR_BLACK));
-					gc.setAlpha(0xff);
-					gc.fillRectangle(0, 0, ixmax, iymax);
 					gc.setClipping(0, 0, ixmax, iymax);
 					continue;
 				case RGraphicInstruction.SET_CLIP: {

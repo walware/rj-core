@@ -63,6 +63,7 @@ import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsPing;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.client.RClientGraphic.InitConfig;
 import de.walware.rj.services.RPlatform;
 import de.walware.rj.services.RService;
 
@@ -117,6 +118,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		
 		public RClientGraphic newGraphic(final int devId, final double w, final double h,
+				final InitConfig config,
 				final boolean active, final RClientGraphicActions actions, final int options) {
 			return new RClientGraphicDummy(devId, w, h);
 		}
@@ -487,6 +489,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 				addGraphic(devId,
 						io.readDouble(),
 						io.readDouble(),
+						io.readInt(),
 						io.readBoolean() );
 				return;
 			case GDCmdItem.C_CLOSE_DEVICE:
@@ -1060,19 +1063,23 @@ public abstract class AbstractRJComClient implements ComHandler {
 	protected void processExtraMode(final int i) {
 	}
 	
-	private void addGraphic(final int devId, final double w, final double h, final boolean activate) throws RjException {
+	private void addGraphic(final int devId, final double w, final double h, final int canvasColor,
+			final boolean activate) throws RjException {
 		if (devId >= 0) {
 			if (devId >= this.graphics.length) {
 				final RClientGraphic[] newArray = new RClientGraphic[devId + 10];
 				System.arraycopy(this.graphics, 0, newArray, 0, this.graphics.length);
 				this.graphics = newArray;
 			}
+			final InitConfig config = new InitConfig();
+			config.canvasColor = canvasColor;
 			if (this.graphics[devId] != null) {
-				this.graphics[devId].reset(w, h);
+				this.graphics[devId].reset(w, h, config);
 				this.graphics[devId].setActive(activate);
 			}
 			else {
-				this.graphics[devId] = this.lastGraphic = this.graphicFactory.newGraphic(devId, w, h,
+				this.graphics[devId] = this.lastGraphic = this.graphicFactory.newGraphic(devId,
+						w, h, config,
 						activate, this.graphicActions, this.currentGraphicOptions);
 			}
 			return;
