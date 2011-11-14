@@ -67,7 +67,9 @@ public class DefaultGCRenderer {
 		final Transform tempTransform = new Transform(gc.getDevice());
 		final float scale = fScale;
 		int currentAlpha = -1;
+		Color lineColor = fLineColor;
 		int lineAlpha = fLineAlpha;
+		Color fillColor = fFillColor;
 		int fillAlpha = fFillAlpha;
 		
 		try {
@@ -91,31 +93,31 @@ public class DefaultGCRenderer {
 				switch (instr.getInstructionType()) {
 				case RGraphicInstruction.INIT:
 					final GraphicInitialization init = (GraphicInitialization) instr;
-					ixmax = (int) (((init.width) * scale) + 0.5);
-					iymax = (int) (((init.height) * scale) + 0.5);
-					gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
-					gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_BLACK));
+					ixmax = (int) (init.width * scale + 0.5);
+					iymax = (int) (init.height * scale + 0.5);
+					gc.setBackground(fillColor = gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
+					gc.setForeground(lineColor = gc.getDevice().getSystemColor(SWT.COLOR_BLACK));
 					gc.setAlpha(0xff);
 					gc.fillRectangle(0, 0, ixmax, iymax);
 					gc.setClipping(0, 0, ixmax, iymax);
 					continue;
 				case RGraphicInstruction.SET_CLIP: {
 					final ClipSetting setting = (ClipSetting) instr;
-					final int ix0 = (int) ((setting.x0 * scale) + 1.5);
-					final int iy0 = (int) ((setting.y0 * scale) + 1.5);
+					final int ix0 = (int) (setting.x0 * scale + 1.5);
+					final int iy0 = (int) (setting.y0 * scale + 1.5);
 					gc.setClipping(ix0, iy0,
-							(int) Math.min(((setting.x1 * scale) + 0.5), ixmax) - ix0,
-							(int) Math.min(((setting.y1 * scale) + 0.5), iymax) - iy0 );
+							(int) Math.min((setting.x1 * scale + 0.5), ixmax) - ix0,
+							(int) Math.min((setting.y1 * scale + 0.5), iymax) - iy0 );
 					continue; }
 				case RGraphicInstruction.SET_COLOR: {
 					final ColorSetting setting = (ColorSetting) instr;
 					lineAlpha = setting.getAlpha();
-					gc.setForeground(setting.swtColor);
+					gc.setForeground(lineColor = setting.swtColor);
 					continue; }
 				case RGraphicInstruction.SET_FILL: {
 					final FillSetting setting = (FillSetting) instr;
 					fillAlpha = setting.getAlpha();
-					gc.setBackground(setting.swtColor);
+					gc.setBackground(fillColor = setting.swtColor);
 					continue; }
 				case RGraphicInstruction.SET_LINE: {
 					final LineSetting setting = (LineSetting) instr;
@@ -184,11 +186,21 @@ public class DefaultGCRenderer {
 					final int iy0 = (int) (element.y0 * scale + 0.5);
 					final int iw = (int) (element.x1 * scale + 0.5) - ix0;
 					final int ih = (int) (element.y1 * scale + 0.5) - iy0;
+					if (iw == 0 || ih == 0) {
+						if (lineAlpha != 0) {
+							if (lineAlpha != currentAlpha) {
+								gc.setAlpha(currentAlpha = lineAlpha);
+							}
+							gc.drawLine(ix0, iy0, ix0+iw, iy0+ih);
+							continue;
+						}
+						continue;
+					}
 					if (fillAlpha != 0) {
 						if (fillAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = fillAlpha);
 						}
-						gc.fillRectangle(ix0, iy0, iw, ih);
+						gc.fillRectangle(ix0+1, iy0+1, iw-1, ih-1);
 					}
 					if (lineAlpha != 0) {
 						if (lineAlpha != currentAlpha) {
@@ -230,16 +242,16 @@ public class DefaultGCRenderer {
 					continue; }
 				case RGraphicInstruction.DRAW_CIRCLE: {
 					final CircleElement element = (CircleElement) instr;
-					tempTransform.setElements(1, 0, 0, 1,
-							(float) (element.x - element.r),
-							(float) (element.y - element.r) );
-					gc.setTransform(tempTransform);
 					final int id = (int) (element.r * 2.0);
+					tempTransform.setElements(1, 0, 0, 1,
+							(float) (element.x - id / 2.0),
+							(float) (element.y - id / 2.0) );
+					gc.setTransform(tempTransform);
 					if (fillAlpha != 0) {
 						if (fillAlpha != currentAlpha) {
 							gc.setAlpha(currentAlpha = fillAlpha);
 						}
-						gc.fillOval(0, 0, id, id);
+						gc.fillOval(1, 1, id-1, id-1);
 					}
 					if (lineAlpha != 0) {
 						if (lineAlpha != currentAlpha) {
@@ -281,7 +293,7 @@ public class DefaultGCRenderer {
 						}
 						gc.drawString(element.text,
 								(int) Math.floor(1.1111 + element.x - hShift),
-								(int) Math.floor(0.5111 + element.y - fFontProperties[0]),
+								(int) Math.floor(0.6111 + element.y - fFontProperties[0]),
 								true );
 						
 						continue;
@@ -289,9 +301,9 @@ public class DefaultGCRenderer {
 				}
 			}
 			
-			fLineColor = gc.getForeground();
+			fLineColor = lineColor;
 			fLineAlpha = lineAlpha;
-			fFillColor = gc.getBackground();
+			fFillColor = fillColor;
 			fFillAlpha = fillAlpha;
 			fXMax = ixmax;
 			fYMax = iymax;
