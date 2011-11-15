@@ -33,9 +33,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 	public static final byte DRAW_RECTANGLE =               0x12;
 	public static final byte DRAW_POLYLINE =                0x13;
 	public static final byte DRAW_POLYGON =                 0x14;
-	public static final byte DRAW_CIRCLE =                  0x15;
-	public static final byte DRAW_TEXT =                    0x16;
-	public static final byte DRAW_RASTER =                  0x17;
+	public static final byte DRAW_PATH =                    0x15;
+	public static final byte DRAW_CIRCLE =                  0x16;
+	public static final byte DRAW_TEXT =                    0x17;
+	public static final byte DRAW_RASTER =                  0x18;
 	
 	public static final byte C_NEW_PAGE =                   0x21;
 	public static final byte C_CLOSE_DEVICE =               0x22;
@@ -1005,6 +1006,65 @@ public abstract class GDCmdItem extends MainCmdItem {
 			sb.append(this.devId);
 			sb.append(", commandId=");
 			sb.append(DRAW_POLYGON);
+			sb.append(")\n<GD-DATA>\n");
+			sb.append("\n</GD-DATA>");
+			return sb.toString();
+		}
+		
+	}
+	
+	public static final class DrawPath extends GDCmdItem {
+		
+		
+		private final int[] n;
+		private final double x[];
+		private final double y[];
+		private final int mode;
+		
+		
+		public DrawPath(final int devId, final int[] n, final double x[], final double y[],
+				final int mode, final byte slot) {
+			this.options = 0;
+			this.devId = devId;
+			this.n = n;
+			this.x = x;
+			this.y = y;
+			this.mode = mode;
+			
+			this.slot = slot;
+		}
+		
+		@Override
+		public void writeExternal(final RJIO io) throws IOException {
+			io.writeInt(this.devId);
+			io.writeByte(DRAW_PATH);
+			io.writeIntArray(this.n, this.n.length);
+			io.writeDoubleArrayPair(this.x, this.y, this.x.length);
+			io.writeInt(this.mode);
+		}
+		
+		
+		@Override
+		public void setAnswer(final RjsStatus status) {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public double[] getData() {
+			throw new UnsupportedOperationException();
+		}
+		
+		
+		@Override
+		public String toString() {
+			final StringBuffer sb = new StringBuffer();
+			sb.append("GDCmdItem (options=0x");
+			sb.append(Integer.toHexString(this.options));
+			sb.append(", device=");
+			sb.append(this.devId);
+			sb.append(", commandId=");
+			sb.append(DRAW_PATH);
 			sb.append(")\n<GD-DATA>\n");
 			sb.append("\n</GD-DATA>");
 			return sb.toString();

@@ -164,27 +164,33 @@ public final class JavaGD extends GDInterface {
 	}
 	
 	@Override
-	public void gdPolyline(final int n, final double[] x, final double[] y) {
-//		System.out.println("Polyline: " + n);
-		this.rjsGraphic.drawPolyline(x, y);
-	}
-	
-	@Override
 	public void gdRect(final double x0, final double y0, final double x1, final double y1) {
 //		System.out.println("Rect: (" + x0 + ", " + y0 + "), (" + x1 + ", " + y1 + ")");
 		this.rjsGraphic.drawRect(x0, y0, x1, y1);
 	}
 	
 	@Override
-	public void gdCircle(final double x, final double y, final double r) {
-//		System.out.println("Circle: (" + x + ", " + y + "), " +r);
-		this.rjsGraphic.drawCircle(x, y, r);
+	public void gdPolyline(final int n, final double[] x, final double[] y) {
+//		System.out.println("Polyline: " + n);
+		this.rjsGraphic.drawPolyline(x, y);
 	}
 	
 	@Override
 	public void gdPolygon(final int n, final double[] x, final double[] y) {
 //		System.out.println("Polygon: " + n);
 		this.rjsGraphic.drawPolygon(x, y);
+	}
+	
+	@Override
+	public void gdPath(final int nPoly, final int[] nPer, final double[] x, final double[] y, final int mode) {
+//		System.out.println("Path: " + Arrays.toString(nPer));
+		this.rjsGraphic.drawPath(nPer, x, y, mode);
+	}
+	
+	@Override
+	public void gdCircle(final double x, final double y, final double r) {
+//		System.out.println("Circle: (" + x + ", " + y + "), " +r);
+		this.rjsGraphic.drawCircle(x, y, r);
 	}
 	
 	@Override

@@ -142,11 +142,6 @@ public final class RjsGraphic {
 				this.devId, x0, y0, x1, y1, this.slot ));
 	}
 	
-	public void drawCircle(final double x, final double y, final double r) {
-		this.rj.sendMainCmd(new GDCmdItem.DrawCircle(
-				this.devId, x, y, r, this.slot ));
-	}
-	
 	public void drawLine(final double x0, final double y0, final double x1, final double y1) {
 		this.rj.sendMainCmd(new GDCmdItem.DrawLine(
 				this.devId, x0, y0, x1, y1, this.slot ));
@@ -157,14 +152,24 @@ public final class RjsGraphic {
 				this.devId, x0, y0, x1, y1, this.slot ));
 	}
 	
+	public void drawPolyline(final double[] x, final double[] y) {
+		this.rj.sendMainCmd(new GDCmdItem.DrawPolyline(
+				this.devId, x, y, this.slot ));
+	}
+	
 	public void drawPolygon(final double[] x, final double[] y) {
 		this.rj.sendMainCmd(new GDCmdItem.DrawPolygon(
 				this.devId, x, y, this.slot ));
 	}
 	
-	public void drawPolyline(final double[] x, final double[] y) {
-		this.rj.sendMainCmd(new GDCmdItem.DrawPolyline(
-				this.devId, x, y, this.slot ));
+	public void drawPath(final int[] n, final double[] x, final double[] y, final int mode) {
+		this.rj.sendMainCmd(new GDCmdItem.DrawPath(
+				this.devId, n, x, y, mode, this.slot ));
+	}
+	
+	public void drawCircle(final double x, final double y, final double r) {
+		this.rj.sendMainCmd(new GDCmdItem.DrawCircle(
+				this.devId, x, y, r, this.slot ));
 	}
 	
 	

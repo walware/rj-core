@@ -139,6 +139,12 @@ public class GDContainerGD extends GDInterface {
     }
 
     @Override
+    public void     gdPath(int nPoly, int[] nPer, double[] x, double[] y, int mode) {
+        if (c==null) return;
+//        c.add(new GDPolygon(n, x, y, false));
+    }
+
+    @Override
     public void     gdPolygon(int n, double[] x, double[] y) {
         if (c==null) return;
         c.add(new GDPolygon(n, x, y, false));

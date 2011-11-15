@@ -235,6 +235,8 @@ public abstract class GDInterface {
 		return false;
 	}
 	
+	public abstract void gdPath(int nPoly, int[] nPer, double[] x, double[] y, int mode);
+	
     public abstract void gdPolygon(int n, double[] x, double[] y);
 
     public abstract void gdPolyline(int n, double[] x, double[] y);

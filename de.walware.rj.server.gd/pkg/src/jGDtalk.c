@@ -41,6 +41,8 @@ static void newJavaGD_MetricInfo(int c,
 static void newJavaGD_Mode(int mode, NewDevDesc *dd);
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
 static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd);
+static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean winding,
+		R_GE_gcontext *gc, NewDevDesc *dd);
 static void newJavaGD_Polygon(int n, double *x, double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
@@ -93,6 +95,7 @@ static jmethodID jmGDInterfaceMode;
 static jmethodID jmGDInterfaceNewPage;
 static jmethodID jmGDInterfaceNewPageConfirm;
 static jmethodID jmGDInterfaceOpen;
+static jmethodID jmGDInterfacePath;
 static jmethodID jmGDInterfacePolygon;
 static jmethodID jmGDInterfacePolyline;
 static jmethodID jmGDInterfaceRect;
@@ -335,12 +338,12 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
 		int savedCol = gc->col;
 		gc->col = 0x00ffffff;
 		sendAllGC(env, xd, gc);
-		gc->col = savedCol;
 		
 		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRect, 
 				dd->left, dd->top, dd->right, dd->bottom);
 		chkX(env);
 		
+		gc->col = savedCol;
 		checkGC(env, xd, gc);
 	} else {
 		sendAllGC(env, xd, gc);
@@ -363,19 +366,50 @@ static jarray newDoubleArrayPoly(JNIEnv *env, int n, double *ct)
 {
     jdoubleArray da = (*env)->NewDoubleArray(env,n);
 	if (!da) {
-		handleJNewArrayError(env, "gdPoly*");
+		handleJNewArrayError(env, "gdPoly*/gdPath");
 	}
     if (n>0) {
         jdouble *dae;
         dae = (*env)->GetDoubleArrayElements(env, da, 0);
 		if (!dae) {
-			handleJGetArrayError(env, da, "gdPoly*");
+			handleJGetArrayError(env, da, "gdPoly*/gdPath");
 		}
         memcpy(dae,ct,sizeof(double)*n);
         (*env)->ReleaseDoubleArrayElements(env, da, dae, 0);
     }
 	chkX(env);
     return da;
+}
+
+static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean winding,
+		R_GE_gcontext *gc, NewDevDesc *dd) {
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	jarray jNPer, jX, jY;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
+	
+	jNPer = (*env)->NewIntArray(env, npoly);
+	if (!jNPer) {
+		handleJNewArrayError(env, "gdPath");
+	}
+	(*env)->SetIntArrayRegion(env, jNPer, 0, npoly, (jint *) nper);
+	{	int n = 0;
+		for (int i = 0; i < npoly; ++i) {
+			n += nper[i];
+		}
+		jX=newDoubleArrayPoly(env, n, x);
+		jY=newDoubleArrayPoly(env, n, y);
+	}
+	
+	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePath, (jint) npoly, jNPer, jX, jY,
+			(winding == TRUE) ? 1 : 0);
+	(*env)->DeleteLocalRef(env, jNPer);
+	(*env)->DeleteLocalRef(env, jX); 
+	(*env)->DeleteLocalRef(env, jY);
+	chkX(env);
 }
 
 static void newJavaGD_Polygon(int n, double *x, double *y,  R_GE_gcontext *gc,  NewDevDesc *dd)
@@ -568,6 +602,7 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->rect = newJavaGD_Rect;
     dd->circle = newJavaGD_Circle;
     dd->line = newJavaGD_Line;
+    dd->path = newJavaGD_Path;
     dd->polyline = newJavaGD_Polyline;
     dd->polygon = newJavaGD_Polygon;
 	dd->raster = newJavaGD_Raster;
@@ -712,6 +747,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceNewPage = getJMethod(env, jc, "gdNewPage", "()V", RJ_ERROR_RERROR);
 		jmGDInterfaceNewPageConfirm = getJMethod(env, jc, "gdNewPageConfirm", "()Z", RJ_ERROR_RERROR);
 		jmGDInterfaceOpen = getJMethod(env, jc, "gdOpen", "(I)V", RJ_ERROR_RERROR);
+		jmGDInterfacePath = getJMethod(env, jc, "gdPath", "(I[I[D[DI)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolygon = getJMethod(env, jc, "gdPolygon", "(I[D[D)V", RJ_ERROR_RERROR);
 		jmGDInterfacePolyline = getJMethod(env, jc, "gdPolyline", "(I[D[D)V", RJ_ERROR_RERROR);
 		jmGDInterfaceRect = getJMethod(env, jc, "gdRect", "(DDDD)V", RJ_ERROR_RERROR);
