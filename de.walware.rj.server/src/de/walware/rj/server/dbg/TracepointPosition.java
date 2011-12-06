@@ -102,4 +102,13 @@ public class TracepointPosition implements Tracepoint, Comparable<TracepointPosi
 				&& Arrays.equals(this.exprIndex, other.exprIndex) );
 	}
 	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder("TracepointPosition");
+		sb.append(" (type= ").append(this.type).append(")");
+		sb.append("\n\t").append("exprIndex= ").append(Arrays.toString(this.exprIndex));
+		sb.append("\n\t").append("exprSrcref= ").append(Arrays.toString(this.exprSrcref));
+		return sb.toString();
+	}
+	
 }

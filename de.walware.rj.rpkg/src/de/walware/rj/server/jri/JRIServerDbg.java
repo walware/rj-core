@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import org.rosuda.JRI.REXP;
 import org.rosuda.JRI.Rengine;
 
+import de.walware.rj.RjException;
 import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.UnexpectedRDataException;
 import de.walware.rj.server.RjsException;
@@ -399,8 +400,9 @@ final class JRIServerDbg {
 	 * @param commandId the specified command id
 	 * @param argsP pointer to command specified arguments
 	 * @return pointer to answer or <code>0</code>
+	 * @throws RjException if an error occurred when executing the command
 	 */
-	public long execRJCommand(final String commandId, final long argsP) {
+	public long execRJCommand(final String commandId, final long argsP) throws RjException {
 		this.rni.newDataLevel(255, Integer.MAX_VALUE, Integer.MAX_VALUE);
 		final int savedProtected = this.rni.saveProtected();
 		try {
@@ -1131,6 +1133,16 @@ final class JRIServerDbg {
 			this.rni.looseProtected(savedProtected);
 		}
 		
+		if (LOGGER.isLoggable(Level.FINER)) {
+			final StringBuilder sb = new StringBuilder("Dbg: installTracepoints");
+			for (int i = 0; i < resultCodes.length; i++) {
+				sb.append('\n').append(i).append(".");
+				sb.append(" --> ").append(resultCodes[i]);
+				sb.append('\n').append(elementList.get(i));
+			}
+			LOGGER.log(Level.FINER, sb.toString());
+		}
+		
 		return new ElementTracepointInstallationReport(resultCodes);
 	}
 	
@@ -1691,24 +1703,26 @@ final class JRIServerDbg {
 		return RjsStatus.OK_STATUS;
 	}
 	
-	private long checkBreakpoint(final long callP) {
+	private long checkBreakpoint(final long callP) throws RjException {
 		if (this.disabled || !this.breakpointsEnabled) {
 			return 0;
 		}
 		final long srcrefP = this.rEngine.rniGetAttrBySym(callP, this.rni.p_srcrefSymbol);
 		if (srcrefP == 0) {
-			return 0;
+			throw new RjException("Missing data: srcref.");
 		}
 		final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_srcfileSymbol);
-		final long idP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_idSymbol);
-		final long atP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_atSymbol);
-		if (srcfileP == 0 || this.rEngine.rniExpType(srcfileP) != REXP.ENVSXP
-				|| idP == 0 || atP == 0 ) {
-			return 0;
+		if (srcfileP == 0 || this.rEngine.rniExpType(srcfileP) != REXP.ENVSXP) {
+			throw new RjException("Missing data: srcfile env of srcref.");
 		}
 		final String filePath = getFilePath(srcfileP, srcrefP);
 		if (filePath == null) {
-			return 0;
+			throw new RjException("Missing data: path of srcref.");
+		}
+		final long idP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_idSymbol);
+		final long atP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_atSymbol);
+		if (idP == 0 || atP == 0 ) {
+			throw new RjException("Missing data: id/position.");
 		}
 		final long id = RDataUtil.decodeLongFromRaw(this.rEngine.rniGetRawArray(idP));
 		final int[] index = this.rEngine.rniGetIntArray(atP);
@@ -1730,28 +1744,35 @@ final class JRIServerDbg {
 					if (elementIdP != 0) {
 						elementId = this.rEngine.rniGetString(elementIdP);
 					}
-					if (elementId == null) {
-						return 0;
-					}
-					for (int i = 0; i < list.size(); i++) {
-						final TracepointState state = list.get(i);
-						if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
-								&& elementId.equals(state.getElementId())
-								&& Arrays.equals(index, state.getIndex()) ) {
-							breakpointState = state;
-							break;
+					if (elementId != null) {
+						for (int i = 0; i < list.size(); i++) {
+							final TracepointState state = list.get(i);
+							if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
+									&& elementId.equals(state.getElementId())
+									&& Arrays.equals(index, state.getIndex()) ) {
+								breakpointState = state;
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
-		if (breakpointState == null || !breakpointState.isEnabled()) {
+		if (breakpointState == null) {
+			LOGGER.log(Level.FINE, "Skipping breakpoint because of missing state.");
+			return 0;
+		}
+		if (!breakpointState.isEnabled()) {
+//			LOGGER.log(Level.FINER, "Skipping breakpoint because it is disabled.");
 			return 0;
 		}
 		
 		this.hitBreakpointState = null;
 		this.hitBreakpointSrcref = this.rEngine.rniGetIntArray(srcrefP);
-		if (this.hitBreakpointSrcref == null || !this.breakpointsEnabled) {
+		if (this.hitBreakpointSrcref == null) {
+			throw new RjException("Missing data: srcref values.");
+		}
+		if (!this.breakpointsEnabled) {
 			return 0;
 		}
 		
@@ -1767,6 +1788,7 @@ final class JRIServerDbg {
 			final int stateFlags = breakpointState.getFlags();
 			if (breakpointState.getType() == Tracepoint.TYPE_FB) {
 				if ((codeFlags & stateFlags & (TracepointState.FLAG_MB_ENTRY | TracepointState.FLAG_MB_EXIT)) == 0) {
+//					LOGGER.log(Level.FINER, "Skipping breakpoint because current position is disabled.");
 					return 0;
 				}
 			}
@@ -1775,6 +1797,7 @@ final class JRIServerDbg {
 		if (breakpointState.getExpr() != null) { // check expr
 			final long exprP = getTracepointEvalExpr(breakpointState);
 			if (exprP == 0) {
+//				LOGGER.log(Level.WARNING, "Creating expression for breakpoint condition failed.");
 				return 0;
 			}
 			
@@ -1782,7 +1805,7 @@ final class JRIServerDbg {
 			try {
 				final long envP = this.rEngine.rniEval(this.getTraceExprEvalEnvCallP, 0);
 				if (envP == 0) {
-					JRIServerErrors.LOGGER.log(Level.SEVERE, "Creating environment for breakpoint condition failed.");
+					LOGGER.log(Level.SEVERE, "Creating environment for breakpoint condition failed.");
 					return 0;
 				}
 				this.rni.protect(envP);
@@ -1792,6 +1815,7 @@ final class JRIServerDbg {
 				}
 			}
 			catch (final RjsException e) {
+//				LOGGER.log(Level.FINER, "Skipping breakpoint because evaluating the condition failed.", e);
 				// evaluation failed (expression invalid...)
 //				TODO notify ?
 //				e.printStackTrace();

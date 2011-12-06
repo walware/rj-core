@@ -94,6 +94,7 @@ import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ExtServer;
 import de.walware.rj.server.srvext.RjsGraphic;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
+import de.walware.rj.server.srvext.ServerUtil;
 
 
 /**
@@ -633,6 +634,12 @@ public final class JRIServer extends RJ
 		}
 		catch (final Throwable e) {
 			LOGGER.log(Level.SEVERE, "An error occurred when loading platform data.", e);
+		}
+		
+		if (LOGGER.isLoggable(Level.FINE)) {
+			final StringBuilder sb = new StringBuilder("R Platform Data");
+			ServerUtil.prettyPrint(this.platformDataValues, sb);
+			LOGGER.log(Level.FINE, sb.toString());
 		}
 	}
 	
@@ -1788,6 +1795,9 @@ public final class JRIServer extends RJ
 	
 	public long rExecJCommand(final Rengine re, String commandId, final long argsP, final int options) {
 		try {
+			if (LOGGER.isLoggable(Level.FINE)) {
+				LOGGER.log(Level.FINE, "Executing java command ''{0}''.", commandId);
+			}
 			final int idx = commandId.indexOf(':');
 			if (idx <= 0) {
 				return 0;
