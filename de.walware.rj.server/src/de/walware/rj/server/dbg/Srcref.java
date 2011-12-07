@@ -59,8 +59,8 @@ public class Srcref {
 			}
 		}
 		
-		if (base[END_LINE] > 0 && rel[END_LINE] > 0) {
-			diff[END_LINE] = 1 + rel[END_LINE] - base[END_LINE];
+		if (base[BEGIN_LINE] > 0 && rel[END_LINE] > 0) {
+			diff[END_LINE] = 1 + rel[END_LINE] - base[BEGIN_LINE];
 			if (diff[END_LINE] <= 0) {
 				return null;
 			}
@@ -69,8 +69,8 @@ public class Srcref {
 			diff[END_LINE] = NA;
 		}
 		if (diff[END_LINE] == 1) {
-			if (base[END_COLUMN] > 0 && rel[END_COLUMN] > 0) {
-				diff[END_COLUMN] = 1 + rel[END_COLUMN] - base[END_COLUMN];
+			if (base[BEGIN_COLUMN] > 0 && rel[END_COLUMN] > 0) {
+				diff[END_COLUMN] = 1 + rel[END_COLUMN] - base[BEGIN_COLUMN];
 				if (diff[END_COLUMN] <= 0) {
 					return null;
 				}
@@ -78,8 +78,8 @@ public class Srcref {
 			else {
 				diff[END_COLUMN] = NA;
 			}
-			if (base[END_BYTE] > 0 && rel[END_BYTE] > 0) {
-				diff[END_BYTE] = 1 + rel[END_BYTE] - base[END_BYTE];
+			if (base[BEGIN_BYTE] > 0 && rel[END_BYTE] > 0) {
+				diff[END_BYTE] = 1 + rel[END_BYTE] - base[BEGIN_BYTE];
 				if (diff[END_BYTE] <= 0) {
 					diff[END_BYTE] = NA;
 				}
@@ -120,21 +120,21 @@ public class Srcref {
 			sum[BEGIN_BYTE] = base[BEGIN_BYTE];
 		}
 		
-		if (base[END_LINE] > 0 && diff[END_LINE] > 0) {
-			sum[END_LINE] = base[END_LINE] + diff[END_LINE] - 1;
+		if (base[BEGIN_LINE] > 0 && diff[END_LINE] > 0) {
+			sum[END_LINE] = base[BEGIN_LINE] + diff[END_LINE] - 1;
 		}
 		else {
 			sum[END_LINE] = NA;
 		}
 		if (diff[END_LINE] == 1) {
-			if (base[END_COLUMN] > 0 && diff[END_COLUMN] > 0) {
-				sum[END_COLUMN] = base[END_COLUMN] + diff[END_COLUMN] - 1;
+			if (base[BEGIN_COLUMN] > 0 && diff[END_COLUMN] > 0) {
+				sum[END_COLUMN] = base[BEGIN_COLUMN] + diff[END_COLUMN] - 1;
 			}
 			else {
 				sum[END_COLUMN] = NA;
 			}
-			if (base[END_BYTE] > 0 && diff[END_BYTE] > 0) {
-				sum[END_BYTE] = base[END_BYTE] + diff[END_BYTE] - 1;
+			if (base[BEGIN_BYTE] > 0 && diff[END_BYTE] > 0) {
+				sum[END_BYTE] = base[BEGIN_BYTE] + diff[END_BYTE] - 1;
 			}
 			else {
 				sum[END_BYTE] = NA;
