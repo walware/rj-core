@@ -1,5 +1,4 @@
-#!/bin/sh
-##
+## (Windows PowerShell Script)
 # Shell script to start R server (for StatET)
 ##
 # Usually you have to change only the CONFIG sections. You should set at least:
@@ -8,7 +7,7 @@
 # Depending on the system configuration, it can be required to set:
 #     S_HOSTADDRESS
 # 
-# The authentication is set to 'fx' (method using SSH) by default.
+# The authentication is set to 'none' by default.
 ##
 # Usage of this script:
 #     startup.sh <address> [options]
@@ -24,7 +23,7 @@
 #
 # Note: This script does not start an RMI registry! You have to launch it
 # as system daemon or manually (see Java documentation), e.g. by:
-#     $JAVA_HOME/bin/rmiregistry &
+#     %JAVA_HOME%/bin/rmiregistry.exe
 ##
 # Author: Stephan Wahlbrink
 ###############################################################################
@@ -32,47 +31,47 @@
 ###############################################################################
 # SCRIPT - INIT / READING PARAMETERS ##########################################
 ###############################################################################
-if [ -z "$1" ]
-then
+param([String] $ADDRESS)
+
+if ([String]::IsNullOrEmpty("$ADDRESS"))
+{
 	echo "Missing address or name for R server"
 	exit -1
-fi
-ADDRESS=$1
-S_NAME=`basename $ADDRESS`
-S_HOSTADDRESS=""
-S_REGISTRYPORT=""
-if [ "$ADDRESS" != "$S_NAME" ]
-then
-	S_HOSTADDRESS=`expr "$ADDRESS" : "[^/]*\/\/\([^:/]*\).*"`
-	S_REGISTRYPORT=`expr "$ADDRESS" : "[^/]*\/\/[^:/]*:\([0-9]\+\)\/.*"`
-fi
-shift
-WD=~
-SCRIPT=`readlink -f "$0"`
+}
 
-until [ -z "$1" ]
-do
-	case "$1" in
-	-wd=*)
-		WD=${1##-wd=}
-		;;
-#	-host=*)
-#		S_HOSTADDRESS=${1##-host=}
-#		;;
-	-debug*)
-		DEBUG=1
-		echo Debug mode enabled
-		;;
-	-dev*)
-		DEV=1
-		echo Development mode enabled
-		;;
-	*)
-		echo Unknown parameter: $1
-		;;
-	esac
-	shift
-done
+$S_NAME=$ADDRESS -replace '.*\/([^/]+)$', '$1'
+$S_HOSTADDRESS=""
+$S_REGISTRYPORT=""
+if ( $ADDRESS -ne $S_NAME )
+{
+	$S_HOSTADDRESS=$ADDRESS -replace '[^/]*\/\/([^:/]*).*', '$1'
+	$S_REGISTRYPORT=$ADDRESS -replace '[^/]*\/\/[^:/]*:?([0-9]*)\/.*', '$1'
+}
+
+$WD=$HOME
+$SCRIPT=$MyInvocation.MyCommand.Path
+
+foreach ($1 in $Args) {
+	switch -wildcard ("$1") {
+	"-wd=*" {
+		$WD=$1.Substring(4)
+		}
+#	"-host=*" {
+#		$S_HOSTADDRESS=$1.Substring(6)
+#		}
+	"-debug*" {
+		$DEBUG=1
+		echo "Debug mode enabled"
+		}
+	"-dev*" {
+		$DEV=1
+		echo "Development mode enabled"
+		}
+	default {
+		echo "Unknown parameter: $1"
+		}
+	}
+}
 ###############################################################################
 
 ###############################################################################
@@ -97,8 +96,9 @@ done
 #     R_LIBS_SITE="/usr/local/lib/R/site-library"
 #     JAVA_HOME="/usr/lib/jvm/java-6-sun"
 
-R_HOME=
-JAVA_HOME=
+$R_HOME=""
+$R_ARCH="/x64"
+$JAVA_HOME=""
 
 ###############################################################################
 # Set the home and work directory of this R server.
@@ -110,8 +110,8 @@ JAVA_HOME=
 #     RJS_HOME=`dirname "$SCRIPT"`
 #     RJS_WORK="~/.RJServer"
 
-RJS_HOME=`dirname "$SCRIPT"`
-RJS_WORK=~/.RJServer
+$RJS_HOME=Split-Path -Path $SCRIPT -Parent 
+$RJS_WORK="$HOME/.RJServer"
 
 ###############################################################################
 # Set explicitly the hostname and port you want to use to access the RMI 
@@ -132,7 +132,7 @@ RJS_WORK=~/.RJServer
 # Example:
 #     S_HOSTADDRESS=192.168.1.80
 
-#S_HOSTADDRESS=""
+#$S_HOSTADDRESS=""
 
 
 ###############################################################################
@@ -141,8 +141,8 @@ RJS_WORK=~/.RJServer
 # Example:
 #     JAVA_OPTS="-server -Dde.walware.rj.rmi.disableSocketFactory=true"
 
-JAVA_OPTS="-server"
-JAVA_OPTS_LIB=
+$JAVA_OPTS=@("-server")
+$JAVA_OPTS_LIB=@()
 
 
 ###############################################################################
@@ -170,9 +170,9 @@ JAVA_OPTS_LIB=
 #     RJ param:    -auth=none
 # 
 # Script Usage:
-#     AUTH="none"
+#     AUTH=none
 
-#AUTH="none"
+$AUTH="none"
 
 ###############################################################################
 # Authentication method: password file / 'name-pass'
@@ -191,8 +191,8 @@ JAVA_OPTS_LIB=
 #         myname=mypassword
 #     Make sure that only authorized users can read this file!
 
-#AUTH="name-pass:file"
-#AUTH_PW_FILE="~/.RJServer/logins"
+#$AUTH="name-pass:file"
+#$AUTH_PW_FILE="$HOME/.RJServer/logins"
 
 ###############################################################################
 # Authentication method: local user account / 'local-shaj'
@@ -215,8 +215,8 @@ JAVA_OPTS_LIB=
 #     AUTH=local-shaj
 #     AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj/linux-x64"
 
-#AUTH="local-shaj"
-#AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj/<platform>"
+#$AUTH="local-shaj"
+#$AUTH_SHAJ_LD_DIR="$RJS_HOME/shaj/<platform>"
 
 ###############################################################################
 # Authentication method: ssh / 'fx' (exchange over file)
@@ -238,127 +238,126 @@ JAVA_OPTS_LIB=
 #     If the script setup is used, the files is created automatically and
 #     the permission is set according to AUTH_FX_USER and AUTH_FX_MASK
 
-AUTH="fx:file"
-AUTH_FX_FILE="$RJS_WORK/session-$S_NAME.lock"
-AUTH_FX_USER=$USER
-AUTH_FX_MASK=600
+#$AUTH="fx:file"
+$AUTH_FX_FILE="$RJS_WORK/session-$S_NAME.lock"
+$AUTH_FX_USER=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+$AUTH_FX_MASK=new-object System.Security.AccessControl.FileSystemAccessRule $AUTH_FX_USER, 'FullControl', 'Allow'
 
 
 ###############################################################################
 # SCRIPT - STARTUP SERVER #####################################################
 ###############################################################################
 # Usually you don't have to edit the lines below
-PATH_SEP=":"
+$PATH_SEP=";"
 
 #$JAVA_HOME/bin/rmiregistry &
 
-mkdir -p "$RJS_WORK"
+if ( !( Test-Path "$RJS_WORK" ) ) {
+	mkdir -p "$RJS_WORK"
+}
 
 ## Final RMI address
-if [ -n "$S_HOSTADDRESS" ]
-then
-	S_ADDRESS="//$S_HOSTADDRESS"
-	if [ -n "$S_REGISTRYPORT" ]
-	then
-		S_ADDRESS="$S_ADDRESS:$S_REGISTRYPORT"
-	fi
-	S_ADDRESS="$S_ADDRESS/$S_NAME"
-else
-	S_ADDRESS="//$S_NAME"
-fi
+if ( $S_HOSTADDRESS )
+{
+	$S_ADDRESS="//$S_HOSTADDRESS"
+	if ( $S_REGISTRYPORT ) {
+		$S_ADDRESS="$S_ADDRESS:$S_REGISTRYPORT"
+	}
+	$S_ADDRESS="$S_ADDRESS/$S_NAME"
+} else {
+	$S_ADDRESS="//$S_NAME"
+}
 
 ## Finish auth configuration
-if [ "$FORCE_AUTH" ]
-then
-	AUTH="$FORCE_AUTH"
-fi
+if ( $FORCE_AUTH )
+{
+	$AUTH="$FORCE_AUTH"
+}
 
-if [ "$AUTH" = "name-pass:file" ]
-then
-	AUTH="name-pass:file=$AUTH_PW_FILE"
-fi
+if ( $AUTH -eq "name-pass:file" )
+{
+	$AUTH="name-pass:file=$AUTH_PW_FILE"
+}
 
-if [ "$AUTH" = "local-shaj" ]
-then
-	AUTH="local-shaj"
-	JAVA_OPTS_LIB="$JAVA_OPTS_LIB$PATH_SEP$AUTH_SHAJ_LD_DIR"
-	JAVA_CP="$JAVA_CP$PATH_SEP$RJS_HOME/shaj/auth.jar"
-fi
+if ( $AUTH -eq "local-shaj" )
+{
+	$AUTH="local-shaj"
+	$JAVA_OPTS_LIB="$JAVA_OPTS_LIB$PATH_SEP$AUTH_SHAJ_LD_DIR"
+	$JAVA_CP="$JAVA_CP$PATH_SEP$RJS_HOME/shaj/auth.jar"
+}
 
-if [ "$AUTH" = "fx:file" ]
-then
-	AUTH="fx:file=$AUTH_FX_FILE"
-	AUTH_FX_FOLDER=`dirname "$AUTH_FX_FILE"`
+if ( "$AUTH" -eq "fx:file" )
+{
+	$AUTH="fx:file=$AUTH_FX_FILE"
+	$AUTH_FX_FOLDER=Split-Path -Path $AUTH_FX_FILE -Parent
 	mkdir -p "$AUTH_FX_FOLDER"
 	echo "00000000" > "$AUTH_FX_FILE"
-	if [ $AUTH_FX_USER ]
-	then
-		chown $AUTH_FX_USER "$AUTH_FX_FILE"
-	fi
-	if [ $AUTH_FX_MASK ]
-	then
-		chmod $AUTH_FX_MASK "$AUTH_FX_FILE"
-	fi
-fi
+	
+	$ACL=Get-Acl "$AUTH_FX_FILE"
+	$ACL.SetAccessRule($AUTH_FX_MASK)
+	#$SystemAccessRule = new-object System.Security.AccessControl.FileSystemAccessRule 'SYSTEM', 'FullControl', 'Allow'
+	#$ACL.SetAccessRule($SystemAccessRule)
+	$ACL.SetAccessRuleProtection($True, $False)
+	Set-Acl "$AUTH_FX_FILE" $ACL
+}
 
-OPTS="-auth=$AUTH"
-if [ $DEBUG ]
-then
-	OPTS="$OPTS -verbose"
-fi
+$OPTS=@("-auth=$AUTH")
+if ( $DEBUG )
+{
+	$OPTS+="-verbose"
+}
 
 ## Java config
-$JAVA_EXE="$JAVA_HOME/bin/java"
-if [ $DEV ]
-then
-	JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin$PATH_SEP$RJS_HOME/../de.walware.rj.data/bin$PATH_SEP$RJS_HOME/bin$PATH_SEP$RJS_HOME/binShaj"
-	RMI_BASE="file://$RJS_HOME/../de.walware.rj.server/bin"
-	RJAVA_CP=
-else
-	JAVA_CP="$RJS_HOME/de.walware.rj.server.jar$PATH_SEP$RJS_HOME/de.walware.rj.data.jar$PATH_SEP$JAVA_CP"
-	RMI_BASE="file://$RJS_HOME/de.walware.rj.server.jar"
-	RJAVA_CP=
-fi
+$JAVA_EXE="$JAVA_HOME/bin/java.exe"
+if ( $DEV )
+{
+	$JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin$PATH_SEP$RJS_HOME/../de.walware.rj.data/bin$PATH_SEP$RJS_HOME/bin$PATH_SEP$RJS_HOME/binShaj"
+	$RMI_BASE="file://$RJS_HOME/../de.walware.rj.server/bin"
+	$RJAVA_CP=""
+} else {
+	$JAVA_CP="$RJS_HOME/de.walware.rj.server.jar$PATH_SEP$RJS_HOME/de.walware.rj.data.jar$PATH_SEP$JAVA_CP"
+	$RMI_BASE="file://$RJS_HOME/de.walware.rj.server.jar"
+	$RJAVA_CP=""
+}
 
-JAVA_OPTS="$JAVA_OPTS -Djava.security.policy=$RJS_HOME/security.policy"
-JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.codebase=$RMI_BASE"
-if [ -n "$S_HOSTADDRESS" ]
-then
-	JAVA_OPTS="$JAVA_OPTS -Djava.rmi.server.hostname=$S_HOSTADDRESS"
-fi
-if [ -n "$JAVA_OPTS_LIB" ]
-then
-	JAVA_OPTS="$JAVA_OPTS -Djava.library.path=$JAVA_OPTS_LIB"
-fi
-if [ -n "$RJAVA_CP" ]
-then
-	JAVA_OPTS="$JAVA_OPTS -Drjava.class.path=$RJAVA_CP"
-fi
+$JAVA_OPTS+="-Djava.security.policy=$RJS_HOME/security.policy"
+$JAVA_OPTS+="-Djava.rmi.server.codebase=$RMI_BASE"
+if ( $S_HOSTADDRESS )
+{
+	$JAVA_OPTS+="-Djava.rmi.server.hostname=$S_HOSTADDRESS"
+}
+if ( $JAVA_OPTS_LIB )
+{
+	$JAVA_OPTS+="-Djava.library.path=$JAVA_OPTS_LIB"
+}
+if ( $RJAVA_CP )
+{
+	$JAVA_OPTS+="-Drjava.class.path=$RJAVA_CP"
+}
 
 ## Other environment
-PATH=$R_HOME/bin$PATH_SEP$PATH
-LD_LIBRARY_PATH=$R_HOME/lib
+$PATH="$R_HOME/bin$R_ARCH$PATH_SEP$Env:PATH"
+$LD_LIBRARY_PATH="$R_HOME/lib"
 
-export PATH
-export LD_LIBRARY_PATH
-export JAVA_HOME
-export R_HOME
-#export R_ARCH
-export R_LIBS
-export R_LIBS_USER
-export R_LIBS_SITE
-export R_DOC_DIR
-export R_SHARE_DIR
-export R_INCLUDE_DIR
-export LC_ALL
+$env:PATH = $PATH
+$env:JAVA_HOME = $JAVA_HOME
+$env:R_HOME = $R_HOME
+$env:R_ARCH = $R_ARCH
+$env:R_LIBS = $R_LIBS
+$env:R_LIBS_USER = $R_LIBS_USER
+$env:R_LIBS_SITE = $R_LIBS_SITE
+$env:R_DOC_DIR = $R_DOC_DIR
+$env:R_SHARE_DIR = $R_SHARE_DIR
+$env:R_INCLUDE_DIR = $R_INCLUDE_DIR
+$env:LC_ALL = $LC_ALL
 
-cd "$WD"
+cd $WD
 
-START_ARGS="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start $S_ADDRESS $OPTS"
-#echo $JAVA_EXE $START_ARGS
+$START_ARGS=@('-cp',$JAVA_CP)+$JAVA_OPTS+@('de.walware.rj.server.RMIServerControl','start',$S_ADDRESS)+$OPTS
+#echo "$JAVA_EXE $START_ARGS"
 
-if [ $DEBUG ]
-then
+if ( $DEBUG )
+{
 	echo "S_HOSTADDRESS = $S_HOSTADDRESS"
 	echo "S_REGISTRYPORT = $S_REGISTRY_PORT"
 	echo "PATH = $PATH"
@@ -372,31 +371,34 @@ then
 	echo "AUTH = $AUTH"
 	
 	# Start server directly
-	$JAVA_EXE $START_ARGS
-	START_EXIT=$?
-	START_PID=$!
+	& $JAVA_EXE $START_ARGS
+	$START_EXIT=$LastExitCode
 	exit $START_EXIT
-else
+} else {
 	# First check if running or dead server is already bound
-	CLEAN_ARGS="-cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl clean $S_ADDRESS"
-	$JAVA_EXE $CLEAN_ARGS
-	CLEAN_EXIT=$?
-	if [ $CLEAN_EXIT -ne 0 ]
-	then
+	$CLEAN_ARGS=@('-cp',$JAVA_CP)+$JAVA_OPTS+@('de.walware.rj.server.RMIServerControl','clean',$S_ADDRESS)
+	& $JAVA_EXE $CLEAN_ARGS
+	$CLEAN_EXIT=$LastExitcode
+	if ( $CLEAN_EXIT -ne 0 )
+	{
 		echo "Check and cleanup of old server failed (CODE=$CLEAN_EXIT), cancelling startup."
 		exit $CLEAN_EXIT
-	fi
+	}
 	
 	# Start server detached
-	nohup $START_EXE $START_ARGS > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
-	START_EXIT=$?
-	START_PID=$!
-	if [ $START_EXIT -eq 0 ]
-	then
+	$JAVA_EXE="$JAVA_HOME/bin/javaw.exe"
+	$START_PROCESS=Start-Process $JAVA_EXE -NoNewWindow -PassThru`
+			-RedirectStandardOutput "$RJS_WORK/session-$S_NAME.out" `
+			-RedirectStandardError "$RJS_WORK/session-$S_NAME.err" `
+			$START_ARGS
+	#$START_EXIT=
+	$START_PID=$START_PROCESS.Id
+	if ( ! $START_PROCESS.HasExited )
+	{
 		echo "Started server in background (PID=$START_PID)."
 		exit 0
-	else
+	} else {
 		echo "Startup failed"
-		exit $START_EXIT
-	fi
-fi
+		exit -1
+	}
+}
