@@ -10,24 +10,28 @@ public class Rengine extends Thread {
 	 @since API 1.9, JRI 0.5
 	 */
 	public static boolean jriLoaded;
-
-    static {
-        try {
-            System.loadLibrary("jri");
+	
+	static {
+		try {
+			System.loadLibrary("jri");
 			jriLoaded = true;
-        } catch (UnsatisfiedLinkError e) {
+		} catch (final UnsatisfiedLinkError e) {
 			jriLoaded = false; // should be implicit, but well ...
-			String iu = System.getProperty("jri.ignore.ule");
-			if (iu == null || !iu.equals("yes")) {
+			final String iu = System.getProperty("jri.ignore.ule");
+			if (iu != null && (iu.equals("true") || iu.equals("yes"))) {
 				System.err.println("Cannot find JRI native library!\nPlease make sure that the JRI native library is in a directory listed in java.library.path.\n");
 				e.printStackTrace();
 				System.exit(1);
 			}
-        }
-    }
-
-    static Thread mainRThread = null;
-
+			else {
+				throw e;
+			}
+		}
+	}
+	
+	
+	static Thread mainRThread = null;
+	
 	// constrants to be used with rniSpecialObject
 	/** constant to be used in {@link #rniSpecialObject} to return <code>R_NilValue</code> reference */
 	public static final int SO_NilValue     = 0;
