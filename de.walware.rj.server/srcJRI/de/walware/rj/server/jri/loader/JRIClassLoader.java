@@ -491,7 +491,7 @@ public class JRIClassLoader extends RJClassLoader {
 			
 			if (verbose) {
 				final StringBuilder sb = new StringBuilder((1+this.defaultLibPath.size())*32);
-				sb.append("RJ/R-Java ClassLoader / R library path: ");
+				sb.append("RJ/R-Java ClassLoader / R library path:");
 				ServerUtil.prettyPrint(this.defaultLibPath, sb);
 				LOGGER.log(Level.CONFIG, sb.toString());
 			}

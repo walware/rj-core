@@ -34,6 +34,7 @@ import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -479,6 +480,11 @@ public final class JRIServer extends RJ
 				}
 				
 				final String[] args = checkArgs((String[]) properties.get("args"));
+				if (LOGGER.isLoggable(Level.CONFIG)) {
+					final StringBuilder sb = new StringBuilder("R arguments:");
+					ServerUtil.prettyPrint(Arrays.asList(args), sb);
+					LOGGER.log(Level.CONFIG, sb.toString());
+				}
 				
 				this.mainLoopState = ENGINE_RUN_IN_R;
 				this.hotMode = true;
