@@ -21,7 +21,7 @@ int RJava_request_lock() {
   buf[0] = IPCC_LOCK_REQUEST;
   write(ipcout, buf, sizeof(ptrlong));
   n = read(resin, buf, sizeof(ptrlong));
-  return (buf[0] == IPCC_LOCK_GRANTED)?1:0;
+  return (n > 0 && buf[0] == IPCC_LOCK_GRANTED) ? 1 : 0;
 }
 
 int RJava_clear_lock() {
