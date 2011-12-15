@@ -33,7 +33,7 @@ int initR(int argc, char **argv, unsigned long stacksize) {
     /* getenv("R_HOME","/Library/Frameworks/R.framework/Resources",1); */
     if (!getenv("R_HOME")) {
         fprintf(stderr, "R_HOME is not set. Please set all required environment variables before running this program.\n");
-        return -1;
+        return 20201;
     }
 
     /* this is probably unnecessary, but we could set any other parameters here */
@@ -47,10 +47,10 @@ int initR(int argc, char **argv, unsigned long stacksize) {
     R_Interactive = 1;
     SaveAction = SA_SAVEASK;
     {
-      int stat=Rf_initialize_R(argc, argv);
-      if (stat<0) {
-        printf("Failed to initialize embedded R! (stat=%d)\n",stat);
-        return -1;
+        int stat = Rf_initialize_R(argc, argv);
+        if (stat < 0) {
+            printf("Failed to initialize embedded R! (stat=%d)\n", stat);
+            return 20401;
       }
     }
 
@@ -61,9 +61,8 @@ int initR(int argc, char **argv, unsigned long stacksize) {
         /* disable stack checking, because threads will thow it off */
         R_CStackLimit = (uintptr_t) -1;
     } else {
-        int dir;
         /* stack start: current position with tolerance for existing stack */
-        dir = ((uintptr_t) &ref < (uintptr_t) &dir) ? -1 : 1;
+        int dir = ((uintptr_t) &ref < (uintptr_t) &dir) ? -1 : 1;
         R_CStackStart = (uintptr_t) &ref + 8192 * dir;
         R_CStackLimit = (uintptr_t) stacksize;
     }
@@ -96,7 +95,7 @@ int initR(int argc, char **argv, unsigned long stacksize) {
     
     R_PolledEvents = Re_CallbackHandler;
 #ifdef JGR_DEBUG
-	printf("Setting up R event loop\n");
+    printf("Setting up R event loop\n");
 #endif
 
     setup_Rmainloop();
@@ -217,41 +216,39 @@ int initR(int argc, char **argv, unsigned long stacksize)
     char rhb[MAX_PATH+10];
     DWORD t, s = MAX_PATH;
     HKEY k;
-    int cvl;
 
     sprintf(Rversion, "%s.%s", R_MAJOR, R_MINOR);
-    cvl=strlen(R_MAJOR)+2;
-    if(strncmp(getDLLVersion(), Rversion, cvl) != 0) {
+    if (strcmp(getDLLVersion(), Rversion) != 0) {
         char msg[512];
-	sprintf(msg, "Error: R.DLL version does not match (DLL: %s, expecting: %s)\n", getDLLVersion(), Rversion);
-	fprintf(stderr, msg);
-	MessageBox(0, msg, "Version mismatch", MB_OK|MB_ICONERROR);
-	return -1;
+        sprintf(msg, "Error: R.ddl version does not match (DLL: %s, JRI: %s)\n", getDLLVersion(), Rversion);
+        fprintf(stderr, msg);
+        MessageBox(0, msg, "Version mismatch", MB_OK|MB_ICONERROR);
+        return 20101;
     }
 
     R_DefParams(Rp);
     if(getenv("R_HOME")) {
-	strcpy(RHome, getenv("R_HOME"));
+        strcpy(RHome, getenv("R_HOME"));
     } else { /* fetch R_HOME from the registry - try preferred architecture first */
 #ifdef WIN64
-      const char *pref_path = "SOFTWARE\\R-core\\R64";
+        const char *pref_path = "SOFTWARE\\R-core\\R64";
 #else
-      const char *pref_path = "SOFTWARE\\R-core\\R32";
+        const char *pref_path = "SOFTWARE\\R-core\\R32";
 #endif
-      if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-	   RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_CURRENT_USER, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-           RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-	   RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
-	  (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
-           RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS)) {
-	fprintf(stderr, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n");
-	MessageBox(0, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n", "Can't find R home", MB_OK|MB_ICONERROR);
-	return -2;
-      }
-      sprintf(rhb,"R_HOME=%s",RHome);
-      putenv(rhb);
+        if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
+             RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
+            (RegOpenKeyEx(HKEY_CURRENT_USER, pref_path, 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
+             RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
+            (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
+             RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS) &&
+            (RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\R-core\\R", 0, KEY_QUERY_VALUE, &k) != ERROR_SUCCESS ||
+             RegQueryValueEx(k, "InstallPath", 0, &t, (LPBYTE) RHome, &s) != ERROR_SUCCESS)) {
+            fprintf(stderr, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n");
+            MessageBox(0, "R_HOME must be set or R properly installed (\\Software\\R-core\\R\\InstallPath registry entry must exist).\n", "Can't find R home", MB_OK|MB_ICONERROR);
+            return 20201;
+        }
+        sprintf(rhb,"R_HOME=%s", RHome);
+        putenv(rhb);
     }
     /* on Win32 this should set R_Home (in R_SetParams) as well */
     Rp->rhome = RHome;
@@ -259,14 +256,14 @@ int initR(int argc, char **argv, unsigned long stacksize)
      * try R_USER then HOME then working directory
      */
     if (getenv("R_USER")) {
-	strcpy(RUser, getenv("R_USER"));
+        strcpy(RUser, getenv("R_USER"));
     } else if (getenv("HOME")) {
-	strcpy(RUser, getenv("HOME"));
+        strcpy(RUser, getenv("HOME"));
     } else if (getenv("HOMEDIR")) {
-	strcpy(RUser, getenv("HOMEDIR"));
-	strcat(RUser, getenv("HOMEPATH"));
+        strcpy(RUser, getenv("HOMEDIR"));
+        strcat(RUser, getenv("HOMEPATH"));
     } else
-	GetCurrentDirectory(MAX_PATH, RUser);
+        GetCurrentDirectory(MAX_PATH, RUser);
     p = RUser + (strlen(RUser) - 1);
     if (*p == '/' || *p == '\\') *p = '\0';
     Rp->home = RUser;

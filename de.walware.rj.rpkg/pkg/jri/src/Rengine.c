@@ -58,57 +58,61 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
     return (jlong) JRI_API;
 }
 
-JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR
-  (JNIEnv *env, jobject this, jobjectArray a, jlong stackSize)
+JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniSetupR(
+		JNIEnv *env, jobject this, jobjectArray a, jlong stackSize)
 {
-      int initRes;
-      char *fallbackArgv[]={"Rengine",0};
-      char **argv=fallbackArgv;
-      int argc=1;
-      
-#ifdef JRI_DEBUG
-      printf("rniSetupR\n");
-#endif
-	  
-      engineObj=(*env)->NewGlobalRef(env, this);
-      engineClass=(*env)->NewGlobalRef(env, (*env)->GetObjectClass(env, engineObj));
-      eenv=env;
-      
-      if (a) { /* retrieve the content of the String[] and construct argv accordingly */
-          int len = (int)(*env)->GetArrayLength(env, a);
-          if (len>0) {              
-              int i=0;
-              argv=(char**) malloc(sizeof(char*)*(len+2));
-              argv[0]=fallbackArgv[0];
-              while (i < len) {
-                  jobject o=(*env)->GetObjectArrayElement(env, a, i);
-                  i++;
-                  if (o) {
-                      const char *c;
-                      c=(*env)->GetStringUTFChars(env, o, 0);
-                      if (!c)
-                          argv[i]="";
-                      else {
-			  argv[i] = strdup(c);
-                          (*env)->ReleaseStringUTFChars(env, o, c);
-                      }
-                  } else
-                      argv[i]="";
-              }
-              argc=len+1;
-              argv[argc]=0;
-          }
-      }
+    int initRes;
+    char *fallbackArgv[] = {"Rengine",0};
+    char **argv = fallbackArgv;
+    int argc = 1;
 
-      if (argc==2 && !strcmp(argv[1],"--zero-init")) {/* special case for direct embedding (exp!) */
-	initRinside();
-	return 0;
-      }
-      
-      initRes=initR(argc, argv, (unsigned long) stackSize);
-      /* we don't release the argv in case R still needs it later (even if it shouldn't), but it's not really a significant leak */
-      
-      return initRes;
+#ifdef JRI_DEBUG
+    printf("rniSetupR\n");
+#endif
+
+    if (!env) {
+        return 10101;
+    }
+    engineObj = (*env)->NewGlobalRef(env, this);
+    engineClass = (*env)->NewGlobalRef(env, (*env)->GetObjectClass(env, engineObj));
+    eenv = env;
+    
+    if (a) { /* retrieve the content of the String[] and construct argv accordingly */
+        int len = (int)(*env)->GetArrayLength(env, a);
+        if (len > 0) {
+            int i = 0;
+            argv = (char**) malloc(sizeof(char*)*(len+2));
+            argv[0] = fallbackArgv[0];
+            while (i < len) {
+                jobject o = (*env)->GetObjectArrayElement(env, a, i);
+                i++;
+                if (!o) {
+                    return 10201;
+                }
+                const char *c = (*env)->GetStringUTFChars(env, o, 0);
+                if (!c) {
+                    return 10202;
+                }
+                argv[i] = strdup(c);
+                (*env)->ReleaseStringUTFChars(env, o, c);
+            }
+            argc = len+1;
+            argv[argc] = 0;
+        }
+    }
+
+    if (argc == 2 && !strcmp(argv[1], "--zero-init")) {/* special case for direct embedding (exp!) */
+        initRinside();
+        return 0;
+    }
+    
+    initRes = initR(argc, argv, (unsigned long) stackSize);
+    /* we don't release the argv in case R still needs it later (even if it shouldn't), but it's not really a significant leak */
+    
+    if (initRes != 0) {
+        fflush(stderr);
+    }
+    return initRes;
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniParse

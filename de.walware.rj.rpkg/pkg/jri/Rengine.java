@@ -94,14 +94,15 @@ public class Rengine extends Thread {
     public boolean isStandAlone() { return standAlone; }
 
     boolean died, alive, runLoop, loopRunning;
-    /** arguments used to initialize R, set by the constructor */
+	private int exitCode;
+	/** arguments used to initialize R, set by the constructor */
 	String[] args;
 	/** Advanced configuration parameters */
 	RConfig config;
 	/** synchronization mutex */
 	Mutex Rsync;
 	/** callback handler */
-    RMainLoopCallbacks callback;
+	RMainLoopCallbacks callback;
 	
     /** create and start a new instance of R. 
 	@param args arguments to be passed to R. Please note that R requires the presence of certain arguments (e.g. <code>--save</code> or <code>--no-save</code> or equivalents), so passing an empty list usually doesn't work.
@@ -143,7 +144,7 @@ public class Rengine extends Thread {
 	callback=null;
 	mainEngine=this;
 	mainRThread=Thread.currentThread();
-	rniSetupR(args, 0);
+        this.exitCode = rniSetupR(args, 0);
     }
 
     /** RNI: setup R with supplied parameters (should <b>not</b> be used directly!).
@@ -170,8 +171,16 @@ public class Rengine extends Thread {
     }
     
     synchronized int setupR(String[] args) {
-        int r=rniSetupR(args, config.MainCStack_SetLimit ? config.MainCStack_Size : 0);
-        if (r==0) {
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    throw new NullPointerException("args["+i+"]");
+                }
+            }
+        }
+        int r = rniSetupR(args, config.MainCStack_SetLimit ? config.MainCStack_Size : 0);
+        this.exitCode = r;
+        if (r == 0) {
             alive=true; died=false;
         } else {
             alive=false; died=true;
@@ -583,6 +592,10 @@ public class Rengine extends Thread {
     public void startMainLoop() {
 		runLoop=true;
     }
+    
+	public int getExitCode() {
+		return this.exitCode;
+	}
     
     //============ R callback methods =========
 

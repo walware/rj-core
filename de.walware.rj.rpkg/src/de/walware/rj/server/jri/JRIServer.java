@@ -489,7 +489,7 @@ public final class JRIServer extends RJ
 				}
 				if (!re.waitForR()) {
 					internalRStopped();
-					throw new IllegalThreadStateException("R thread not started");
+					throw new IllegalThreadStateException("R thread not started (" + re.getExitCode() + ")");
 				}
 				
 				this.mainExchangeLock.lock();
