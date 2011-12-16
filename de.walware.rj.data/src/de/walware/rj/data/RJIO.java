@@ -335,7 +335,7 @@ public final class RJIO {
 	public void writeStringArray(final String[] sa, final int length) throws IOException {
 		final ObjectOutput out = this.out;
 		out.writeInt(length);
-		for (int i = 0; i < length; i++) {
+		ARRAY: for (int i = 0; i < length; i++) {
 			final String s = sa[i];
 			if (s != null) {
 				final int cn = s.length();
@@ -348,22 +348,22 @@ public final class RJIO {
 					if (cn <= 8) {
 						out.writeInt(-cn);
 						out.writeBytes(s);
-						continue;
+						continue ARRAY;
 					}
 					else {
 						out.writeInt(-cn);
 						s.getBytes(0, cn, this.ba, 0);
 						out.write(this.ba, 0, cn);
-						continue;
+						continue ARRAY;
 					}
 				}
 				out.writeInt(cn);
 				out.writeChars(s);
-				continue;
+				continue ARRAY;
 			}
 			else {
 				out.writeInt(Integer.MIN_VALUE);
-				continue;
+				continue ARRAY;
 			}
 		}
 	}
@@ -726,51 +726,52 @@ public final class RJIO {
 		final ObjectInput in = this.in;
 		final int length = in.readInt();
 		final String[] array = new String[length];
-		for (int i = 0; i < length; i++) {
+		ARRAY: for (int i = 0; i < length; i++) {
 			final int cn = in.readInt();
 			if (cn >= 0) {
 				if (cn == 0) {
 					array[i] = "";
-					continue;
+					continue ARRAY;
 				}
 				else if (cn <= 64) {
 					for (int ci = 0; ci < cn; ci++) {
 						this.ca[ci] = in.readChar();
 					}
 					array[i] = new String(this.ca, 0, cn);
-					continue;
+					continue ARRAY;
 				}
 				else if (cn <= CB_LENGTH) {
 					readFullyBB((cn << 1));
 					this.cb.clear();
 					this.cb.get(this.ca, 0, cn);
 					array[i] = new String(this.ca, 0, cn);
-					continue;
+					continue ARRAY;
 				}
 				else if (cn <= CA_LENGTH) {
 					array[i] = readString(cn, this.ca, in);
-					continue;
+					continue ARRAY;
 				}
 				else {
 					array[i] = readString(cn, new char[cn], in);
-					continue;
+					continue ARRAY;
 				}
 			}
 			else {
 				if (cn >= -BA_LENGTH) {
 					in.readFully(this.ba, 0, -cn);
 					array[i] = new String(this.ba, 0, 0, -cn);
-					continue;
+					continue ARRAY;
 				}
 				else if (cn != Integer.MIN_VALUE) {
 					final byte[] bt = new byte[-cn];
 					in.readFully(bt, 0, -cn);
 					array[i] = new String(bt, 0, 0, -cn);
-					continue;
+					continue ARRAY;
 				}
-//				else { // cn == Integer.MIN_VALUE
+				else { // cn == Integer.MIN_VALUE
 //					array[i] = null;
-//				}
+					continue ARRAY;
+				}
 			}
 		}
 		return array;
