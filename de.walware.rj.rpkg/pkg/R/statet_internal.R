@@ -311,26 +311,24 @@
 		ffun <- get(fname, envir= envir)
 		fbody <- body(ffun)
 		l <- length(fbody)
-		if (getRversion() < "2.14.0") {
-			for (i in 1L:l) {
-				if (length(fbody[[i]]) == 3 && fbody[[i]][[1]] == "<-" && fbody[[i]][[2]] == "exprs") {
-					c1 <- quote(rj:::.statet.extSource(x))
-					c1[[2]] <- fbody[[i]][[3]]
-					fbody[[i]][[3]] <- c1
-					body(ffun) <- fbody
-					return (.patchPackage(fname, ffun, envir= envir))
-				}
+		for (i in 1L:l) {
+			if (length(fbody[[i]]) == 3 && fbody[[i]][[1]] == "<-" && fbody[[i]][[2]] == "exprs") {
+				c1 <- quote(rj:::.statet.extSource(x))
+				c1[[2]] <- fbody[[i]][[3]]
+				fbody[[i]][[3]] <- c1
+				body(ffun) <- fbody
+				return (.patchPackage(fname, ffun, envir= envir))
 			}
-		} else {
-			for (i in 1L:l) {
-				if (length(fbody[[i]]) == 4 && length(fbody[[i]][[4]]) == 3
-						&& fbody[[i]][[4]][[1]] == "<-" && fbody[[i]][[4]][[2]] == "exprs") {
-					c1 <- quote(rj:::.statet.extSource(x))
-					c1[[2]] <- fbody[[i]][[4]][[3]]
-					fbody[[i]][[4]][[3]] <- c1
-					body(ffun) <- fbody
-					return (.patchPackage(fname, ffun, envir= envir))
-				}
+		}
+		# For 2.14.0
+		for (i in 1L:l) {
+			if (length(fbody[[i]]) == 4 && length(fbody[[i]][[4]]) == 3
+					&& fbody[[i]][[4]][[1]] == "<-" && fbody[[i]][[4]][[2]] == "exprs") {
+				c1 <- quote(rj:::.statet.extSource(x))
+				c1[[2]] <- fbody[[i]][[4]][[3]]
+				fbody[[i]][[4]][[3]] <- c1
+				body(ffun) <- fbody
+				return (.patchPackage(fname, ffun, envir= envir))
 			}
 		}
 		cat("Could not install rj extension for '", fname, "'.\n", sep= "")
