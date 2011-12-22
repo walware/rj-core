@@ -242,7 +242,7 @@ public class DefaultGCRenderer {
 					continue; }
 				case RGraphicInstruction.DRAW_CIRCLE: {
 					final CircleElement element = (CircleElement) instr;
-					final int id = (int) (element.r * 2.0);
+					final int id = (int) (element.r * 2.0 + 0.5);
 					tempTransform.setElements(1, 0, 0, 1,
 							(float) (element.x - id / 2.0),
 							(float) (element.y - id / 2.0) );
