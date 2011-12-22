@@ -12,7 +12,7 @@
 	
 	<groupId>de.walware.rj-packaging</groupId>
 	<artifactId>de.walware.rj.core.source</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 	
 	<build>
