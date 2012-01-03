@@ -218,7 +218,7 @@ int initR(int argc, char **argv, unsigned long stacksize)
     HKEY k;
 
     sprintf(Rversion, "%s.%s", R_MAJOR, R_MINOR);
-    if (strcmp(getDLLVersion(), Rversion) != 0) {
+    if (strncmp(getDLLVersion(), Rversion, strlen(Rversion)-2) != 0) {
         char msg[512];
         sprintf(msg, "Error: R.ddl version does not match (DLL: %s, JRI: %s)\n", getDLLVersion(), Rversion);
         fprintf(stderr, msg);
