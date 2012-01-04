@@ -507,7 +507,7 @@ final class JRIServerRni {
 	}
 	
 	public long resolveExpression(final String expression) throws RjsException {
-		final long exprP = this.rEngine.rniParse(expression, 1);
+		final long exprP = this.rEngine.rniParse(expression, -1);
 		if (this.rEngine.rniExpType(exprP) != REXP.EXPRSXP) {
 			throw new RjsException((CODE_DATA_COMMON | 0x3),
 					"The specified expression is invalid (syntax error)." );
