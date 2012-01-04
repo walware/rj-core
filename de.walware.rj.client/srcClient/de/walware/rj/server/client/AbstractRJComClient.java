@@ -288,7 +288,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 		synchronized (this) {
 			this.rjConsoleServer = rjServer;
 			if (client == 0) {
-				this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(new KeepAliveRunnable(), 50, 50, TimeUnit.SECONDS);
+				long t = 45 * 1000;
+				try {
+					final String p = System.getProperty("de.walware.rj.client.keepaliveInterval"); //$NON-NLS-1$
+					if (p != null && p.length() > 0) {
+						t = Long.parseLong(p);
+					}
+				}
+				catch (Exception e) {}
+				this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(
+						new KeepAliveRunnable(), t, t, TimeUnit.MILLISECONDS );
 			}
 			runnables = this.defferedRunnables;
 			this.defferedRunnables = null;
