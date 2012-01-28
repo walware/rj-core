@@ -152,7 +152,7 @@ public final class DataCmdItem extends MainCmdItem {
 		}
 		if ((this.options & OV_WITHRHO) != 0) {
 			if ((this.options & OV_ANSWER) != 0) {
-				in.flags = 0;
+				in.flags = RObjectFactory.F_ONLY_STRUCT;
 				this.rho = getFactory(this.factoryId).readObject(in);
 			}
 			else {
@@ -187,7 +187,8 @@ public final class DataCmdItem extends MainCmdItem {
 			}
 		}
 		if ((this.options & OV_WITHRHO) != 0) {
-			out.flags = 0;
+			out.flags = ((this.options & OV_ANSWER) != 0) ?
+					RObjectFactory.F_ONLY_STRUCT : 0;
 			gDefaultFactory.writeObject(this.rho, out);
 		}
 	}
