@@ -206,6 +206,22 @@ public final class JavaGD extends GDInterface {
 		this.rjsGraphic.drawRaster(img, imgAlpha, img_w, img_h, x, y, w, h, rot, interpolate);
 	}
 	
+	@Override
+	public byte[] gdCap(final int[] dim) {
+		{	final int iWidth = (int) (getWidth() + 0.5);
+			if (dim[0] < 0 || dim[0] == iWidth) {
+				dim[0] = iWidth;
+				dim[1] = (int) (getHeight() + 0.5);
+			}
+			else {
+				dim[1] = (int) ((dim[0]/getWidth()) * getHeight() + 0.5);
+			}
+		}
+		{	final byte[] array = this.rjsGraphic.capture(dim);
+			return (array != null && array.length == dim[0] * dim[1] * 4) ? array : null;
+		}
+	}
+	
 	
 	@Override
 	public double[] gdLocator() {

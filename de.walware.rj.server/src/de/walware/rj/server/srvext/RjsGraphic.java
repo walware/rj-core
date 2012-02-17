@@ -56,15 +56,6 @@ public final class RjsGraphic {
 	}
 	
 	
-	private double[] runCmdDouble(final GDCmdItem cmd) {
-		final MainCmdItem answer = this.rj.sendMainCmd(cmd);
-		if (answer instanceof GDCmdItem && answer.isOK() ) {
-			return ((GDCmdItem) answer).getData();
-		}
-		return null;
-	}
-	
-	
 	public void initPage(final int devId, final int state, final double width, final double height,
 			final int canvasColor, final boolean isActive) {
 		if (this.devId != devId || this.state < STATE_OPENED) {
@@ -117,8 +108,10 @@ public final class RjsGraphic {
 	}
 	
 	public double[] newPageSize() {
-		return runCmdDouble(new GDCmdItem.CGetSize(
+		final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.CGetSize(
 				this.devId, this.slot ));
+		return (answer instanceof GDCmdItem && answer.isOK() ) ?
+				((GDCmdItem) answer).getDoubleData() : null;
 	}
 	
 	
@@ -188,8 +181,10 @@ public final class RjsGraphic {
 			if (ch == this.cachedStrWidthChar) {
 				return this.cachedStrWidthCharResult;
 			}
-			this.cachedStrWidthCharResult = runCmdDouble(new GDCmdItem.CGetStrWidth(
+			final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.CGetStrWidth(
 					this.devId, str, this.slot ));
+			this.cachedStrWidthCharResult = (answer instanceof GDCmdItem && answer.isOK() ) ?
+					((GDCmdItem) answer).getDoubleData() : null;
 			this.cachedStrWidthChar = ch;
 			return this.cachedStrWidthCharResult;
 		}
@@ -197,16 +192,20 @@ public final class RjsGraphic {
 			if (str.equals(this.cachedStrWidthStr)) {
 				return this.cachedStrWidthStrResult;
 			}
-			this.cachedStrWidthStrResult = runCmdDouble(new GDCmdItem.CGetStrWidth(
+			final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.CGetStrWidth(
 					this.devId, str, this.slot ));
+			this.cachedStrWidthStrResult = (answer instanceof GDCmdItem && answer.isOK() ) ?
+					((GDCmdItem) answer).getDoubleData() : null;
 			this.cachedStrWidthStr = str;
 			return this.cachedStrWidthStrResult;
 		}
 	}
 	
 	public double[] getMetricInfo(final int ch) {
-		return runCmdDouble(new GDCmdItem.CGetFontMetric(
+		final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.CGetFontMetric(
 				this.devId, ch, this.slot ));
+		return (answer instanceof GDCmdItem && answer.isOK() ) ?
+				((GDCmdItem) answer).getDoubleData() : null;
 	}
 	
 	public void drawText(final String str, final double x, final double y, final double rDeg, final double hAdj) {
@@ -222,10 +221,19 @@ public final class RjsGraphic {
 				rDeg, interpolate, this.slot ));
 	}
 	
+	public byte[] capture(final int[] dim) {
+		final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.Capture(this.devId,
+				dim[0], dim[1], this.slot ));
+		return (answer instanceof GDCmdItem && answer.isOK() ) ?
+				((GDCmdItem) answer).getByteData() : null;
+	}
+	
 	
 	public double[] execLocator() {
-		return runCmdDouble(new GDCmdItem.Locator(
+		final MainCmdItem answer = this.rj.sendMainCmd(new GDCmdItem.Locator(
 				this.devId, this.slot ));
+		return (answer instanceof GDCmdItem && answer.isOK() ) ?
+				((GDCmdItem) answer).getDoubleData() : null;
 	}
 	
 }

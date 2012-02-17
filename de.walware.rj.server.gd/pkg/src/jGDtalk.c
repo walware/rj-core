@@ -73,6 +73,7 @@ static void newJavaGD_Raster(unsigned int *raster, int w, int h,
 			   double x, double y, double width, double height,
 			   double rot, Rboolean interpolate,
 			   R_GE_gcontext *gc, NewDevDesc *dd);
+static SEXP newJavaGD_Cap(NewDevDesc *dd);
 
 
 static R_GE_gcontext lastGC; /** last graphics context. the API send changes, not the entire context, so we cache it for comparison here */
@@ -103,6 +104,7 @@ static jmethodID jmGDInterfaceSize;
 static jmethodID jmGDInterfaceStrWidth;
 static jmethodID jmGDInterfaceText;
 static jmethodID jmGDInterfaceRaster;
+static jmethodID jmGDInterfaceCap;
 static jmethodID jmGDInterfaceSetColor;
 static jmethodID jmGDInterfaceSetFill;
 static jmethodID jmGDInterfaceSetLine;
@@ -586,6 +588,50 @@ static void newJavaGD_Raster(unsigned int *raster, int w, int h,
 	chkX(env);
 }
 
+static SEXP newJavaGD_Cap(NewDevDesc *dd)
+{
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return R_NilValue;
+	
+	SEXP sRaster = R_NilValue;
+	jint dim[] = { -1, -1 };
+	jintArray jDim = (*env)->NewIntArray(env, 2);
+	if (!jDim) {
+		handleJNewArrayError(env, "gdCap");
+	}
+	(*env)->SetIntArrayRegion(env, jDim, 0, 2, dim);
+	jbyteArray jRaster = (*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceCap, jDim);
+	if (jRaster) {
+		(*env)->GetIntArrayRegion(env, jDim, 0, 2, dim);
+		int count = dim[0] * dim[1];
+		
+		PROTECT(sRaster = allocVector(INTSXP, count));
+		{	unsigned int *raster = INTEGER(sRaster);
+			jbyte* ba = (*env)->GetPrimitiveArrayCritical(env, jRaster, 0);
+			for (int i = 0, j = 0; i < count; i++, j+=4) {
+				raster[i] = R_RGB(ba[j+2], ba[j+1], ba[j+0]);
+			}
+			(*env)->ReleasePrimitiveArrayCritical(env, jRaster, ba, JNI_ABORT);
+		}
+		{	SEXP rDim;
+			PROTECT(rDim = allocVector(INTSXP, 2));
+			INTEGER(rDim)[0] = dim[0];
+			INTEGER(rDim)[1] = dim[1];
+			setAttrib(sRaster, R_DimSymbol, rDim);
+		}
+		UNPROTECT(2);
+		
+		(*env)->DeleteLocalRef(env, jRaster);
+	}
+	
+	(*env)->DeleteLocalRef(env, jDim);
+	chkX(env);
+	
+	return sRaster;
+}
+
 
 /*-----------------------------------------------------------------------*/
 
@@ -606,6 +652,7 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->polyline = newJavaGD_Polyline;
     dd->polygon = newJavaGD_Polygon;
 	dd->raster = newJavaGD_Raster;
+	dd->cap = newJavaGD_Cap;
 	
 	dd->canHAdj = 2;
 	dd->useRotatedTextInContour = TRUE;
@@ -624,7 +671,7 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
 	dd->haveTransparency = 2;
 	dd->haveTransparentBg = 3;
 	dd->haveRaster = 2;
-	dd->haveCapture = 1;
+	dd->haveCapture = 2;
 	dd->haveLocator = 2;
 #endif
 }
@@ -755,6 +802,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceStrWidth = getJMethod(env, jc, "gdStrWidth", "(Ljava/lang/String;)D", RJ_ERROR_RERROR);
 		jmGDInterfaceText = getJMethod(env, jc, "gdText", "(DDLjava/lang/String;DD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceRaster = getJMethod(env, jc, "gdRaster", "([BZIIDDDDDZ)V", RJ_ERROR_RERROR);
+		jmGDInterfaceCap = getJMethod(env, jc, "gdCap", "([I)[B", RJ_ERROR_RERROR);
 		jmGDInterfaceSetColor = getJMethod(env, jc, "gdcSetColor", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetFill = getJMethod(env, jc, "gdcSetFill", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetLine = getJMethod(env, jc, "gdcSetLine", "(DI)V", RJ_ERROR_RERROR);

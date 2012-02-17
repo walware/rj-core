@@ -48,6 +48,7 @@ package org.rosuda.javaGD;
  public double   gdStrWidth(String str);
  public void     gdText(double x, double y, String str, double rot, double hadj);
  public void     gdRaster(byte[] rgb, byte[] a, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
+ public int[]    gdCap(int[] dim);
   </pre>
  <p>
  <b>GDC - manipulation of the current graphics state</b>
@@ -262,6 +263,8 @@ public abstract class GDInterface {
 
 	public abstract void gdRaster(byte[] img, boolean imgAlpha, int img_w, int img_h,
 			double x, double y, double w, double h, double rot, boolean interpolate);
+	
+	public abstract byte[] gdCap(int[] dim);
 
     /*-- GDC - manipulation of the current graphics state */
     /** set drawing color

@@ -38,6 +38,8 @@ public abstract class GDCmdItem extends MainCmdItem {
 	public static final byte DRAW_TEXT =                    0x17;
 	public static final byte DRAW_RASTER =                  0x18;
 	
+	public static final byte CAPTURE =                      0x1c;
+	
 	public static final byte C_NEW_PAGE =                   0x21;
 	public static final byte C_CLOSE_DEVICE =               0x22;
 	public static final byte C_GET_SIZE =                   0x23;
@@ -56,13 +58,24 @@ public abstract class GDCmdItem extends MainCmdItem {
 	public static final class Answer extends GDCmdItem {
 		
 		
-		private final double[] data;
+		private static final int OM_WITHDATA =              0x07000000;
+		private static final int OV_WITHDOUBLE =            0x01000000;
+		private static final int OV_WITHBYTE =              0x02000000;
 		
+		private final Object data;
 		
-		public Answer(final byte requestId, final int devId, final double[] data) {
-			this.options = OV_WAITFORCLIENT;
+// use DoubleAnswer
+//		public Answer(final byte requestId, final int devId, final double[] data) {
+//			this.options = (data != null) ? (OV_WITHDOUBLE | OV_WAITFORCLIENT) : OV_WAITFORCLIENT;
+//			this.devId = devId;
+//			this.data = data;
+//			this.requestId = requestId;
+//		}
+		
+		public Answer(final byte requestId, final int devId, final byte[] data) {
+			this.options = (data != null) ? (OV_WITHBYTE | OV_WAITFORCLIENT) : OV_WAITFORCLIENT;
 			this.devId = devId;
-			this.data = (data != null) ? data : NO_DATA;
+			this.data = data;
 			this.requestId = requestId;
 		}
 		
@@ -80,7 +93,17 @@ public abstract class GDCmdItem extends MainCmdItem {
 			this.options = io.readInt();
 			this.devId = io.readInt();
 			this.requestId = io.readByte();
-			this.data = io.readDoubleArray();
+			switch (this.options & OM_WITHDATA) {
+			case OV_WITHDOUBLE:
+				this.data = io.readDoubleArray();
+				break;
+			case OV_WITHBYTE:
+				this.data = io.readByteArray();
+				break;
+			default:
+				this.data = null;
+				break;
+			}
 		}
 		
 		@Override
@@ -88,25 +111,84 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.options);
 			io.writeInt(this.devId);
 			io.writeByte(this.requestId);
-			io.writeDoubleArray(this.data, this.data.length);
+			switch (this.options & OM_WITHDATA) {
+			case OV_WITHDOUBLE: {
+				final double[] d = (double[]) this.data;
+				io.writeDoubleArray(d, d.length);
+				break; }
+			case OV_WITHBYTE: {
+				final byte[] b = (byte[]) this.data;
+				io.writeByteArray(b, b.length);
+				break; }
+			}
 		}
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
+		public double[] getDoubleData() {
+			return (double[]) this.data;
+		}
+		
+		@Override
+		public byte[] getByteData() {
+			return (byte[]) this.data;
 		}
 		
 		
 		@Override
-		public double[] getData() {
+		public String toString() {
+			final StringBuffer sb = new StringBuffer(100);
+			sb.append("GDCmdItem (options=0x");
+			sb.append(Integer.toHexString(this.options));
+			sb.append(", device=");
+			sb.append(this.devId);
+			sb.append(", commandId=ANSWER");
+			sb.append(")");
+			sb.append("\n<GD-DATA>\n");
+			switch (this.options & OM_WITHDATA) {
+			case OV_WITHDOUBLE:
+				sb.append(Arrays.toString((double[]) this.data));
+			}
+			sb.append("\n</GD-DATA>");
+			return sb.toString();
+		}
+		
+	}
+	
+	public static final class DoubleAnswer extends GDCmdItem {
+		
+		
+		private final double[] data;
+		
+		
+		public DoubleAnswer(final byte requestId, final int devId, final double[] data) {
+			this.options = (data != null) ? (Answer.OV_WITHDOUBLE | OV_WAITFORCLIENT) : OV_WAITFORCLIENT;
+			this.devId = devId;
+			this.data = data;
+			this.requestId = requestId;
+		}
+		
+		
+		@Override
+		public void writeExternal(final RJIO io) throws IOException {
+			io.writeInt(this.options);
+			io.writeInt(this.devId);
+			io.writeByte(this.requestId);
+			if (this.data != null) {
+				io.writeDoubleArray(this.data, this.data.length);
+			}
+		}
+		
+		
+		@Override
+		public double[] getDoubleData() {
 			return this.data;
 		}
 		
 		
 		@Override
 		public String toString() {
-			final StringBuffer sb = new StringBuffer(100 + this.data.length*5);
+			final StringBuffer sb = new StringBuffer(100);
 			sb.append("GDCmdItem (options=0x");
 			sb.append(Integer.toHexString(this.options));
 			sb.append(", device=");
@@ -154,18 +236,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -195,18 +265,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(C_CLOSE_DEVICE);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -250,12 +308,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -289,18 +341,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -329,18 +369,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(C_SET_ACTIVE_ON);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -378,18 +406,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(C_SET_MODE);
 			io.writeByte(this.mode);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -440,12 +456,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -487,12 +497,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		@Override
 		public void setAnswer(final RjsStatus status) {
 			this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -545,18 +549,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -591,18 +583,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(SET_COLOR);
 			io.writeInt(this.cc);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -645,18 +625,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -695,18 +663,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeByte(SET_LINE);
 			io.writeInt(this.type);
 			io.writeDouble(this.width);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -760,18 +716,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -816,18 +760,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeDouble(this.y0);
 			io.writeDouble(this.x1);
 			io.writeDouble(this.y1);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -880,18 +812,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -933,18 +853,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -982,18 +890,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_POLYGON);
 			io.writeDoubleArrayPair(this.x, this.y, this.x.length);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -1045,18 +941,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("GDCmdItem (options=0x");
@@ -1098,18 +982,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeDouble(this.x);
 			io.writeDouble(this.y);
 			io.writeDouble(this.r);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -1162,18 +1034,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeDouble(this.y);
 			io.writeDouble(this.rDeg);
 			io.writeDouble(this.hAdj);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -1245,14 +1105,52 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
+		public String toString() {
+			final StringBuffer sb = new StringBuffer();
+			sb.append("GDCmdItem (options=0x");
+			sb.append(Integer.toHexString(this.options));
+			sb.append(", device=");
+			sb.append(this.devId);
+			sb.append(", commandId=");
+			sb.append(DRAW_RASTER);
+			sb.append(")\n<GD-DATA>\n");
+			sb.append("\n</GD-DATA>");
+			return sb.toString();
+		}
+		
+	}
+	
+	public static final class Capture extends GDCmdItem {
+		
+		
+		private final int w, h;
+		
+		
+		public Capture(final int devId,
+				final int w, final int h,
+				final byte slot) {
+			this.options = OV_WAITFORCLIENT;
+			this.devId = devId;
+			
+			this.w = w;
+			this.h = h;
+			
+			this.slot = slot;
+		}
+		
+		@Override
+		public void writeExternal(final RJIO io) throws IOException {
+			io.writeInt(this.devId);
+			io.writeByte(CAPTURE);
+			io.writeByte(this.requestId);
+			io.writeInt(this.w);
+			io.writeInt(this.h);
 		}
 		
 		
 		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
+		public void setAnswer(final RjsStatus status) {
+			this.options = (this.options & OM_CLEARFORANSWER) | (status.getSeverity() << OS_STATUS);
 		}
 		
 		
@@ -1264,7 +1162,7 @@ public abstract class GDCmdItem extends MainCmdItem {
 			sb.append(", device=");
 			sb.append(this.devId);
 			sb.append(", commandId=");
-			sb.append(DRAW_RASTER);
+			sb.append(CAPTURE);
 			sb.append(")\n<GD-DATA>\n");
 			sb.append("\n</GD-DATA>");
 			return sb.toString();
@@ -1288,18 +1186,6 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt((OV_WAITFORCLIENT | this.devId));
 			io.writeByte(U_LOCATOR);
 			io.writeByte(this.requestId);
-		}
-		
-		
-		@Override
-		public void setAnswer(final RjsStatus status) {
-			throw new UnsupportedOperationException();
-		}
-		
-		
-		@Override
-		public double[] getData() {
-			throw new UnsupportedOperationException();
 		}
 		
 		
@@ -1354,7 +1240,20 @@ public abstract class GDCmdItem extends MainCmdItem {
 		return this.devId;
 	}
 	
-	public abstract double[] getData();
+	@Override
+	public void setAnswer(final RjsStatus status) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	public double[] getDoubleData() {
+		throw new UnsupportedOperationException();
+	}
+	
+	public byte[] getByteData() {
+		throw new UnsupportedOperationException();
+	}
+	
 	
 	@Override
 	public final String getDataText() {

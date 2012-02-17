@@ -217,6 +217,11 @@ public class GDContainerGD extends GDInterface {
         c.add(new GDRaster(img, img_w, img_h, x, y, w, h, rot, interpolate));
     }
 
+    @Override
+    public byte[] gdCap(int[] dim) {
+        return null;
+    }
+    
     /*-- GDC - manipulation of the current graphics state */
     /** set drawing color
      *  @param cc color */
