@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -31,6 +32,7 @@ import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.statushandlers.StatusManager;
 
+import de.walware.rj.graphic.RGraphicInitialization;
 import de.walware.rj.graphic.utils.CachedMapping;
 import de.walware.rj.graphic.utils.CharMapping;
 import de.walware.rj.graphic.utils.Unicode2AdbSymbolMapping;
@@ -45,6 +47,7 @@ import de.walware.ecommons.collections.ConstList;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.util.UIAccess;
 
+import de.walware.rj.eclient.graphics.DefaultGCRenderer;
 import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.IERGraphicInstruction;
 import de.walware.rj.eclient.graphics.LocatorCallback;
@@ -66,7 +69,11 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	
 	private static final long MILLI_NANOS = 1000000L;
 	
-	private static final PaletteData DIRECT_PALETTE = new PaletteData(0xFF00, 0xFF0000, 0xFF000000);
+	private static final int DIRECT_RED_MASK =   0x0000FF00;
+	private static final int DIRECT_GREEN_MASK = 0x00FF0000;
+	private static final int DIRECT_BLUE_MASK =  0xFF000000;
+	private static final PaletteData DIRECT_PALETTE = new PaletteData(
+			DIRECT_RED_MASK, DIRECT_GREEN_MASK, DIRECT_BLUE_MASK );
 	
 	private static final LocatorCallback R_LOCATOR_CALLBACK = new LocatorCallback() {
 		
@@ -580,26 +587,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			}
 			if (mode != 1) {
 				fDrawingStoppedStamp = System.nanoTime();
-				if (fInstructionsNewSize > 0) {
-					if (fInstructionsUpdate == null) {
-						fInstructionsUpdate = fInstructionsNew;
-						fInstructionsUpdateStart = 0;
-						fInstructionsUpdateSize = fInstructionsNewSize;
-						fInstructionsNew = null;
-						fInstructionsNewSize = 0;
-					}
-					else {
-						final int newSize = fInstructionsUpdateStart + fInstructionsUpdateSize + fInstructionsNewSize;
-						if (newSize > fInstructionsUpdate.length) {
-							final IERGraphicInstruction[] newArray = new IERGraphicInstruction[newSize + 512];
-							System.arraycopy(fInstructionsUpdate, 0, newArray, 0, fInstructionsUpdateStart + fInstructionsUpdateSize);
-							fInstructionsUpdate = newArray;
-						}
-						System.arraycopy(fInstructionsNew, 0, fInstructionsUpdate, fInstructionsUpdateStart + fInstructionsUpdateSize, fInstructionsNewSize);
-						fInstructionsUpdateSize += fInstructionsNewSize;
-						fInstructionsNewSize = 0;
-					}
-				}
+				flushNewInstructions();
 			}
 			fMode = mode;
 			if (fIsDisposed) {
@@ -615,6 +603,37 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 				fStateNotificationDirectScheduled = true;
 				execInDisplay(fStateNotificationRunnable);
 			}
+		}
+	}
+	
+	private void flushNewInstructions() {
+		if (fInstructionsNewSize > 0) {
+			if (fInstructionsUpdate == null) {
+				fInstructionsUpdate = fInstructionsNew;
+				fInstructionsUpdateStart = 0;
+				fInstructionsUpdateSize = fInstructionsNewSize;
+				fInstructionsNew = null;
+				fInstructionsNewSize = 0;
+			}
+			else {
+				final int newSize = fInstructionsUpdateStart + fInstructionsUpdateSize + fInstructionsNewSize;
+				if (newSize > fInstructionsUpdate.length) {
+					final IERGraphicInstruction[] newArray = new IERGraphicInstruction[newSize + 512];
+					System.arraycopy(fInstructionsUpdate, 0, newArray, 0, fInstructionsUpdateStart + fInstructionsUpdateSize);
+					fInstructionsUpdate = newArray;
+				}
+				System.arraycopy(fInstructionsNew, 0, fInstructionsUpdate, fInstructionsUpdateStart + fInstructionsUpdateSize, fInstructionsNewSize);
+				fInstructionsUpdateSize += fInstructionsNewSize;
+				fInstructionsNewSize = 0;
+			}
+		}
+	}
+	
+	private List<IERGraphicInstruction> getCurrentInstructions() {
+		synchronized (fStateLock) {
+			flushNewInstructions();
+			return new ConstList<IERGraphicInstruction>(fInstructionsUpdate).subList(0,
+					fInstructionsSize + fInstructionsUpdateSize );
 		}
 	}
 	
@@ -789,6 +808,82 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		final RasterElement instr = new RasterElement(imgData, imgWidth, imgHeight, x, y, w, h,
 				rDeg, interpolate, swtImage );
 		add(instr);
+	}
+	
+	public byte[] capture(final int width, final int height) {
+		ImageData imageData;
+		{	Image image = null;
+			GC gc = null;
+			try {
+				image = new Image(fDisplay, width, height);
+				gc = new GC(image);
+				final DefaultGCRenderer renderer = new DefaultGCRenderer();
+				final List<IERGraphicInstruction> instructions = getCurrentInstructions();
+				if (instructions.isEmpty()) {
+					return null;
+				}
+				{	final RGraphicInitialization init = (RGraphicInitialization) instructions.get(0);
+					double scale;
+					if (width == (int) (init.width + 0.5)) {
+						scale = 1.0;
+					}
+					else {
+						scale = width / init.width;
+					}
+					renderer.clear(scale);
+				}
+				renderer.paint(gc, instructions);
+				gc.dispose();
+				gc = null;
+				imageData = image.getImageData();
+				image.dispose();
+				image = null;
+			}
+			finally {
+				if (gc != null && !gc.isDisposed()) {
+					gc.dispose();
+				}
+				if (image != null && !image.isDisposed()) {
+					image.dispose();
+				}
+			}
+		}
+		if (imageData == null || !imageData.palette.isDirect) {
+			return null;
+		}
+		if (imageData.palette.redMask != DIRECT_RED_MASK
+				|| imageData.palette.greenMask != DIRECT_GREEN_MASK
+				|| imageData.palette.blueMask != DIRECT_BLUE_MASK
+				|| imageData.scanlinePad != 4
+				|| imageData.bytesPerLine != width * 4
+				|| imageData.data.length != width * height * 4 ) {
+			final byte[] data = (imageData.data.length == width * height * 4) ?
+					imageData.data : new byte[width * height * 4];
+			final int blueMask = imageData.palette.blueMask;
+			final int blueShift = imageData.palette.blueShift;
+			final int greenMask = imageData.palette.greenMask;
+			final int greenShift = imageData.palette.greenShift;
+			final int redMask = imageData.palette.redMask;
+			final int redShift = imageData.palette.redShift;
+			int i = 0;
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					final int p = imageData.getPixel(x, y);
+					data[i++] = (blueShift < 0) ?
+							(byte) ((p & blueMask) >>> -blueShift) :
+							(byte) ((p & blueMask) << blueShift);
+					data[i++] = (greenShift < 0) ?
+							(byte) ((p & greenMask) >>> -greenShift) :
+							(byte) ((p & greenMask) << greenShift);
+					data[i++] = (redShift < 0) ?
+							(byte) ((p & redMask) >>> -redShift) :
+							(byte) ((p & redMask) << redShift);
+					data[i++] = (byte) 255;
+				}
+			}
+			return data;
+		}
+		return imageData.data;
 	}
 	
 	

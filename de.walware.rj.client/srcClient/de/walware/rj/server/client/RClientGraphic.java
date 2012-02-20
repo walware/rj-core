@@ -145,6 +145,8 @@ public interface RClientGraphic {
 	void addDrawRaster(byte[] imgData, boolean imgAlpha, int imgWidth, int imgHeight,
 			double x, double y, double w, double h, double rDeg, boolean interpolate);
 	
+	byte[] capture(int width, int height);
+	
 	
 	double[] runRLocator(RService r, IProgressMonitor monitor);
 	

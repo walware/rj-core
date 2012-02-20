@@ -108,6 +108,10 @@ public class RClientGraphicDummy implements RClientGraphic {
 			final double rDeg, final boolean interpolate) {
 	}
 	
+	public byte[] capture(final int width, final int height) {
+		return null;
+	}
+	
 	
 	public double[] runRLocator(final RService r, final IProgressMonitor monitor) {
 		return null;

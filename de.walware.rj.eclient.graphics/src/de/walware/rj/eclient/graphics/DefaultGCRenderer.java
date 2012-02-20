@@ -41,7 +41,7 @@ import de.walware.rj.eclient.internal.graphics.TextElement;
 public class DefaultGCRenderer {
 	
 	
-	private float fScale = 1.0f;
+	private double fScale = 1.0f;
 	
 	private final LineAttributes fLineAttributes = new LineAttributes(1.0f);
 	private Color fLineColor;
@@ -53,14 +53,14 @@ public class DefaultGCRenderer {
 	private int fYMax;
 	
 	
-	public void clear(final float scale) {
+	public void clear(final double scale) {
 		fScale = scale;
 		fLineColor = null;
 		fLineAlpha = 0xff;
 		fFillColor = null;
 		fFillAlpha = 0xff;
 		fLineAttributes.style = SWT.LINE_SOLID;
-		fLineAttributes.width = scale;
+		fLineAttributes.width = (float) scale;
 		fXMax = 0;
 		fYMax = 0;
 	}
@@ -68,7 +68,7 @@ public class DefaultGCRenderer {
 	public void paint(final GC gc, final List<? extends IERGraphicInstruction> instructions) {
 		final Transform defaultTransform = null;
 		final Transform tempTransform = new Transform(gc.getDevice());
-		final float scale = fScale;
+		final double scale = fScale;
 		int currentAlpha = -1;
 		int currentInterpolation = -1;
 		int currentFillRule = -1;
@@ -103,8 +103,8 @@ public class DefaultGCRenderer {
 					gc.setAlpha(currentAlpha = 0xff);
 					gc.setClipping((Rectangle) null);
 					gc.fillRectangle(0, 0, ixmax, iymax);
-					gc.setBackground(fillColor = gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
-					gc.setForeground(lineColor = gc.getDevice().getSystemColor(SWT.COLOR_BLACK));
+//					gc.setBackground(fillColor = gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
+//					gc.setForeground(lineColor = gc.getDevice().getSystemColor(SWT.COLOR_BLACK));
 					gc.setClipping(0, 0, ixmax, iymax);
 					continue;
 				case RGraphicInstruction.SET_CLIP: {
@@ -302,8 +302,8 @@ public class DefaultGCRenderer {
 					}
 					if (element.rotateDegree != 0.0) {
 						tempTransform.setElements(1, 0, 0, 1,
-								(float) element.x * scale,
-								(float) element.y * scale );
+								(float) (element.x * scale),
+								(float) (element.y * scale) );
 						tempTransform.rotate((float) -element.rotateDegree);
 						tempTransform.translate(
 								(float) Math.floor(1.1111 - hShift),
@@ -360,8 +360,8 @@ public class DefaultGCRenderer {
 					}
 					if (element.rotateDegree != 0.0) {
 						tempTransform.setElements(1, 0, 0, 1,
-								(float) element.x * scale,
-								(float) element.y * scale );
+								(float) (element.x * scale),
+								(float) (element.y * scale) );
 						tempTransform.rotate(-(float) element.rotateDegree);
 						if (element.width < 0 || element.height < 0) {
 							tempTransform.translate(

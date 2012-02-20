@@ -496,7 +496,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 				removeGraphic(devId);
 				return;
 			case GDCmdItem.C_GET_SIZE:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
+				addC2SCmd(new GDCmdItem.DoubleAnswer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeSize() ));
 				return;
 			case GDCmdItem.C_SET_ACTIVE_OFF:
@@ -509,12 +509,12 @@ public abstract class AbstractRJComClient implements ComHandler {
 				getGraphic(devId).setMode(io.readByte());
 				return;
 			case GDCmdItem.C_GET_FONTMETRIC:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
+				addC2SCmd(new GDCmdItem.DoubleAnswer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeFontMetric(
 								io.readInt() )));
 				return;
 			case GDCmdItem.C_GET_STRINGWIDTH:
-				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
+				addC2SCmd(new GDCmdItem.DoubleAnswer(requestId = io.readByte(),
 						devId, getGraphic(devId).computeStringWidth(
 								io.readString() )));
 				return;
@@ -606,11 +606,18 @@ public abstract class AbstractRJComClient implements ComHandler {
 						io.readBoolean() );
 				return;
 				
+			case GDCmdItem.CAPTURE:
+				addC2SCmd(new GDCmdItem.Answer(requestId = io.readByte(),
+						devId, getGraphic(devId).capture(
+								io.readInt(),
+								io.readInt() )));
+				return;
+				
 			case GDCmdItem.U_LOCATOR: {
 				final byte fid = requestId = io.readByte();
 				processCmdDeferred(new Runnable() {
 					public void run() {
-						addC2SCmd(new GDCmdItem.Answer(fid,
+						addC2SCmd(new GDCmdItem.DoubleAnswer(fid,
 								devId, getGraphic(devId).runRLocator(
 										AbstractRJComClient.this.rService,
 										AbstractRJComClient.this.progressMonitor )));
@@ -631,9 +638,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		catch (final Throwable e) {
 			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing graphic command.", e));
 			if (requestId >= 0) {
-				addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus()));
+				addC2SCmd(new GDCmdItem.Answer(requestId, devId, new RjsStatus(RjsStatus.ERROR, 0)));
 			}
-			throw new RuntimeException(e);
+//			throw new RuntimeException(e);
 		}
 	}
 	
