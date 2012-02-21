@@ -24,6 +24,8 @@
 # Note: This script does not start an RMI registry! You have to launch it
 # as system daemon or manually (see Java documentation), e.g. by:
 #     %JAVA_HOME%/bin/rmiregistry.exe
+# or in a detached process (not official):
+#     %JAVA_HOME%/bin/javaw.exe sun.rmi.registry.RegistryImpl
 ##
 # Author: Stephan Wahlbrink
 ###############################################################################
