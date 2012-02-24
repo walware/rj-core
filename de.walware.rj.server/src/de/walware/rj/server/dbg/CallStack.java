@@ -151,15 +151,15 @@ public class CallStack implements RJIOExternalizable {
 		for (int i = 0; i < n; i++) {
 			final Frame frame0 = this.frames.get(i);
 			if (frame0.getCall() != null) {
-				if (frame0.getCall().startsWith("source(") ) {
-					final Frame frame1 = this.frames.get(i+1);
-					if (i+1 < n && frame1.getCall() != null
+				if (frame0.getCall().startsWith("source(")) {
+					final Frame frame1;
+					if (i+1 < n && (frame1 = this.frames.get(i+1)).getCall() != null
 							&& frame1.getCall().startsWith("eval.with.vis(") ) {
 						frame0.addFlags((FLAG_SOURCE | 0));
 						frame1.addFlags((FLAG_SOURCE | 1));
 						i++;
-						final Frame frame2 = this.frames.get(i+2);
-						if (i+1 < n && frame2.getCall() != null
+						final Frame frame2;
+						if (i+1 < n && (frame2 = this.frames.get(i+1)).getCall() != null
 								&& frame2.getCall().startsWith("eval.with.vis(") ) {
 							frame2.addFlags((FLAG_SOURCE | 2));
 							i++;
