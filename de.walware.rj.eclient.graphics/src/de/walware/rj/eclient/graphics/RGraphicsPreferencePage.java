@@ -220,6 +220,9 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 		initBindings();
 		loadDisplayOptions();
 		loadFontOptions();
+		
+		applyDialogFont(pageComposite);
+		
 		return pageComposite;
 	}
 	
