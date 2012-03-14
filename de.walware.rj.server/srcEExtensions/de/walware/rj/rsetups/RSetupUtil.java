@@ -161,6 +161,9 @@ public class RSetupUtil {
 			if (element.getName().equals(LIBRARY_ELEMENT_NAME)
 					&& id.equals(element.getAttribute(SETUP_ID_ATTRIBUTE_NAME)) ) {
 				final String path = getLocation(element, filter);
+				if (path == null) {
+					continue;
+				}
 				final String groupId = element.getAttribute(GROUP_ATTRIBUTE_NAME);
 				if (groupId == null || groupId.length() == 0 || groupId.equals("R_LIBS")) { //$NON-NLS-1$
 					setup.getRLibs().add(path);
