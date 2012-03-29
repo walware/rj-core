@@ -80,7 +80,10 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,
 			 double rot, double hadj,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd);
-
+static void newJavaGD_Raster(unsigned int *raster, int w, int h,
+			   double x, double y, double width, double height,
+			   double rot, Rboolean interpolate,
+			   R_GE_gcontext *gc, NewDevDesc *dd);
 
 static R_GE_gcontext lastGC; /** last graphics context. the API send changes, not the entire context, so we cache it for comparison here */
 
@@ -109,7 +112,7 @@ static JNIEnv *getJNIEnv() {
     if (!jvm) { /* we're hoping that the JVM pointer won't change :P we fetch it just once */
         res = JNI_GetCreatedJavaVMs(&jvm, 1, &l);
         if (res != 0) {
-	  fprintf(stderr, "JNI_GetCreatedJavaVMs failed! (%d)\n", (int)res); return 0;
+	  REprintf("JNI_GetCreatedJavaVMs failed! (%d)\n", (int)res); return 0;
         }
         if (l<1) {
 	  /* fprintf(stderr, "JNI_GetCreatedJavaVMs said there's no JVM running!\n"); */ return 0;
@@ -119,7 +122,7 @@ static JNIEnv *getJNIEnv() {
     }
     res = (*jvm)->AttachCurrentThread(jvm, (void**) &env, 0);
     if (res!=0) {
-        fprintf(stderr, "AttachCurrentThread failed! (%d)\n", (int)res); return 0;
+	REprintf("AttachCurrentThread failed! (%d)\n", (int)res); return 0;
     }
     /* if (eenv!=env)
         fprintf(stderr, "Warning! eenv=%x, but env=%x - different environments encountered!\n", eenv, env); */
@@ -567,6 +570,29 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,  double ro
 	chkX(env);
 }
 
+static void newJavaGD_Raster(unsigned int *raster, int w, int h,
+			   double x, double y, double width, double height,
+			   double rot, Rboolean interpolate,
+			   R_GE_gcontext *gc, NewDevDesc *dd)
+{
+    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+    JNIEnv *env = getJNIEnv();
+    jmethodID mid;
+
+    if(!env || !xd || !xd->talk) return;
+    checkGC(env,xd, gc);
+    mid = (*env)->GetMethodID(env, xd->talkClass, "gdRaster", "([BIIDDDDDZ)V");
+    if (mid) {
+	jbyteArray img = (*env)->NewByteArray(env, w * h * 4);
+	(*env)->SetByteArrayRegion(env, img, 0, w * h * 4, (jbyte*) raster);
+        (*env)->CallVoidMethod(env, xd->talk, mid, img, w, h, x, y, width, height, rot, interpolate);
+	(*env)->DeleteLocalRef(env, img);
+    }
+    chkX(env);
+
+}
+
+
 /*-----------------------------------------------------------------------*/
 
 /** fill the R device structure with callback functions */
@@ -591,6 +617,9 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->hasTextUTF8 = TRUE;
     dd->strWidthUTF8 = newJavaGD_StrWidthUTF8;
     dd->textUTF8 = newJavaGD_TextUTF8;
+#if R_GE_version >= 6
+    dd->raster = newJavaGD_Raster;
+#endif
 #else
     dd->hold = newJavaGD_Hold;
 #endif

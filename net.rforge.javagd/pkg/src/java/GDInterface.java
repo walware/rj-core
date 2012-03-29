@@ -48,6 +48,7 @@ import java.lang.reflect.Method;
  public double[] gdSize();
  public double   gdStrWidth(String str);
  public void     gdText(double x, double y, String str, double rot, double hadj);
+ public void     gdRaster(byte img[], int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
  </pre>
  <p>
  <b>GDC - manipulation of the current graphics state</b>
@@ -196,6 +197,11 @@ public class GDInterface {
     public void     gdRect(double x0, double y0, double x1, double y1) {
         if (c==null) return;
         c.add(new GDRect(x0, y0, x1, y1));
+    }
+
+    public void     gdRaster(byte img[], int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate) {
+	if (c == null) return;
+	c.add(new GDRaster(img, img_w, img_h, x, y, w, h, rot, interpolate));
     }
 
     /** retrieve the current size of the device

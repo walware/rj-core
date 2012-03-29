@@ -1,6 +1,11 @@
  NEWS/Changelog for JavaGD
 ---------------------------
 
+0.5-5	2011-12-10
+    o	minor cleanups to get rid of warnings
+
+    o	add raster support
+
 0.5-4	2011-06-21
     o	copies WinRegistry.dll in the build directory so
 	it can be picked up by multi-arch installs.
