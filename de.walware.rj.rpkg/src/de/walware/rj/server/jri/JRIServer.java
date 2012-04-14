@@ -324,6 +324,10 @@ public final class JRIServer extends RJ
 		this.mainLoopClient0State = CLIENT_NONE;
 		
 		this.serverState = S_NOT_STARTED;
+		
+		this.platformDataValues.put("os.name", System.getProperty("os.name"));
+		this.platformDataValues.put("os.arch", System.getProperty("os.arch"));
+		this.platformDataValues.put("os.version", System.getProperty("os.version"));
 	}
 	
 	
