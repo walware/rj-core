@@ -12,8 +12,6 @@
 package de.walware.rj.data;
 
 
-
-
 public class RDataUtil {
 	
 	/**
@@ -569,6 +567,21 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
 		}
 		return data;
+	}
+	
+	
+	public static void checkColCountEqual(final RArray<?> array, final int count) throws UnexpectedRDataException {
+		if (array.getDim().getInt(1) != count) {
+			throw new UnexpectedRDataException("Unexpected R column count: " + array.getDim().getInt(1));
+		}
+	}
+	
+	public static int checkColName(final RArray<?> array, final String name) throws UnexpectedRDataException {
+		final int idx = array.getNames(1).indexOf(name);
+		if (idx < 0) {
+			throw new UnexpectedRDataException("Missing R data column: " + name);
+		}
+		return idx;
 	}
 	
 	
