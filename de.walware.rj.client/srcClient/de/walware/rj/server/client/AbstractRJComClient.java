@@ -1158,8 +1158,12 @@ public abstract class AbstractRJComClient implements ComHandler {
 						this.platformData = this.rjConsoleServer.getPlatformData();
 					}
 					this.platformObj = new RPlatform((String) this.platformData.get("os.type"),
-							(String) this.platformData.get("file.sep"), (String) this.platformData.get("path.sep"),
-							(String) this.platformData.get("version.string") );
+							(String) this.platformData.get("file.sep"),
+							(String) this.platformData.get("path.sep"),
+							(String) this.platformData.get("version.string"),
+							(String) this.platformData.get("os.name"),
+							(String) this.platformData.get("os.arch"),
+							(String) this.platformData.get("os.version") );
 				}
 				catch (final RemoteException e) {
 					log(new Status(IStatus.ERROR, RJ_CLIENT_ID,

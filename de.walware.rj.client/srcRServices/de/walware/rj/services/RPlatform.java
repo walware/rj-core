@@ -28,8 +28,14 @@ import org.osgi.framework.Version;
  */
 public final class RPlatform implements Externalizable {
 	
-	
+	/**
+	 * OS type constant for windows operation systems
+	 */
 	public static final String OS_WINDOWS = "windows";
+	
+	/**
+	 * OS type constant for unix operation systems
+	 */
 	public static final String OS_UNIX = "unix";
 	
 	
@@ -41,15 +47,25 @@ public final class RPlatform implements Externalizable {
 	private String versionString;
 	private transient Version version;
 	
+	private String osName;
+	private String osArch;
+	private String osVersion;
+	
 	
 	public RPlatform() {
 	}
 	
-	public RPlatform(final String osType, final String fileSep, final String pathSep, final String version) {
+	public RPlatform(final String osType, final String fileSep, final String pathSep,
+			final String version,
+			final String osName, final String osArch, final String osVersion) {
 		this.osType = osType;
 		this.fileSep = fileSep;
 		this.pathSep = pathSep;
 		this.versionString = version;
+		
+		this.osName = osName;
+		this.osArch = osArch;
+		this.osVersion = osVersion;
 	}
 	
 	
@@ -58,6 +74,10 @@ public final class RPlatform implements Externalizable {
 		this.fileSep = in.readUTF();
 		this.pathSep = in.readUTF();
 		this.versionString = in.readUTF();
+		
+		this.osName = in.readUTF();
+		this.osArch = in.readUTF();
+		this.osVersion = in.readUTF();
 	}
 	
 	public void writeExternal(final ObjectOutput out) throws IOException {
@@ -65,9 +85,21 @@ public final class RPlatform implements Externalizable {
 		out.writeUTF(this.fileSep);
 		out.writeUTF(this.pathSep);
 		out.writeUTF(this.versionString);
+		
+		out.writeUTF(this.osName);
+		out.writeUTF(this.osArch);
+		out.writeUTF(this.osVersion);
 	}
 	
 	
+	/**
+	 * The OS type as defined in R <code>.Platform$OS.type</code>
+	 * 
+	 * @see #OS_WINDOWS
+	 * @see #OS_UNIX
+	 * 
+	 * @return the os type constant
+	 */
 	public String getOsType() {
 		return this.osType;
 	}
@@ -85,6 +117,34 @@ public final class RPlatform implements Externalizable {
 			this.version = new Version(this.versionString);
 		}
 		return this.version;
+	}
+	
+	
+	/**
+	 * The OS name as defined by the Java property <code>os.name</code>
+	 * 
+	 * @return the OS name string
+	 */
+	public String getOSName() {
+		return this.osName;
+	}
+	
+	/**
+	 * The OS architecture as defined by the Java property <code>os.arch</code>
+	 * 
+	 * @return the OS architecture string
+	 */
+	public String getOSArch() {
+		return this.osArch;
+	}
+	
+	/**
+	 * The OS version as defined by the Java property <code>os.version</code>
+	 * 
+	 * @return the OS version string
+	 */
+	public String getOSVersion() {
+		return this.osVersion;
 	}
 	
 }
