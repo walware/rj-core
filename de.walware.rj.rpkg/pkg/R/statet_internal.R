@@ -339,3 +339,73 @@
 	.injectSrcfile("srcfilecopy", baseEnv)
 	return (invisible())
 }
+
+
+.renv.checkLibs <- function() {
+	libs <- .libPaths()
+	result <- file.info(libs)$mtime
+	names(result) <- libs
+	
+	result
+}
+
+.renv.getAvailPkgs <- function(repo) {
+	fields= c('Package', 'Version', 'Priority', 'License',
+			'Depends', 'Imports', 'LinkingTo', 'Suggests', 'Enhances')
+	result <- available.packages(contriburl= contrib.url(repo), fields= fields,
+			filter= c('R_version', 'OS_type', 'subarch') )
+	result[, fields]
+}
+
+.renv.getInstPkgs <- function(lib) {
+	names <- list.files(lib)
+	fields <- c('Package', 'Version', 'Title', 'Built')
+	result <- matrix(NA_character_, nrow= length(names), ncol= length(fields))
+	descrFields <- 
+	num <- 0L
+	for (name in names) {
+		pkgpath <- file.path(lib, name)
+		if (file.access(pkgpath, 5L)) {
+			next
+		}
+		if (file.exists(file <- file.path(pkgpath, 'Meta', 'package.rds'))) {
+			md <- try(readRDS(file))
+			if (inherits(md, 'try-error')) {
+				next
+			}
+			desc <- md$DESCRIPTION[fields]
+			if (!length(desc)) {
+				next
+			}
+			desc[1L] <- name
+			result[num <- num + 1, ] <- desc
+		}
+	}
+	result[seq.int(from= 1L, length.out= num),]
+}
+
+.renv.getInstPkgDetail <- function(lib, name) {
+	fields <- c('Priority', 'License',
+			'Depends', 'Imports', 'LinkingTo', 'Suggests', 'Enhances' )
+	file <- file.path(lib, name, 'Meta', 'package.rds')
+	md <- readRDS(file)
+	md$DESCRIPTION[fields]
+}
+
+.renv.isValidLibLoc <- function(path) {
+	# path <- normalizePath(path)
+	current <- path
+	repeat {
+		if (file.access(current, 0L) == 0L) { # exists
+			result <-  file.access(current, 3L) # writable
+			names(result) <- path
+			return (result)
+		}
+		parent <- dirname(current)
+		if (nchar(parent) <= 1L || parent == current) {
+			return (-1L)
+		}
+		current <- parent
+	}
+}
+
