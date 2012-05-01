@@ -17,21 +17,25 @@
 .rj.originals <- new.env()
 
 .patchPackage <- function(name, value, envir) {
-	unlockBinding(name, envir)
-	on.exit(lockBinding(name, envir))
-	assign(name, value, envir)
-	envName <- environmentName(envir)
-	if (envName == "base") {
-		ns <- "base"
+	if (exists(name, envir)) {
+		unlockBinding(name, envir)
+		on.exit(lockBinding(name, envir), add= TRUE)
+		assign(name, value, envir)
 	}
-	else if (!is.null(envName) && substring(envName, 1L, 8L) == "package:") {
-		ns <- asNamespace(substring(envName, 9L))
-	}
-	else {
-		ns <- NULL
-	}
-	if (!is.null(ns)) {
-		assignInNamespace(name, value, ns= ns)
+	if (getRversion() < "2.15.0") {
+		envName <- environmentName(envir)
+		if (envName == "base") {
+			ns <- "base"
+		}
+		else if (!is.null(envName) && substring(envName, 1L, 8L) == "package:") {
+			ns <- asNamespace(substring(envName, 9L))
+		}
+		else {
+			ns <- NULL
+		}
+		if (!is.null(ns)) {
+			assignInNamespace(name, value, ns= ns)
+		}
 	}
 	return (invisible(TRUE))
 }
@@ -64,5 +68,14 @@
 .rj.errorHandler <- function(e) {
 	if (.rj.tmp$Debug) {
 		print(e)
+	}
+}
+
+resolveVisible <- function(result) {
+	if (result$visible) {
+		return (result$value)
+	}
+	else {
+		return (invisible(result$value))
 	}
 }

@@ -139,44 +139,52 @@
 #' 
 #' @seealso help
 #' @export
-statet.help <- function(..., help_type = "html",
-		live = FALSE) {
-	this.call <- match.call()
-	if (help_type != "html") {
-		helpObj <- .rj.originals$help(..., help_type= help_type)
-		attr(helpObj, "call") <- this.call
-		return (helpObj)
-	}
-	if (getRversion() < "2.10.0") {
-		helpObj <- .rj.originals$help(..., chmhelp= FALSE, htmlhelp= TRUE)
-		attr(helpObj, "call") <- this.call
-		help.statet <- helpObj
+statet.help <- function(topic, package= NULL, lib.loc= NULL,
+		verbose= getOption("verbose"),
+		try.all.packages= getOption("help.try.all.packages"), ...,
+		live= FALSE ) {
+	nextCall <- match.call(expand.dots= TRUE)
+	callName <- nextCall[[1]]
+	
+	if (is.null(nextCall$topic) && !is.null(nextCall$package)) {
+		packageInfo <- list(name= nextCall$package)
+		class(packageInfo) <- "packageInfo"
+		
+		result <- list(value= packageInfo, visible= TRUE)
 	}
 	else {
-		helpObj <- .rj.originals$help(..., help_type= "html")
-		attr(helpObj, "call") <- this.call
-		if (length(helpObj) == 0) {
-			return (helpObj) #visible
+		nextCall[[1]] <- substitute(utils::help)
+		nextCall$live <- NULL
+		nextCall$help_type <- "html"
+		
+		result <- withVisible(eval(nextCall, envir= parent.frame()))
+		
+		result.call <- attr(result$value, "call")
+		if (!is.null(result.call)) {
+			result.call[[1]] <- callName
+			attr(result$value, "call") <- result.call
 		}
-		if (live) {
-			help.statet <- .getLiveHelp(helpObj)
-			if (!is.null(help.statet)) {
-				help.statet <- paste(help.statet, collapse= "\n")
-				help.statet <- paste("html:///", help.statet, sep= "")
-			}
+		
+	}
+	
+	if (live) {
+		help.statet <- .getLiveHelp(result$value)
+		if (!is.null(help.statet)) {
+			help.statet <- paste(help.statet, collapse= "\n")
+			help.statet <- paste("html:///", help.statet, sep= "")
 		}
-		else if (inherits(helpObj, "help_files_with_topic")
-				&& this.call[[1]] != "statet.help") {
-			return (helpObj) # visible
-		}
-		else {
-			help.statet <- .getRHelpUrl(helpObj)
-		}
+	}
+	else if (is.null(.rj.tmp$help)
+			|| inherits(result$value, "packageInfo") ) {
+		help.statet <- .getRHelpUrl(result$value)
+	}
+	else {
+		return (resolveVisible(result))
 	}
 	if (is.character(help.statet) && !is.na(help.statet)) {
 		.showHelp(help.statet)
 	}
-	return (invisible(helpObj))
+	return (invisible())
 }
 
 #' Shows the R help start page in StatET. This is a console command for R help in StatET
@@ -192,11 +200,50 @@ statet.help.start <- function(...) {
 	return (invisible())
 }
 
-statet.print.help <- function(x, ...) {
+
+help.start.body <- function() {
+	nextCall <- sys.call()
+	if (is.null(rj:::.rj.tmp$help)) {
+		nextCall[[1]] <- substitute(utils::help.start)
+	}
+	else {
+		nextCall[[1]] <- substitute(rj:::statet.help.start)
+	}
+	
+	result <- withVisible(eval(nextCall, envir= parent.frame()))
+	
+	return (rj:::resolveVisible(result))
+}
+
+help.body <- function() {
+	nextCall <- sys.call()
+	callName <- nextCall[[1]]
+	if (is.null(rj:::.rj.tmp$help)
+			|| (!missing(help_type) && help_type != "html") ) {
+		nextCall[[1]] <- substitute(utils::help)
+	}
+	else {
+		nextCall[[1]] <- substitute(rj:::statet.help)
+	}
+	
+	result <- withVisible(eval(nextCall, envir= parent.frame()))
+	
+	result.call <- attr(result$value, "call")
+	if (!is.null(result.call)) {
+		result.call[[1]] <- callName
+		attr(result$value, "call") <- result.call
+	}
+	
+	return (rj:::resolveVisible(result))
+}
+
+print.help_files_with_topic <- statet.print.help <- function(x, ...) {
 	type <- attr(x, "type")
 	if (length(x) == 0
-			|| (!is.null(type) && type != "html") ) {
-		return (.rj.originals$print.help_files_with_topic(x, ...))
+			|| (!is.null(type) && type != "html")
+			|| is.null(.rj.tmp$help) ) {
+		# NextMethod ?
+		return (utils:::print.help_files_with_topic(x, ...))
 	}
 	help.statet <- .getRHelpUrl(x)
 	if (is.character(help.statet)
@@ -210,9 +257,13 @@ statet.print.help <- function(x, ...) {
 #' 
 #' @export
 .statet.reassignHelp <- function() {
-	utilsEnv <- as.environment("package:utils")
+	assign("help", value= "statet", envir= .rj.tmp)
 	
-	.patchPackage("help", statet.help, envir= utilsEnv)
-	assignInNamespace("print.help_files_with_topic", statet.print.help, envir= utilsEnv)
-	.patchPackage("help.start", statet.help.start, envir= utilsEnv)
+	utilsEnv <- as.environment("package:utils")
+	f <- utilsEnv$help
+	body(f) <- body(help.body)
+	.patchPackage("help", f, envir= utilsEnv)
+	f <- utilsEnv$help.start
+	body(f) <- body(help.start.body)
+	.patchPackage("help.start", f, envir= utilsEnv)
 }
