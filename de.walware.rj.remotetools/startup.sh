@@ -354,7 +354,7 @@ export LC_ALL
 
 cd "$WD"
 
-START_ARGS="$JAVA_HOME/bin/java -cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start $S_ADDRESS $OPTS"
+START_ARGS="-cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start $S_ADDRESS $OPTS"
 #echo $JAVA_EXE $START_ARGS
 
 if [ $DEBUG ]
@@ -388,7 +388,7 @@ else
 	fi
 	
 	# Start server detached
-	nohup $START_EXE $START_ARGS > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
+	nohup $JAVA_EXE $START_ARGS > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
 	START_EXIT=$?
 	START_PID=$!
 	if [ $START_EXIT -eq 0 ]
