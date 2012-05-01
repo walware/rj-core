@@ -814,13 +814,14 @@ final class JRIServerDbg {
 				switch (frame0.getFlags() & 0xff) {
 				case (CallStack.FLAG_COMMAND | 0):
 				case (CallStack.FLAG_SOURCE | 0):
-					continue;
 				case (CallStack.FLAG_COMMAND | 1):
 				case (CallStack.FLAG_SOURCE | 1):
 					i -= 1;
 					continue;
 				case (CallStack.FLAG_COMMAND | 2):
 				case (CallStack.FLAG_SOURCE | 2):
+				case (CallStack.FLAG_COMMAND | 3):
+				case (CallStack.FLAG_SOURCE | 3):
 					i -= 1;
 					break;
 				default:

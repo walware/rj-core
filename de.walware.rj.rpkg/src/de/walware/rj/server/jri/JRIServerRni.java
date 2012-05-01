@@ -282,8 +282,6 @@ final class JRIServerRni {
 				
 				final long deparseControlValueP = protect(this.rEngine.rniPutStringArray(
 						new String[] { "keepInteger", "keepNA" } ));
-				final long deparseWidthcutoffValueP = protect(this.rEngine.rniPutIntArray(
-						new int[] { 500 } ));
 				final long collapseValueP = protect(this.rEngine.rniPutString(""));
 				
 				{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
@@ -330,7 +328,7 @@ final class JRIServerRni {
 							deparseFunP, this.rEngine.rniCons(
 									this.p_xSymbol, this.rEngine.rniCons(
 											deparseControlValueP, this.rEngine.rniCons(
-													deparseWidthcutoffValueP, this.p_NULL,
+													this.rEngine.rniPutIntArray(new int[] { 500 }), this.p_NULL,
 													widthcutoffSymbolP, false ),
 											controlSymbolP, false ),
 									this.p_exprSymbol, false ),
