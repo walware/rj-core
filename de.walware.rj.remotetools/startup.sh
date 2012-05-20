@@ -308,7 +308,7 @@ then
 fi
 
 ## Java config
-$JAVA_EXE="$JAVA_HOME/bin/java"
+JAVA_EXE="$JAVA_HOME/bin/java"
 if [ $DEV ]
 then
 	JAVA_CP="$RJS_HOME/../de.walware.rj.server/bin$PATH_SEP$RJS_HOME/../de.walware.rj.data/bin$PATH_SEP$RJS_HOME/bin$PATH_SEP$RJS_HOME/binShaj"
