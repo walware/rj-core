@@ -16,13 +16,13 @@
 
 .rj.originals <- new.env()
 
-.patchPackage <- function(name, value, envir) {
+.patchPackage <- function(name, value, envir, ns = TRUE) {
 	if (exists(name, envir)) {
 		unlockBinding(name, envir)
 		on.exit(lockBinding(name, envir), add= TRUE)
 		assign(name, value, envir)
 	}
-	if (getRversion() < "2.15.0") {
+	if (ns && getRversion() < "2.15.0") {
 		envName <- environmentName(envir)
 		if (envName == "base") {
 			ns <- "base"

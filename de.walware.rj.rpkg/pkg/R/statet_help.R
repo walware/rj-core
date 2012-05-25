@@ -259,11 +259,13 @@ print.help_files_with_topic <- statet.print.help <- function(x, ...) {
 .statet.reassignHelp <- function() {
 	assign("help", value= "statet", envir= .rj.tmp)
 	
+	options(help_type = "html")
+	
 	utilsEnv <- as.environment("package:utils")
 	f <- utilsEnv$help
 	body(f) <- body(help.body)
-	.patchPackage("help", f, envir= utilsEnv)
+	.patchPackage("help", f, envir= utilsEnv, ns= FALSE)
 	f <- utilsEnv$help.start
 	body(f) <- body(help.start.body)
-	.patchPackage("help.start", f, envir= utilsEnv)
+	.patchPackage("help.start", f, envir= utilsEnv, ns= FALSE)
 }
