@@ -4,12 +4,22 @@
 #' @param filename name of file to open
 #' 
 #' @export
-statet.openInEditor <- function(filename) {
+openInEditor <- function(filename) {
 	if (missing(filename) || !is.character(filename) || length(filename) != 1) {
 		stop("Illegal argument: filename")
 	}
 	.rj_ui.execCommand("common/showFile", list(
 					filename= filename ), wait= TRUE)
+	return (invisible())
+}
+
+statet.openInEditor <- openInEditor
+
+#' Opens the package manager in StatET
+#' 
+#' @export
+openPackageManager <- function() {
+	.rj_ui.execCommand("r/openPackageManager", wait= FALSE)
 	return (invisible())
 }
 
