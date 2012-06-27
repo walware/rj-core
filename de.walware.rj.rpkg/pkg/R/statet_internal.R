@@ -354,7 +354,7 @@
 			'Depends', 'Imports', 'LinkingTo', 'Suggests', 'Enhances')
 	result <- available.packages(contriburl= contrib.url(repo), fields= fields,
 			filter= c('R_version', 'OS_type', 'subarch') )
-	result[, fields]
+	result[, fields, drop= FALSE]
 }
 
 .renv.getInstPkgs <- function(lib) {
@@ -381,7 +381,7 @@
 			result[num <- num + 1, ] <- desc
 		}
 	}
-	result[seq.int(from= 1L, length.out= num),]
+	result[seq.int(from= 1L, length.out= num), , drop= FALSE]
 }
 
 .renv.getInstPkgDetail <- function(lib, name) {
