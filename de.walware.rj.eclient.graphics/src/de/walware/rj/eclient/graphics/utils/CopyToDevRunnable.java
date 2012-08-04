@@ -14,11 +14,10 @@ package de.walware.rj.eclient.graphics.utils;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import de.walware.rj.services.RService;
-
 import de.walware.ecommons.ts.ITool;
 
 import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.IRToolService;
 import de.walware.rj.eclient.graphics.IERGraphic;
 
 
@@ -51,7 +50,7 @@ public class CopyToDevRunnable extends AbstractRServiceRunnable {
 	}
 	
 	@Override
-	public void run(final RService r,
+	public void run(final IRToolService r,
 			final IProgressMonitor monitor) throws CoreException {
 		fGraphic.copy(fToDev, fToDevFile, fToDevArgs, monitor);
 	}

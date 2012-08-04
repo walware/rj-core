@@ -10,6 +10,12 @@ import de.walware.ecommons.ts.IToolRunnable;
 import de.walware.ecommons.ts.IToolService;
 
 
+/**
+ * Abstract runnable for R tool.
+ * 
+ * Sub class should implement at least the method {@link #run(IRToolService, IProgressMonitor)},
+ * which is called by the R tool and gives access to the {@link IRToolService} API.
+ */
 public abstract class AbstractRServiceRunnable implements IToolRunnable {
 	
 	
@@ -41,10 +47,22 @@ public abstract class AbstractRServiceRunnable implements IToolRunnable {
 	
 	public void run(final IToolService service,
 			final IProgressMonitor monitor) throws CoreException {
-		run((RService) service, monitor);
+		run((IRToolService) service, monitor);
 	}
 	
-	protected abstract void run(RService r,
-			IProgressMonitor monitor) throws CoreException;
+	/**
+	 * 
+	 * 
+	 * @since 1.2
+	 */
+	protected void run(final IRToolService r,
+			IProgressMonitor monitor) throws CoreException {
+		run((RService) r, monitor);
+	}
+	
+	@Deprecated
+	protected void run(RService r,
+			IProgressMonitor monitor) throws CoreException {
+	}
 	
 }

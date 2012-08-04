@@ -45,8 +45,6 @@ import org.eclipse.ui.services.IServiceLocator;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.eclipse.ui.views.IViewDescriptor;
 
-import de.walware.rj.services.RService;
-
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.SharedUIResources;
 import de.walware.ecommons.ui.actions.HandlerCollection;
@@ -57,6 +55,7 @@ import de.walware.ecommons.ui.mpbv.ManagedPageBookView;
 import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.IRToolService;
 
 
 /**
@@ -168,7 +167,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 						"r/rj/gd/new", "New R Graphic") { //$NON-NLS-1$
 						
 						@Override
-						public void run(final RService r,
+						public void run(final IRToolService r,
 								final IProgressMonitor monitor) throws CoreException {
 							r.evalVoid("rj.gd::rj.GD()", monitor);
 						}

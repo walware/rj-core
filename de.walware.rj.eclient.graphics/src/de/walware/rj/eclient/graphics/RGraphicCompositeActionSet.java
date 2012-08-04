@@ -35,8 +35,6 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.menus.CommandContributionItemParameter;
 import org.eclipse.ui.services.IServiceLocator;
 
-import de.walware.rj.services.RService;
-
 import de.walware.ecommons.FastList;
 import de.walware.ecommons.ts.ISystemRunnable;
 import de.walware.ecommons.ts.ITool;
@@ -45,6 +43,7 @@ import de.walware.ecommons.ui.actions.HandlerCollection;
 import de.walware.ecommons.ui.actions.HandlerContributionItem;
 
 import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.IRToolService;
 import de.walware.rj.eclient.graphics.utils.AbstractLocalLocator;
 import de.walware.rj.eclient.internal.graphics.RGraphicsPlugin;
 
@@ -193,7 +192,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 		}
 		
 		@Override
-		protected void run(final RService service,
+		protected void run(final IRToolService service,
 				final IProgressMonitor monitor) throws CoreException {
 			double[] source = null;
 			double[] target = null;

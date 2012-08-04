@@ -18,13 +18,13 @@ import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.server.client.AbstractRJComClient;
 import de.walware.rj.server.client.AbstractRJComClientGraphicActions;
-import de.walware.rj.services.RService;
 
 import de.walware.ecommons.collections.IntArrayMap;
 import de.walware.ecommons.ts.ISystemRunnable;
 import de.walware.ecommons.ts.ITool;
 
 import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.IRToolService;
 
 
 public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
@@ -71,7 +71,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 		}
 		
 		@Override
-		public void run(final RService r,
+		public void run(final IRToolService r,
 				final IProgressMonitor monitor) throws CoreException {
 			synchronized (fCloseTasks) {
 				fResizeTasks.put(fDevId, Boolean.FALSE);
@@ -112,7 +112,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 		}
 		
 		@Override
-		public void run(final RService r,
+		public void run(final IRToolService r,
 				final IProgressMonitor monitor) throws CoreException {
 			doCloseGraphic(fDevId, monitor);
 		}
