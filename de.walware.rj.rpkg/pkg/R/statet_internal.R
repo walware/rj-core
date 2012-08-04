@@ -62,6 +62,7 @@
 #' @export
 .statet.captureStr <- function(x, limit = 2000L) {
 	savedOptions <- options(width = 10000L)
+	on.exit(options(savedOptions))
 	levels <- .estimateStrDepth(x, max.elements = limit)
 	if (!is.na(levels) && levels <= 1L && getRversion() >= "2.11.0") {
 		output <- capture.output(str(x, max.level = 1L, list.len = limit - 1L))
@@ -69,7 +70,6 @@
 	else {
 		output <- capture.output(str(x, max.level = levels))
 	}
-	options(savedOptions)
 	return (output)
 }
 
