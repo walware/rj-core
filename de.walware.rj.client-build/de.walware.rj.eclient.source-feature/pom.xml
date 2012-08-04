@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.walware.rj</groupId>
 		<artifactId>rj-client</artifactId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.2-SNAPSHOT</version>
 	</parent>
 	
 	<groupId>de.walware.rj-packaging</groupId>
 	<artifactId>de.walware.rj.eclient.source</artifactId>
-	<version>1.1.0-SNAPSHOT</version>
+	<version>1.2.0-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 	<name>Eclipse Feature: RJ Library - Sources of E-Client</name>
 	
