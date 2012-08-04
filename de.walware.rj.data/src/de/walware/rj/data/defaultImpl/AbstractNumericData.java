@@ -29,6 +29,16 @@ public abstract class AbstractNumericData extends AbstractRData
 	}
 	
 	@Override
+	public boolean getLogi(final int idx) {
+		return getNum(idx) != 0.0;
+	}
+	
+	@Override
+	public void setLogi(final int idx, final boolean logi) {
+		setNum(idx, (logi) ? 1.0 : 0.0);
+	}
+	
+	@Override
 	public final int getInt(final int idx) {
 		return (int) getNum(idx);
 	}

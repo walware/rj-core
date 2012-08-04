@@ -406,7 +406,7 @@ public abstract class AbstractRData implements RStore {
 			fromIdx = 0;
 		}
 		while (fromIdx < this.length) {
-			if (!isNA(fromIdx) && value.equals(this.getChar(fromIdx))) {
+			if (!isNA(fromIdx) && value.equals(getChar(fromIdx))) {
 				return fromIdx;
 			}
 			fromIdx++;
@@ -430,7 +430,7 @@ public abstract class AbstractRData implements RStore {
 			fromIdx = 0;
 		}
 		while (fromIdx < this.length) {
-			if (!isNA(fromIdx) && value == this.getInt(fromIdx)) {
+			if (!isNA(fromIdx) && value == getInt(fromIdx)) {
 				return fromIdx;
 			}
 			fromIdx++;

@@ -29,6 +29,16 @@ public abstract class AbstractIntegerData extends AbstractRData
 	}
 	
 	@Override
+	public final boolean getLogi(final int idx) {
+		return (getInt(idx) != 0);
+	}
+	
+	@Override
+	public final void setLogi(final int idx, final boolean logi) {
+		setInt(idx, logi ? 1 : 0);
+	}
+	
+	@Override
 	public final double getNum(final int idx) {
 		return getInt(idx);
 	}
@@ -41,16 +51,6 @@ public abstract class AbstractIntegerData extends AbstractRData
 	@Override
 	public final String getChar(final int idx) {
 		return Integer.toString(getInt(idx));
-	}
-	
-	@Override
-	public final boolean getLogi(final int idx) {
-		return (getInt(idx) != 0);
-	}
-	
-	@Override
-	public final void setLogi(final int idx, final boolean logi) {
-		setInt(idx, logi ? 1 : 0);
 	}
 	
 	public Integer[] toArray() {

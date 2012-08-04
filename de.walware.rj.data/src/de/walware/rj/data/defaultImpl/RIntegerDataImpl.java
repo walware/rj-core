@@ -159,7 +159,7 @@ public class RIntegerDataImpl extends AbstractIntegerData
 			throw new IndexOutOfBoundsException();
 		}
 		return (this.intValues[idx] != NA_integer_INT) ?
-			Integer.valueOf(this.intValues[idx]) : null;
+				Integer.valueOf(this.intValues[idx]) : null;
 	}
 	
 	@Override
