@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.6"?>
+<?pde version="3.8"?>
 
 <target name="all">
 	<locations>
 		<location includeAllPlatforms="false" includeMode="slicer" includeSource="false"
 				type="InstallableUnit">
-			<repository location="http://download.eclipse.org/releases/helios"/>
-			<unit id="org.eclipse.rcp.feature.group"
-					version="3.6.2.r362_v20101104-9SAxFMKFkSAqi8axkv1ZjegmiBLY"/>
+			<repository location="http://download.eclipse.org/eclipse/updates/3.8"/>
+			<unit id="org.eclipse.platform.feature.group"
+					version="3.8.0.v20120607-071945-9gF7jI7nG5qByXMVdkhRMWBQlF4PnDCLybDCPQ"/>
 		</location>
 	</locations>
 </target>
