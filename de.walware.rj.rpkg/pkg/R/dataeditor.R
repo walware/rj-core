@@ -45,3 +45,48 @@
 	}
 }
 
+.getDataLevelValues <- function(x, max = 1000) {
+	if (is.factor(x)) {
+		values <- levels(x)
+		if (any(is.na(x))) {
+			values <- c(values, NA)
+		}
+	}
+	else {
+		values <- sort(unique(x), na.last= TRUE)
+	}
+	if (length(values) > max) {
+		return (NULL)
+	}
+	return (values)
+}
+
+.getDataIntervalValues <- function(x) {
+	values <- c(min(x, na.rm= TRUE), max(x, na.rm= TRUE), if (any(is.na(x))) 1L else 0L)
+	return (values)
+}
+
+.searchDataTextValues <- function(x, type, pattern, max = 1000) {
+	if (type == 0L) { # Eclipse
+		values <- grep(pattern, x, ignore.case= TRUE, value= TRUE)
+	}
+	else if (type == 1L) {
+		values <- grep(pattern, x, ignore.case= FALSE, value= TRUE)
+	}
+	else if (type == 2L) {
+		values <- match(pattern, x)
+		if (!is.na(values)) {
+			values <- pattern
+		}
+		else {
+			values <- character(0)
+		}
+	}
+	else {
+		stop("Illegal argument: type")
+	}
+	if (length(values) > max) {
+		return (NULL)
+	}
+	return (values)
+}

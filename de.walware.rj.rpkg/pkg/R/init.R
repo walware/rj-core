@@ -50,16 +50,74 @@
 #' @param envir optional environment, default is \code{.rj.tmp}
 #' @return the id
 #' @returnType char
-.rj.nextId <- function(prefix, envir = .rj.tmp) {
+tmp.createId <- function(prefix, envir = .rj.tmp) {
 	i <- 1L; 
 	repeat {
-		name <- paste(prefix, i, sep = ""); 
+		name <- paste(prefix, i, sep= "")
 		if (!exists(name, envir = envir, inherits = FALSE)) {
-			assign(name, NULL, envir = envir); 
+			assign(name, NULL, envir= envir)
 			return(name); 
 		}
 		i <- i + 1L; 
 	}
+}
+
+.rj.nextId <- tmp.createId
+
+tmp.set <- function(name, value, envir = .rj.tmp) {
+	assign(name, value, envir= envir)
+	return (invisible())
+}
+
+tmp.remove <- function(name, envir = .rj.tmp) {
+	if (exists(name, envir= envir, inherits= FALSE)) {
+		rm(list= name, envir= envir, inherits= FALSE)
+	}
+	return (invisible())
+}
+
+tmp.setReverseIndex <- function(name, index, len = NA, envir = .rj.tmp) {
+	index = get(index, envir= envir, inherits= FALSE)
+	if (is.na(len)) {
+		len <- length(index)
+	}
+	index.r <- rep.int(NA_integer_, len)
+	index.r[index] <- 1L:length(index)
+	assign(name, index.r, envir= envir)
+	return (invisible())
+}
+
+tmp.setWhichIndex <- function(name, filter, envir = .rj.tmp) {
+	filter <- get(filter, envir= envir, inherits= FALSE)
+	filter <- which(filter)
+	assign(name, filter, envir= envir)
+	return (invisible())
+}
+
+tmp.setFilteredIndex <- function(name, filter, index, envir = .rj.tmp) {
+	filter <- get(filter, envir= envir, inherits= FALSE)
+	index <- get(index, envir= envir, inherits= FALSE)
+	if (length(dim(index)) > 1L) {
+		idx <- index[,1L]
+		index <- index[filter[idx],]
+	}
+	else {
+		index <- index[filter[index]]
+	}
+	assign(name, index, envir= envir)
+	return (invisible())
+}
+
+tmp.getFilteredCount <- function(index, filter, envir = .rj.tmp) {
+	filter <- get(filter, envir= envir, inherits= FALSE)
+	if (missing(index)) {
+		return (sum(filter))
+	}
+	index <- get(index, envir= envir, inherits= FALSE)
+	if (length(dim(index)) > 1L) {
+		index <- index[,1L]
+	}
+	return (sum(filter[index]))
 }
 
 
