@@ -41,6 +41,7 @@ import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RReference;
 import de.walware.rj.data.RS4Object;
 import de.walware.rj.data.RStore;
+import de.walware.rj.data.RVector;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
@@ -608,9 +609,13 @@ final class JRIServerRni {
 		case RObject.TYPE_NULL:
 		case RObject.TYPE_MISSING:
 			return this.p_NULL;
-		case RObject.TYPE_VECTOR:
+		case RObject.TYPE_VECTOR: {
 			objP = assignDataStore(obj.getData());
-			return objP;
+			names = ((RVector<?>) obj).getNames();
+			if (names != null) {
+				this.rEngine.rniSetAttr(objP, "names", assignDataStore(names));
+			}
+			return objP; }
 		case RObject.TYPE_ARRAY:
 			objP = assignDataStore(obj.getData());
 			this.rEngine.rniSetAttr(objP, "dim",
