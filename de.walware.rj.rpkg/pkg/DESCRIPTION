@@ -10,6 +10,6 @@ SystemRequirements: java
 Description: Server implementation and R functions for the high-level Java-R library RJ.  The
   package also includes callback functions for StatET.  It is shipped with an adapted version of
   the JRI library.
-  The package can be use only when R was loaded via RJ.
+  The package can be used only when R was loaded via RJ.
 License: LGPL (>= 2.1)
 URL: http://www.walware.de/goto/opensource
