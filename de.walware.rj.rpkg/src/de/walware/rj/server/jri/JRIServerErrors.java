@@ -32,6 +32,9 @@ public final class JRIServerErrors {
 	public static final int CODE_DBG_DEBUG =                0x3120;
 	public static final int CODE_DBG_TRACE =                0x3130;
 	
+	public static final int CODE_SRV_COMMON =               0x4000;
+	public static final int CODE_SRV_EVAL_DATA =            0x4110;
+	
 	
 	public static final Logger LOGGER = Logger.getLogger("de.walware.rj.server.jri");
 	

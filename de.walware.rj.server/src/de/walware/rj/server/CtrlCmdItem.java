@@ -64,7 +64,6 @@ public final class CtrlCmdItem implements RjsComObject, RJIOExternalizable, Exte
 	}
 	
 	
-	
 	public int getComType() {
 		return RjsComObject.T_CTRL;
 	}

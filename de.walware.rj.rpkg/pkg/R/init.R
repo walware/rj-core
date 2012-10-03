@@ -120,11 +120,17 @@ tmp.getFilteredCount <- function(index, filter, envir = .rj.tmp) {
 	return (sum(filter[index]))
 }
 
+tmp.clear <- function(envir = .rj.tmp) {
+	toRemove <- ls(envir= envir)
+	toRemove <- toRemove[toRemove != "help"] # TODO Remove in RJ-1.2
+	rm(list= toRemove, envir= envir)
+}
 
-.rj.tmp$Debug <- FALSE
+
+.rj.tmp$.Debug <- FALSE
 
 .rj.errorHandler <- function(e) {
-	if (.rj.tmp$Debug) {
+	if (.rj.tmp$.Debug) {
 		print(e)
 	}
 }

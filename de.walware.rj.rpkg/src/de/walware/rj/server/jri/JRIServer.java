@@ -27,6 +27,8 @@ import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_EVAL_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_RESOLVE_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DBG_COMMON;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_SRV_COMMON;
+import static de.walware.rj.server.jri.JRIServerErrors.CODE_SRV_EVAL_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.LOGGER;
 import static de.walware.rj.server.jri.JRIServerRni.EVAL_MODE_DEFAULT;
 
@@ -969,6 +971,20 @@ public final class JRIServer extends RJ
 		return new RjsStatus(RjsStatus.WARNING, S_STOPPED);
 	}
 	
+	private void doAppend(final MainCmdItem first) {
+		this.rni.rniInterrupted = false; // TODO remove, call always checkInterrupted before operations
+		if (this.mainLoopC2SCommandFirst == null) {
+			this.mainLoopC2SCommandFirst = first;
+		}
+		else {
+			MainCmdItem cmd = this.mainLoopC2SCommandFirst;
+			while (cmd.next != null) {
+				cmd = cmd.next;
+			}
+			cmd.next = first;
+		}
+	}
+	
 	private RjsComObject internalMainCallbackFromClient(final byte slot, final MainCmdC2SList mainC2SCmdList) {
 //		System.out.println("fromClient 1: " + mainC2SCmdList);
 //		System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
@@ -1003,17 +1019,7 @@ public final class JRIServer extends RJ
 			}
 		}
 		if (mainC2SCmdList != null) {
-			this.rni.rniInterrupted = false;
-			if (this.mainLoopC2SCommandFirst == null) {
-				this.mainLoopC2SCommandFirst = mainC2SCmdList.getItems();
-			}
-			else {
-				MainCmdItem cmd = this.mainLoopC2SCommandFirst;
-				while (cmd.next != null) {
-					cmd = cmd.next;
-				}
-				cmd.next = mainC2SCmdList.getItems();
-			}
+			doAppend(mainC2SCmdList.getItems());
 		}
 		
 //			System.out.println("fromClient 2: " + mainC2SCmdList);
@@ -1217,6 +1223,9 @@ public final class JRIServer extends RJ
 			case MainCmdItem.T_DBG_ITEM:
 				item = internalEvalDbg((DbgCmdItem) item);
 				continue;
+			case SrvCmdItem.T_SRV_ITEM:
+				item = internalExecSrv(item);
+				continue;
 				
 			default:
 				continue;
@@ -1252,7 +1261,6 @@ public final class JRIServer extends RJ
 			return 0;
 		}
 		try {
-			// TODO disable
 			this.safeMode = true;
 			this.dbgSupport.beginSafeMode();
 			return 1;
@@ -1397,28 +1405,10 @@ public final class JRIServer extends RJ
 			this.rni.exitDataLevel();
 			
 			if (this.rni.rniInterrupted) {
-				this.mainInterruptLock.lock();
-				try {
-					if (this.rni.rniInterrupted) {
-						try {
-							Thread.sleep(10);
-						}
-						catch (final InterruptedException e) {}
-						this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
-						this.rni.rniInterrupted = false;
-					}
-				}
-				finally {
-					this.mainInterruptLock.unlock();
-					if (ownLock) {
-						this.rEngine.getRsync().unlock();
-					}
-				}
+				doCheckInterrupted();
 			}
-			else {
-				if (ownLock) {
-					this.rEngine.getRsync().unlock();
-				}
+			if (ownLock) {
+				this.rEngine.getRsync().unlock();
 			}
 		}
 		return cmd.waitForClient() ? cmd : null;
@@ -1557,8 +1547,8 @@ public final class JRIServer extends RJ
 		final RMainLoopCallbacks savedCallback = this.rEngine.getMainLoopCallbacks();
 		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
 		try {
-			if (this.rni.rniInterrupted) { // TODO
-				this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
+			if (this.rni.rniInterrupted) {
+				doCheckInterrupted();
 			}
 			CMD_OP: switch (cmd.getOp()) {
 			
@@ -1636,33 +1626,33 @@ public final class JRIServer extends RJ
 			this.currentSlot = savedSlot;
 			
 			if (this.rni.rniInterrupted) {
-				this.mainInterruptLock.lock();
-				try {
-					if (this.rni.rniInterrupted) {
-						try {
-							Thread.sleep(10);
-						}
-						catch (final InterruptedException e) {
-							e.printStackTrace();
-						}
-						this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
-						this.rni.rniInterrupted = false;
-					}
-				}
-				finally {
-					this.mainInterruptLock.unlock();
-					if (ownLock) {
-						this.rEngine.getRsync().unlock();
-					}
-				}
+				doCheckInterrupted();
 			}
-			else {
-				if (ownLock) {
-					this.rEngine.getRsync().unlock();
-				}
+			if (ownLock) {
+				this.rEngine.getRsync().unlock();
 			}
 		}
 		return cmd.waitForClient() ? cmd : null;
+	}
+	
+	private void doCheckInterrupted() {
+		this.mainInterruptLock.lock();
+		try {
+			if (this.rni.rniInterrupted) {
+				try {
+					Thread.sleep(10);
+				}
+				catch (final InterruptedException e) {}
+				this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
+				this.rni.rniInterrupted = false;
+			}
+		}
+		catch (final Throwable e) {
+			LOGGER.log(Level.SEVERE, "An error occurred when resetting interrupted state.", e);
+		}
+		finally {
+			this.mainInterruptLock.unlock();
+		}
 	}
 	
 	private RjsStatus internalAsyncDbg(final byte slot, final DbgCmdItem cmd) {
@@ -1686,6 +1676,56 @@ public final class JRIServer extends RJ
 	
 	public void handle(final TracepointEvent event) {
 		internalMainFromR(new DbgCmdItem(DbgCmdItem.OP_NOTIFY_TP_EVENT, 0, event));
+	}
+	
+	private MainCmdItem internalExecSrv(final MainCmdItem cmd) {
+		final byte savedSlot = this.currentSlot;
+		this.currentSlot = cmd.slot;
+		final boolean ownLock = this.rEngine.getRsync().safeLock();
+		this.rni.newDataLevel(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+		final int savedProtected = this.rni.saveProtected();
+		final int savedSafeMode = beginSafeMode();
+		final RMainLoopCallbacks savedCallback = this.rEngine.getMainLoopCallbacks();
+		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
+		this.mainInterruptLock.lock();
+		try {
+			if (this.rni.rniInterrupted) {
+				doCheckInterrupted();
+			}
+			CMD_OP: switch (cmd.getOp()) {
+			case SrvCmdItem.OP_CLEAR_SESSION:
+				this.rni.evalExpr(this.rni.resolveExpression("rj:::tmp.clear()"),
+						this.rni.p_GlobalEnv, CODE_SRV_EVAL_DATA);
+				break CMD_OP;
+			}
+		}
+		catch (final RjsException e) {
+			final String message = "Exec srv failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.WARNING, message, e);
+			cmd.setAnswer(e.getStatus());
+		}
+		catch (final CancellationException e) {
+			cmd.setAnswer(RjsStatus.CANCEL_STATUS);
+		}
+		catch (final Throwable e) {
+			final String message = "Exec srv failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.SEVERE, message, e);
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_SRV_COMMON | 0x1),
+					"Internal server error (see server log)." ));
+		}
+		finally {
+			this.mainInterruptLock.unlock();
+			this.rEngine.addMainLoopCallbacks(savedCallback);
+			endSafeMode(savedSafeMode);
+			this.rni.looseProtected(savedProtected);
+			this.rni.exitDataLevel();
+			this.currentSlot = savedSlot;
+			
+			if (ownLock) {
+				this.rEngine.getRsync().unlock();
+			}
+		}
+		return null;
 	}
 	
 	
@@ -1957,6 +1997,9 @@ public final class JRIServer extends RJ
 				catch (final Exception e) {
 					LOGGER.log(Level.SEVERE, "An error occurrend when trying to cancel hot loop.", e);
 				}
+				
+				doAppend(new SrvCmdItem(SrvCmdItem.OP_CLEAR_SESSION));
+				this.mainExchangeR.signalAll();
 			}
 		}
 		finally {

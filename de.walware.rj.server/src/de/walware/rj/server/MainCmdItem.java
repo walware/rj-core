@@ -71,7 +71,12 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	/**
 	 * {@link DbgCmdItem}
 	 */
-	public static final byte T_DBG_ITEM =            11;
+	public static final byte T_DBG_ITEM =                   0x0b; // TODO RJ-1.2 Change to 0x14
+	
+	/**
+	 * Inside server only
+	 */
+	public static final byte T_SRV_ITEM =                   0x20;
 	
 	
 	protected static final int OM_STATUS =                  0x00f00000; // 0xf << OS_STATUS
