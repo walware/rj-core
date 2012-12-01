@@ -267,7 +267,7 @@ if ( $S_HOSTADDRESS )
 	}
 	$S_ADDRESS="$S_ADDRESS/$S_NAME"
 } else {
-	$S_ADDRESS="//$S_NAME"
+	$S_ADDRESS="///$S_NAME"
 }
 
 ## Finish auth configuration

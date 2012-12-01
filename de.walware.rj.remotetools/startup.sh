@@ -264,7 +264,7 @@ then
 	fi
 	S_ADDRESS="$S_ADDRESS/$S_NAME"
 else
-	S_ADDRESS="//$S_NAME"
+	S_ADDRESS="///$S_NAME"
 fi
 
 ## Finish auth configuration
@@ -372,6 +372,7 @@ then
 	echo "AUTH = $AUTH"
 	
 	# Start server directly
+	echo "Starting server ..."
 	$JAVA_EXE $START_ARGS
 	START_EXIT=$?
 	START_PID=$!
@@ -388,6 +389,8 @@ else
 	fi
 	
 	# Start server detached
+	echo "Starting server ..."
+	echo "INFO: [Startup:$S_NAME] Cmd:\n$JAVA_EXE $START_ARGS" > "$RJS_WORK/session-$S_NAME.out"
 	nohup $JAVA_EXE $START_ARGS > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
 	START_EXIT=$?
 	START_PID=$!
