@@ -32,6 +32,18 @@
 ###############################################################################
 # SCRIPT - INIT / READING PARAMETERS ##########################################
 ###############################################################################
+OS=`uname | tr '[:upper:]' '[:lower:]'`
+case "$OS" in
+darwin)
+	C_READLINK=greadlink
+	LD_LIB_VAR="DYLD_LIBRARY_PATH"
+	;;
+*)
+	C_READLINK=readlink
+	LD_LIB_VAR="LD_LIBRARY_PATH"
+	;;
+esac
+
 if [ -z "$1" ]
 then
 	echo "Missing address or name for R server"
@@ -48,7 +60,7 @@ then
 fi
 shift
 WD=~
-SCRIPT=`readlink -f "$0"`
+SCRIPT=`$C_READLINK -f "$0"`
 
 until [ -z "$1" ]
 do
@@ -337,10 +349,10 @@ fi
 
 ## Other environment
 PATH=$R_HOME/bin$PATH_SEP$PATH
-LD_LIBRARY_PATH=$R_HOME/lib
+LD_LIB_PATH=$R_HOME/lib
 
 export PATH
-export LD_LIBRARY_PATH
+export $LD_LIB_VAR=$LD_LIB_PATH
 export JAVA_HOME
 export R_HOME
 #export R_ARCH
@@ -362,7 +374,7 @@ then
 	echo "S_HOSTADDRESS = $S_HOSTADDRESS"
 	echo "S_REGISTRYPORT = $S_REGISTRY_PORT"
 	echo "PATH = $PATH"
-	echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
+	echo $LD_LIB_VAR = ${!LD_LIB_VAR}
 	echo "R_HOME = $R_HOME"
 	echo "R_ARCH = $R_ARCH"
 	echo "JAVA_HOME = $JAVA_HOME"
@@ -390,8 +402,9 @@ else
 	
 	# Start server detached
 	echo "Starting server ..."
-	echo "INFO: [Startup:$S_NAME] Cmd:\n$JAVA_EXE $START_ARGS" > "$RJS_WORK/session-$S_NAME.out"
-	nohup $JAVA_EXE $START_ARGS > "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
+	echo "`date --rfc-3339=seconds` RJServer Startup Script" > "$RJS_WORK/session-$S_NAME.out"
+	echo "INFO: [Startup:$S_NAME] Cmd: $JAVA_EXE $START_ARGS" >> "$RJS_WORK/session-$S_NAME.out"
+	nohup $JAVA_EXE $START_ARGS >> "$RJS_WORK/session-$S_NAME.out" 2>&1 < /dev/null &
 	START_EXIT=$?
 	START_PID=$!
 	if [ $START_EXIT -eq 0 ]
