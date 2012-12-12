@@ -16,12 +16,12 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 import de.walware.ecommons.ts.ITool;
 
-import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.AbstractRToolRunnable;
 import de.walware.rj.eclient.IRToolService;
 import de.walware.rj.eclient.graphics.IERGraphic;
 
 
-public class CopyToDevRunnable extends AbstractRServiceRunnable {
+public class CopyToDevRunnable extends AbstractRToolRunnable {
 	
 	
 	private final IERGraphic fGraphic;

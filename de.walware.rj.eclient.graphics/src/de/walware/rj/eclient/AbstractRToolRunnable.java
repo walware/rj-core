@@ -3,8 +3,6 @@ package de.walware.rj.eclient;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import de.walware.rj.services.RService;
-
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ts.IToolRunnable;
 import de.walware.ecommons.ts.IToolService;
@@ -16,17 +14,16 @@ import de.walware.ecommons.ts.IToolService;
  * Sub class should implement at least the method {@link #run(IRToolService, IProgressMonitor)},
  * which is called by the R tool and gives access to the {@link IRToolService} API.
  * 
- * @deprecated use {@link AbstractRToolRunnable}
+ * @since 1.2
  */
-@Deprecated
-public abstract class AbstractRServiceRunnable implements IToolRunnable {
+public abstract class AbstractRToolRunnable implements IToolRunnable {
 	
 	
 	private final String fTypeId;
 	private final String fLabel;
 	
 	
-	public AbstractRServiceRunnable(final String typeId, final String label) {
+	public AbstractRToolRunnable(final String typeId, final String label) {
 		fTypeId = typeId;
 		fLabel = label;
 	}
@@ -50,10 +47,10 @@ public abstract class AbstractRServiceRunnable implements IToolRunnable {
 	
 	public void run(final IToolService service,
 			final IProgressMonitor monitor) throws CoreException {
-		run((RService) service, monitor);
+		run((IRToolService) service, monitor);
 	}
 	
-	
-	protected abstract void run(RService r, IProgressMonitor monitor);
+	protected abstract void run(IRToolService r,
+			IProgressMonitor monitor) throws CoreException;
 	
 }

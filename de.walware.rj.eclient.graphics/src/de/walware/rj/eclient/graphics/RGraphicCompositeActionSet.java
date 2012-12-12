@@ -42,7 +42,7 @@ import de.walware.ecommons.ui.SharedUIResources;
 import de.walware.ecommons.ui.actions.HandlerCollection;
 import de.walware.ecommons.ui.actions.HandlerContributionItem;
 
-import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.AbstractRToolRunnable;
 import de.walware.rj.eclient.IRToolService;
 import de.walware.rj.eclient.graphics.utils.AbstractLocalLocator;
 import de.walware.rj.eclient.internal.graphics.RGraphicsPlugin;
@@ -122,7 +122,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 		
 	}
 	
-	private static abstract class ConversionRunnable extends AbstractRServiceRunnable implements ISystemRunnable {
+	private static abstract class ConversionRunnable extends AbstractRToolRunnable implements ISystemRunnable {
 		
 		private final IERGraphic fGraphic;
 		

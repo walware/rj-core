@@ -23,7 +23,7 @@ import de.walware.ecommons.collections.IntArrayMap;
 import de.walware.ecommons.ts.ISystemRunnable;
 import de.walware.ecommons.ts.ITool;
 
-import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.AbstractRToolRunnable;
 import de.walware.rj.eclient.IRToolService;
 
 
@@ -43,7 +43,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 	}
 	
 	
-	private class ResizeRunnable extends AbstractRServiceRunnable implements ISystemRunnable {
+	private class ResizeRunnable extends AbstractRToolRunnable implements ISystemRunnable {
 		
 		private final int fDevId;
 		private final Runnable fBeforeResize;
@@ -82,7 +82,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 		
 	}
 	
-	private class CloseRunnable extends AbstractRServiceRunnable implements ISystemRunnable {
+	private class CloseRunnable extends AbstractRToolRunnable implements ISystemRunnable {
 		
 		
 		private final int fDevId;

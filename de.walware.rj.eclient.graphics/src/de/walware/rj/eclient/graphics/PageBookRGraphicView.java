@@ -54,7 +54,7 @@ import de.walware.ecommons.ui.mpbv.ISession;
 import de.walware.ecommons.ui.mpbv.ManagedPageBookView;
 import de.walware.ecommons.ui.util.UIAccess;
 
-import de.walware.rj.eclient.AbstractRServiceRunnable;
+import de.walware.rj.eclient.AbstractRToolRunnable;
 import de.walware.rj.eclient.IRToolService;
 
 
@@ -163,13 +163,13 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			try {
 				final ITool tool = getTool();
 				if (tool != null) {
-					tool.getQueue().add(new AbstractRServiceRunnable(
+					tool.getQueue().add(new AbstractRToolRunnable(
 						"r/rj/gd/new", "New R Graphic") { //$NON-NLS-1$
 						
 						@Override
 						public void run(final IRToolService r,
 								final IProgressMonitor monitor) throws CoreException {
-							r.evalVoid("rj.gd::rj.GD()", monitor);
+							r.evalVoid("rj.gd::rj.GD()", monitor); //$NON-NLS-1$
 						}
 						
 					});
