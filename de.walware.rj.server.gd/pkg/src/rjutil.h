@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2011-2012 Stephan Wahlbrink and others.
+ * Copyright (C) 2011-2013 Stephan Wahlbrink and others.
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
