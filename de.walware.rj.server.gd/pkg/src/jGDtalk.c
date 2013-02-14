@@ -458,8 +458,19 @@ static void newJavaGD_Rect(double x0, double y0, double x1, double y1,  R_GE_gco
     JNIEnv *env = getJNIEnv();
     
     if(!env || !xd || !xd->talk) return;
-    
-    checkGC(env,xd, gc);
+	
+	if (x0 > x1) {
+		double tmp = x0;
+		x0 = x1;
+		x1 = tmp;
+	}
+	if (y0 > y1) {
+		double tmp = y0;
+		y0 = y1;
+		y1 = tmp;
+	}
+	
+	checkGC(env,xd, gc);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRect, x0, y0, x1, y1);
 	chkX(env);

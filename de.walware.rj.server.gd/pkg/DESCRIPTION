@@ -1,6 +1,6 @@
 Encoding: UTF-8
 Package: rj.gd
-Version: 1.1.0-1
+Version: 1.1.0-2
 Title: RJ Graphics Device
 Author: Stephan Wahlbrink, R binding based on the JavaGD package by Simon Urbanek
 Maintainer: Stephan Wahlbrink <stephan.wahlbrink@walware.de>
