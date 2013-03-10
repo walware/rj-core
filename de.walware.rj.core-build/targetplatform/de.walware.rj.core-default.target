@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+
+<target name="all">
+	<locations>
+		<location includeAllPlatforms="false" includeMode="planner" includeConfigurePhase="false" includeSource="false"
+				type="InstallableUnit">
+			<repository location="http://download.eclipse.org/eclipse/updates/3.8"/>
+			<unit id="org.eclipse.rcp.feature.group"
+					version="3.8.2.v20130118-180157-96BuGOZFxwOAeG8Ofmqicz0tPK"/>
+		</location>
+	</locations>
+</target>

@@ -1,0 +1,5 @@
+SHAJ Library
+Copyright 2005 Cenqua Pty Ltd.
+
+This product includes software developed by
+Cenqua Pty Ltd.

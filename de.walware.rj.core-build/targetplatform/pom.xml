@@ -9,36 +9,8 @@
 		<version>1.1-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>de.walware.rj.core-targetplatform</artifactId>
-	<version>1.1.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.6</version>
-				<executions>
-					<execution>
-						<id>attach-artifacts</id>
-						<phase>package</phase>
-						<goals>
-							<goal>attach-artifact</goal>
-						</goals>
-						<configuration>
-							<artifacts>
-								<artifact>
-									<file>all.target</file>
-									<type>target</type>
-									<classifier>all</classifier>
-								</artifact>
-							</artifacts>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+	<artifactId>de.walware.rj.core-default</artifactId>
+	<version>1.1.1-SNAPSHOT</version>
+	<packaging>eclipse-target-definition</packaging>
 	
 </project>
