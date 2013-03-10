@@ -17,7 +17,8 @@
 	</modules>
 	
 	<properties>
-		<tycho.version>0.12.0</tycho.version>
+		<tycho.version>0.16.0</tycho.version>
+		<tycho.scmUrl>scm:git:git://github.com/walware/rj-client.git</tycho.scmUrl>
 	</properties>
 	
 	<build>
@@ -39,28 +40,10 @@
 					<target>
 						<artifact>
 							<groupId>de.walware.rj</groupId>
-							<artifactId>de.walware.rj.client-targetplatform</artifactId>
-							<version>1.2.0-SNAPSHOT</version>
-							<classifier>all</classifier>
+							<artifactId>de.walware.rj.client-default</artifactId>
+							<version>1.2.1-SNAPSHOT</version>
 						</artifact>
 					</target>
-					<environments>
-						<environment>
-							<os>linux</os>
-							<ws>gtk</ws>
-							<arch>x86_64</arch>
-						</environment>
-						<environment>
-							<os>win32</os>
-							<ws>win32</ws>
-							<arch>x86_64</arch>
-						</environment>
-						<environment>
-							<os>macosx</os>
-							<ws>cocoa</ws>
-							<arch>x86_64</arch>
-						</environment>
-					</environments>
 				</configuration>
 			</plugin>
 			<!-- enable source bundle generation -->
@@ -81,7 +64,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>2.5.1</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
 				</configuration>
