@@ -140,26 +140,40 @@ public class ServerUtil {
 	
 	
 	private static class PathEntry implements Comparable<PathEntry> {
+		
 		final File dir;
 		final String child;
+		
 		public PathEntry(final File dir, final String child) {
 			this.dir = dir;
 			this.child = child;
 		}
+		
 		public int compareTo(final PathEntry o) {
 			return this.child.compareTo((o).child);
 		}
+		
+		@Override
+		public String toString() {
+			return '\'' + this.child + "' in '" + this.dir + '\'';
+		}
+		
 	}
 	
 	public static PathEntry searchLib(final List<PathEntry> files, final String baseName) {
 		PathEntry found = null;
 		for (final PathEntry entry : files) {
 			if (entry.child.startsWith(baseName)) {
-				if (entry.child.length() == baseName.length()) {
+				// without version
+				if (entry.child.length() == baseName.length() // equals
+						|| (entry.child.length() == baseName.length() + 4 && entry.child.endsWith(".jar")) ) {
 					return entry;
 				}
-				if (entry.child.charAt(baseName.length()) == '_') {
-					found = entry;
+				// with version suffix
+				if (entry.child.length() > baseName.length()) {
+					if (entry.child.charAt(baseName.length()) == '_') {
+						found = entry;
+					}
 				}
 			}
 		}
