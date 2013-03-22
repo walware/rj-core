@@ -1,6 +1,6 @@
 /*******************************************************************************
- * Copyright (c) 2009-2013 Stephan Wahlbrink (www.walware.de/goto/opensource)
- * and others. All rights reserved. This program and the accompanying materials
+ * Copyright (c) 2009-2013 Stephan Wahlbrink (WalWare.de) and others.
+ * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the GNU Lesser General Public License
  * v2.1 or newer, which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl.html
@@ -12,7 +12,6 @@
 package de.walware.rj.server.srvext;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import de.walware.rj.RjInvalidConfigurationException;
 import de.walware.rj.server.RjsStatus;
@@ -103,8 +101,8 @@ public class ServerUtil {
 	@SuppressWarnings("unchecked")
 	public static void prettyPrint(final Map map, final StringBuilder sb) {
 		final String sep = System.getProperty("line.separator")+"\t";
-		final Set<Entry> entrySet = map.entrySet();
-		for (final Entry entry : entrySet) {
+		final Set<Entry<?, ?>> entrySet = map.entrySet();
+		for (final Entry<?, ?> entry : entrySet) {
 			sb.append(sep);
 			sb.append(entry.getKey());
 			sb.append('=');
@@ -136,111 +134,6 @@ public class ServerUtil {
 				sb.append(version[i]);
 			}
 		}
-	}
-	
-	
-	private static class PathEntry implements Comparable<PathEntry> {
-		
-		final File dir;
-		final String child;
-		
-		public PathEntry(final File dir, final String child) {
-			this.dir = dir;
-			this.child = child;
-		}
-		
-		public int compareTo(final PathEntry o) {
-			return this.child.compareTo((o).child);
-		}
-		
-		@Override
-		public String toString() {
-			return '\'' + this.child + "' in '" + this.dir + '\'';
-		}
-		
-	}
-	
-	public static PathEntry searchLib(final List<PathEntry> files, final String baseName) {
-		PathEntry found = null;
-		for (final PathEntry entry : files) {
-			if (entry.child.startsWith(baseName)) {
-				// without version
-				if (entry.child.length() == baseName.length() // equals
-						|| (entry.child.length() == baseName.length() + 4 && entry.child.endsWith(".jar")) ) {
-					return entry;
-				}
-				// with version suffix
-				if (entry.child.length() > baseName.length()) {
-					if (entry.child.charAt(baseName.length()) == '_') {
-						found = entry;
-					}
-				}
-			}
-		}
-		return found;
-	}
-	
-	private static String check(final PathEntry entry) {
-		final File file = new File(entry.dir, entry.child);
-		if (file.isDirectory()) {
-			final File binFile = new File(file, "bin");
-			if (binFile.exists() && binFile.isDirectory()) {
-				return binFile.getPath();
-			}
-		}
-		return file.getPath();
-	}
-	
-	public static String[] searchRJLibs(final String libPath, final String[] libs) throws RjInvalidConfigurationException {
-		String path = System.getProperty("de.walware.rj.path");
-		if (path == null) {
-			path = libPath; 
-		}
-		
-		if (path != null && path.length() > 0) {
-			final String[] resolved = new String[libs.length];
-			final String[] paths = path.split(Pattern.quote(File.pathSeparator));
-			final List<PathEntry> files = new ArrayList<PathEntry>(paths.length*10);
-			for (int i = 0; i < paths.length; i++) {
-				if (paths[i].length() > 0) {
-					final File dir = new File(paths[i]);
-					final String[] list = dir.list();
-					if (list != null) {
-						for (final String child : list) {
-							files.add(new PathEntry(dir, child));
-						}
-					}
-				}
-			}
-			
-			StringBuilder sb = null;
-			if (!files.isEmpty()) {
-				Collections.sort(files);
-				for (int i = 0; i < libs.length; i++) {
-					final PathEntry entry = searchLib(files, libs[i]);
-					if (entry == null) {
-						if (sb == null) {
-							sb = new StringBuilder("Missing RJ library ");
-						}
-						else {
-							sb.append(',');
-						}
-						sb.append(" '");
-						sb.append(libs[i]);
-						sb.append("'");
-					}
-					else {
-						resolved[i] = check(entry);
-					}
-				}
-			}
-			if (sb != null) {
-				sb.append('.');
-				throw new RjInvalidConfigurationException(sb.toString());
-			}
-			return resolved;
-		}
-		throw new RjInvalidConfigurationException("Missing or invalid RJ library location.");
 	}
 	
 	
@@ -296,6 +189,15 @@ public class ServerUtil {
 				file.delete();
 			}
 		}
+	}
+	
+	
+	/**
+	 * @deprecated use {@link RJContext}
+	 */
+	@Deprecated
+	public static String[] searchRJLibs(final String libPath, final String[] libs) throws RjInvalidConfigurationException {
+		return new RJContext(libPath).searchRJLibs(libs);
 	}
 	
 }
