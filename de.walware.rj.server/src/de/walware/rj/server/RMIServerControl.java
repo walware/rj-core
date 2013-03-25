@@ -11,11 +11,10 @@
 
 package de.walware.rj.server;
 
-import java.net.MalformedURLException;
-import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -100,7 +99,7 @@ public class RMIServerControl extends AbstractServerControl {
 			exit(AbstractServerControl.EXIT_INIT_AUTHMETHOD_ERROR);
 			throw new IllegalStateException();
 		}
-		final DefaultServerImpl server = new DefaultServerImpl(this.name, this, authMethod);
+		final DefaultServerImpl server = new DefaultServerImpl(this, authMethod);
 		if (!initREngine(server)) {
 			exit(EXIT_INIT_RENGINE_ERROR | 1);
 		}
@@ -118,22 +117,14 @@ public class RMIServerControl extends AbstractServerControl {
 			exit(EXIT_REGISTRY_SERVER_STILL_ACTIVE);
 		}
 		try {
-			Naming.unbind(this.name);
+			final Registry registry = getRegistry();
+			registry.unbind(getName());
 			LOGGER.log(Level.INFO,
 					"{0} server removed from registry.",
 					this.logPrefix);
 		}
 		catch (final NotBoundException e) {
 			exit(0);
-		}
-		catch (final MalformedURLException e) {
-			final LogRecord record = new LogRecord(Level.SEVERE,
-					"{0} the server address ''{1}'' is invalid.");
-			record.setParameters(new Object[] { this.logPrefix, this.name });
-			record.setThrown(e);
-			LOGGER.log(record);
-			
-			exit(EXIT_REGISTRY_INVALID_ADDRESS);
 		}
 		catch (final RemoteException e) {
 			final LogRecord record = new LogRecord(Level.SEVERE,
@@ -159,13 +150,11 @@ public class RMIServerControl extends AbstractServerControl {
 	protected int unbindDead() {
 		Remote remote;
 		try {
-			remote = Naming.lookup(this.name);
+			final Registry registry = getRegistry();
+			remote = registry.lookup(getName());
 		}
 		catch (final NotBoundException lookupException) {
 			return 0;
-		}
-		catch (final MalformedURLException lookupException) {
-			return EXIT_REGISTRY_INVALID_ADDRESS;
 		}
 		catch (final RemoteException lookupException) {
 			return EXIT_REGISTRY_CONNECTING_ERROR;
@@ -179,7 +168,8 @@ public class RMIServerControl extends AbstractServerControl {
 		}
 		catch (final RemoteException deadException) {
 			try {
-				Naming.unbind(this.name);
+				final Registry registry = getRegistry();
+				registry.unbind(getName());
 				LOGGER.log(Level.INFO,
 						"{0} dead server removed from registry.",
 						this.logPrefix);

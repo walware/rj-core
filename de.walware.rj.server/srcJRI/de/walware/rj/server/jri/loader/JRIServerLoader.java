@@ -23,6 +23,7 @@ import javax.swing.UIManager;
 
 import de.walware.rj.RjInitFailedException;
 import de.walware.rj.server.Server;
+import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvext.ExtServer;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
@@ -36,7 +37,7 @@ public final class JRIServerLoader {
 	}
 	
 	
-	public InternalEngine loadServer(final String name, final Map<String, String> args,
+	public InternalEngine loadServer(final AbstractServerControl control, final Map<String, String> args,
 			final Server publicServer, final ServerRuntimePlugin plugin) throws Exception {
 		final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 		try {
@@ -108,7 +109,7 @@ public final class JRIServerLoader {
 			
 			final ExtServer localServer = (ExtServer) engine;
 			
-			localServer.init(name, publicServer, loader);
+			localServer.init(control, publicServer, loader);
 			
 			// plugins
 			final List<String> plugins = ServerUtil.getArgValueList(args.get("plugins"));

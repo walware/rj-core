@@ -12,13 +12,18 @@
 package de.walware.rj.server.srvImpl;
 
 import java.io.StreamCorruptedException;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
-import java.rmi.Naming;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.UnmarshalException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -28,6 +33,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 import de.walware.rj.RjException;
 import de.walware.rj.RjInvalidConfigurationException;
@@ -137,14 +145,20 @@ public class AbstractServerControl {
 		}
 	}
 	
-	public static Remote exportObject(Remote obj) throws RemoteException {
-		return UnicastRemoteObject.exportObject(obj, 0, RjsComConfig.getRMIServerClientSocketFactory(), null);
+	public Remote exportObject(final Remote obj) throws RemoteException {
+		RMIClientSocketFactory csf = RjsComConfig.getRMIServerClientSocketFactory();
+		RMIServerSocketFactory ssf = null;
+		if (this.rmiAddress.isSSL()) {
+			csf = new SslRMIClientSocketFactory();
+			ssf = new SslRMIServerSocketFactory(null, null, true);
+		}
+		return UnicastRemoteObject.exportObject(obj, 0, csf, ssf);
 	}
 	
 	
 	protected final String logPrefix;
 	
-	protected final String name;
+	private final RMIAddress rmiAddress;
 	
 	protected final Map<String, String> args;
 	
@@ -153,10 +167,32 @@ public class AbstractServerControl {
 	
 	
 	protected AbstractServerControl(final String name, final Map<String, String> args) {
-		this.name = name;
 		final int lastSegment = name.lastIndexOf('/');
 		this.logPrefix = "[Control:"+((lastSegment >= 0) ? name.substring(lastSegment+1) : name)+"]";
 		this.args = args;
+		
+		{	RMIAddress address = null;
+			Exception error = null;
+			try {
+				address = new RMIAddress(name);
+			}
+			catch (final MalformedURLException e) {
+				error = e;
+			}
+			catch (final UnknownHostException e) {
+				error = e;
+			}
+			if (address == null) {
+				final LogRecord record = new LogRecord(Level.SEVERE,
+						"{0} the server address ''{1}'' is invalid.");
+				record.setParameters(new Object[] { this.logPrefix, name });
+				record.setThrown(error);
+				LOGGER.log(record);
+				
+				exit(EXIT_REGISTRY_INVALID_ADDRESS);
+			}
+			this.rmiAddress = address;
+		}
 		
 		if (args != null) {
 			if (args.containsKey("verbose")) {
@@ -177,15 +213,18 @@ public class AbstractServerControl {
 	public boolean initREngine(final DefaultServerImpl server) {
 		InternalEngine engine = null;
 		try {
-			engine = new JRIServerLoader().loadServer(this.name, this.args, server, new ServerRuntimePlugin() {
+			engine = new JRIServerLoader().loadServer(this, this.args, server, new ServerRuntimePlugin() {
 				
+				@Override
 				public String getSymbolicName() {
 					return "rmi";
 				}
 				
+				@Override
 				public void rjIdle() throws Exception {
 				}
 				
+				@Override
 				public void rjStop(final int state) throws Exception {
 					if (state == 0) {
 						try {
@@ -213,17 +252,30 @@ public class AbstractServerControl {
 		}
 	}
 	
+	protected Registry getRegistry() throws RemoteException {
+		RMIClientSocketFactory csf = null;
+		if (this.rmiAddress.isSSL()) {
+			csf = new SslRMIClientSocketFactory();
+		}
+		return LocateRegistry.getRegistry(this.rmiAddress.getHost(), this.rmiAddress.getPortNum(), csf);
+	}
+	
+	public String getName() {
+		return this.rmiAddress.getName();
+	}
+	
 	protected void publishServer(final Server server) {
 		try {
 			System.setSecurityManager(new SecurityManager());
-			Server stub = (Server) AbstractServerControl.exportObject(server);
+			final Registry registry = getRegistry();
+			Server stub = (Server) exportObject(server);
 			this.mainServer = server;
 			try {
-				Naming.bind(this.name, stub);
+				registry.bind(getName(), stub);
 			}
 			catch (final AlreadyBoundException boundException) {
 				if (unbindDead() == 0) {
-					Naming.bind(this.name, stub);
+					registry.bind(getName(), stub);
 				}
 				else {
 					throw boundException;
@@ -238,15 +290,15 @@ public class AbstractServerControl {
 						UnicastRemoteObject.unexportObject(server, true);
 						stub = (Server) UnicastRemoteObject.exportObject(server, 0, null, null);
 					}
-					catch (Exception testException) {}
+					catch (final Exception testException) {}
 					if (stub != null) {
 						final LogRecord record = new LogRecord(Level.SEVERE,
 								"{0} caught StreamCorruptedException \nretrying without socket factory to reveal other potential problems.");
 						record.setParameters(new Object[] { this.logPrefix });
 						record.setThrown(remoteException);
 						LOGGER.log(record);
-						Naming.bind(this.name, stub);
-						Naming.unbind(this.name);
+						registry.bind(getName(), stub);
+						registry.unbind(getName());
 						throw new RjException("No error without socket factory, use the Java property 'de.walware.rj.rmi.disableSocketFactory' to disable the factory.");
 					}
 				}
@@ -292,7 +344,8 @@ public class AbstractServerControl {
 		}
 		LOGGER.log(Level.INFO, "{0} cleaning up server resources...", this.logPrefix);
 		try {
-			Naming.unbind(this.name);
+			final Registry registry = getRegistry();
+			registry.unbind(getName());
 		}
 		catch (final NotBoundException e) {
 			// ok

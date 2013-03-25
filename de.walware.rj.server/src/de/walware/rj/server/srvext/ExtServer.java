@@ -12,6 +12,7 @@
 package de.walware.rj.server.srvext;
 
 import de.walware.rj.server.Server;
+import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.RJClassLoader;
 
 
@@ -21,7 +22,7 @@ import de.walware.rj.server.srvImpl.RJClassLoader;
 public interface ExtServer {
 	
 	
-	public void init(String name, Server publicServer, RJClassLoader loader) throws Exception;
+	public void init(AbstractServerControl control, Server publicServer, RJClassLoader loader) throws Exception;
 	
 	public void addPlugin(ServerRuntimePlugin plugin);
 	

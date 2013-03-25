@@ -62,8 +62,6 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	protected final AbstractServerControl control;
 	protected InternalEngine internalEngine;
 	
-	private final String name;
-	
 	private final String[] userTypes;
 	private String[] userNames;
 	protected String workingDirectory;
@@ -75,12 +73,11 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	private final MainCmdC2SList serverC2SList = new MainCmdC2SList();
 	
 	
-	public DefaultServerImpl(final String name, final AbstractServerControl control, final ServerAuthMethod authMethod) {
-		if (name == null || control == null) {
+	public DefaultServerImpl(final AbstractServerControl control, final ServerAuthMethod authMethod) {
+		if (control == null) {
 			throw new NullPointerException();
 		}
 		
-		this.name = name;
 		this.control = control;
 		
 		this.userTypes = createUserTypes();
@@ -117,10 +114,12 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	}
 	
 	
+	@Override
 	public int getState() throws RemoteException {
 		return this.internalEngine.getState();
 	}
 	
+	@Override
 	public int[] getVersion() throws RemoteException {
 		final int[] internalVersion = this.internalEngine.getVersion();
 		final int[] version = new int[internalVersion.length];
@@ -128,8 +127,9 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 		return version;
 	}
 	
+	@Override
 	public ServerInfo getInfo() throws RemoteException {
-		return new ServerInfo(this.name, this.workingDirectory, this.timestamp,
+		return new ServerInfo(this.control.getName(), this.workingDirectory, this.timestamp,
 				this.userTypes, this.userNames,
 				this.internalEngine.getState());
 	}
@@ -142,6 +142,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public final ServerLogin createLogin(final String command) throws RemoteException {
 		final ServerAuthMethod authMethod = getAuthMethod(command);
 		try {
@@ -166,6 +167,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 		}
 	}
 	
+	@Override
 	public Object execute(final String command, final Map<String, ? extends Object> properties, final ServerLogin login) throws RemoteException, LoginException {
 		try {
 			if (command.equals(C_CONSOLE_START)) {
@@ -201,7 +203,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 			sendCom = this.serverC2SList;
 			
 			WAIT_FOR_ANSWER: while (true) {
-				final RjsComObject receivedCom = this.runMainLoop(sendCom, null);
+				final RjsComObject receivedCom = runMainLoop(sendCom, null);
 				sendCom = null;
 				
 				COM_TYPE: switch (receivedCom.getComType()) {
@@ -255,6 +257,7 @@ public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 		return this.internalEngine.runMainLoop(this.serverClient, com);
 	}
 	
+	@Override
 	public File resolve(final Remote ref, final String path) throws RjException {
 		final File file = new File(path);
 		if (!DefaultServerImpl.isValid(ref)) {

@@ -248,7 +248,7 @@ public final class JRIServer extends RJ
 	}
 	
 	
-	private String name;
+	private AbstractServerControl control;
 	
 	private Server publicServer;
 	private RJClassLoader rClassLoader;
@@ -337,11 +337,11 @@ public final class JRIServer extends RJ
 		return VERSION;
 	}
 	
-	public void init(final String name, final Server publicServer, final RJClassLoader loader) throws Exception {
+	public void init(final AbstractServerControl control, final Server publicServer, final RJClassLoader loader) throws Exception {
 		if (loader == null) {
 			throw new NullPointerException("loader");
 		}
-		this.name = name;
+		this.control = control;
 		this.publicServer = publicServer;
 		this.rClassLoader = loader;
 		
@@ -474,7 +474,7 @@ public final class JRIServer extends RJ
 			}
 			
 			final ConsoleEngineImpl consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-			final ConsoleEngine export = (ConsoleEngine) AbstractServerControl.exportObject(consoleEngine);
+			final ConsoleEngine export = (ConsoleEngine) this.control.exportObject(consoleEngine);
 			
 			final ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 			try {
@@ -701,7 +701,7 @@ public final class JRIServer extends RJ
 				return this.client0ExpRef;
 			}
 			final ConsoleEngine consoleEngine = new ConsoleEngineImpl(this.publicServer, this, client);
-			final ConsoleEngine export = (ConsoleEngine) AbstractServerControl.exportObject(consoleEngine);
+			final ConsoleEngine export = (ConsoleEngine) this.control.exportObject(consoleEngine);
 			
 			this.mainExchangeLock.lock();
 			try {
