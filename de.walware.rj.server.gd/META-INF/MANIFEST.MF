@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ-GD R Package
 Bundle-SymbolicName: de.walware.rj.server.gd
-Bundle-Version: 1.1.0.qualifier
+Bundle-Version: 2.0.0.qualifier
 Bundle-ClassPath: pkg/inst/java/gd.jar
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Require-Bundle: de.walware.rj.server;bundle-version="[1.1.0,1.2.0)"
+Require-Bundle: de.walware.rj.server;bundle-version="[1.1.0,2.1.0)"
