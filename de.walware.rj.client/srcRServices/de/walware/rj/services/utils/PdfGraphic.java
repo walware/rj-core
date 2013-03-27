@@ -35,23 +35,23 @@ public class PdfGraphic extends Graphic {
 	
 	@Override
 	protected void prepare(final String filename, final RService service, final IProgressMonitor monitor) throws CoreException {
-		final FunctionCall png = service.createFunctionCall("pdf");
-		png.addChar("file", filename);
+		final FunctionCall png = service.createFunctionCall("pdf"); //$NON-NLS-1$
+		png.addChar("file", filename); //$NON-NLS-1$
 		if (this.resolution > 0) {
-			png.addInt("res", this.resolution);
+			png.addInt("res", this.resolution); //$NON-NLS-1$
 		}
 		if (this.sizeUnit != null) {
 			if (this.sizeUnit.equals(UNIT_IN)) {
-				png.addNum("width", this.sizeWidth);
-				png.addNum("height", this.sizeHeight);
+				png.addNum("width", this.sizeWidth); //$NON-NLS-1$
+				png.addNum("height", this.sizeHeight); //$NON-NLS-1$
 			}
 			else if (this.sizeUnit.equals(UNIT_CM)) {
-				png.addNum("width", this.sizeWidth/2.54);
-				png.addNum("height", this.sizeHeight/2.54);
+				png.addNum("width", this.sizeWidth/2.54); //$NON-NLS-1$
+				png.addNum("height", this.sizeHeight/2.54); //$NON-NLS-1$
 			}
 			else if (this.sizeUnit.equals(UNIT_MM)) {
-				png.addNum("width", this.sizeWidth/25.4);
-				png.addNum("height", this.sizeHeight/25.4);
+				png.addNum("width", this.sizeWidth/25.4); //$NON-NLS-1$
+				png.addNum("height", this.sizeHeight/25.4); //$NON-NLS-1$
 			}
 		}
 		png.evalVoid(monitor);

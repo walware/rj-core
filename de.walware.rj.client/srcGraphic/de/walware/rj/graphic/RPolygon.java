@@ -36,6 +36,7 @@ public class RPolygon extends RGraphicElement {
 	}
 	
 	
+	@Override
 	public final byte getInstructionType() {
 		return DRAW_POLYGON;
 	}

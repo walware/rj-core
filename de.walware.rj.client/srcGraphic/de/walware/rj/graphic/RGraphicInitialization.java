@@ -41,6 +41,7 @@ public class RGraphicInitialization implements RGraphicInstruction {
 	}
 	
 	
+	@Override
 	public final byte getInstructionType() {
 		return INIT;
 	}

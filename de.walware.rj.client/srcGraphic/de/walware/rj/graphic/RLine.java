@@ -40,6 +40,7 @@ public class RLine extends RGraphicElement {
 	}
 	
 	
+	@Override
 	public final byte getInstructionType() {
 		return DRAW_LINE;
 	}

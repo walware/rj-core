@@ -41,6 +41,7 @@ public class RClipSetting extends RPaintSetting {
 	}
 	
 	
+	@Override
 	public final byte getInstructionType() {
 		return SET_CLIP;
 	}

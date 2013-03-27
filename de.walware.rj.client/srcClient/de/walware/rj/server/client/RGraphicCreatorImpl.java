@@ -43,6 +43,7 @@ public class RGraphicCreatorImpl implements RGraphicCreator {
 	}
 	
 	
+	@Override
 	public void setSize(final double width, final double height) {
 		if (width == -1 && height == -1) {
 			this.width = -1;
@@ -56,10 +57,12 @@ public class RGraphicCreatorImpl implements RGraphicCreator {
 		this.height = height;
 	}
 	
+	@Override
 	public RGraphic create(final String expression, final IProgressMonitor monitor) throws CoreException {
 		return create(expression, null, monitor);
 	}
 	
+	@Override
 	public RGraphic create(final FunctionCall fcall, final IProgressMonitor monitor) throws CoreException {
 		return create(null, fcall, monitor);
 	}

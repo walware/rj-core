@@ -51,6 +51,7 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 	}
 	
 	
+	@Override
 	public void copy(final int devId, final String toDev, final String toDevFile, final String toDevArgs,
 			final IProgressMonitor monitor) throws CoreException {
 		final StringBuilder sb = new StringBuilder(64);
@@ -68,6 +69,7 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 		this.rjs.evalVoid(sb.toString(), null, monitor);
 	}
 	
+	@Override
 	public double[] convertGraphic2User(final int devId, final double[] xy,
 			final IProgressMonitor monitor) throws CoreException {
 		if (xy == null) {
@@ -84,6 +86,7 @@ public abstract class AbstractRJComClientGraphicActions implements RClientGraphi
 		return null;
 	}
 	
+	@Override
 	public double[] convertUser2Graphic(final int devId, final double[] xy,
 			final IProgressMonitor monitor) throws CoreException {
 		if (xy == null) {

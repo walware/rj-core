@@ -219,10 +219,12 @@ public final class Unicode2AdbSymbolMapping implements CharMapping {
 	}
 	
 	
+	@Override
 	public int encode(final int codepoint) {
 		return (codepoint >= 0 && codepoint < 0xffff) ? ADBSYMBOL_U2C[codepoint] : codepoint;
 	}
 	
+	@Override
 	public String encode(final String s) {
 		final char[] encodedChars = new char[s.length()];
 		for (int i = 0; i < s.length(); i++) {

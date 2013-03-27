@@ -175,7 +175,7 @@ public interface RService {
 	 *     FileInputStream in = null;
 	 *     try {
 	 *         in = new FileInputStream(localfile);
-	 *         rservice.uploadFile(in, "data.xml", monitor);
+	 *         rservice.uploadFile(in, localfile.length(), "data.xml", 0, monitor);
 	 *     }
 	 *     finally {
 	 *         if (in != null) {

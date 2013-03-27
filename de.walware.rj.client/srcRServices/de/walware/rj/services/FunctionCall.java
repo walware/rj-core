@@ -52,6 +52,8 @@ public interface FunctionCall {
 	 * @param arg the name of the argument or <code>null</code> for unnamed
 	 * @param expression a single valid expression
 	 * @return a reference to this object
+	 * 
+	 * @see #addChar(String, String) to add a string/character value directly
 	 */
 	FunctionCall add(String arg, String expression);
 	
@@ -62,6 +64,8 @@ public interface FunctionCall {
 	 * 
 	 * @param expression a single valid expression
 	 * @return a reference to this object
+	 * 
+	 * @see #addChar(String) to add a string/character value directly
 	 */
 	FunctionCall add(String expression);
 	

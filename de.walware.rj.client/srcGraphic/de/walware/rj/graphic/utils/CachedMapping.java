@@ -26,10 +26,12 @@ public final class CachedMapping implements CharMapping {
 	}
 	
 	
+	@Override
 	public int encode(final int codepoint) {
 		return this.mapping.encode(codepoint);
 	}
 	
+	@Override
 	public String encode(final String s) {
 		if (s.equals(this.lastString)) {
 			return this.lastEncoded;

@@ -69,6 +69,7 @@ public final class RPlatform implements Externalizable {
 	}
 	
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.osType = in.readUTF();
 		this.fileSep = in.readUTF();
@@ -80,6 +81,7 @@ public final class RPlatform implements Externalizable {
 		this.osVersion = in.readUTF();
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeUTF(this.osType);
 		out.writeUTF(this.fileSep);

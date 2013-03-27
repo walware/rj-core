@@ -31,6 +31,7 @@ public class RFillSetting extends RPaintSetting {
 	}
 	
 	
+	@Override
 	public final byte getInstructionType() {
 		return SET_FILL;
 	}

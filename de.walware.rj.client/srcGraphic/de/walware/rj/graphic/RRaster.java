@@ -69,6 +69,7 @@ public class RRaster extends RGraphicElement {
 	}
 	
 	
+	@Override
 	public byte getInstructionType() {
 		return DRAW_RASTER;
 	}

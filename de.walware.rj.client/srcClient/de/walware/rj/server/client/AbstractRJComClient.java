@@ -113,16 +113,19 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	private static class DummyFactory implements RClientGraphicFactory {
 		
+		@Override
 		public Map<String, ? extends Object> getInitServerProperties() {
 			return null;
 		}
 		
+		@Override
 		public RClientGraphic newGraphic(final int devId, final double w, final double h,
 				final InitConfig config,
 				final boolean active, final RClientGraphicActions actions, final int options) {
 			return new RClientGraphicDummy(devId, w, h);
 		}
 		
+		@Override
 		public void closeGraphic(final RClientGraphic graphic) {
 		}
 		
@@ -170,14 +173,16 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	private class KeepAliveRunnable implements Runnable {
 		
+		@Override
 		public void run() {
-			AbstractRJComClient.this.runAsyncPing();
+			runAsyncPing();
 		}
 		
 	}
 	
 	private class HotModeRequestRunnable implements Runnable {
 		
+		@Override
 		public void run() {
 			if (AbstractRJComClient.this.hotModeRequested.get()) {
 				try {
@@ -297,7 +302,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 						t = Long.parseLong(p);
 					}
 				}
-				catch (Exception e) {}
+				catch (final Exception e) {}
 				this.keepAliveJob = RJHelper_EXECUTOR.scheduleWithFixedDelay(
 						new KeepAliveRunnable(), t, t, TimeUnit.MILLISECONDS );
 			}
@@ -375,6 +380,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
+	@Override
 	public final void processMainCmd(final ObjectInput in) throws IOException {
 		boolean runGC = false;
 		updateBusy(in.readBoolean());
@@ -616,6 +622,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case GDCmdItem.U_LOCATOR: {
 				final byte fid = requestId = io.readByte();
 				processCmdDeferred(new Runnable() {
+					@Override
 					public void run() {
 						addC2SCmd(new GDCmdItem.DoubleAnswer(fid,
 								devId, getGraphic(devId).runRLocator(
@@ -1470,6 +1477,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public void execAsyncDbgOp(final byte op, final RJIOExternalizable request)
 			throws CoreException {
 		execAsync(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					runAsync(new DbgCmdItem(op, 0, request));
