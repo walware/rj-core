@@ -106,13 +106,20 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			return 0;
 		}
 		
+		private static String getId(final IViewReference ref) {
+			// E-Bug #405563
+			final String id = ref.getId();
+			int idx = id.indexOf(':');
+			return (idx >= 0) ? id.substring(0, idx) : id;
+		}
+		
 		public void showGraphic(final IERGraphic graphic) {
 			try {
 				final IWorkbenchPage page = getBestPage(graphic);
 				String secondaryId = ""; //$NON-NLS-1$
 				final IViewReference[] refs = page.getViewReferences();
 				for (int i = 0; i < refs.length; i++) { // search views not yet instanced
-					if (fViewId.equals(refs[i].getId()) && refs[i].getView(false) == null) {
+					if (fViewId.equals(getId(refs[i])) && refs[i].getView(false) == null) {
 						if (refs[i].getSecondaryId() == null) {
 							secondaryId = null;
 							break;
