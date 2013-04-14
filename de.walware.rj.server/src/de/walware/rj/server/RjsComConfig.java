@@ -123,6 +123,15 @@ public class RjsComConfig {
 		
 		private static final long serialVersionUID = -2470426070934072117L;
 		
+		private static String getLocalHostName() {
+			try {
+				return InetAddress.getLocalHost().getCanonicalHostName();
+			}
+			catch (final UnknownHostException e) {}
+			catch (final ArrayIndexOutOfBoundsException e) { /* JVM bug */ }
+			return "unknown";
+		}
+		
 		
 		private String id;
 		private RMIClientSocketFactory resolvedFactory;
@@ -134,25 +143,23 @@ public class RjsComConfig {
 		
 		public RjRMIClientSocketFactory(final String init) {
 			final StringBuilder sb = new StringBuilder(init);
-			try {
-				sb.append(InetAddress.getLocalHost().getCanonicalHostName());
-			}
-			catch (UnknownHostException e) {
-				sb.append("unknown");
-			}
+			sb.append(getLocalHostName());
 			sb.append('/').append(System.nanoTime()).append('/').append(Math.random());
 			this.id = sb.toString();
 		}
 		
 		
-		public void writeExternal(ObjectOutput out) throws IOException {
+		@Override
+		public void writeExternal(final ObjectOutput out) throws IOException {
 			out.writeUTF(this.id);
 		}
-		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		@Override
+		public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 			this.id = in.readUTF();
 		}
 		
 		
+		@Override
 		public Socket createSocket(final String host, final int port) throws IOException {
 			RMIClientSocketFactory factory = null;
 			factory = gRMIClientSocketFactoriesInit.get();
@@ -182,7 +189,7 @@ public class RjsComConfig {
 		}
 		
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(final Object obj) {
 			return (this == obj
 					|| (obj instanceof RjRMIClientSocketFactory
 							&& this.id.equals(((RjRMIClientSocketFactory) obj).id) ));
