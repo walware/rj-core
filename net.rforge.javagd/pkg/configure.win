@@ -22,9 +22,10 @@ echo "  JAVA_HOME=$JAVA_HOME"
 
 echo "JAVA_HOME:=$JAVA_HOME" > src/Makevars.java
 
-echo "Install WinRegistry"
-mkdir -p inst/libs${R_ARCH}
-cp src/jvm-w32/WinRegistry.dll inst/libs${R_ARCH}
+# WinRegistry should no longer be needed
+#echo "Install WinRegistry"
+#mkdir -p inst/libs${R_ARCH}
+#cp src/jvm-w32/WinRegistry.dll inst/libs${R_ARCH}
 
 echo "Configuration done."
 

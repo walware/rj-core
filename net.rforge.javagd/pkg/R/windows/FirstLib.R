@@ -1,49 +1,60 @@
-.First.lib <-
+.onLoad <-
 function(libname, pkgname) {
+    OPATH <- Sys.getenv("PATH")
     javahome <- Sys.getenv("JAVA_HOME")
-    .putenv <- if (exists("Sys.setenv")) Sys.setenv else Sys.putenv
-    if(!nchar(javahome)) {
-	# let's try to fetch the paths from registry via WinRegistry.dll
-	javahome <- NULL
-	library.dynam("WinRegistry", pkgname, libname)
-	key<-"Software\\JavaSoft\\Java Runtime Environment"
-	jrever <- .Call("RegGetStrValue",c(key,"CurrentVersion"))
-	if (is.null(jrever)) { # try JDK if JRE fails
-	    key<-"Software\\JavaSoft\\Java Development Kit"
-	    jrever <- .Call("RegGetStrValue",c(key,"CurrentVersion"))
-	}
-	if (!is.null(jrever)) {
-	    dispver <- jrever
-	    key<-paste(key,jrever,sep="\\")
-	    micro <- .Call("RegGetStrValue", c(key,"MicroVersion"))
-	    if (!is.null(micro)) dispver <- paste(dispver,micro,sep=".")
-#	    cat("using Java Runtime version",dispver,"\n")
-	    javahome <- .Call("RegGetStrValue",c(key,"JavaHome"))
-	    if (!is.null(javahome)) { # ok, let's try to get the real lib path
-		p <- .Call("RegGetStrValue",c(key,"RuntimeLib"))
-		if (!is.null(p)) {
-		    # the following assumes that the entry is of the form
-		    # ...\jvm.dll - this should be ok since if it's not,
-		    # then we won't find the DLL either.
-		    # Note that we just add it to the PATH so if this fails
-		    # we still fall back to the JavaHome entry.
-		    .putenv(PATH=paste(Sys.getenv("PATH"),
-					  substr(p,1,nchar(p)-8),sep=";"))
-		}
-	    }
-	}
-	if (is.null(javahome))
-	    stop("JAVA_HOME is not set")
+    if(!nchar(javahome)) { ## JAVA_HOME was not set explicitly
+        find.java <- function() {
+            for (root in c("HLM", "HCU"))
+                for(key in c("Software\\JavaSoft\\Java Runtime Environment",
+                             "Software\\JavaSoft\\Java Development Kit")) {
+                  hive <- try(utils::readRegistry(key, root, 2), silent=TRUE)
+                  if (!inherits(hive, "try-error")) return(hive)
+                }
+            hive
+        }
+        hive <- find.java()
+        if (inherits(hive, "try-error"))
+            stop("JAVA_HOME cannot be determined from the Registry")
+        if (!length(hive$CurrentVersion))
+            stop("No CurrentVersion entry! Try re-installing Java and make sure R and Java have matching architectures.")
+        this <- hive[[hive$CurrentVersion]]
+        javahome <- this$JavaHome
+        paths <- dirname(this$RuntimeLib) # wrong on 64-bit
+    } else paths <- character()
+    if(is.null(javahome) || !length(javahome) || !nchar(javahome))
+        stop("JAVA_HOME is not set and could not be determined from the registry")
+    #else cat("using JAVA_HOME =", javahome, "\n")
+
+    ## we need to add Java-related library paths to PATH
+    curPath <- OPATH
+    paths <- c(paths,
+               file.path(javahome, "bin", "client"), # 32-bit
+               file.path(javahome, "bin", "server"), # 64-bit
+               file.path(javahome, "bin"), # base (now needed for MSVCRT in recent Sun Java)
+               file.path(javahome, "jre", "bin", "client")) # old 32-bit
+    cpc <- strsplit(curPath, ";", fixed=TRUE)[[1]] ## split it up so we can check presence/absence of a path
+
+    ## add paths only if they are not in already and they exist
+    for (path in unique(paths))
+        if (!path %in% cpc && file.exists(path)) curPath <- paste(curPath, path, sep=";")
+
+    ## set PATH only if it's not correct already (cannot use identical/isTRUE because of PATH name attribute)
+    if (curPath != OPATH) {
+      Sys.setenv(PATH = curPath)
+      # check the resulting PATH - if they don't match then Windows has truncated it
+      if (curPath != Sys.getenv("PATH"))
+        warning("*** WARNING: your Windows system seems to suffer from truncated PATH bug which will likely prevent rJava from loading.\n      Either reduce your PATH or read http://support.microsoft.com/kb/906469 on how to fix your system.")
     }
-    if(!nchar(javahome)) stop("JAVA_HOME is not set")
-#    else cat("using JAVA_HOME =", javahome, "\n")
-    .putenv(PATH=paste(Sys.getenv("PATH"),
-               file.path(javahome, "bin", "client"),
-               file.path(javahome, "bin", "server"),
-               file.path(javahome, "bin"),
-	       sep=";"))
-    .javaGD.jar.file<-paste(libname,pkgname,"java","javaGD.jar",sep=.Platform$file.sep)
+
+    .javaGD.jar.file <- system.file("java", "javaGD.jar", package=pkgname)
     library.dynam("JavaGD", pkgname, libname)
+
+    # register symbols (since we can't use NAMESPACE for that)
+    env <- asNamespace(pkgname)
+    symbols <- c('newJavaGD', 'javaGDversion', 'setJavaGDClassPath', 'getJavaGDClassPath',
+       'javaGDsetDisplayParam', 'javaGDgetDisplayParam', 'javaGDobjectCall', 'javaGDgetSize', 'javaGDresizeCall')
+    for (s in symbols) assign(s, getNativeSymbolInfo(s, "JavaGD"), envir=env)
+
     # set internal classpath in case we really need to initialize the JVM
-    .C("setJavaGDClassPath",paste(.javaGD.jar.file,Sys.getenv("CLASSPATH"),sep=";"))
+    .Call(setJavaGDClassPath, paste(.javaGD.jar.file, Sys.getenv("CLASSPATH"), sep=";"))
 }

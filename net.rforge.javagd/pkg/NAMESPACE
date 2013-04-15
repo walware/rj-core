@@ -1,2 +1,5 @@
-useDynLib(JavaGD, newJavaGD, javaGDversion, setJavaGDClassPath, getJavaGDClassPath, javaGDsetDisplayParam, javaGDgetDisplayParam, javaGDobjectCall, javaGDgetSize, javaGDresizeCall)
+## we cannot use useDynLib on Windows because PATH has to be tweaked first at run-time
+if(tools:::.OStype() != "windows") {
+    useDynLib(JavaGD, newJavaGD, javaGDversion, setJavaGDClassPath, getJavaGDClassPath, javaGDsetDisplayParam, javaGDgetDisplayParam, javaGDobjectCall, javaGDgetSize, javaGDresizeCall)
+}
 export(JavaGD)
