@@ -1,7 +1,7 @@
 #ifndef _DEV_JAVAGD_H
 #define _DEV_JAVAGD_H
 
-#define JAVAGD_VER 0x000505 /* JavaGD v0.5-5 */
+#define JAVAGD_VER 0x000600 /* JavaGD v0.6-0 */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -31,7 +31,7 @@
 #endif
 #endif
 
-Rboolean newJavaGDDeviceDriver(NewDevDesc*, char*, double, double, double);
+Rboolean newJavaGDDeviceDriver(NewDevDesc*, const char*, double, double, double);
 
 /********************************************************/
 /* Each driver can have its own device-specic graphical */
@@ -78,6 +78,8 @@ typedef struct {
 
     jobject talk; /* object associated with this graphics */
     jclass  talkClass; /* class of the talk object (cached) */
+
+    int holdlevel;                      /* current hold level (0=no holding) */
 } newJavaGDDesc;
 
 newJavaGDDesc * Rf_allocNewJavaGDDeviceDesc(double ps);

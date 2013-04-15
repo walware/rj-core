@@ -1,6 +1,21 @@
  NEWS/Changelog for JavaGD
 ---------------------------
 
+0.6-0	2012-09-12
+    o	change raster color space to sRGB
+
+    o	add support for flush/hold
+
+    o	add support for polypaths (modified patch
+	by Stephan Wahlbrink)
+
+    o	add a namespace
+
+    o	fixed a leak in StrWidth callback
+
+    o	cleanup (registered entry points, .Call)
+
+
 0.5-5	2011-12-10
     o	minor cleanups to get rid of warnings
 

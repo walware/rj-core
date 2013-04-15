@@ -19,12 +19,13 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
-//  $Id: GDObject.java 3410 2011-09-30 01:56:46Z ifellows $
+//  $Id: GDObject.java 3458 2012-09-12 21:30:35Z urbanek $
 
 package org.rosuda.javaGD;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
 
@@ -204,17 +205,51 @@ class GDPolygon extends GDObject {
     }
 
     public void paint(Component c, GDState gs, Graphics g) {
-        if (gs.fill!=null && !isPolyline) {
+        if (gs.fill != null && !isPolyline) {
             g.setColor(gs.fill);
             g.fillPolygon(xi, yi, n);
-            if (gs.col!=null) g.setColor(gs.col);
+            if (gs.col != null)
+		g.setColor(gs.col);
         }
-        if (gs.col!=null) {
+        if (gs.col != null) {
             if (isPolyline)
                 g.drawPolyline(xi, yi, n);
             else
                 g.drawPolygon(xi, yi, n);
         }
+    }
+}
+
+class GDPath extends GDObject {
+    int[] np; // # of points per path (np.length == # of paths)
+    double x[], y[]; // copy of the R-supplied data; FIXME: this is not really needed since it's already in the path object - so NOT rely on this in subclasses!
+    boolean winding; // winding rule (true) or odd/even rule (false)
+    GeneralPath path;
+    public GDPath(int[] np, double[] x, double[] y, boolean winding) {
+        this.x = x; this.y = y; this.np = np; this.winding = winding;
+
+        path = new GeneralPath(winding ? GeneralPath.WIND_NON_ZERO : GeneralPath.WIND_EVEN_ODD, x.length);
+        int k = 0, end = 0;
+        for (int i = 0; i < np.length; i++) {
+            end += np[i];
+            path.moveTo((float) x[k], (float) y[k]);
+	    k++;
+            for (; k < end; k++)
+                path.lineTo((float) x[k], (float) y[k]);
+            path.closePath();
+        }
+    }
+
+    public void paint(Component c, GDState gs, Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        if (gs.fill != null) {
+            g2.setColor(gs.fill);
+            g2.fill(path);
+            if (gs.col != null)
+		g2.setColor(gs.col);
+        }
+        if (gs.col != null)
+            g2.draw(path);
     }
 }
 
@@ -322,7 +357,7 @@ class GDRaster extends GDObject {
 	int comp_off[]  = { 0, 1, 2, 3 };
 	SampleModel sm = new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE, img_w, img_h, 4, img_w * 4, comp_off);
         WritableRaster raster = Raster.createWritableRaster(sm, dbuf, null);
-	ColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB), // FIXME: does R use sRGB or linear RGB?
+	ColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
 						true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
 	image = new BufferedImage(cm, raster, false, null);
 	//System.out.println(" - image = "+image);
@@ -333,7 +368,7 @@ class GDRaster extends GDObject {
 	Object oh = g2.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
 	try {
 	    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolate ? RenderingHints.VALUE_INTERPOLATION_BILINEAR : RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-	    ((Graphics2D)g).drawImage(image, atrans, null);
+	    g2.drawImage(image, atrans, null);
 	} finally {
 	    if (oh != null) g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, oh);
 	}

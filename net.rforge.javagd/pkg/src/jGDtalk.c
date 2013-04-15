@@ -53,7 +53,9 @@ static void newJavaGD_MetricInfo(int c,
 static void newJavaGD_Mode(int mode, NewDevDesc *dd);
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
 Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd,
-		     char *dsp, double w, double h);
+		     const char *dsp, double w, double h);
+static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean winding,
+                           R_GE_gcontext *gc, NewDevDesc *dd);
 static void newJavaGD_Polygon(int n, double *x, double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
@@ -258,6 +260,32 @@ static void newJavaGD_Hold(NewDevDesc *dd)
     chkX(env);
 }
 
+static int  newJavaGD_HoldFlush(NewDevDesc *dd, int level)
+{
+    int ol;
+    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+    JNIEnv *env = getJNIEnv();
+    jmethodID mid;
+    
+    if (!xd) return 0;
+    ol = xd->holdlevel;
+    xd->holdlevel += level;
+    if (xd->holdlevel < 0)
+	xd->holdlevel = 0;
+    
+    if(!env || !xd->talk)
+	return xd->holdlevel;
+    mid = (*env)->GetMethodID(env, xd->talkClass, "gdFlush", "(Z)V");
+    if (mid) {
+	if (xd->holdlevel == 0) /* flush */
+	    (*env)->CallVoidMethod(env, xd->talk, mid, 1);
+	else if (ol == 0) /* first hold */
+	    (*env)->CallVoidMethod(env, xd->talk, mid, 0);
+	chkX(env);
+    }
+    return xd->holdlevel;
+}
+
 static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd)
 {
     newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
@@ -362,7 +390,7 @@ static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
     sendAllGC(env, xd, gc);
 }
 
-Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd,  char *dsp, double w, double h)
+Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd, const char *dsp, double w, double h)
 {   
     if (initJavaGD(xd)) return FALSE;
     
@@ -371,6 +399,7 @@ Rboolean newJavaGD_Open(NewDevDesc *dd, newJavaGDDesc *xd,  char *dsp, double w,
     xd->canvas = R_RGB(255, 255, 255);
     xd->windowWidth = w;
     xd->windowHeight = h;
+    xd->holdlevel = 0;
         
     {
         JNIEnv *env = getJNIEnv();
@@ -416,6 +445,38 @@ static jarray newDoubleArray(JNIEnv *env, int n, double *ct)
     return da;
 }
 
+static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean winding,
+        R_GE_gcontext *gc, NewDevDesc *dd)
+{
+    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+    JNIEnv *env = getJNIEnv();
+    jmethodID mid;
+    jarray na, xa, ya;
+    int n;
+
+    if (!env || !xd || !xd->talk) return;
+
+    checkGC(env, xd, gc);
+
+    na = (*env)->NewIntArray(env, npoly);
+    if (!na) return;
+    (*env)->SetIntArrayRegion(env, na, 0, npoly, (jint *) nper);
+    n = 0;
+    for (int i = 0; i < npoly; ++i)
+        n += nper[i];
+    xa = newDoubleArray(env, n, x);
+    if (!xa) return;
+    ya = newDoubleArray(env, n, y);
+    if (!ya) return;
+    
+    mid = (*env)->GetMethodID(env, xd->talkClass, "gdPath", "(I[I[D[DZ)V");
+    if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, (jint) npoly, na, xa, ya, winding);
+    (*env)->DeleteLocalRef(env, na);
+    (*env)->DeleteLocalRef(env, xa); 
+    (*env)->DeleteLocalRef(env, ya);
+    chkX(env);
+}
+
 static void newJavaGD_Polygon(int n, double *x, double *y,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
     newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
@@ -425,18 +486,18 @@ static void newJavaGD_Polygon(int n, double *x, double *y,  R_GE_gcontext *gc,  
     
     if(!env || !xd || !xd->talk) return;
 
-    checkGC(env,xd, gc);
+    checkGC(env, xd, gc);
 
-    xa=newDoubleArray(env, n, x);
+    xa = newDoubleArray(env, n, x);
     if (!xa) return;
-    ya=newDoubleArray(env, n, y);
+    ya = newDoubleArray(env, n, y);
     if (!ya) return;
     
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdPolygon", "(I[D[D)V");
     if (mid) (*env)->CallVoidMethod(env, xd->talk, mid, n, xa, ya);
     (*env)->DeleteLocalRef(env, xa); 
     (*env)->DeleteLocalRef(env, ya);
-	chkX(env);
+    chkX(env);
 }
 
 static void newJavaGD_Polyline(int n, double *x, double *y,  R_GE_gcontext *gc,  NewDevDesc *dd)
@@ -448,11 +509,11 @@ static void newJavaGD_Polyline(int n, double *x, double *y,  R_GE_gcontext *gc, 
     
     if(!env || !xd || !xd->talk) return;
     
-    checkGC(env,xd, gc);
+    checkGC(env, xd, gc);
     
-    xa=newDoubleArray(env, n, x);
+    xa = newDoubleArray(env, n, x);
     if (!xa) return;
-    ya=newDoubleArray(env, n, y);
+    ya = newDoubleArray(env, n, y);
     if (!ya) return;
     
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdPolyline", "(I[D[D)V");
@@ -460,7 +521,7 @@ static void newJavaGD_Polyline(int n, double *x, double *y,  R_GE_gcontext *gc, 
     else gdWarning("gdPolyline: can't get mid ");
     (*env)->DeleteLocalRef(env, xa); 
     (*env)->DeleteLocalRef(env, ya);
-	chkX(env);
+    chkX(env);
 }
 
 static void newJavaGD_Rect(double x0, double y0, double x1, double y1,  R_GE_gcontext *gc,  NewDevDesc *dd)
@@ -533,17 +594,18 @@ static double newJavaGD_StrWidthUTF8(constxt char *str,  R_GE_gcontext *gc,  New
     JNIEnv *env = getJNIEnv();
     jmethodID mid;
     jstring s;
+    double res = 0.0;
     
     if(!env || !xd || !xd->talk) return 0.0;
     
-    checkGC(env,xd, gc);
+    checkGC(env, xd, gc);
     
     s = (*env)->NewStringUTF(env, str);
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdStrWidth", "(Ljava/lang/String;)D");
-    if (mid) return (*env)->CallDoubleMethod(env, xd->talk, mid, s);
-    /* s not released! */
-	chkX(env);
-    return 0.0;
+    if (mid) res = (*env)->CallDoubleMethod(env, xd->talk, mid, s);
+    (*env)->DeleteLocalRef(env, s);
+    chkX(env);
+    return res;
 }
 
 static void newJavaGD_Text(double x, double y, constxt char *str,  double rot, double hadj,  R_GE_gcontext *gc,  NewDevDesc *dd)
@@ -560,14 +622,14 @@ static void newJavaGD_TextUTF8(double x, double y, constxt char *str,  double ro
     
     if(!env || !xd || !xd->talk) return;
         
-    checkGC(env,xd, gc);
+    checkGC(env, xd, gc);
     
     s = (*env)->NewStringUTF(env, str);
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdText", "(DDLjava/lang/String;DD)V");
     if (mid)
         (*env)->CallVoidMethod(env, xd->talk, mid, x, y, s, rot, hadj);
     (*env)->DeleteLocalRef(env, s);  
-	chkX(env);
+    chkX(env);
 }
 
 static void newJavaGD_Raster(unsigned int *raster, int w, int h,
@@ -580,7 +642,7 @@ static void newJavaGD_Raster(unsigned int *raster, int w, int h,
     jmethodID mid;
 
     if(!env || !xd || !xd->talk) return;
-    checkGC(env,xd, gc);
+    checkGC(env, xd, gc);
     mid = (*env)->GetMethodID(env, xd->talkClass, "gdRaster", "([BIIDDDDDZ)V");
     if (mid) {
 	jbyteArray img = (*env)->NewByteArray(env, w * h * 4);
@@ -619,6 +681,12 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
     dd->textUTF8 = newJavaGD_TextUTF8;
 #if R_GE_version >= 6
     dd->raster = newJavaGD_Raster;
+#if R_GE_version >= 8
+    dd->path = newJavaGD_Path;
+#if R_GE_version >= 9
+    dd->holdflush = newJavaGD_HoldFlush;
+#endif
+#endif
 #endif
 #else
     dd->hold = newJavaGD_Hold;
@@ -684,13 +752,18 @@ int initJVM(char *user_classpath) {
 
 /*---------------- R-accessible functions -------------------*/
 
-void setJavaGDClassPath(char **cp) {
-    jarClassPath=(char*)malloc(strlen(*cp)+1);
-    strcpy(jarClassPath, *cp);
+SEXP setJavaGDClassPath(SEXP scp) {
+    const char *cp;
+    if (TYPEOF(scp) != STRSXP || LENGTH(scp) != 1)
+	Rf_error("invalid class path");
+    cp = CHAR(STRING_ELT(scp, 0));
+    /* FIXME: this will leak, but fixing it would require non-static initialization .. */
+    jarClassPath = strdup(cp);
+    return scp;
 }
 
-void getJavaGDClassPath(char **cp) {
-    *cp=jarClassPath;
+SEXP getJavaGDClassPath() {
+    return mkString(jarClassPath);
 }
 
 int initJavaGD(newJavaGDDesc* xd) {

@@ -5,11 +5,11 @@ JavaGD <- function(name="JavaGD", width=400, height=300, ps=12) {
     .jinit(.javaGD.get.class.path())
     .javaGD.set.class.path("")
   }
-  invisible(.C("newJavaGD",as.character(name),as.numeric(width),as.numeric(height),as.numeric(ps),PACKAGE="JavaGD"))
+  invisible(.Call(newJavaGD, name, width, height, ps))
 }
 
 .getJavaGDObject <- function(devNr) {
-    a<-.Call("javaGDobjectCall",as.integer(devNr-1),PACKAGE="JavaGD")
+    a <- .Call(javaGDobjectCall, devNr - 1L)
     if (!is.null(a)) {
     	if (exists(".jmkref")) a <- .jmkref(a)
 	else stop(".jmkref is not available. Please use rJava 0.3 or higher.")

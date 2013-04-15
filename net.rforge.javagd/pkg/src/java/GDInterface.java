@@ -36,19 +36,21 @@ import java.lang.reflect.Method;
  public void     gdClip(double x0, double x1, double y0, double y1);
  public void     gdClose();
  public void     gdDeactivate();
+ public void     gdFlush(boolean flush);
  public void     gdHold();
  public double[] gdLocator();
  public void     gdLine(double x1, double y1, double x2, double y2);
  public double[] gdMetricInfo(int ch);
  public void     gdMode(int mode);
  public void     gdNewPage(int deviceNumber);
+ public void     gdPath(int npoly, int[] nper, double[] x, double[] y, int mode);
  public void     gdPolygon(int n, double[] x, double[] y);
  public void     gdPolyline(int n, double[] x, double[] y);
+ public void     gdRaster(byte img[], int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
  public void     gdRect(double x0, double y0, double x1, double y1);
  public double[] gdSize();
  public double   gdStrWidth(String str);
  public void     gdText(double x, double y, String str, double rot, double hadj);
- public void     gdRaster(byte img[], int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
  </pre>
  <p>
  <b>GDC - manipulation of the current graphics state</b>
@@ -65,6 +67,8 @@ public class GDInterface {
     public boolean active=false;
     /** flag indicating whether this device has currently an open instance */
     public boolean open=false;
+    /** flag indicating whether hold is in progress */
+    public boolean holding = false;
     /** device number as supplied by R in {@link #newPage()} (-1 if undefined) */
     int devNr=-1;
     
@@ -120,6 +124,19 @@ public class GDInterface {
     public void     gdHold() {
     }
 
+    /** hold/flush
+     *  @param flush if <code>false</code> then the device started holding and no
+     *         updates should be shown on screen, if <code>true</code> then the device should
+     *         flush right away and resume normal operation after than. Note that
+     *         the flush must either be synchronous, or it must be guaranteed that
+     *         shown content will be identical to the state up till now, otherwise
+     *         the device will break animations. */
+    public void     gdFlush(boolean flush) {
+	holding = !flush;
+	if (flush && c != null)
+	    c.syncDisplay(true);
+    }
+
     /** invoke the locator
      *  @return array of indices or <code>null</code> is cancelled */
     public double[] gdLocator() {
@@ -166,7 +183,7 @@ public class GDInterface {
     /** R signalled a mode change
      *  @param mode mode as signalled by R (currently 0=R stopped drawing, 1=R started drawing, 2=graphical input exists) */
     public void     gdMode(int mode) {
-        if (c!=null) c.syncDisplay(mode==0);
+        if (!holding && c != null) c.syncDisplay(mode==0);
     }
 
     /** create a new, blank page (old API, not used anymore) */
@@ -182,6 +199,13 @@ public class GDInterface {
             c.reset();
             c.setDeviceNumber(devNr);
         }
+    }
+
+    /** create multi-polygon path
+     *  @param winding: use winding rule (true) or odd-even rule (false) */
+    public void     gdPath(int npoly, int[] nper, double[] x, double[] y, boolean winding) {
+        if (c==null) return;
+        c.add(new GDPath(nper, x, y, winding));
     }
 
     public void     gdPolygon(int n, double[] x, double[] y) {

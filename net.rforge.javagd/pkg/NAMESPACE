@@ -1,0 +1,2 @@
+useDynLib(JavaGD, newJavaGD, javaGDversion, setJavaGDClassPath, getJavaGDClassPath, javaGDsetDisplayParam, javaGDgetDisplayParam, javaGDobjectCall, javaGDgetSize, javaGDresizeCall)
+export(JavaGD)
