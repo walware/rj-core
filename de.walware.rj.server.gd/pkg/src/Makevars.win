@@ -10,8 +10,8 @@ JAVA_INCLUDES=$(JAVA_HOME)/include $(JAVA_HOME)/include/win32
 PKG_CFLAGS= -D_R_ -DWin32 -I$(RHOME)/src/include $(JAVA_INCLUDES:%=-I%) -Iinclude/Win32
 PKG_LIBS= -ljvm.dll -L$(TOP)/src -Ljvm-w32 -L.
 
-all: WinRegistry.dll $(SHLIB)
-
-WinRegistry.dll:
-	$(MAKE) -C jvm-w32 WinRegistry.dll
-	cp jvm-w32/WinRegistry.dll .
+#all: WinRegistry.dll $(SHLIB)
+#
+#WinRegistry.dll:
+#	$(MAKE) -C jvm-w32 WinRegistry.dll
+#	cp jvm-w32/WinRegistry.dll .

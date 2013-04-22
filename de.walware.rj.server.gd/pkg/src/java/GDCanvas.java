@@ -98,7 +98,7 @@ public class GDCanvas extends Canvas implements GDContainer, MouseListener {
                     par[0]=Class.forName("java.lang.String");
                     m=c.getMethod("eval",par);
                     Object[] pars=new Object[1];
-                    pars[0]="try(.C(\"javaGDresize\",as.integer("+devNr+")),silent=TRUE)";
+                    pars[0]="try(.Call(\"javaGDresize\", "+devNr+"L)), PACKAGE= \"rj.gd\", silent= TRUE)";
                     m.invoke(o, pars);
                 }
             }

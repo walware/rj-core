@@ -4,7 +4,7 @@
 
 include $(R_HOME)/etc$(R_ARCH)/Makeconf
 
-TARGETS=libjvm.dll.a findjava.exe WinRegistry.dll
+TARGETS=libjvm.dll.a findjava.exe
 
 # libjvm.dll.a    - wrapper lib for jvm.dll from Java
 # findjava.exe    - helper tool to find the current JDK from the registry

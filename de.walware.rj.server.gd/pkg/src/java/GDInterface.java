@@ -34,6 +34,7 @@ package org.rosuda.javaGD;
  public void     gdClip(double x0, double x1, double y0, double y1);
  public void     gdClose();
  public void     gdDeactivate();
+ public void     gdFlush(boolean flush);
  public double[] gdInit(double width, double height, int unit, double xpi, double ypi)
  public double[] gdLocator();
  public void     gdLine(double x1, double y1, double x2, double y2);
@@ -41,13 +42,14 @@ package org.rosuda.javaGD;
  public void     gdMode(int mode);
  public void     gdNewPage();
  public boolean  gdNewPageConfirm();
+ public void     gdPath(int npoly, int[] nper, double[] x, double[] y, int mode);
  public void     gdPolygon(int n, double[] x, double[] y);
  public void     gdPolyline(int n, double[] x, double[] y);
  public void     gdRect(double x0, double y0, double x1, double y1);
  public double[] gdSize();
  public double   gdStrWidth(String str);
  public void     gdText(double x, double y, String str, double rot, double hadj);
- public void     gdRaster(byte[] rgb, byte[] a, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
+ public void     gdRaster(byte[] rgb, boolean hasAlpha, int img_w, int img_h, double x, double y, double w, double h, double rot, boolean interpolate);
  public int[]    gdCap(int[] dim);
   </pre>
  <p>
@@ -78,6 +80,11 @@ public abstract class GDInterface {
 	private boolean open = false;
 	
 	/**
+	 * Flag indicating whether hold is in progress
+	 **/
+	private boolean holding = false;
+	
+	/**
 	 * The device number as supplied by R in {@link #gdOpen(int, double, double)}
 	 * (-1 if undefined)
 	 **/
@@ -106,6 +113,10 @@ public abstract class GDInterface {
 	
 	public final boolean isOpen() {
 		return this.open;
+	}
+	
+	public final boolean isHolding() {
+		return this.holding;
 	}
 	
 	
@@ -205,6 +216,17 @@ public abstract class GDInterface {
     /** the device became inactive (i.e. another device is now current) */
     public void     gdDeactivate() {
         this.active = false;
+    }
+
+    /** hold/flush
+     *  @param flush if <code>false</code> then the device started holding and no
+     *         updates should be shown on screen, if <code>true</code> then the device should
+     *         flush right away and resume normal operation after than. Note that
+     *         the flush must either be synchronous, or it must be guaranteed that
+     *         shown content will be identical to the state up till now, otherwise
+     *         the device will break animations. */
+    public void     gdFlush(boolean flush) {
+		this.holding = !flush;
     }
 
     /** invoke the locator

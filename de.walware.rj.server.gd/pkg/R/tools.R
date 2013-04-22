@@ -12,10 +12,10 @@
 .rj.getGDVersion <- function() {
 	initLib()
 	
-	v <- .C("javaGDversion", as.integer(rep(0,4)), PACKAGE= "rj.gd")[[1]]
+	v <- .Call("javaGDversion", PACKAGE= "rj.gd")
 	list(major= v[1]%/%65536, minor= (v[1]%/%256)%%256, patch= (v[1]%%256), numeric= v[1])
 }
 
 .rj.setGDDisplayParameters <- function(dpiX = 100, dpiY = 100, aspect = 1) {
-	invisible(.C("javaGDsetDisplayParam", as.double(c(dpiX, dpiY, aspect)), PACKAGE= "rj.gd"))
+	invisible(.Call("javaGDsetDisplayParam", as.double(c(dpiX, dpiY, aspect)), PACKAGE= "rj.gd"))
 }

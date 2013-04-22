@@ -1,7 +1,7 @@
 #ifndef _DEV_JAVAGD_H
 #define _DEV_JAVAGD_H
 
-#define JAVAGD_VER 0x000505 /* JavaGD v0.5-5 */
+#define JAVAGD_VER 0x000601 /* JavaGD v0.6-1 */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -56,6 +56,9 @@ typedef struct {
 
     jobject talk; /* object associated with this graphics */
     jclass  talkClass; /* class of the talk object (cached) */
+    
+    int holdlevel;                      /* current hold level (0=no holding) */
+
 } newJavaGDDesc;
 
 #endif

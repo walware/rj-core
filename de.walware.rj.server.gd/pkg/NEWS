@@ -1,6 +1,29 @@
  NEWS/Changelog for JavaGD
 ---------------------------
 
+0.6-1	2012-09-13
+    o	clean up Windows version and remove dependency on WinRegistry
+
+0.6-0	2012-09-12
+    o	change raster color space to sRGB
+
+    o	add support for flush/hold
+
+    o	add support for polypaths (modified patch
+	by Stephan Wahlbrink)
+
+    o	add a namespace
+
+    o	fixed a leak in StrWidth callback
+
+    o	cleanup (registered entry points, .Call)
+
+
+0.5-5	2011-12-10
+    o	minor cleanups to get rid of warnings
+
+    o	add raster support
+
 0.5-4	2011-06-21
     o	copies WinRegistry.dll in the build directory so
 	it can be picked up by multi-arch installs.

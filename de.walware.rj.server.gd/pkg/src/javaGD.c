@@ -40,7 +40,7 @@ static int setNewJavaGDDeviceData(NewDevDesc *dd, newJavaGDDesc *xd,
 /* JavaGD Driver Specific parameters
  * with only one copy for all xGD devices */
 
-static Rboolean newJavaGDDeviceDriver(NewDevDesc *dd, char *display,
+static Rboolean newJavaGDDeviceDriver(NewDevDesc *dd, const char *display,
 		double width, double height, int sizeUnit,
 		double xpi, double ypi, int canvas,
 		double pointsize, double gamma)
@@ -61,6 +61,7 @@ static Rboolean newJavaGDDeviceDriver(NewDevDesc *dd, char *display,
 		return FALSE;
 	}
 	
+	xd->holdlevel = 0;
 	xd->fill = 0xffffffff; /* transparent */
 	xd->col = R_RGB(0, 0, 0);
 	xd->canvas = canvas;
@@ -155,7 +156,7 @@ static char *SaveString(SEXP sxp, int offset)
 } */
 
 static GEDevDesc* 
-addJavaGDDevice(char *display, double width, double height, int sizeUnit,
+addJavaGDDevice(const char *display, double width, double height, int sizeUnit,
 		double xpinch, double ypinch, int canvas,
 		double pointsize, double gamma)
 {
@@ -210,47 +211,54 @@ void reloadJavaGD(int *dn) {
 }
 
 SEXP javaGDobjectCall(SEXP dev) {
-  int ds=NumDevices();
-  int dn;
-  GEDevDesc *gd;
-  void *ptr=0;
-
-  if (!isInteger(dev) || LENGTH(dev)<1) return R_NilValue;
-  dn = INTEGER(dev)[0];
-  if (dn<0 || dn>=ds) return R_NilValue;
-  gd=GEgetDevice(dn);
-  if (gd) {
-    NewDevDesc *dd=gd->dev;
-    if (dd) {
-      newJavaGDDesc *xd=(newJavaGDDesc*) dd->deviceSpecific;
-      if (xd) ptr = xd->talk;
-    }
-  }
-  if (!ptr) return R_NilValue;
-  return R_MakeExternalPtr(ptr, R_NilValue, R_NilValue);
+	GEDevDesc *gd;
+	{	int ds = NumDevices();
+		int dn = asInteger(dev);
+		if (dn < 0 || dn >= ds) return R_NilValue;
+		gd = GEgetDevice(dn);
+	}
+	void *ptr=0;
+	
+	if (gd) {
+		NewDevDesc *dd=gd->dev;
+		if (dd) {
+			newJavaGDDesc *xd=(newJavaGDDesc*) dd->deviceSpecific;
+			if (xd) ptr = xd->talk;
+		}
+	}
+	
+	if (!ptr) return R_NilValue;
+	return R_MakeExternalPtr(ptr, R_NilValue, R_NilValue);
 }
 
-void javaGDresize(int dev) {
-    int ds=NumDevices();
-    int i=0;
-    if (dev>=0 && dev<ds) { i=dev; ds=dev+1; }
-    while (i<ds) {
-        GEDevDesc *gd=GEgetDevice(i);
-        if (gd) {
-            NewDevDesc *dd=gd->dev;
+void javaGDresize(SEXP dev) {
+	int ds = NumDevices();
+	int dn = asInteger(dev);
+	if (dn < 0) {
+		dn = 0;
+	} else if (dn < ds) {
+		ds = dn + 1;
+	} else {
+		return;
+	}
+	
+	while (dn < ds) {
+		GEDevDesc *gd=GEgetDevice(dn);
+		if (gd) {
+			NewDevDesc *dd = gd->dev;
 #ifdef JGD_DEBUG
-            printf("javaGDresize: device=%d, dd=%lx\n", i, (unsigned long)dd);
+			printf("javaGDresize: device=%d, dd=%lx\n", dn, (unsigned long)dd);
 #endif
-            if (dd) {
+			if (dd) {
 #ifdef JGD_DEBUG
-                printf("dd->size=%lx\n", (unsigned long)dd->size);
+				printf("dd->size=%lx\n", (unsigned long)dd->size);
 #endif
-                dd->size(&(dd->left), &(dd->right), &(dd->bottom), &(dd->top), dd);
-                GEplayDisplayList(gd);
-            }
-        }
-        i++;
-    }
+				dd->size(&(dd->left), &(dd->right), &(dd->bottom), &(dd->top), dd);
+				GEplayDisplayList(gd);
+			}
+		}
+		dn++;
+	}
 }
 
 void resizedJavaGD(NewDevDesc *dd) {
@@ -268,13 +276,17 @@ void resizedJavaGD(NewDevDesc *dd) {
 SEXP newJavaGD(SEXP sName, SEXP sWidth, SEXP sHeight, SEXP sSizeUnit,
 		SEXP sXpinch, SEXP sYpinch, SEXP sCanvasColor,
 		SEXP sPointsize, SEXP sGamma) {
+	if (TYPEOF(sName) != STRSXP || LENGTH(sName) < 1) {
+		Rf_error("Illegal argument: name");
+	}
+	
 	double width = Rf_asReal(sWidth);
 	double height = Rf_asReal(sHeight);
 	if (!R_FINITE(width) || width < 0.0) {
-		error("Illegal argument: width");
+		Rf_error("Illegal argument: width");
 	}
 	if (!R_FINITE(height) || height < 0.0) {
-		error("Illegal argument: height");
+		Rf_error("Illegal argument: height");
 	}
 	int sizeUnit = Rf_asInteger(sSizeUnit);
 	
@@ -296,7 +308,7 @@ SEXP newJavaGD(SEXP sName, SEXP sWidth, SEXP sHeight, SEXP sSizeUnit,
 		gamma = 1.0;
 	}
 	
-	addJavaGDDevice("", width, height, sizeUnit,
+	addJavaGDDevice(CHAR(STRING_ELT(sName, 0)), width, height, sizeUnit,
 			xpinch, ypinch, canvas,
 			pointsize, gamma );
 	return R_NilValue;
@@ -306,6 +318,6 @@ void javaGDsetDisplayParam(double *par) {
 	jGDasp  = par[2];
 }
 
-void javaGDversion(int *ver) {
-	*ver=JAVAGD_VER;
+SEXP javaGDversion() {
+	return ScalarInteger(JAVAGD_VER);
 }

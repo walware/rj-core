@@ -87,6 +87,7 @@ static jmethodID jmGDInterfaceCircle;
 static jmethodID jmGDInterfaceClip;
 static jmethodID jmGDInterfaceClose;
 static jmethodID jmGDInterfaceDeactivate;
+static jmethodID jmGDInterfaceFlush;
 static jmethodID jmGDInterfaceGetPPI;
 static jmethodID jmGDInterfaceInit;
 static jmethodID jmGDInterfaceLocator;
@@ -132,17 +133,17 @@ static JNIEnv *getJNIEnv() {
     if (!jvm) { /* we're hoping that the JVM pointer won't change :P we fetch it just once */
         res = JNI_GetCreatedJavaVMs(&jvm, 1, &l);
         if (res != 0) {
-	  fprintf(stderr, "JNI_GetCreatedJavaVMs failed! (%d)\n", (int)res); return 0;
+	  REprintf("JNI_GetCreatedJavaVMs failed! (%d)\n", (int)res); return 0;
         }
         if (l<1) {
-	  /* fprintf(stderr, "JNI_GetCreatedJavaVMs said there's no JVM running!\n"); */ return 0;
+	  /* REprintf("JNI_GetCreatedJavaVMs said there's no JVM running!\n"); */ return 0;
         }
 	if (!jvm)
 	  error("Unable to get JVM handle");
     }
     res = (*jvm)->AttachCurrentThread(jvm, (void**) &env, 0);
     if (res!=0) {
-        fprintf(stderr, "AttachCurrentThread failed! (%d)\n", (int)res); return 0;
+        REprintf("AttachCurrentThread failed! (%d)\n", (int)res); return 0;
     }
     /* if (eenv!=env)
         fprintf(stderr, "Warning! eenv=%x, but env=%x - different environments encountered!\n", eenv, env); */
@@ -190,10 +191,10 @@ static void sendAllGC(JNIEnv *env, newJavaGDDesc *xd, R_GE_gcontext *gc) {
 
 static void newJavaGD_Activate(NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceActivate);
 	chkX(env);
@@ -201,12 +202,12 @@ static void newJavaGD_Activate(NewDevDesc *dd)
 
 static void newJavaGD_Circle(double x, double y, double r,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
-
-    checkGC(env,xd, gc);
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceCircle, x, y, r);
 	chkX(env);
@@ -214,11 +215,11 @@ static void newJavaGD_Circle(double x, double y, double r,  R_GE_gcontext *gc,  
 
 static void newJavaGD_Clip(double x0, double x1, double y0, double y1,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if (!env || !xd || !xd->talk) return;
-    
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
+	
 	if (x0 > x1) {
 		double tmp = x0;
 		x0 = x1;
@@ -235,10 +236,10 @@ static void newJavaGD_Clip(double x0, double x1, double y0, double y1,  NewDevDe
 
 static void newJavaGD_Close(NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceClose);
 	chkX(env);
@@ -246,21 +247,44 @@ static void newJavaGD_Close(NewDevDesc *dd)
 
 static void newJavaGD_Deactivate(NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceDeactivate);
 	chkX(env);
 }
 
-static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd)
+static int newJavaGD_HoldFlush(NewDevDesc *dd, int level)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return FALSE;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!xd) return 0;
+	
+	int ol = xd->holdlevel;
+	xd->holdlevel += level;
+	if (xd->holdlevel < 0) {
+		xd->holdlevel = 0;
+	}
+	
+	if (!env || !xd->talk) return xd->holdlevel;
+	
+	if (xd->holdlevel == 0) /* flush */
+		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceFlush, 1);
+	else if (ol == 0)/* first hold */
+		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceFlush, 0);
+	chkX(env);
+	
+	return xd->holdlevel;
+}
+
+static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd) {
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return FALSE;
 	
 	jobject o=(*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceLocator);
 	if (o) {
@@ -279,29 +303,29 @@ static Rboolean newJavaGD_Locator(double *x, double *y, NewDevDesc *dd)
 	return FALSE;
 }
 
-static void newJavaGD_Line(double x1, double y1, double x2, double y2,  R_GE_gcontext *gc,  NewDevDesc *dd)
+static void newJavaGD_Line(double x1, double y1, double x2, double y2, R_GE_gcontext *gc, NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
-    
-    checkGC(env,xd, gc);
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceLine, x1, y1, x2, y2);
 	chkX(env);
 }
 
-static void newJavaGD_MetricInfo(int c,  R_GE_gcontext *gc,  double* ascent, double* descent,  double* width, NewDevDesc *dd)
+static void newJavaGD_MetricInfo(int c, R_GE_gcontext *gc, double* ascent, double* descent, double* width, NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
-    
-    checkGC(env,xd, gc);
-    
-    if(c <0) c = -c;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
+	
+	if (c < 0) c = -c;
 	jobject o=(*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceMetricInfo, c);
 	if (o) {
 		jdouble *ac=(jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
@@ -317,10 +341,10 @@ static void newJavaGD_MetricInfo(int c,  R_GE_gcontext *gc,  double* ascent, dou
 
 static void newJavaGD_Mode(int mode, NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceMode, mode);
 	chkX(env);
@@ -328,10 +352,10 @@ static void newJavaGD_Mode(int mode, NewDevDesc *dd)
 
 static void newJavaGD_NewPage(R_GE_gcontext *gc, NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceNewPage, gc->fill);
 	chkX(env);
@@ -366,21 +390,21 @@ static Rboolean newJavaGD_NewPageConfirm(NewDevDesc *dd)
 
 static jarray newDoubleArrayPoly(JNIEnv *env, int n, double *ct)
 {
-    jdoubleArray da = (*env)->NewDoubleArray(env,n);
+	jdoubleArray da = (*env)->NewDoubleArray(env,n);
 	if (!da) {
 		handleJNewArrayError(env, "gdPoly*/gdPath");
 	}
-    if (n>0) {
-        jdouble *dae;
-        dae = (*env)->GetDoubleArrayElements(env, da, 0);
+	if (n>0) {
+		jdouble *dae;
+		dae = (*env)->GetDoubleArrayElements(env, da, 0);
 		if (!dae) {
 			handleJGetArrayError(env, da, "gdPoly*/gdPath");
 		}
-        memcpy(dae,ct,sizeof(double)*n);
-        (*env)->ReleaseDoubleArrayElements(env, da, dae, 0);
-    }
+		memcpy(dae,ct,sizeof(double)*n);
+		(*env)->ReleaseDoubleArrayElements(env, da, dae, 0);
+	}
 	chkX(env);
-    return da;
+	return da;
 }
 
 static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean winding,
@@ -402,8 +426,8 @@ static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean 
 		for (int i = 0; i < npoly; ++i) {
 			n += nper[i];
 		}
-		jX=newDoubleArrayPoly(env, n, x);
-		jY=newDoubleArrayPoly(env, n, y);
+		jX = newDoubleArrayPoly(env, n, x);
+		jY = newDoubleArrayPoly(env, n, y);
 	}
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePath, (jint) npoly, jNPer, jX, jY,
@@ -416,48 +440,48 @@ static void newJavaGD_Path(double *x, double *y, int npoly, int *nper, Rboolean 
 
 static void newJavaGD_Polygon(int n, double *x, double *y,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    jarray xa, ya;
-    
-    if(!env || !xd || !xd->talk) return;
-
-    checkGC(env,xd, gc);
-
-    xa=newDoubleArrayPoly(env, n, x);
-    ya=newDoubleArrayPoly(env, n, y);
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	jarray xa, ya;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
+	
+	xa = newDoubleArrayPoly(env, n, x);
+	ya = newDoubleArrayPoly(env, n, y);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePolygon, n, xa, ya);
-    (*env)->DeleteLocalRef(env, xa); 
-    (*env)->DeleteLocalRef(env, ya);
+	(*env)->DeleteLocalRef(env, xa); 
+	(*env)->DeleteLocalRef(env, ya);
 	chkX(env);
 }
 
 static void newJavaGD_Polyline(int n, double *x, double *y,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    jarray xa, ya;
-    
-    if(!env || !xd || !xd->talk) return;
-    
-    checkGC(env,xd, gc);
-    
-    xa=newDoubleArrayPoly(env, n, x);
-    ya=newDoubleArrayPoly(env, n, y);
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	jarray xa, ya;
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
+	
+	xa = newDoubleArrayPoly(env, n, x);
+	ya = newDoubleArrayPoly(env, n, y);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfacePolyline, n, xa, ya);
-    (*env)->DeleteLocalRef(env, xa); 
-    (*env)->DeleteLocalRef(env, ya);
+	(*env)->DeleteLocalRef(env, xa); 
+	(*env)->DeleteLocalRef(env, ya);
 	chkX(env);
 }
 
 static void newJavaGD_Rect(double x0, double y0, double x1, double y1,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	if (x0 > x1) {
 		double tmp = x0;
@@ -470,7 +494,7 @@ static void newJavaGD_Rect(double x0, double y0, double x1, double y1,  R_GE_gco
 		y1 = tmp;
 	}
 	
-	checkGC(env,xd, gc);
+	checkGC(env, xd, gc);
 	
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRect, x0, y0, x1, y1);
 	chkX(env);
@@ -478,10 +502,10 @@ static void newJavaGD_Rect(double x0, double y0, double x1, double y1,  R_GE_gco
 
 static void newJavaGD_Size(double *left, double *right,  double *bottom, double *top,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    
-    if(!env || !xd || !xd->talk) return;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
 	
 	jobject o=(*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceSize);
 	if (o) {
@@ -519,23 +543,23 @@ static double newJavaGD_StrWidth(constxt char *str,  R_GE_gcontext *gc,  NewDevD
 
 static double newJavaGD_StrWidthUTF8(constxt char *str,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    jstring s;
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
 	double width;
-    
-    if(!env || !xd || !xd->talk) return 0.0;
-    
-    checkGC(env,xd, gc);
-
-    s = (*env)->NewStringUTF(env, str);
+	
+	if (!env || !xd || !xd->talk) return 0.0;
+	
+	checkGC(env, xd, gc);
+	
+	jstring s = (*env)->NewStringUTF(env, str);
 	if (!s) {
 		handleJNewStringError(env, "gdStrWidth");
 	}
 	width = (*env)->CallDoubleMethod(env, xd->talk, jmGDInterfaceStrWidth, s);
-    /* s not released! */
+	(*env)->DeleteLocalRef(env, s);
 	chkX(env);
-    return width;
+	
+	return width;
 }
 
 static void newJavaGD_Text(double x, double y, constxt char *str,  double rot, double hadj,  R_GE_gcontext *gc,  NewDevDesc *dd)
@@ -545,15 +569,14 @@ static void newJavaGD_Text(double x, double y, constxt char *str,  double rot, d
 
 static void newJavaGD_TextUTF8(double x, double y, constxt char *str,  double rot, double hadj,  R_GE_gcontext *gc,  NewDevDesc *dd)
 {
-    newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
-    JNIEnv *env = getJNIEnv();
-    jstring s;
-    
-    if(!env || !xd || !xd->talk) return;
-        
-    checkGC(env,xd, gc);
-    
-    s = (*env)->NewStringUTF(env, str);
+	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
+	JNIEnv *env = getJNIEnv();
+	
+	if (!env || !xd || !xd->talk) return;
+	
+	checkGC(env, xd, gc);
+	
+	jstring s = (*env)->NewStringUTF(env, str);
 	if (!s) {
 		handleJNewStringError(env, "gdText");
 	}
@@ -568,31 +591,30 @@ static void newJavaGD_Raster(unsigned int *raster, int w, int h,
 		R_GE_gcontext *gc, NewDevDesc *dd) {
 	newJavaGDDesc *xd = (newJavaGDDesc *) dd->deviceSpecific;
 	JNIEnv *env = getJNIEnv();
-	jbyteArray jData;
-	jbyte* ba;
 	int i, j;
 	
 	if (!env || !xd || !xd->talk) return;
 	
 	int withAlpha = 0;
 	int count = w * h;
-	jData = (*env)->NewByteArray(env, count * 4);
+	jbyteArray jData = (*env)->NewByteArray(env, count * 4);
 	if (!jData) {
 		handleJNewArrayError(env, "gdRaster");
 	}
-	ba = (*env)->GetByteArrayElements(env, jData, 0);
-	if (!ba) {
-		handleJGetArrayError(env, jData, "gdRaster");
-	}
-	for (i = 0, j = 0; i < count; i++, j+=4) {
-		ba[j] = R_BLUE(raster[i]);
-		ba[j+1] = R_GREEN(raster[i]);
-		ba[j+2] = R_RED(raster[i]);
-		if ((ba[j+3] = R_ALPHA(raster[i])) != (jbyte) 0xff) {
-			withAlpha = 1;
+	{	jbyte* ba = (*env)->GetByteArrayElements(env, jData, 0);
+		if (!ba) {
+			handleJGetArrayError(env, jData, "gdRaster");
 		}
+		for (i = 0, j = 0; i < count; i++, j+=4) {
+			ba[j] = R_BLUE(raster[i]);
+			ba[j+1] = R_GREEN(raster[i]);
+			ba[j+2] = R_RED(raster[i]);
+			if ((ba[j+3] = R_ALPHA(raster[i])) != (jbyte) 0xff) {
+				withAlpha = 1;
+			}
+		}
+		(*env)->ReleaseByteArrayElements(env, jData, ba, 0);
 	}
-	(*env)->ReleaseByteArrayElements(env, jData, ba, 0);
 	(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceRaster, jData, (withAlpha) ? JNI_TRUE : JNI_FALSE,
 			w, h, x, y, width, height, rot, interpolate );
 	(*env)->DeleteLocalRef(env, jData);
@@ -684,6 +706,7 @@ void setupJavaGDfunctions(NewDevDesc *dd) {
 	dd->haveRaster = 2;
 	dd->haveCapture = 2;
 	dd->haveLocator = 2;
+	dd->holdflush = newJavaGD_HoldFlush;
 #endif
 }
 
@@ -796,6 +819,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceClip = getJMethod(env, jc, "gdClip", "(DDDD)V", RJ_ERROR_RERROR);
 		jmGDInterfaceClose = getJMethod(env, jc, "gdClose", "()V", RJ_ERROR_RERROR);
 		jmGDInterfaceDeactivate = getJMethod(env, jc, "gdDeactivate", "()V", RJ_ERROR_RERROR);
+		jmGDInterfaceFlush = getJMethod(env, jc, "gdFlush", "(Z)V", RJ_ERROR_RERROR);
 		jmGDInterfaceGetPPI = getJMethod(env, jc, "gdPPI", "()[D", RJ_ERROR_RERROR);
 		jmGDInterfaceInit = getJMethod(env, jc, "gdInit", "(DDIDDI)[D", RJ_ERROR_RERROR);
 		jmGDInterfaceLocator = getJMethod(env, jc, "gdLocator", "()[D", RJ_ERROR_RERROR);
@@ -851,7 +875,7 @@ void initJavaGD(newJavaGDDesc *xd, double *width, double *height, int *unit, dou
 	JNIEnv *env = getJNIEnv();
 	jobject jo;
 	
-	if(!env || !xd || !xd->talk) return;
+	if (!env || !xd || !xd->talk) return;
 	
 	jo = (*env)->CallObjectMethod(env, xd->talk, jmGDInterfaceInit,
 			(jdouble) *width, (jdouble) *height, (jint) *unit,

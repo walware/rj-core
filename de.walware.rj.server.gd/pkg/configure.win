@@ -1,20 +1,16 @@
 #!/bin/sh
 
-# if CONFIGURED is set, then we don't attempt to run findjava
-# (useful when building inside rJava)
-if [ -z "$CONFIGURED" ]; then
-    echo "Generate Windows-specific files (src/jvm-w32) ..."
-    make -C src/jvm-w32
+echo "Generate Windows-specific files (src/jvm-w32) ..."
+make -C src/jvm-w32
 
-    if [ $? != 0 ]; then
-	exit 1
-    fi
+if [ $? != 0 ]; then
+    exit 1
+fi
 
-    echo "Find Java..."
+echo "Find Java..."
 # findjava honors JAVA_HOME environment variable, so we can safely overwite it 
-    if [ -e src/jvm-w32/findjava.exe ]; then
-        JAVA_HOME=`src/jvm-w32/findjava -s -f`
-    fi
+if [ -e src/jvm-w32/findjava.exe ]; then
+    JAVA_HOME=`src/jvm-w32/findjava -s -f`
 fi
 
 if [ x$JAVA_HOME = x ]; then
@@ -26,7 +22,5 @@ fi
 echo "  JAVA_HOME=$JAVA_HOME"
 
 echo "JAVA_HOME:=$JAVA_HOME" > src/Makevars.java
-
-mkdir -p inst/libs${R_ARCH}
 
 echo "Configuration done."

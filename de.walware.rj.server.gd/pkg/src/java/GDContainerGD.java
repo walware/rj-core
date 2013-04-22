@@ -80,6 +80,14 @@ public class GDContainerGD extends GDInterface {
         if (c!=null) c.closeDisplay();
     }
 
+    @Override
+    public void gdFlush(boolean flush) {
+        super.gdFlush(flush);
+        if (c != null && !isHolding()) {
+            c.syncDisplay(true);
+        }
+    }
+
     /** invoke the locator
      *  @return array of indices or <code>null</code> is cancelled */
     @Override
@@ -127,11 +135,9 @@ public class GDContainerGD extends GDInterface {
     /** R signalled a mode change
      *  @param mode mode as signalled by R (currently 0=R stopped drawing, 1=R started drawing, 2=graphical input exists) */
     public void     gdMode(int mode) {
-        if (c!=null) c.syncDisplay(mode==0);
+        if (c != null && !isHolding()) c.syncDisplay(mode==0);
     }
 
-    /** create a new, blank page 
-     *  @param devNr device number assigned to this device by R */
     public void     gdNewPage() {
         if (c!=null) {
             c.reset();
@@ -141,7 +147,7 @@ public class GDContainerGD extends GDInterface {
     @Override
     public void     gdPath(int nPoly, int[] nPer, double[] x, double[] y, int mode) {
         if (c==null) return;
-//        c.add(new GDPolygon(n, x, y, false));
+        c.add(new GDPath(nPer, x, y, mode == 1));
     }
 
     @Override

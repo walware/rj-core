@@ -3,7 +3,7 @@
 //  Java Graphics Device
 //
 //  Created by Simon Urbanek on Thu Aug 05 2004.
-//  Copyright (c) 2004-2013 Simon Urbanek. All rights reserved.
+//  Copyright (c) 2004-2009 Simon Urbanek. All rights reserved.
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public

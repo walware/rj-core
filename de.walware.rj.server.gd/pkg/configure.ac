@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(rj.gd, 0.5, stephan.wahlbrink@walware.de)
+AC_INIT(rj.gd, 2.0, stephan.wahlbrink@walware.de)
 AC_CONFIG_SRCDIR([src/javaGD.c])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -123,4 +123,5 @@ AC_SUBST(XTRA_CF)
 AC_SUBST(XTRA_LD)
 
 AC_CONFIG_FILES([src/Makevars])
+AC_CONFIG_FILES([R/zzz.R])
 AC_OUTPUT

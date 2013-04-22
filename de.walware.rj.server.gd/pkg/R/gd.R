@@ -10,7 +10,7 @@ rj.GD <- function(name = "rj.gd", width = 7, height = 7, size.unit = "in",
 	}
 	size.unit <- switch(size.unit, "px" = 1L, 0L)
 	
-	invisible(.Call("newJavaGD", as.character(name),
+	invisible(.Call("newJavaGD", name,
 					width, height, size.unit,
 					xpinch, ypinch, canvas,
 					pointsize, gamma,
@@ -18,7 +18,7 @@ rj.GD <- function(name = "rj.gd", width = 7, height = 7, size.unit = "in",
 }
 
 .rj.getGDJavaObject <- function(devNr) {
-	a <- .Call("javaGDobjectCall", as.integer(devNr-1), PACKAGE= "rj.gd")
+	a <- .Call("javaGDobjectCall", devNr - 1L, PACKAGE= "rj.gd")
 	if (!is.null(a)) {
 		if (exists(".jmkref")) a <- .jmkref(a)
 		else stop(".jmkref is not available. Please use rJava 0.3 or higher.")
