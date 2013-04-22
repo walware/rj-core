@@ -14,8 +14,8 @@ package de.walware.rj.server.client;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import de.walware.rj.server.gd.Coord;
-import de.walware.rj.server.gd.GraOp;
+import de.walware.rj.server.gr.Coord;
+import de.walware.rj.server.gr.GraOp;
 
 
 public abstract class AbstractRJComClientGraphicActions implements RClientGraphicActions {
