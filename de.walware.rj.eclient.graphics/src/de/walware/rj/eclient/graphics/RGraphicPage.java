@@ -64,6 +64,10 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		return fGraphic;
 	}
 	
+	protected void init(final StatusLineContributionItem locationStatusItem) {
+		fLocationStatusItem = locationStatusItem;
+	}
+	
 	@Override
 	public void createControl(final Composite parent) {
 		fControl = new RGraphicComposite(parent, fGraphic) {
@@ -84,6 +88,7 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		final IHandlerService handlerService = (IHandlerService) serviceLocator.getService(IHandlerService.class);
 		
 		final IHandler2 refreshHandler = new AbstractHandler() {
+			@Override
 			public Object execute(final ExecutionEvent event) throws ExecutionException {
 				fControl.redrawGraphic();
 				return null;
@@ -100,18 +105,21 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		fActions.initActions(serviceLocator);
 		fActions.contributeToActionsBars(serviceLocator, actionBars);
 		
-		fLocationStatusItem = (StatusLineContributionItem) actionBars.getStatusLineManager().find(RGraphicCompositeActionSet.POSITION_STATUSLINE_ITEM_ID);
+		// Can find wrong item from other view
+//		fLocationStatusItem = (StatusLineContributionItem) actionBars.getStatusLineManager().find(RGraphicCompositeActionSet.POSITION_STATUSLINE_ITEM_ID);
 		if (fLocationStatusItem != null) {
 			fMouseLocationListener = new LocationListener() {
 				
 				final DecimalFormat format = new DecimalFormat("0.0####", new DecimalFormatSymbols(Locale.US));
 				
+				@Override
 				public void loading() {
 					if (fLocationStatusItem != null) {
 						fLocationStatusItem.setText("..."); //$NON-NLS-1$
 					}
 				}
 				
+				@Override
 				public void located(final double x, final double y) {
 					if (fLocationStatusItem != null) {
 						if (Double.isNaN(x) || Double.isInfinite(x)
@@ -153,6 +161,7 @@ public class RGraphicPage extends Page implements IStatusChangeListener {
 		}
 	}
 	
+	@Override
 	public void statusChanged(final IStatus status) {
 		final String message;
 		if (status.getSeverity() > 0) {

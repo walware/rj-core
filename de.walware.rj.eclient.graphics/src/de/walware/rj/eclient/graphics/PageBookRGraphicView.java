@@ -77,10 +77,12 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		}
 		
 		
+		@Override
 		public ImageDescriptor getImageDescriptor() {
 			return ImageDescriptor.createFromImage(PageBookRGraphicView.this.getTitleImage());
 		}
 		
+		@Override
 		public String getLabel() {
 			return fGraphic.getLabel();
 		}
@@ -102,6 +104,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		}
 		
 		
+		@Override
 		public int canShowGraphic(final IERGraphic graphic) {
 			return 0;
 		}
@@ -109,10 +112,11 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		private static String getId(final IViewReference ref) {
 			// E-Bug #405563
 			final String id = ref.getId();
-			int idx = id.indexOf(':');
+			final int idx = id.indexOf(':');
 			return (idx >= 0) ? id.substring(0, idx) : id;
 		}
 		
+		@Override
 		public void showGraphic(final IERGraphic graphic) {
 			try {
 				final IWorkbenchPage page = getBestPage(graphic);
@@ -148,9 +152,11 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			return UIAccess.getActiveWorkbenchPage(true);
 		}
 		
+		@Override
 		public void graphicAdded(final IERGraphic graphic) {
 		}
 		
+		@Override
 		public void graphicRemoved(final IERGraphic graphic) {
 		}
 		
@@ -166,6 +172,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		
 		protected abstract ITool getTool() throws CoreException;
 		
+		@Override
 		public Object execute(final ExecutionEvent event) throws ExecutionException {
 			try {
 				final ITool tool = getTool();
@@ -200,6 +207,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 		public RGraphicComparator() {
 		}
 		
+		@Override
 		public int compare(final RGraphicSession o1, final RGraphicSession o2) {
 			final ITool handle1 = o1.fGraphic.getRHandle();
 			final ITool handle2 = o2.fGraphic.getRHandle();
@@ -232,6 +240,7 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			fViewSite = viewSite;
 		}
 		
+		@Override
 		public Object execute(final ExecutionEvent event) throws ExecutionException {
 			try {
 				final String secondaryId = "t" + System.currentTimeMillis(); //$NON-NLS-1$
@@ -270,9 +279,11 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	private IERGraphicsManager fManager;
 	private final IERGraphicsManager.ListenerShowExtension fManagerListener = new IERGraphicsManager.ListenerShowExtension() {
 		private IERGraphic toShow;
+		@Override
 		public int canShowGraphic(final IERGraphic graphic) {
 			return PageBookRGraphicView.this.canShowGraphic(graphic);
 		}
+		@Override
 		public void showGraphic(final IERGraphic graphic) {
 			toShow = graphic;
 			final IViewSite site = getViewSite();
@@ -281,11 +292,13 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 			}
 			catch (final PartInitException e) {}
 		}
+		@Override
 		public void graphicAdded(final IERGraphic graphic) {
 			add(graphic, graphic == toShow
 					|| (graphic.isActive() && (!fPinPage || getCurrentSession() == null)) );
 			toShow = null;
 		}
+		@Override
 		public void graphicRemoved(final IERGraphic graphic) {
 			final RGraphicSession session = getSession(graphic);
 			if (session != null) {
@@ -297,19 +310,25 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	private boolean fPinPage;
 	
 	private final IERGraphic.Listener fGraphicListener = new IERGraphic.ListenerLocatorExtension() {
+		@Override
 		public void activated() {
 			updateTitle();
 		}
+		@Override
 		public void deactivated() {
 			updateTitle();
 		}
+		@Override
 		public void drawingStarted() {
 		}
+		@Override
 		public void drawingStopped() {
 		}
+		@Override
 		public void locatorStarted() {
 			updateTitle();
 		}
+		@Override
 		public void locatorStopped() {
 			updateTitle();
 		}
@@ -463,6 +482,14 @@ public abstract class PageBookRGraphicView extends ManagedPageBookView<PageBookR
 	@Override
 	protected RGraphicPage doCreatePage(final RGraphicSession session) {
 		return new RGraphicPage(session.getGraphic());
+	}
+	
+	@Override
+	protected void initPage(final IPageBookViewPage page) {
+		super.initPage(page);
+		if (page instanceof RGraphicPage) {
+			((RGraphicPage) page).init(fPositionStatusLineItem);
+		}
 	}
 	
 	@Override
