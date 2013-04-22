@@ -27,6 +27,11 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		implements RVector<DataType>, ExternalizableRObject {
 	
 	
+	final static int checkVectorLength(final long length) {
+		return (length <= Integer.MAX_VALUE) ? (int) length : -2;
+	}
+	
+	
 	private DataType data;
 	private int length;
 	
@@ -38,7 +43,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		this(data, data.getLength(), className1, initialNames);
 	}
 	
-	public JRIVectorImpl(final DataType data, final int length, final String className1, final String[] initialNames) {
+	public JRIVectorImpl(final DataType data, final long length, final String className1, final String[] initialNames) {
 		if (data == null) {
 			throw new NullPointerException();
 		}
@@ -46,7 +51,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 			throw new IllegalArgumentException();
 		}
 		this.data = data;
-		this.length = length;
+		this.length = checkVectorLength(length);
 		this.className1 = className1;
 		if (initialNames != null) {
 			this.namesAttribute = new RCharacterDataImpl(initialNames);
@@ -57,6 +62,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		readExternal(io, factory);
 	}
 	
+	@Override
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		final int options = io.readInt();
@@ -80,6 +86,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = 0;
@@ -113,23 +120,28 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_VECTOR;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return (this.className1 != null) ? this.className1 : this.data.getBaseVectorRClassName();
 	}
 	
+	@Override
 	public int getLength() {
 		return this.length;
 	}
 	
+	@Override
 	public RStore getNames() {
 		return this.namesAttribute;
 	}
 	
 	
+	@Override
 	public DataType getData() {
 		return this.data;
 	}

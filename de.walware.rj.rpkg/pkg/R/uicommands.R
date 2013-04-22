@@ -26,7 +26,8 @@
 	if (wait) {
 		options <- options + 1L
 	}
-	.Call("Re_ExecJCommand", paste("ui", commandId, sep=":"), args, options)
+	.Call("Re_ExecJCommand", paste("ui", commandId, sep=":"), args, options,
+						PACKAGE= "(embedding)" )
 }
 
 

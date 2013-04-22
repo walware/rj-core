@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.walware.rj.server.srvext.RjsGraphic;
+import de.walware.rj.server.gr.RjsGraphicManager;
 
 
 /**
@@ -49,14 +49,12 @@ public class RJ {
 		instance = null;
 	}
 	
-	public void registerGraphic(final RjsGraphic graphic) {
-	}
-	
-	public void unregisterGraphic(final RjsGraphic graphic) {
-	}
-	
 	public byte getCurrentSlot() {
 		return this.currentSlot;
+	}
+	
+	public RjsGraphicManager getGraphicManager() {
+		return null;
 	}
 	
 	protected void setClientProperty(final byte slot, final String key, final Object value) {

@@ -58,6 +58,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		readExternal(io, factory);
 	}
 	
+	@Override
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		final int options = io.readInt();
@@ -88,6 +89,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = 0;
@@ -125,34 +127,39 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
+	@Override
 	public final byte getRObjectType() {
 		return TYPE_ARRAY;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return (this.className1 != null) ? this.className1 :
 				((this.dimAttribute.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY);
 	}
 	
+	@Override
 	public int getLength() {
 		if (this.dimAttribute.length == 0) {
 			return 0;
 		}
-		int length = this.data.getLength();
+		long length = this.data.getLength();
 		if (length >= 0) {
-			return length;
+			return (int) length;
 		}
 		length = 1;
 		for (int i = 0; i < this.dimAttribute.length; i++) {
 			length *= this.dimAttribute[i];
 		}
-		return length;
+		return JRIVectorImpl.checkVectorLength(length);
 	}
 	
+	@Override
 	public RIntegerStore getDim() {
 		return new JRIIntegerDataImpl(this.dimAttribute);
 	}
 	
+	@Override
 	public RCharacterStore getDimNames() {
 		if (this.dimnamesAttribute != null) {
 			return this.dimnamesAttribute.getNames();
@@ -160,6 +167,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		return null;
 	}
 	
+	@Override
 	public RStore getNames(final int dim) {
 		if (this.dimnamesAttribute != null) {
 			return this.dimnamesAttribute.get(dim);
@@ -168,6 +176,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
+	@Override
 	public DataType getData() {
 		return this.data;
 	}

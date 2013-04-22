@@ -27,7 +27,7 @@ public final class SrvCmdItem extends MainCmdItem {
 	private final byte op;
 	
 	
-	public SrvCmdItem(byte op) {
+	public SrvCmdItem(final byte op) {
 		this.op = op;
 	}
 	
@@ -43,7 +43,7 @@ public final class SrvCmdItem extends MainCmdItem {
 	}
 	
 	@Override
-	public void setAnswer(RjsStatus status) {
+	public void setAnswer(final RjsStatus status) {
 	}
 	
 	@Override
@@ -62,7 +62,7 @@ public final class SrvCmdItem extends MainCmdItem {
 	}
 	
 	@Override
-	public void writeExternal(RJIO io) throws IOException {
+	public void writeExternal(final RJIO io) throws IOException {
 	}
 	
 	@Override
