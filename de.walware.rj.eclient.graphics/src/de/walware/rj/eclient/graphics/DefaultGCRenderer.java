@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 
 import de.walware.rj.graphic.RGraphicInstruction;
+import de.walware.rj.server.client.RClientGraphic;
 
 import de.walware.rj.eclient.internal.graphics.CircleElement;
 import de.walware.rj.eclient.internal.graphics.ClipSetting;
@@ -251,8 +252,8 @@ public class DefaultGCRenderer {
 					continue; }
 				case RGraphicInstruction.DRAW_PATH: {
 					final PathElement element = (PathElement) instr;
-					{	final int fillRule = ((element.mode & 0x3) == 1) ?
-							SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
+					{	final int fillRule = ((element.mode & RClientGraphic.MASK_FILL_RULE) == RClientGraphic.FILL_WIND_NON_ZERO) ?
+								SWT.FILL_WINDING : SWT.FILL_EVEN_ODD;
 						if (fillRule != currentFillRule) {
 							gc.setFillRule(currentFillRule = fillRule);
 						}

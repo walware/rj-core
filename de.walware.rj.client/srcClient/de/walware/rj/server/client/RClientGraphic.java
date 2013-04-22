@@ -47,6 +47,32 @@ public interface RClientGraphic {
 	
 	
 	/**
+	 * Mask for fill rule
+	 * <ul>
+	 *   <li>{@link #FILL_WIND_EVEN_ODD}</li>
+	 *   <li>{@link #FILL_WIND_NON_ZERO}</li>
+	 * </ul>
+	 * 
+	 * @since 2.0
+	 */
+	int MASK_FILL_RULE = 0x3;
+	
+	/**
+	 * Constant for "even-odd" winding rule for filling elements
+	 * 
+	 * @since 2.0
+	 */
+	int FILL_WIND_EVEN_ODD = 0x0;
+	
+	/**
+	 * Constant for "non-zero" winding rule for filling elements
+	 * 
+	 * @since 2.0
+	 */
+	int FILL_WIND_NON_ZERO = 0x1;
+	
+	
+	/**
 	 * Returns the device id of R
 	 * 
 	 * @return the id
