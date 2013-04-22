@@ -15,8 +15,8 @@ import java.io.IOException;
 
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RJIOExternalizable;
-import de.walware.rj.server.gd.Coord;
-import de.walware.rj.server.gd.GraOp;
+import de.walware.rj.server.gr.Coord;
+import de.walware.rj.server.gr.GraOp;
 
 
 /**

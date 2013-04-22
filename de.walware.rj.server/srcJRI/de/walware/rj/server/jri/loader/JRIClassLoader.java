@@ -516,7 +516,7 @@ public class JRIClassLoader extends RJClassLoader {
 	
 	private String classNameToFile(final String cls) {
 		// convert . to /
-		return cls.replace('.', '/');
+		return cls.replace('.', '/') + ".class";
 	}
 	
 	@Override
@@ -552,28 +552,29 @@ public class JRIClassLoader extends RJClassLoader {
 				System.out.println("RJavaClassLoader.findClass(\"" + name + "\")");
 			}
 			
+			final String classFileName = classNameToFile(name);
 			InputStream ins = null;
 			
 			for (final Enumeration<UnixFile> e = this.classPath.elements(); e.hasMoreElements();) {
 				final UnixFile cp = e.nextElement();
 				
 				if (verbose) {
-					System.out.println(" - trying class path \"" + cp + "\"");
+					System.out.println("  - trying class path \"" + cp + "\"");
 				}
 				try {
 					ins = null;
 					if (cp instanceof UnixJarFile) {
-						ins = ((UnixJarFile) cp).getResourceAsStream(classNameToFile(name) + ".class");
+						ins = ((UnixJarFile) cp).getResourceAsStream(classFileName);
 						if (verbose) {
-							System.out.println("   JAR file, can get '" + classNameToFile(name) + "'? " + ((ins == null) ? "YES" : "NO"));
+							System.out.println("    JAR file, can get '" + classFileName + "'? " + ((ins != null) ? "YES" : "NO"));
 						}
 					} else if (cp instanceof UnixDirectory) {
-						final UnixFile class_f = new UnixFile(cp.getPath()+"/"+classNameToFile(name)+".class");
+						final UnixFile class_f = new UnixFile(cp.getPath()+'/'+classFileName);
 						if (class_f.isFile()) {
 							ins = new FileInputStream(class_f);
 						}
 						if (verbose) {
-							System.out.println("   Directory, can get '" + class_f + "'? " + ((ins == null) ? "YES" : "NO"));
+							System.out.println("    Directory, can get '" + classFileName + "'? " + ((ins != null) ? "YES" : "NO"));
 						}
 					}
 					if (ins != null) {
@@ -604,8 +605,7 @@ public class JRIClassLoader extends RJClassLoader {
 						ins.close();
 						n = rp;
 						if (verbose) {
-							System.out.println("RJavaClassLoader: loaded class "
-									+ name + ", " + n + " bytes");
+							System.out.println("RJavaClassLoader: loaded class " + name + ", " + n + " bytes");
 						}
 						try {
 							cl = defineClass(name, fc, 0, n);
@@ -657,7 +657,7 @@ public class JRIClassLoader extends RJClassLoader {
 						final URL u = ((UnixJarFile) cp).getResource(name) ;
 						if (u != null) {
 							if (verbose) {
-								System.out.println(" - found in a JAR file, URL " + u);
+								System.out.println("  - found in a JAR file, URL " + u);
 							}
 							return u;
 						}
@@ -665,7 +665,7 @@ public class JRIClassLoader extends RJClassLoader {
 						final UnixFile res_f = new UnixFile(cp.getPath() + "/" + name);
 						if (res_f.isFile()) {
 							if (verbose) {
-								System.out.println(" - find as a file: "+res_f);
+								System.out.println("  - find as a file: "+res_f);
 							}
 							return res_f.toURL();
 						}
@@ -703,10 +703,20 @@ public class JRIClassLoader extends RJClassLoader {
 		}
 		if (this.useSecond) {
 			UnixFile g = null;
-			if (f.isFile() && f.getName().endsWith(".jar")) {
+			if (f.isFile() && (f.getName().endsWith(".jar") || f.getName().endsWith(".JAR"))) {
 				g = new UnixJarFile(f.getPath());
+				if (verbose) {
+					System.out.println("RJavaClassLoader: adding Java archive file '"+g+"' to the internal class path");
+				}
 			} else if (f.isDirectory()) {
 				g = new UnixDirectory(f.getPath());
+				if (verbose) {
+					System.out.println("RJavaClassLoader: adding class directory '"+g+"' to the internal class path");
+				}
+			} else if (verbose) {
+				System.err.println(f.exists() ?
+						("WARNING: the path '"+f+"' is neither a directory nor a JAR file, it will NOT be added to the internal class path!") :
+						("WARNING: the path '"+f+"' does NOT exist, it will NOT be added to the internal class path!") );
 			}
 			
 			if (g != null && !this.classPath.contains(g)) {

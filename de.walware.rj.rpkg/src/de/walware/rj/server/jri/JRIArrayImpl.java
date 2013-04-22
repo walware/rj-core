@@ -138,15 +138,15 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 		if (this.dimAttribute.length == 0) {
 			return 0;
 		}
-		int length = this.data.getLength();
+		long length = this.data.getLength();
 		if (length >= 0) {
-			return length;
+			return (int) length;
 		}
 		length = 1;
 		for (int i = 0; i < this.dimAttribute.length; i++) {
 			length *= this.dimAttribute[i];
 		}
-		return length;
+		return JRIVectorImpl.checkVectorLength(length);
 	}
 	
 	public RIntegerStore getDim() {

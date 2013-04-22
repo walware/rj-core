@@ -86,8 +86,9 @@ import de.walware.rj.server.dbg.SetDebugRequest;
 import de.walware.rj.server.dbg.TracepointEvent;
 import de.walware.rj.server.dbg.TracepointListener;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
-import de.walware.rj.server.gd.Coord;
-import de.walware.rj.server.gd.GraOp;
+import de.walware.rj.server.gr.Coord;
+import de.walware.rj.server.gr.GraOp;
+import de.walware.rj.server.gr.RjsGraphicManager;
 import de.walware.rj.server.srvImpl.AbstractServerControl;
 import de.walware.rj.server.srvImpl.ConsoleEngineImpl;
 import de.walware.rj.server.srvImpl.DefaultServerImpl;
@@ -95,7 +96,6 @@ import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvImpl.RJClassLoader;
 import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ExtServer;
-import de.walware.rj.server.srvext.RjsGraphic;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
 
@@ -165,42 +165,52 @@ public final class JRIServer extends RJ
 	
 	
 	private class InitCallbacks implements RMainLoopCallbacks {
+		@Override
 		public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 			initEngine(re);
 			return JRIServer.this.rReadConsole(re, prompt, addToHistory);
 		}
+		@Override
 		public void rWriteConsole(final Rengine re, final String text, final int oType) {
 			initEngine(re);
 			JRIServer.this.rWriteConsole(re, text, oType);
 		}
+		@Override
 		public void rFlushConsole(final Rengine re) {
 			initEngine(re);
 			JRIServer.this.rFlushConsole(re);
 		}
+		@Override
 		public void rBusy(final Rengine re, final int which) {
 			initEngine(re);
 			JRIServer.this.rBusy(re, which);
 		}
+		@Override
 		public void rShowMessage(final Rengine re, final String message) {
 			initEngine(re);
 			JRIServer.this.rShowMessage(re, message);
 		}
+		@Override
 		public String rChooseFile(final Rengine re, final int newFile) {
 			initEngine(re);
 			return JRIServer.this.rChooseFile(re, newFile);
 		}
+		@Override
 		public void rLoadHistory(final Rengine re, final String filename) {
 			initEngine(re);
 			JRIServer.this.rLoadHistory(re, filename);
 		}
+		@Override
 		public void rSaveHistory(final Rengine re, final String filename) {
 			initEngine(re);
 			JRIServer.this.rSaveHistory(re, filename);
 		}
+		@Override
 		public long rExecJCommand(final Rengine re, final String commandId, final long argsExpr, final int options) {
 			initEngine(re);
 			return JRIServer.this.rExecJCommand(re, commandId, argsExpr, options);
 		}
+		@Override
 		public void rProcessJEvents(final Rengine re) {
 			JRIServer.this.mainExchangeLock.lock();
 			try {
@@ -215,34 +225,44 @@ public final class JRIServer extends RJ
 	}
 	
 	private class HotLoopCallbacks implements RMainLoopCallbacks {
+		@Override
 		public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 			if (prompt.startsWith("Browse")) {
 				return "c\n";
 			}
 			return "\n";
 		}
+		@Override
 		public void rWriteConsole(final Rengine re, final String text, final int oType) {
 			LOGGER.log(Level.WARNING, "HotMode - Console Output:\n" + text);
 		}
+		@Override
 		public void rFlushConsole(final Rengine re) {
 			JRIServer.this.rFlushConsole(re);
 		}
+		@Override
 		public void rBusy(final Rengine re, final int which) {
 			JRIServer.this.rBusy(re, which);
 		}
+		@Override
 		public void rShowMessage(final Rengine re, final String message) {
 			LOGGER.log(Level.WARNING, "HotMode - Message:\n" + message);
 		}
+		@Override
 		public String rChooseFile(final Rengine re, final int newFile) {
 			return null;
 		}
+		@Override
 		public void rLoadHistory(final Rengine re, final String filename) {
 		}
+		@Override
 		public void rSaveHistory(final Rengine re, final String filename) {
 		}
+		@Override
 		public long rExecJCommand(final Rengine re, final String commandId, final long argsExpr, final int options) {
 			return 0;
 		}
+		@Override
 		public void rProcessJEvents(final Rengine re) {
 		}
 	}
@@ -333,10 +353,12 @@ public final class JRIServer extends RJ
 	}
 	
 	
+	@Override
 	public int[] getVersion() {
 		return VERSION;
 	}
 	
+	@Override
 	public void init(final AbstractServerControl control, final Server publicServer, final RJClassLoader loader) throws Exception {
 		if (loader == null) {
 			throw new NullPointerException("loader");
@@ -352,6 +374,7 @@ public final class JRIServer extends RJ
 		this.platformDataCommands.put("version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
 	}
 	
+	@Override
 	public void addPlugin(final ServerRuntimePlugin plugin) {
 		if (plugin == null) {
 			throw new IllegalArgumentException();
@@ -365,6 +388,7 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public void removePlugin(final ServerRuntimePlugin plugin) {
 		if (plugin == null) {
 			return;
@@ -452,10 +476,12 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public Client getCurrentClient() {
 		return this.client0;
 	}
 	
+	@Override
 	public int getState() {
 		final int state = this.serverState;
 		if (state == Server.S_CONNECTED
@@ -465,6 +491,7 @@ public final class JRIServer extends RJ
 		return state;
 	}
 	
+	@Override
 	public synchronized ConsoleEngine start(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		assert (client.slot == 0);
 		this.clientLocks[client.slot].writeLock().lock();
@@ -540,6 +567,7 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public void setProperties(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		this.clientLocks[client.slot].readLock().lock();
 		try {
@@ -608,7 +636,7 @@ public final class JRIServer extends RJ
 				}
 			}
 			
-			this.graphics = new JRIServerGraphics(this, this.rEngine);
+			this.graphics = new JRIServerGraphics(this, this.rEngine, this.rni);
 			
 			this.hotMode = false;
 			if (this.hotModeDelayed) {
@@ -657,6 +685,12 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
+	public RjsGraphicManager getGraphicManager() {
+		return this.graphics;
+	}
+	
+	@Override
 	public Map<String, Object> getPlatformData() {
 		return this.platformDataValues;
 	}
@@ -693,6 +727,7 @@ public final class JRIServer extends RJ
 		return checked.toArray(new String[checked.size()]);
 	}
 	
+	@Override
 	public ConsoleEngine connect(final Client client, final Map<String, ? extends Object> properties) throws RemoteException {
 		assert (client.slot == 0);
 		this.clientLocks[client.slot].writeLock().lock();
@@ -781,6 +816,7 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public void disconnect(final Client client) throws RemoteException {
 		assert (client.slot == 0);
 		this.clientLocks[client.slot].writeLock().lock();
@@ -818,6 +854,7 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public RjsComObject runMainLoop(final Client client, final RjsComObject command) throws RemoteException {
 		this.clientLocks[client.slot].readLock().lock();
 		boolean clientLock = true;
@@ -869,6 +906,7 @@ public final class JRIServer extends RJ
 	}
 	
 	
+	@Override
 	public RjsComObject runAsync(final Client client, final RjsComObject command) throws RemoteException {
 		this.clientLocks[client.slot].readLock().lock();
 		try {
@@ -1392,6 +1430,10 @@ public final class JRIServer extends RJ
 		catch (final CancellationException e) {
 			cmd.setAnswer(RjsStatus.CANCEL_STATUS);
 		}
+		catch (final UnsupportedOperationException e) {
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_COMMON | 0x2),
+					e.getMessage() ));
+		}
 		catch (final Throwable e) {
 			final String message = "Eval data failed. Cmd:\n" + cmd.toString() + ".";
 			LOGGER.log(Level.SEVERE, message, e);
@@ -1674,6 +1716,7 @@ public final class JRIServer extends RJ
 		return new RjsStatus(RjsStatus.ERROR, CODE_DBG_COMMON | 0x2);
 	}
 	
+	@Override
 	public void handle(final TracepointEvent event) {
 		internalMainFromR(new DbgCmdItem(DbgCmdItem.OP_NOTIFY_TP_EVENT, 0, event));
 	}
@@ -1729,6 +1772,7 @@ public final class JRIServer extends RJ
 	}
 	
 	
+	@Override
 	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
 		if (prompt.startsWith("Browse")) {
 			final String input = this.dbgSupport.handleBrowserPrompt(prompt);
@@ -1750,6 +1794,7 @@ public final class JRIServer extends RJ
 		return "\n";
 	}
 	
+	@Override
 	public void rWriteConsole(final Rengine re, final String text, final int type) {
 		if (type == 0) {
 			this.mainExchangeLock.lock();
@@ -1792,19 +1837,23 @@ public final class JRIServer extends RJ
 		}
 	}
 	
+	@Override
 	public void rFlushConsole(final Rengine re) {
 		internalMainFromR(null);
 	}
 	
+	@Override
 	public void rBusy(final Rengine re, final int which) {
 		this.mainLoopBusyAtServer = (which == 1);
 		internalMainFromR(null);
 	}
 	
+	@Override
 	public void rShowMessage(final Rengine re, final String message) {
 		internalMainFromR(new ConsoleMessageCmdItem(message));
 	}
 	
+	@Override
 	public String rChooseFile(final Rengine re, final int newFile) {
 		final RList args = this.rObjectFactory.createList(new RObject[] {
 				this.rObjectFactory.createVector(this.rObjectFactory.createLogiData(new boolean[] {
@@ -1823,6 +1872,7 @@ public final class JRIServer extends RJ
 		return null;
 	}
 	
+	@Override
 	public void rLoadHistory(final Rengine re, final String filename) {
 		final RList args = this.rObjectFactory.createList(new RObject[] {
 				this.rObjectFactory.createVector(this.rObjectFactory.createCharData(new String[] {
@@ -1834,6 +1884,7 @@ public final class JRIServer extends RJ
 		execUICommand("common/loadHistory", args, true);
 	}
 	
+	@Override
 	public void rSaveHistory(final Rengine re, final String filename) {
 		final RList args = this.rObjectFactory.createList(new RObject[] {
 				this.rObjectFactory.createVector(this.rObjectFactory.createCharData(new String[] {
@@ -1845,6 +1896,7 @@ public final class JRIServer extends RJ
 		execUICommand("common/saveHistory", args, true);
 	}
 	
+	@Override
 	public long rExecJCommand(final Rengine re, String commandId, final long argsP, final int options) {
 		try {
 			if (LOGGER.isLoggable(Level.FINE)) {
@@ -1917,6 +1969,7 @@ public final class JRIServer extends RJ
 		return null;
 	}
 	
+	@Override
 	public void rProcessJEvents(final Rengine re) {
 		while (true) {
 			this.mainExchangeLock.lock();
@@ -2053,16 +2106,6 @@ public final class JRIServer extends RJ
 	public void onRExit() {
 		internalRStopped();
 		super.onRExit();
-	}
-	
-	@Override
-	public void registerGraphic(final RjsGraphic graphic) {
-		this.graphics.addGraphic(graphic);
-	}
-	
-	@Override
-	public void unregisterGraphic(final RjsGraphic graphic) {
-		this.graphics.removeGraphic(graphic);
 	}
 	
 	@Override

@@ -27,6 +27,11 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		implements RVector<DataType>, ExternalizableRObject {
 	
 	
+	final static int checkVectorLength(final long length) {
+		return (length <= Integer.MAX_VALUE) ? (int) length : -2;
+	}
+	
+	
 	private DataType data;
 	private int length;
 	
@@ -38,7 +43,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		this(data, data.getLength(), className1, initialNames);
 	}
 	
-	public JRIVectorImpl(final DataType data, final int length, final String className1, final String[] initialNames) {
+	public JRIVectorImpl(final DataType data, final long length, final String className1, final String[] initialNames) {
 		if (data == null) {
 			throw new NullPointerException();
 		}
@@ -46,7 +51,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 			throw new IllegalArgumentException();
 		}
 		this.data = data;
-		this.length = length;
+		this.length = checkVectorLength(length);
 		this.className1 = className1;
 		if (initialNames != null) {
 			this.namesAttribute = new RCharacterDataImpl(initialNames);

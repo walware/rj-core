@@ -9,7 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.gd;
+package de.walware.rj.server.gr;
 
 import java.io.IOException;
 
@@ -38,6 +38,7 @@ public class Coord implements RJIOExternalizable {
 	}
 	
 	
+	@Override
 	public void writeExternal(final RJIO out) throws IOException {
 		out.writeDouble(this.x);
 		out.writeDouble(this.y);

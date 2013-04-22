@@ -9,7 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.srvext;
+package de.walware.rj.server.gr;
 
 import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.MainCmdItem;
@@ -25,11 +25,12 @@ public final class RjsGraphic {
 	
 	
 	private final RJ rj;
+	private final RjsGraphicManager manager;
 	
 	private final byte slot;
 	
 	private int devId;
-	private int state;
+	int state;
 	
 	private int cachedStrWidthChar;
 	private double[] cachedStrWidthCharResult;
@@ -39,6 +40,7 @@ public final class RjsGraphic {
 	
 	public RjsGraphic() {
 		this.rj = RJ.get();
+		this.manager = this.rj.getGraphicManager();
 		this.slot = this.rj.getCurrentSlot();
 	}
 	
@@ -60,7 +62,7 @@ public final class RjsGraphic {
 			final int canvasColor, final boolean isActive) {
 		if (this.devId != devId || this.state < STATE_OPENED) {
 			this.devId = devId;
-			this.rj.registerGraphic(this);
+			this.manager.registerGraphic(this);
 		}
 		this.state = state;
 		
@@ -73,7 +75,7 @@ public final class RjsGraphic {
 	
 	public void close() {
 		this.state = STATE_CLOSED;
-		this.rj.unregisterGraphic(this);
+		this.manager.unregisterGraphic(this);
 		this.rj.sendMainCmd(new GDCmdItem.CCloseDevice(
 				this.devId, this.slot ));
 	}
@@ -87,15 +89,13 @@ public final class RjsGraphic {
 	
 	public void activate() {
 		if (this.state > 0) {
-			this.rj.sendMainCmd(new GDCmdItem.CSetActiveOn(
-					this.devId, this.slot ));
+			this.manager.activate(this);
 		}
 	}
 	
 	public void deactivate() {
 		if (this.state > 0) {
-			this.rj.sendMainCmd(new GDCmdItem.CSetActiveOff(
-					this.devId, this.slot ));
+			this.manager.deactivate(this);
 		}
 	}
 	

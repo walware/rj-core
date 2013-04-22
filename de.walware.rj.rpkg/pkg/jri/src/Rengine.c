@@ -49,7 +49,6 @@ extern int UserBreak;
 #endif
 
 #include <R_ext/GraphicsEngine.h>
-extern void Rf_GConvert(double *x, double *y, int from, int to, pGEDevDesc dd);
 
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
@@ -426,6 +425,16 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGetLength(
 		JNIEnv *env, jobject this, jlong p)
 {
 	return (p) ? (jint) Rf_length(L2SEXP(p)) : 0;
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVectorLength(
+		JNIEnv *env, jobject this, jlong p)
+{
+#if R_VERSION < R_Version(3,0,0)
+	return (p) ? (jlong) LENGTH(L2SEXP(p)) : 0;
+#else
+	return (p) ? (jlong) XLENGTH(L2SEXP(p)) : 0;
+#endif
 }
 
 JNIEXPORT jarray JNICALL Java_org_rosuda_JRI_Rengine_rniGetArrayDim(
@@ -935,37 +944,5 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDResize(
 	}
 	dd->size(&(dd->left), &(dd->right), &(dd->bottom), &(dd->top), dd);
 	GEplayDisplayList(gd);
-	return 0;
-}
-
-JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDConvertDevToUser(
-		JNIEnv *env, jobject this, jint devId, jdoubleArray coord) {
-	pGEDevDesc gd = GEgetDevice(devId);
-	if (!gd) {
-		return 12;
-	}
-	jdouble* ap = (*env)->GetDoubleArrayElements(env, coord, 0);
-	if (!ap) {
-		jri_error("RgetDoubleArrayCont: can't fetch array contents");
-		return -1;
-	}
-	Rf_GConvert(&ap[0], &ap[1], 0, 12, gd);
-	(*env)->ReleaseDoubleArrayElements(env, coord, ap, 0);
-	return 0;
-}
-
-JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDConvertUserToDev(
-		JNIEnv *env, jobject this, jint devId, jdoubleArray coord) {
-	pGEDevDesc gd = GEgetDevice(devId);
-	if (!gd) {
-		return 12;
-	}
-	jdouble* ap = (*env)->GetDoubleArrayElements(env, coord, 0);
-	if (!ap) {
-		jri_error("RgetDoubleArrayCont: can't fetch array contents");
-		return -1;
-	}
-	Rf_GConvert(&ap[0], &ap[1], 12, 0, gd);
-	(*env)->ReleaseDoubleArrayElements(env, coord, ap, 0);
 	return 0;
 }

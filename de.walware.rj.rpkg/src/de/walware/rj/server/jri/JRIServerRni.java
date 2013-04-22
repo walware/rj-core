@@ -755,7 +755,7 @@ final class JRIServerRni {
 					factor.isOrdered() ? this.p_orderedClassString : this.p_factorClassString );
 			return objP; }
 		default:
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Data storage of type " + data.getStoreType() + " are not yet supported.");
 		}
 	}
 	
@@ -825,7 +825,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RLogicalStore>(
 									RObjectFactoryImpl.LOGI_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RLogicalStore>(
 									new JRILogicalDataImpl(this.rEngine.rniGetBoolArrayI(objP)),
 									className1, getNames(objP) );
@@ -859,7 +859,7 @@ final class JRIServerRni {
 						return ((flags & F_ONLY_STRUCT) != 0) ?
 								new JRIVectorImpl<RIntegerStore>(
 										factorData,
-										this.rEngine.rniGetLength(objP), className1, null ) :
+										this.rEngine.rniGetVectorLength(objP), className1, null ) :
 								new JRIVectorImpl<RIntegerStore>(
 										factorData,
 										className1, getNames(objP) );
@@ -881,7 +881,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RIntegerStore>(
 									RObjectFactoryImpl.INT_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RIntegerStore>(
 									new JRIIntegerDataImpl(this.rEngine.rniGetIntArray(objP)),
 									className1, getNames(objP) );
@@ -914,7 +914,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RNumericStore>(
 									RObjectFactoryImpl.NUM_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RNumericStore>(
 									new JRINumericDataImpl(this.rEngine.rniGetDoubleArray(objP)),
 									className1, getNames(objP) );
@@ -947,7 +947,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RComplexStore>(
 									RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RComplexStore>(
 									new JRIComplexDataImpl(getComplexRe(objP), getComplexIm(objP)),
 									className1, getNames(objP) );
@@ -980,7 +980,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RCharacterStore>(
 									RObjectFactoryImpl.CHR_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RCharacterStore>(
 									new JRICharacterDataImpl(this.rEngine.rniGetStringArray(objP)),
 									className1, getNames(objP) );
@@ -1013,7 +1013,7 @@ final class JRIServerRni {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
 							new JRIVectorImpl<RRawStore>(
 									RObjectFactoryImpl.RAW_STRUCT_DUMMY,
-									this.rEngine.rniGetLength(objP), className1, null ) :
+									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RRawStore>(
 									new JRIRawDataImpl(this.rEngine.rniGetRawArray(objP)),
 									className1, getNames(objP) );
@@ -1028,6 +1028,11 @@ final class JRIServerRni {
 					className1 = null;
 				}
 				
+				{	final long length = this.rEngine.rniGetVectorLength(objP);
+					if (length > Integer.MAX_VALUE) {
+						throw new UnsupportedOperationException("Long generic vectors (lists) are not yet supported.");
+					}
+				}
 				final String[] itemNames = getNames(objP);
 				
 				final long[] itemP = this.rEngine.rniGetVector(objP);

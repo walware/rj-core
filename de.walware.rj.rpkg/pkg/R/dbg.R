@@ -5,7 +5,8 @@
 		on.exit(tracingState(TRUE))
 	}
 	
-	answer <- .Call("Re_ExecJCommand", "dbg:checkBreakpoint", sys.call(), 0L)
+	answer <- .Call("Re_ExecJCommand", "dbg:checkBreakpoint", sys.call(), 0L,
+			PACKAGE= "(embedding)" )
 	
 	if (!is.null(answer)) {
 		envir <- sys.frame(-1)

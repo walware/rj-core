@@ -9,7 +9,7 @@
  *     Stephan Wahlbrink - initial API and implementation
  *******************************************************************************/
 
-package de.walware.rj.server.gd;
+package de.walware.rj.server.gr;
 
 
 /**

@@ -11,70 +11,38 @@
 
 package de.walware.rj.server.jri;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 import org.rosuda.JRI.Rengine;
 
 import de.walware.rj.server.RjsStatus;
-import de.walware.rj.server.gd.Coord;
-import de.walware.rj.server.srvext.RjsGraphic;
+import de.walware.rj.server.gr.Coord;
+import de.walware.rj.server.gr.RjsGraphic;
+import de.walware.rj.server.gr.RjsGraphicManager;
 
 
-public final class JRIServerGraphics {
+public final class JRIServerGraphics extends RjsGraphicManager {
 	
 	
-	private static final Comparator<RjsGraphic> GRAPHIC_COMPARATOR = new Comparator<RjsGraphic>() {
-		
-		public int compare(final RjsGraphic o1, final RjsGraphic o2) {
-			return o1.getDevId() - o2.getDevId();
-		}
-		
-	};
-	
-	
-	private final JRIServer server;
 	private final Rengine rEngine;
+	private final JRIServerRni rni;
 	
-	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
+	private final long p_xySymbol;
+	private final long p_devIdSymbol;
+	private final long p_convertUser2DevFun;
+	private final long p_convertDev2UserFun;
 	
 	
-	public JRIServerGraphics(final JRIServer server, final Rengine rEngine) {
-		this.server = server;
+	public JRIServerGraphics(final JRIServer server, final Rengine rEngine, final JRIServerRni rni) {
+		super(server);;
 		this.rEngine = rEngine;
-	}
-	
-	
-	public void addGraphic(final RjsGraphic graphic) {
-		final int idx = Collections.binarySearch(this.graphicList, graphic, GRAPHIC_COMPARATOR);
-		if (idx >= 0) {
-			this.graphicList.set(idx, graphic);
-		}
-		else {
-			this.graphicList.add(-(idx+1), graphic);
-		}
-	}
-	
-	public void removeGraphic(final RjsGraphic graphic) {
-		this.graphicList.remove(graphic);
-	}
-	
-	public RjsGraphic getGraphic(final int devId) {
-		for (int i = 0; i < this.graphicList.size(); i++) {
-			final RjsGraphic graphic = this.graphicList.get(i);
-			if (graphic.getDevId() < devId) {
-				continue;
-			}
-			else if (graphic.getDevId() > devId) {
-				break;
-			}
-			else {
-				return graphic;
-			}
-		}
-		return null;
+		this.rni = rni;
+		
+		this.p_xySymbol = this.rEngine.rniInstallSymbol("xy");
+		this.p_devIdSymbol = this.rEngine.rniInstallSymbol("devId");
+		
+		this.p_convertUser2DevFun = this.rni.protect(this.rEngine.rniEval(
+					this.rEngine.rniParse("rj:::.gr.convertUser2Dev", 1 ), 0));
+		this.p_convertDev2UserFun = this.rni.protect(this.rEngine.rniEval(
+				this.rEngine.rniParse("rj:::.gr.convertDev2User", 1 ), 0));
 	}
 	
 	
@@ -85,11 +53,13 @@ public final class JRIServerGraphics {
 		case 11: // java
 		case 12: // gd
 		case 13: // dd
+		case 14: // r code
 			return new RjsStatus(RjsStatus.ERROR, code, "Graphic is not ready");
 		default:
 			return new RjsStatus(RjsStatus.ERROR, code);
 		}
 	}
+	
 	public RjsStatus closeGraphic(final int devId) {
 		final RjsGraphic graphic = getGraphic(devId);
 		if (graphic == null) {
@@ -122,17 +92,33 @@ public final class JRIServerGraphics {
 			return RjsStatus.OK_STATUS;
 		}
 		else {
-			final double[] xy = new double[2];
-			xy[0] = coord.getX();
-			xy[1] = coord.getY();
-			final int code = this.rEngine.rniGDConvertDevToUser(devId, xy);
-			if (code == 0) {
-				coord.setX(xy[0]);
-				coord.setY(xy[1]);
-				return RjsStatus.OK_STATUS;
+			beginOperation();
+			try {
+				double[] xy = new double[2];
+				xy[0] = coord.getX();
+				xy[1] = coord.getY();
+				
+				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
+						this.p_convertDev2UserFun, this.rEngine.rniCons(
+								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
+										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.p_NULL,
+										this.p_devIdSymbol, false ),
+								this.p_xySymbol, false ),
+						0, true ), this.rni.p_BaseEnv );
+				if (p != 0) {
+					xy = this.rEngine.rniGetDoubleArray(p);
+					if (xy != null) {
+						coord.setX(xy[0]);
+						coord.setY(xy[1]);
+						return RjsStatus.OK_STATUS;
+					}
+				}
 			}
+			finally {
+				endOperation();
+			}
+			return checkReturnCode(14);
 		}
-		return new RjsStatus(RjsStatus.ERROR, 0);
 	}
 	
 	public RjsStatus convertUser2Dev(final int devId, final Coord coord) {
@@ -149,16 +135,32 @@ public final class JRIServerGraphics {
 			return RjsStatus.OK_STATUS;
 		}
 		else {
-			final double[] xy = new double[2];
-			xy[0] = coord.getX();
-			xy[1] = coord.getY();
-			final int code = this.rEngine.rniGDConvertUserToDev(devId, xy);
-			if (code == 0) {
-				coord.setX(xy[0]);
-				coord.setY(xy[1]);
-				return RjsStatus.OK_STATUS;
+			beginOperation();
+			try {
+				double[] xy = new double[2];
+				xy[0] = coord.getX();
+				xy[1] = coord.getY();
+				
+				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
+						this.p_convertUser2DevFun, this.rEngine.rniCons(
+								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
+										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.p_NULL,
+										this.p_devIdSymbol, false ),
+								this.p_xySymbol, false ),
+						0, true ), this.rni.p_BaseEnv );
+				if (p != 0) {
+					xy = this.rEngine.rniGetDoubleArray(p);
+					if (xy != null) {
+						coord.setX(xy[0]);
+						coord.setY(xy[1]);
+						return RjsStatus.OK_STATUS;
+					}
+				}
 			}
-			return checkReturnCode(code);
+			finally {
+				endOperation();
+			}
+			return checkReturnCode(14);
 		}
 	}
 	

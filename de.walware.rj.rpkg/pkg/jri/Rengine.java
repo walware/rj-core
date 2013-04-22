@@ -233,12 +233,20 @@ public class Rengine extends Thread {
 	public synchronized native boolean rniIsS4(long p);
 	
 	/** RNI:
-	 * Gets the length of the R element
+	 * Gets the length of the R element (not supporting long vectors)
 	 * 
 	 * @param p reference to a SEXP
 	 * @return the length
 	 */
 	public synchronized native int rniGetLength(long p);
+	
+	/** RNI:
+	 * Gets the length of the R vector elements (supporting long vectors)
+	 * 
+	 * @param p reference to a SEXP
+	 * @return the length
+	 */
+	public synchronized native long rniGetVectorLength(long p);
 	
 	/** RNI:
 	 * Gets the dim of the R element
@@ -953,7 +961,4 @@ public class Rengine extends Thread {
 	public synchronized native int rniGDClose(final int devId);
 	public synchronized native int rniGDResize(final int devId);
 	
-	public synchronized native int rniGDConvertDevToUser(final int devId, final double[] xy);
-	public synchronized native int rniGDConvertUserToDev(final int devId, final double[] xy);
-
 }
