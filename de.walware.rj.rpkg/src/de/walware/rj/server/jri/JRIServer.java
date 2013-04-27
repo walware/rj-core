@@ -96,6 +96,7 @@ import de.walware.rj.server.srvImpl.InternalEngine;
 import de.walware.rj.server.srvImpl.RJClassLoader;
 import de.walware.rj.server.srvext.Client;
 import de.walware.rj.server.srvext.ExtServer;
+import de.walware.rj.server.srvext.RjsGraphic;
 import de.walware.rj.server.srvext.ServerRuntimePlugin;
 import de.walware.rj.server.srvext.ServerUtil;
 
@@ -685,7 +686,6 @@ public final class JRIServer extends RJ
 		}
 	}
 	
-	@Override
 	public RjsGraphicManager getGraphicManager() {
 		return this.graphics;
 	}
@@ -2106,6 +2106,16 @@ public final class JRIServer extends RJ
 	public void onRExit() {
 		internalRStopped();
 		super.onRExit();
+	}
+	
+	@Override
+	public void registerGraphic(final RjsGraphic graphic) {
+		this.graphics.addGraphic(graphic);
+	}
+	
+	@Override
+	public void unregisterGraphic(final RjsGraphic graphic) {
+		this.graphics.removeGraphic(graphic);
 	}
 	
 	@Override

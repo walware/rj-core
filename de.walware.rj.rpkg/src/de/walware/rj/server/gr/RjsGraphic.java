@@ -14,9 +14,10 @@ package de.walware.rj.server.gr;
 import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.RJ;
+import de.walware.rj.server.jri.JRIServer;
 
 
-public /*final*/ class RjsGraphic {
+public final class RjsGraphic {
 	
 	
 	public static final int STATE_CLOSED = -1;
@@ -30,7 +31,7 @@ public /*final*/ class RjsGraphic {
 	private final byte slot;
 	
 	private int devId;
-	int state;
+	private int state;
 	
 	private int cachedStrWidthChar;
 	private double[] cachedStrWidthCharResult;
@@ -40,8 +41,17 @@ public /*final*/ class RjsGraphic {
 	
 	public RjsGraphic() {
 		this.rj = RJ.get();
-		this.manager = this.rj.getGraphicManager();
+		this.manager = ((JRIServer) this.rj).getGraphicManager();
 		this.slot = this.rj.getCurrentSlot();
+	}
+	
+	/** Only for compatibility */
+	public RjsGraphic(final int devId, final byte slot) {
+		this.rj = RJ.get();
+		this.manager = ((JRIServer) this.rj).getGraphicManager();
+		this.slot = slot;
+		this.devId = devId;
+		this.state = STATE_OPENED;
 	}
 	
 	

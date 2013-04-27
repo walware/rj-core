@@ -48,7 +48,7 @@ public class RjsGraphicManager {
 	}
 	
 	
-	void registerGraphic(final RjsGraphic graphic) {
+	public void registerGraphic(final RjsGraphic graphic) {
 		final int idx = Collections.binarySearch(this.graphicList, graphic, GRAPHIC_COMPARATOR);
 		if (idx >= 0) {
 			this.graphicList.set(idx, graphic);
@@ -58,7 +58,7 @@ public class RjsGraphicManager {
 		}
 	}
 	
-	void unregisterGraphic(final RjsGraphic graphic) {
+	public void unregisterGraphic(final RjsGraphic graphic) {
 		if (this.activeGraphic == graphic) {
 			this.activeGraphic = null;
 		}

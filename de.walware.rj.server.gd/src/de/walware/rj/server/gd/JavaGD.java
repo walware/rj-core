@@ -13,7 +13,7 @@ package de.walware.rj.server.gd;
 
 import org.rosuda.javaGD.GDInterface;
 
-import de.walware.rj.server.srvext.RjsGraphic;
+import de.walware.rj.server.gr.RjsGraphic;
 
 
 public final class JavaGD extends GDInterface {

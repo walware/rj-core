@@ -11,6 +11,9 @@
 
 package de.walware.rj.server.jri;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.rosuda.JRI.Rengine;
 
 import de.walware.rj.server.RjsStatus;
@@ -59,6 +62,29 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 			return new RjsStatus(RjsStatus.ERROR, code);
 		}
 	}
+	
+	
+	private Map<de.walware.rj.server.srvext.RjsGraphic, RjsGraphic> oldGraphicMap;
+	
+	public void addGraphic(final de.walware.rj.server.srvext.RjsGraphic oldGraphic) {
+		if (this.oldGraphicMap == null) {
+			this.oldGraphicMap = new HashMap<de.walware.rj.server.srvext.RjsGraphic, RjsGraphic>();
+		}
+		RjsGraphic graphic = new RjsGraphic(oldGraphic.getDevId(), oldGraphic.getSlot());
+		this.oldGraphicMap.put(oldGraphic, graphic);
+		registerGraphic(graphic);
+	}
+	
+	public void removeGraphic(final de.walware.rj.server.srvext.RjsGraphic oldGraphic) {
+		if (this.oldGraphicMap == null) {
+			return;
+		}
+		RjsGraphic graphic = this.oldGraphicMap.remove(oldGraphic);
+		if (graphic != null) {
+			unregisterGraphic(graphic);
+		}
+	}
+	
 	
 	public RjsStatus closeGraphic(final int devId) {
 		final RjsGraphic graphic = getGraphic(devId);
