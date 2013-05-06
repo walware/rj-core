@@ -63,21 +63,35 @@ public class RPkgUtil {
 		return pkgType;
 	}
 	
-	public static String checkPkgFileName(final String fileName) throws CoreException {
-		if (!fileName.endsWith(".tar.gz") //$NON-NLS-1$
-				&& !fileName.endsWith(".zip") //$NON-NLS-1$
-				&& !fileName.endsWith(".tgz") ) { //$NON-NLS-1$
+	/**
+	 * Checks if the given file name has the standard format <code>name_version.extension</code>.
+	 * 
+	 * @param fileName the file name to check
+	 * @return a R package object with the detected name and version.
+	 * @throws CoreException if the file name has not the standard format.
+	 */
+	public static IRPkg checkPkgFileName(final String fileName) throws CoreException {
+		final int extIdx;
+		if (fileName.endsWith(".tar.gz")) { //$NON-NLS-1$
+			extIdx = fileName.length() - 7;
+		}
+		else if (fileName.endsWith(".zip") || fileName.endsWith(".tgz")) { //$NON-NLS-1$ //$NON-NLS-2$
+			extIdx = fileName.length() - 4;
+		}
+		else {
 			throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID,
 					MessageFormat.format("Invalid file name ''{0}'' (unsupported extension) for R package.",
 							fileName )));
 		}
-		final int idx = fileName.indexOf('_');
-		if (idx < 0) {
+		
+		final int versionIdx = fileName.indexOf('_');
+		if (versionIdx < 0) {
 			throw new CoreException(new Status(IStatus.ERROR, RJ_CLIENT_ID,
 					MessageFormat.format("Invalid file name ''{0}'' (missing version) for R package.",
 							fileName )));
 		}
-		return fileName.substring(0, idx);
+		return new RPkg(fileName.substring(0, versionIdx),
+				RNumVersion.create(fileName.substring(versionIdx + 1, extIdx)) );
 	}
 	
 	public static String getPkgTypeInstallKey(final RPlatform rPlatform, final RPkgType pkgType) {
