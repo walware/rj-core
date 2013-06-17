@@ -89,7 +89,7 @@ public class RListImpl extends AbstractRObject
 			}
 		}
 		//-- attributes
-		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(io));
 		}
 		return options;

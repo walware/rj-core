@@ -83,7 +83,7 @@ public class JRIArrayImpl<DataType extends RStore> extends AbstractRObject
 			this.className1 = (dim.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY;
 		}
 		//-- attributes
-		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(io));
 		}
 	}
