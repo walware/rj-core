@@ -372,9 +372,10 @@ START_ARGS="-cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start 
 if [ $DEBUG ]
 then
 	echo "S_HOSTADDRESS = $S_HOSTADDRESS"
-	echo "S_REGISTRYPORT = $S_REGISTRY_PORT"
+	echo "S_REGISTRYPORT = $S_REGISTRYPORT"
 	echo "PATH = $PATH"
-	echo $LD_LIB_VAR = ${!LD_LIB_VAR}
+	# ${!LD_LIB_VAR} does not work e.g. in dash
+	echo "$LD_LIB_VAR = $LD_LIB_PATH"
 	echo "R_HOME = $R_HOME"
 	echo "R_ARCH = $R_ARCH"
 	echo "JAVA_HOME = $JAVA_HOME"
