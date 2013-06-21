@@ -4,8 +4,8 @@
 JRI_JSRC=$(wildcard ../*.java)
 TARGETS=$(JNIPREFIX)jri$(JNISO) JRI.jar
 
-# we need to force JDK 1.5 for compatibility
-JFLAGS+=-target 1.5 -source 1.5
+# we need to force JDK 1.6 for compatibility
+JFLAGS+=-target 1.6 -source 1.6
 
 all: $(TARGETS)
 
