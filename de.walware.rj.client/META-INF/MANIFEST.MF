@@ -14,4 +14,5 @@ Export-Package: de.walware.rj.graphic;version="1.0.0",
  de.walware.rj.renv;version="2.0.0",
  de.walware.rj.server.client,
  de.walware.rj.services;version="1.0.0",
- de.walware.rj.services.utils;version="2.0.0"
+ de.walware.rj.services.utils;version="2.0.0",
+ de.walware.rj.services.utils.dataaccess;version="2.0.0"
