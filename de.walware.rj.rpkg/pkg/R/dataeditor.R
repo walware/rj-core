@@ -1,49 +1,91 @@
 ## data editor
 
-.getDataVectorValues <- function(x, rowIdxs) {
+.checkDataStruct <- function(x, xClass1, xDim) {
+	if (class(x)[1] != xClass1) {
+		return (FALSE)
+	}
+	d <- dim(x)
+	if (length(d) < 2L) {
+		return (length(x) == xDim[1L])
+	}
+	else if (length(d) == 2) {
+		return (d[1L] == xDim[1L] && d[2L] == xDim[2L])
+	}
+	else {
+		return (FALSE)
+	}
+}
+
+.getDataVectorValues <- function(x, idxs, rowMapping) {
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+			get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
 	x <- x[rowIdxs, drop= FALSE]
 	names(x) <- NULL
 	x
 }
 
-.getDataVectorRowNames <- function(x, rowIdxs) {
+.getDataVectorRowNames <- function(x, idxs, rowMapping) {
 	x.names <- names(x)
 	if (is.null(x.names)) {
-		rowIdxs
-	} else {
-		x.names[rowIdxs]
+		return (NULL)
 	}
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	x.names[rowIdxs]
 }
 
-.getDataMatrixValues <- function(x, rowIdxs, colIdxs) {
-	x <- x[rowIdxs, colIdxs, drop= FALSE]
+.getDataMatrixValues <- function(x, idxs, rowMapping) {
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
 	rownames(x) <- NULL
 	x
 }
 
-.getDataMatrixRowNames <- function(x, rowIdxs) {
+.getDataMatrixRowNames <- function(x, idxs, rowMapping) {
 	x.names <- rownames(x)
 	if (is.null(x.names)) {
-		rowIdxs
-	} else {
-		x.names[rowIdxs]
+		return (NULL)
 	}
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	x.names[rowIdxs]
 }
 
-.getDataFrameValues <- function(x, rowIdxs, colIdxs) {
-	x <- x[rowIdxs, colIdxs, drop= FALSE]
-	row.names(x) <- NULL
+.getDataArrayDimNames <- function(x, idxs) {
+	x.dimnames <- dimnames(x)
+	if (is.null(x.dimnames)) {
+		return (NULL)
+	}
+	names(x.dimnames)[idxs[1L]:idxs[2L]]
+}
+
+.getDataArrayDimItemNames <- function(x, dimIdx, idxs) {
+	x.dimnames <- dimnames(x)
+	if (is.null(x.dimnames)) {
+		return (NULL)
+	}
+	x.dimnames[[dimIdx]][idxs[1L]:idxs[2L]]
+}
+
+.getDataFrameValues <- function(x, idxs, rowMapping) {
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
+	attr(x, 'row.names') <- NULL
 	x
 }
 
-.getDataFrameRowNames <- function(x, rowIdxs) {
-	x.names <- row.names(x)
+.getDataFrameRowNames <- function(x, idxs, rowMapping) {
+	x.names <- attr(x, 'row.names', exact= TRUE)
 	if (is.null(x.names)) {
-		rowIdxs
-	} else {
-		x.names[rowIdxs]
+		return (NULL)
 	}
+	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	x.names[rowIdxs]
 }
+
 
 .getDataLevelValues <- function(x, max = 1000) {
 	if (is.factor(x)) {
@@ -89,4 +131,15 @@
 		return (NULL)
 	}
 	return (values)
+}
+
+
+.formatInfo.maxLength <- 2L^20L
+.formatInfo.sampleLength <- 2L^19L
+
+.getFormatInfo <- function(x) {
+	if (length(x) > .formatInfo.maxLength) {
+		x <- sample(x, .formatInfo.sampleLength)
+	}
+	return (format.info(x))
 }

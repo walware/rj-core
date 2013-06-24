@@ -28,7 +28,7 @@
 		}
 		if (is.list(x)) {
 			xlen <- length(x)
-			if (level == 0L || xlen == 0L) {
+			if (level == 0L || xlen == 0L || is.data.frame(x)) {
 				return (xlen)
 			}
 			else {
