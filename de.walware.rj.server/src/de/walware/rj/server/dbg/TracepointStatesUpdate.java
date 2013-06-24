@@ -40,6 +40,7 @@ public class TracepointStatesUpdate implements RJIOExternalizable {
 		this.states = TracepointState.readList(io);
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.properties);
 		TracepointState.writeList(this.states, io);

@@ -49,6 +49,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 	
 	
 	static RjsComConfig.PathResolver gSPathResolver = new RjsComConfig.PathResolver() {
+		@Override
 		public File resolve(final Remote client, final String path) throws RjException {
 			final File file = new File(path);
 			if (!file.isAbsolute()) {
@@ -146,6 +147,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return T_FILE_EXCHANGE;
 	}
@@ -171,6 +173,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 	}
 	
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		final int readOptions = in.readInt();
 		this.remoteFilePath = in.readUTF();
@@ -288,6 +291,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 		}
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.options);
 		out.writeUTF(this.remoteFilePath);

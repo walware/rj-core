@@ -56,6 +56,7 @@ public class TracepointEvent implements Tracepoint, RJIOExternalizable {
 		this.message = io.readString();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeByte(this.kind);
 		io.writeInt(this.type);
@@ -71,6 +72,7 @@ public class TracepointEvent implements Tracepoint, RJIOExternalizable {
 		return this.kind;
 	}
 	
+	@Override
 	public int getType() {
 		return this.type;
 	}

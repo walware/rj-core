@@ -82,6 +82,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		final int l = this.length;
 		//-- options
@@ -122,47 +123,58 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	}
 	
 	
+	@Override
 	public final byte getRObjectType() {
 		return TYPE_ENV;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return (this.className1 != null) ? this.className1 : RObject.CLASSNAME_ENV;
 	}
 	
 	
+	@Override
 	public int getSpecialType() {
 		return 0;
 	}
 	
+	@Override
 	public String getEnvironmentName() {
 		return this.id;
 	}
 	
+	@Override
 	public long getHandle() {
 		return this.handle;
 	}
 	
+	@Override
 	public long getLength() {
 		return this.length;
 	}
 	
+	@Override
 	public RCharacterStore getNames() {
 		return this.namesAttribute;
 	}
 	
+	@Override
 	public String getName(final int idx) {
 		return this.namesAttribute.getChar(idx);
 	}
 	
+	@Override
 	public String getName(final long idx) {
 		return this.namesAttribute.getChar(idx);
 	}
 	
+	@Override
 	public RObject get(final int idx) {
 		return this.components[idx];
 	}
 	
+	@Override
 	public RObject get(final long idx) {
 		if (idx < 0 || idx >= Integer.MAX_VALUE) {
 			throw new IndexOutOfBoundsException(Long.toString(idx));
@@ -176,6 +188,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		return array;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}
@@ -224,6 +237,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	}
 	
 	
+	@Override
 	public RObject get(final String name) {
 		final int idx = this.namesAttribute.indexOf(name, 0);
 		if (idx >= 0) {

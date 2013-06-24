@@ -35,30 +35,37 @@ public final class ConsoleEngineImpl implements ConsoleEngine {
 	}
 	
 	
+	@Override
 	public Server getPublic() throws RemoteException {
 		return this.publicServer;
 	}
 	
+	@Override
 	public Map<String, Object> getPlatformData() {
 		return this.internalEngine.getPlatformData();
 	}
 	
+	@Override
 	public void setProperties(final Map<String, ? extends Object> properties) throws RemoteException {
 		this.internalEngine.setProperties(this.client, properties);
 	}
 	
+	@Override
 	public void disconnect() throws RemoteException {
 		this.internalEngine.disconnect(this.client);
 	}
 	
+	@Override
 	public RjsComObject runAsync(final RjsComObject com) throws RemoteException {
 		return this.internalEngine.runAsync(this.client, com);
 	}
 	
+	@Override
 	public RjsComObject runMainLoop(final RjsComObject com) throws RemoteException {
 		return this.internalEngine.runMainLoop(this.client, com);
 	}
 	
+	@Override
 	public boolean isClosed() throws RemoteException {
 		return (this.internalEngine.getCurrentClient() != this.client);
 	}

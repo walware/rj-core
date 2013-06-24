@@ -132,6 +132,7 @@ public class CallStack implements RJIOExternalizable {
 		this.frames = list;
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		final int l = this.frames.size();
 		io.writeInt(l);

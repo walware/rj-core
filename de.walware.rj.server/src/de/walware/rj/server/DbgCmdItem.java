@@ -169,6 +169,7 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 		}
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		final RJIO io = RJIO.get(out);
 		final int check = io.writeCheck1();
@@ -197,6 +198,7 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 		}
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException {
 		final RJIO io = RJIO.get(in);
 		final int check = io.readCheck1();
@@ -206,6 +208,7 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return T_DBG;
 	}

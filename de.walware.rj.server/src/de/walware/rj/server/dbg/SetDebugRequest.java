@@ -76,6 +76,7 @@ public class SetDebugRequest implements RJIOExternalizable {
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.properties);
 		switch (this.properties & 0xf) {

@@ -31,6 +31,7 @@ public class FrameContextDetailRequest implements RJIOExternalizable {
 		this.position = io.readInt();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.position);
 	}

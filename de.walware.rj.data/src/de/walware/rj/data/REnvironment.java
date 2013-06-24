@@ -73,6 +73,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * @return the length
 	 */
+	@Override
 	long getLength();
 	
 	/**

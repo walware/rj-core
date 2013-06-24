@@ -31,6 +31,7 @@ public class DbgFilterState implements RJIOExternalizable {
 		this.stepFilterState = io.readInt();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.stepFilterState);
 	}

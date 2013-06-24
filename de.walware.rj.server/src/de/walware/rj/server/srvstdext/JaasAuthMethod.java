@@ -158,6 +158,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 		this.pendingLogin = 0;
 	}
 	
+	@Override
 	public void run() {
 		this.pendingLogin = STARTED;
 		try {
@@ -179,6 +180,7 @@ public abstract class JaasAuthMethod extends ServerAuthMethod implements Callbac
 		}
 	}
 	
+	@Override
 	public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 		if (this.pendingLogin == STARTED) {
 			this.pendingLogin = CALLBACK;

@@ -45,6 +45,7 @@ public class TracepointPosition implements Tracepoint, Comparable<TracepointPosi
 		this.exprSrcref = io.readIntArray();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.type);
 		io.writeLong(this.id);
@@ -53,6 +54,7 @@ public class TracepointPosition implements Tracepoint, Comparable<TracepointPosi
 	}
 	
 	
+	@Override
 	public int getType() {
 		return this.type;
 	}
@@ -70,6 +72,7 @@ public class TracepointPosition implements Tracepoint, Comparable<TracepointPosi
 	}
 	
 	
+	@Override
 	public int compareTo(final TracepointPosition other) {
 		for (int i = 0; i < this.exprIndex.length; i++) {
 			if (i < other.exprIndex.length) {

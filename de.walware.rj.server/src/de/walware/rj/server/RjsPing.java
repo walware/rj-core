@@ -30,13 +30,16 @@ public final class RjsPing implements RjsComObject, Externalizable {
 	}
 	
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return RjsComObject.T_PING;
 	}

@@ -34,6 +34,7 @@ public class DbgEnablement implements RJIOExternalizable {
 		this.properties = io.readInt();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.properties);
 	}

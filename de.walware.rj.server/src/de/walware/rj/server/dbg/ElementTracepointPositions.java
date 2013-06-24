@@ -55,6 +55,7 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		this.fileInfo.writeExternal(io);
 		io.writeString(this.elementId);

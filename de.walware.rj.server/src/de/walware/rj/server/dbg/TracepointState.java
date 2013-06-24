@@ -157,6 +157,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 		this.expr = io.readString();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.type);
 		io.writeLong(this.id);
@@ -179,6 +180,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	}
 	
 	
+	@Override
 	public int getType() {
 		return this.type;
 	}
@@ -216,6 +218,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	}
 	
 	
+	@Override
 	public int compareTo(final TracepointState other) {
 		{	final int diff = this.filePath.compareTo(other.filePath);
 			if (diff != 0) {

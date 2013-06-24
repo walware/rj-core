@@ -43,6 +43,7 @@ public interface RArray<DataType extends RStore> extends RObject {
 	 * 
 	 * @return the length
 	 */
+	@Override
 	long getLength();
 	
 	/**
@@ -83,6 +84,7 @@ public interface RArray<DataType extends RStore> extends RObject {
 	RStore getNames(int dim);
 	
 	
+	@Override
 	DataType getData();
 	
 //	void setDim(int[] dim);

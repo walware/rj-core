@@ -36,6 +36,7 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return the number of columns
 	 */
+	@Override
 	long getLength();
 	
 	/**
@@ -45,6 +46,7 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return the column names
 	 */
+	@Override
 	RCharacterStore getNames();
 	
 	/**
@@ -54,6 +56,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the column name
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
+	@Override
 	String getName(long idx);
 	
 	/**
@@ -63,6 +66,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the column vector
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
+	@Override
 	RObject get(long idx);
 	
 	/**
@@ -71,6 +75,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @param name the name of the column
 	 * @return the column vector or <code>null</code> (if no column with the specified name exists)
 	 */
+	@Override
 	RObject get(String name);
 	
 	/**
@@ -78,6 +83,7 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return <code>null</code>
 	 */
+	@Override
 	RStore getData();
 	
 	

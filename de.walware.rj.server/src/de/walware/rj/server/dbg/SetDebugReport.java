@@ -33,6 +33,7 @@ public class SetDebugReport implements RJIOExternalizable {
 	public SetDebugReport(final RJIO io) throws IOException {
 		this.resultCode = io.readInt();
 	}
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeInt(this.resultCode);
 	}

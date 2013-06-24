@@ -84,6 +84,7 @@ public final class RjsStatus implements RjsComObject, Externalizable, RJIOExtern
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		if (this.text != null) {
 			io.writeBoolean(true);
@@ -98,6 +99,7 @@ public final class RjsStatus implements RjsComObject, Externalizable, RJIOExtern
 		}
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException {
 		if (in.readBoolean()) {
 			this.severity = in.readByte();
@@ -111,6 +113,7 @@ public final class RjsStatus implements RjsComObject, Externalizable, RJIOExtern
 		}
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		if (this.text != null) {
 			out.writeBoolean(true);
@@ -126,6 +129,7 @@ public final class RjsStatus implements RjsComObject, Externalizable, RJIOExtern
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return RjsComObject.T_STATUS;
 	}

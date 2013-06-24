@@ -125,6 +125,7 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	public abstract RjsStatus getStatus();
 	public abstract String getDataText();
 	
+	@Override
 	public abstract void writeExternal(RJIO io) throws IOException;
 	
 	public abstract boolean testEquals(MainCmdItem other);

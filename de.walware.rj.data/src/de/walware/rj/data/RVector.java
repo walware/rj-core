@@ -45,6 +45,7 @@ public interface RVector<DataType extends RStore> extends RObject {
 	 * 
 	 * @return the length
 	 */
+	@Override
 	long getLength();
 	
 	/**
@@ -60,6 +61,7 @@ public interface RVector<DataType extends RStore> extends RObject {
 	RStore getNames();
 	
 	
+	@Override
 	DataType getData();
 	
 //	void insert(int idx);

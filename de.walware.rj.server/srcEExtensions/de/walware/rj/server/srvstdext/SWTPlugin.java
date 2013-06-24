@@ -29,10 +29,12 @@ public class SWTPlugin implements ServerRuntimePlugin {
 	}
 	
 	
+	@Override
 	public String getSymbolicName() {
 		return "swt";
 	}
 	
+	@Override
 	public void rjIdle() throws Exception {
 		if (this.display == null) {
 			Display.setAppName("R");
@@ -41,6 +43,7 @@ public class SWTPlugin implements ServerRuntimePlugin {
 		this.display.readAndDispatch();
 	}
 	
+	@Override
 	public void rjStop(final int regular) throws Exception {
 		if (this.display != null) {
 			this.display.dispose();

@@ -38,6 +38,7 @@ public interface RS4Object extends RList {
 	 * 
 	 * @return the R class name
 	 */
+	@Override
 	String getRClassName();
 	
 	/**
@@ -52,6 +53,7 @@ public interface RS4Object extends RList {
 	 * 
 	 * @return the slot count
 	 */
+	@Override
 	long getLength();
 	
 	/**
@@ -75,6 +77,7 @@ public interface RS4Object extends RList {
 	 * 
 	 * @return the data of the data slot
 	 */
+	@Override
 	RStore getData();
 	
 	/**
@@ -82,6 +85,7 @@ public interface RS4Object extends RList {
 	 * 
 	 * @return the slot names
 	 */
+	@Override
 	RCharacterStore getNames();
 	
 	/**
@@ -93,6 +97,7 @@ public interface RS4Object extends RList {
 	 * @return the slot names
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; slot count
 	 */
+	@Override
 	String getName(int idx);
 	
 	/**
@@ -102,6 +107,7 @@ public interface RS4Object extends RList {
 	 * @return the value object of the slot
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; slot count
 	 */
+	@Override
 	RObject get(int idx);
 	
 	/**
@@ -111,6 +117,7 @@ public interface RS4Object extends RList {
 	 * @return the value of the slot with the given name
 	 * @throws IllegalArgumentException if the S4 type doesn't have a slot with the given name
 	 */
+	@Override
 	RObject get(String name);
 	
 }

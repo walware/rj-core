@@ -48,6 +48,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		this.first = null;
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeShort(this.id);
 		
@@ -69,6 +70,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 		io.disconnect(out);
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		this.id = in.readUnsignedShort();
 		if (this.id != 0) {
@@ -179,6 +181,7 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return RjsComObject.T_MAIN_LIST;
 	}

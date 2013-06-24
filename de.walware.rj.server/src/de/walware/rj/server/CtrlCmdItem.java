@@ -51,19 +51,23 @@ public final class CtrlCmdItem implements RjsComObject, RJIOExternalizable, Exte
 		this.ctrl = in.readInt();
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException {
 		this.ctrl = in.readInt();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO out) throws IOException {
 		out.writeInt(this.ctrl);
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.ctrl);
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return RjsComObject.T_CTRL;
 	}

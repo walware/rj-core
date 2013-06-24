@@ -37,6 +37,7 @@ public class ElementTracepointInstallationReport implements RJIOExternalizable {
 		this.results = io.readIntArray();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
 		io.writeIntArray(this.results, this.results.length);
 	}

@@ -38,6 +38,7 @@ public interface RList extends RObject {
 	 * 
 	 * @return the length
 	 */
+	@Override
 	long getLength();
 	
 	/**

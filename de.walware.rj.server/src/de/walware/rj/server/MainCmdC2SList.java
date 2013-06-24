@@ -42,6 +42,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 		this.first = null;
 	}
 	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		final RJIO io;
 		if (this.privateIO != null) {
@@ -66,6 +67,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 		io.disconnect(out);
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
 		final RJIO io = RJIO.get(in);
 		final int check = io.readCheck1();
@@ -157,6 +159,7 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 	}
 	
 	
+	@Override
 	public int getComType() {
 		return RjsComObject.T_MAIN_LIST;
 	}

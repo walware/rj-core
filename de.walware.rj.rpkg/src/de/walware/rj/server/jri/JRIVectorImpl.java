@@ -80,6 +80,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		int options = io.getVULongGrade(this.length);
@@ -112,23 +113,28 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_VECTOR;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return (this.className1 != null) ? this.className1 : this.data.getBaseVectorRClassName();
 	}
 	
+	@Override
 	public long getLength() {
 		return this.length;
 	}
 	
+	@Override
 	public RStore getNames() {
 		return this.namesAttribute;
 	}
 	
 	
+	@Override
 	public DataType getData() {
 		return this.data;
 	}
