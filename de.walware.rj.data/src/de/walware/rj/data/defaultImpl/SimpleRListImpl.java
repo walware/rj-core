@@ -17,18 +17,18 @@ import de.walware.rj.data.RCharacterStore;
 public class SimpleRListImpl<T> {
 	
 	
-	private final RCharacterStore names;
+	private final RCharacterDataImpl names;
 	private final T[] values;
 	
 	
-	public SimpleRListImpl(final RCharacterStore names, final T[] values) {
+	public SimpleRListImpl(final T[] values, final RCharacterDataImpl names) {
 		this.names = names;
 		this.values = values;
 	}
 	
 	
 	public int getLength() {
-		return this.names.getLength();
+		return this.names.length();
 	}
 	
 	public RCharacterStore getNames() {
@@ -44,7 +44,7 @@ public class SimpleRListImpl<T> {
 	}
 	
 	public T get(final String name) {
-		final int idx = this.names.indexOf(name);
+		final int idx = this.names.indexOf(name, 0);
 		if (idx >= 0) {
 			return this.values[idx];
 		}

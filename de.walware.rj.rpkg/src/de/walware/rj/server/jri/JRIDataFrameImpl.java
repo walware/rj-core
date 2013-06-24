@@ -16,6 +16,7 @@ import java.io.IOException;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
+import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 import de.walware.rj.data.defaultImpl.RDataFrameImpl;
 
 
@@ -27,8 +28,13 @@ public class JRIDataFrameImpl extends RDataFrameImpl {
 	}
 	
 	public JRIDataFrameImpl(final RJIO io, final RObjectFactory factory) throws IOException {
-		super(io, factory);
+		super(io, factory, io.readInt());
 	}
 	
+	
+	@Override
+	protected RCharacterDataImpl createNamesStore(final String[] names) {
+		return new JRICharacterDataImpl(names);
+	}
 	
 }

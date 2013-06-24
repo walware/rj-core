@@ -94,12 +94,16 @@ public abstract class GDCmdItem extends MainCmdItem {
 			this.devId = io.readInt();
 			this.requestId = io.readByte();
 			switch (this.options & OM_WITHDATA) {
-			case OV_WITHDOUBLE:
-				this.data = io.readDoubleArray();
-				break;
-			case OV_WITHBYTE:
-				this.data = io.readByteArray();
-				break;
+			case OV_WITHDOUBLE: {
+				final double[] d = new double[io.readInt()];
+				io.readDoubleData(d, d.length);
+				this.data = d;
+				break; }
+			case OV_WITHBYTE: {
+				final byte[] b = new byte[io.readInt()];
+				io.readByteData(b, b.length);
+				this.data = b;
+				break; }
 			default:
 				this.data = null;
 				break;
@@ -114,11 +118,13 @@ public abstract class GDCmdItem extends MainCmdItem {
 			switch (this.options & OM_WITHDATA) {
 			case OV_WITHDOUBLE: {
 				final double[] d = (double[]) this.data;
-				io.writeDoubleArray(d, d.length);
+				io.writeInt(d.length);
+				io.writeDoubleData(d, d.length);
 				break; }
 			case OV_WITHBYTE: {
 				final byte[] b = (byte[]) this.data;
-				io.writeByteArray(b, b.length);
+				io.writeInt(b.length);
+				io.writeByteData(b, b.length);
 				break; }
 			}
 		}
@@ -175,7 +181,9 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(this.requestId);
 			if (this.data != null) {
-				io.writeDoubleArray(this.data, this.data.length);
+				final int length = this.data.length;
+				io.writeInt(length);
+				io.writeDoubleData(this.data, length);
 			}
 		}
 		
@@ -848,7 +856,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_POLYLINE);
-			io.writeDoubleArrayPair(this.x, this.y, this.x.length);
+			final int length = this.x.length;
+			io.writeInt(length);
+			io.writeDoubleData(this.x, length);
+			io.writeDoubleData(this.y, length);
 		}
 		
 		
@@ -889,7 +900,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_POLYGON);
-			io.writeDoubleArrayPair(this.x, this.y, this.x.length);
+			final int length = this.x.length;
+			io.writeInt(length);
+			io.writeDoubleData(this.x, length);
+			io.writeDoubleData(this.y, length);
 		}
 		
 		
@@ -935,7 +949,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_PATH);
 			io.writeIntArray(this.n, this.n.length);
-			io.writeDoubleArrayPair(this.x, this.y, this.x.length);
+			final int length = this.x.length;
+			io.writeInt(length);
+			io.writeDoubleData(this.x, length);
+			io.writeDoubleData(this.y, length);
 			io.writeInt(this.mode);
 		}
 		
@@ -1091,7 +1108,8 @@ public abstract class GDCmdItem extends MainCmdItem {
 		public void writeExternal(final RJIO io) throws IOException {
 			io.writeInt(this.devId);
 			io.writeByte(DRAW_RASTER);
-			io.writeByteArray(this.imgData, this.imgData.length);
+			io.writeInt(this.imgData.length);
+			io.writeByteData(this.imgData, this.imgData.length);
 			io.writeBoolean(this.imgAlpha);
 			io.writeInt(this.imgW);
 			io.writeInt(this.imgH);

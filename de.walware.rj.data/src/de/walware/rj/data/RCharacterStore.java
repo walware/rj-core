@@ -21,7 +21,12 @@ package de.walware.rj.data;
 public interface RCharacterStore extends RStore {
 	
 	
+	@Override
 	String get(int idx);
+	@Override
+	String get(long idx);
+	
+	@Override
 	String[] toArray();
 	
 }

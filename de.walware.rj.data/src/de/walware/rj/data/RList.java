@@ -38,7 +38,7 @@ public interface RList extends RObject {
 	 * 
 	 * @return the length
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Returns the names of the list items.
@@ -59,6 +59,17 @@ public interface RList extends RObject {
 	String getName(int idx);
 	
 	/**
+	 * Returns the name of the item at the specified index.
+	 * <p>
+	 * This is equivalent to <code>getNames().getChar(idx)</code>.</p>
+	 * 
+	 * @param idx the index (zero-based) of the item
+	 * @return the slot names
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; length
+	 */
+	String getName(long idx);
+	
+	/**
 	 * Returns the item at the specified index.
 	 * 
 	 * @param idx the index (zero-based) of the item
@@ -66,6 +77,15 @@ public interface RList extends RObject {
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; length
 	 */
 	RObject get(int idx);
+	
+	/**
+	 * Returns the item at the specified index.
+	 * 
+	 * @param idx the index (zero-based) of the item
+	 * @return the item
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; length
+	 */
+	RObject get(long idx);
 	
 	/**
 	 * Returns the item with the specified name. If multiple items have that name,
@@ -76,19 +96,19 @@ public interface RList extends RObject {
 	 */
 	RObject get(String name);
 	
-	/**
-	 * Returns an array with the R object items of the list.
-	 * <p>
-	 * The array is newly created for each call of this method.</p>
-	 * 
-	 * @return an array with the items of the list
-	 */
-	RObject[] toArray();
+//	/**
+//	 * Returns an array with the R object items of the list.
+//	 * <p>
+//	 * The array is newly created for each call of this method.</p>
+//	 * 
+//	 * @return an array with the items of the list
+//	 */
+//	RObject[] toArray();
 	
-//	void insert(int idx, String name, RObject component);
-//	void add(String name, RObject component);
-//	boolean set(int idx, RObject component);
-//	boolean set(String name, RObject component);
+//	void insert(int idx, String name, RObject item);
+//	void add(String name, RObject item);
+//	boolean set(int idx, RObject item);
+//	boolean set(String name, RObject item);
 //	void remove(int idx);
 	
 }

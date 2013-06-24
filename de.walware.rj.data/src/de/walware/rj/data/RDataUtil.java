@@ -23,7 +23,7 @@ public class RDataUtil {
 	 * @param store the data store
 	 * @return an abbreviation
 	 */
-	public static String getStoreAbbr(final RStore store) {
+	public static final String getStoreAbbr(final RStore store) {
 		switch (store.getStoreType()) {
 		case RStore.LOGICAL:
 			return "logi";
@@ -50,7 +50,7 @@ public class RDataUtil {
 	 * @param store the data store
 	 * @return an class name
 	 */
-	public static String getStoreClass(final RStore store) {
+	public static final String getStoreClass(final RStore store) {
 		switch (store.getStoreType()) {
 		case RStore.LOGICAL:
 			return RObject.CLASSNAME_LOGICAL;
@@ -71,7 +71,7 @@ public class RDataUtil {
 		}
 	}
 	
-	public static String getStoreMode(final int storeType) {
+	public static final String getStoreMode(final int storeType) {
 		switch (storeType) {
 		case RStore.LOGICAL:
 			return "logical";
@@ -91,7 +91,7 @@ public class RDataUtil {
 		}
 	}
 	
-	public static String getObjectTypeName(final byte type) {
+	public static final String getObjectTypeName(final byte type) {
 		switch (type) {
 		case RObject.TYPE_NULL:
 			return "RNull";
@@ -122,12 +122,23 @@ public class RDataUtil {
 		}
 	}
 	
-	public static int getDataIdx(final int[] dims, final int... idxs) {
+	public static final long computeLengthFromDim(final int[] dims) {
+		if (dims.length == 0) {
+			return 0;
+		}
+		long length = 1;
+		for (int i = 0; i < dims.length; i++) {
+			length *= dims[i];
+		}
+		return length;
+	}
+	
+	public static final long getDataIdx(final int[] dims, final int... idxs) {
 		assert (dims.length > 0);
 		assert (dims.length == idxs.length);
 		
-		int dataIdx = idxs[0];
-		int step = dims[0];
+		long dataIdx = idxs[0];
+		long step = dims[0];
 		// alt: idx=0; step=1; i=0;
 		for (int i = 1; i < dims.length; i++) {
 			dataIdx += step*idxs[i];
@@ -136,15 +147,15 @@ public class RDataUtil {
 		return dataIdx;
 	}
 	
-	public static int getDataIdx(final RStore dims, final int... idxs) {
+	public static final long getDataIdx(final RStore dims, final int... idxs) {
 		assert (dims.getLength() > 0);
 		assert (dims.getLength() == idxs.length);
 		
-		int dataIdx = idxs[0];
-		int step = dims.getInt(0);
+		long dataIdx = idxs[0];
+		long step = dims.getInt(0);
 		// alt: idx=0; step=1; i=0;
 		for (int i = 1; i < dims.getLength(); i++) {
-			dataIdx += step*idxs[i];
+			dataIdx += step * idxs[i];
 			step *= dims.getInt(i);
 		}
 		return dataIdx;
@@ -161,11 +172,11 @@ public class RDataUtil {
 	 * 
 	 * @see #getDataIdx(int[], int...)
 	 */
-	public static int getDataIdx(final int rowCount, final int rowIdx, final int columnIdx) {
-		return rowIdx + rowCount*columnIdx; 
+	public static final long getDataIdx(final long rowCount, final long rowIdx, final long columnIdx) {
+		return rowIdx + rowCount * columnIdx;
 	}
 	
-	public static int[] getDataIdxs(final int[] dims, final int dim, final int idx) {
+	public static final int[] getDataIdxs(final int[] dims, final int dim, final int idx) {
 		assert (dims.length > 0);
 		assert (0 <= dim && dim < dims.length);
 		assert (0 <= idx && idx < dims[dim]);
@@ -217,7 +228,7 @@ public class RDataUtil {
 	}
 	
 	
-	public static boolean isSingleString(final RObject obj) {
+	public static final boolean isSingleString(final RObject obj) {
 		final RStore data;
 		return (obj != null && (data = obj.getData()) != null
 				&& data.getStoreType() == RStore.CHARACTER
@@ -225,7 +236,7 @@ public class RDataUtil {
 	}
 	
 	
-	public static RVector<?> checkRVector(final RObject obj) throws UnexpectedRDataException {
+	public static final RVector<?> checkRVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -236,7 +247,7 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RLogicalStore> checkRLogiVector(final RObject obj) throws UnexpectedRDataException {
+	public static final RVector<RLogicalStore> checkRLogiVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -250,7 +261,7 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RIntegerStore> checkRIntVector(final RObject obj) throws UnexpectedRDataException {
+	public static final RVector<RIntegerStore> checkRIntVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -264,7 +275,7 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RNumericStore> checkRNumVector(final RObject obj) throws UnexpectedRDataException {
+	public static final RVector<RNumericStore> checkRNumVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -278,7 +289,7 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RVector<RCharacterStore> checkRCharVector(final RObject obj) throws UnexpectedRDataException {
+	public static final RVector<RCharacterStore> checkRCharVector(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -291,7 +302,7 @@ public class RDataUtil {
 		return (RVector<RCharacterStore>) obj;
 	}
 	
-	public static RArray<?> checkRArray(final RObject obj) throws UnexpectedRDataException {
+	public static final RArray<?> checkRArray(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -301,7 +312,23 @@ public class RDataUtil {
 		return (RArray<?>) obj;
 	}
 	
-	public static RArray<?> checkRArray(final RObject obj, final int dim) throws UnexpectedRDataException {
+	public static final RArray<?> checkRArray(final RObject obj, final int dim) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		if (obj.getRObjectType() != RObject.TYPE_ARRAY) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
+		}
+		final RArray<?> array = (RArray<?>) obj;
+		if (dim > 0) {
+			if (dim != array.getDim().getLength()) {
+				throw new UnexpectedRDataException("Unexpected R array dimension: " + array.getDim().getLength());
+			}
+		}
+		return array;
+	}
+	
+	public static final RArray<?> checkRArray(final RObject obj, final long dim) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -318,7 +345,7 @@ public class RDataUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static RArray<RCharacterStore> checkRCharArray(final RObject obj, final int dim) throws UnexpectedRDataException {
+	public static final RArray<RCharacterStore> checkRCharArray(final RObject obj, final int dim) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -337,7 +364,7 @@ public class RDataUtil {
 		return array;
 	}
 	
-	public static RList checkRList(final RObject obj) throws UnexpectedRDataException {
+	public static final RList checkRList(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -347,7 +374,7 @@ public class RDataUtil {
 		return (RList) obj;
 	}
 	
-	public static RDataFrame checkRDataFrame(final RObject obj) throws UnexpectedRDataException {
+	public static final RDataFrame checkRDataFrame(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -357,7 +384,7 @@ public class RDataUtil {
 		return (RDataFrame) obj;
 	}
 	
-	public static RDataFrame checkRDataFrame(final RObject obj, final int length) throws UnexpectedRDataException {
+	public static final RDataFrame checkRDataFrame(final RObject obj, final long length) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -365,12 +392,12 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
 		}
 		if (obj.getLength() != length) {
-			throw new UnexpectedRDataException("Unexpected R object length: " + obj.getLength());
+			throw new UnexpectedRDataException("Unexpected R dataframe column count: " + obj.getLength());
 		}
 		return (RDataFrame) obj;
 	}
 	
-	public static RReference checkRReference(final RObject obj) throws UnexpectedRDataException {
+	public static final RReference checkRReference(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -380,7 +407,7 @@ public class RDataUtil {
 		return (RReference) obj;
 	}
 	
-	public static RLanguage checkRLanguage(final RObject obj) throws UnexpectedRDataException {
+	public static final RLanguage checkRLanguage(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -390,8 +417,7 @@ public class RDataUtil {
 		return (RLanguage) obj;
 	}
 	
-	
-	public static Boolean checkSingleLogi(final RObject obj) throws UnexpectedRDataException {
+	public static final Boolean checkSingleLogi(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -403,7 +429,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			return null;
@@ -411,7 +437,7 @@ public class RDataUtil {
 		return Boolean.valueOf(data.getLogi(0));
 	}
 	
-	public static boolean checkSingleLogiValue(final RObject obj) throws UnexpectedRDataException {
+	public static final boolean checkSingleLogiValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -423,7 +449,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
@@ -431,7 +457,7 @@ public class RDataUtil {
 		return data.getLogi(0);
 	}
 	
-	public static Integer checkSingleInt(final RObject obj) throws UnexpectedRDataException {
+	public static final Integer checkSingleInt(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -443,7 +469,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			return null;
@@ -451,7 +477,7 @@ public class RDataUtil {
 		return Integer.valueOf(data.getInt(0));
 	}
 	
-	public static int checkSingleIntValue(final RObject obj) throws UnexpectedRDataException {
+	public static final int checkSingleIntValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -463,7 +489,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
@@ -471,7 +497,7 @@ public class RDataUtil {
 		return data.getInt(0);
 	}
 	
-	public static Double checkSingleNum(final RObject obj) throws UnexpectedRDataException {
+	public static final Double checkSingleNum(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -483,7 +509,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			return null;
@@ -491,7 +517,7 @@ public class RDataUtil {
 		return Double.valueOf(data.getNum(0));
 	}
 	
-	public static double checkSingleNumValue(final RObject obj) throws UnexpectedRDataException {
+	public static final double checkSingleNumValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -503,7 +529,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
@@ -511,7 +537,7 @@ public class RDataUtil {
 		return data.getNum(0);
 	}
 	
-	public static String checkSingleChar(final RObject obj) throws UnexpectedRDataException {
+	public static final String checkSingleChar(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -523,12 +549,12 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		return data.getChar(0);
 	}
 	
-	public static String checkSingleCharValue(final RObject obj) throws UnexpectedRDataException {
+	public static final String checkSingleCharValue(final RObject obj) throws UnexpectedRDataException {
 		if (obj == null) {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
@@ -540,7 +566,7 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
 		}
 		if (data.getLength() != 1) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == 1 expected.");
 		}
 		if (data.isNA(0)) {
 			throw new UnexpectedRDataException("Unexpected R data value: NA");
@@ -548,63 +574,129 @@ public class RDataUtil {
 		return data.getChar(0);
 	}
 	
-	public static RStore checkData(final RStore data, final byte storeType) throws UnexpectedRDataException {
+	public static final RList checkType(final RObject obj, final byte objectType) throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		if (obj.getRObjectType() != objectType) {
+			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + ", but " + objectType + " expected.");
+		}
+		return (RList) obj;
+	}
+	
+	public static final RStore checkData(final RStore data, final byte storeType) throws UnexpectedRDataException {
 		if (data.getStoreType() != storeType) {
-			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data));
+			throw new UnexpectedRDataException("Unexpected R data type: " + getStoreAbbr(data) + ", but " + storeType + " expected.");
 		}
 		return data;
 	}
 	
-	public static <T extends RStore> T checkLengthEqual(final T data, final int length) throws UnexpectedRDataException {
+	
+	public static final int checkIntLength(final RObject obj) throws UnexpectedRDataException {
+		final long length = obj.getLength();
+		if (length < 0 || length > Integer.MAX_VALUE) {
+			throw new UnexpectedRDataException("Unexpected R object length: " + length + ", but <= 2^31-1 expected.");
+		}
+		return (int) length;
+	}
+	
+	public static final int checkIntLength(final RStore data) throws UnexpectedRDataException {
+		final long length = data.getLength();
+		if (length < 0 || length > Integer.MAX_VALUE) {
+			throw new UnexpectedRDataException("Unexpected R data length: " + length + ", but <= 2^31-1 expected.");
+		}
+		return (int) length;
+	}
+	
+	public static final <T extends RObject> T checkLengthEqual(final T obj, final long length) throws UnexpectedRDataException {
+		if (obj.getLength() != length) {
+			throw new UnexpectedRDataException("Unexpected R object length: " + obj.getLength() + ", but == " + length + " expected.");
+		}
+		return obj;
+	}
+	
+	public static final <T extends RStore> T checkLengthEqual(final T data, final long length) throws UnexpectedRDataException {
 		if (data.getLength() != length) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == " + length + " expected.");
 		}
 		return data;
 	}
 	
-	public static <T extends RStore> T checkLengthGreaterOrEqual(final T data, final int length) throws UnexpectedRDataException {
+	public static final <T extends RStore> T checkLengthGreaterOrEqual(final T data, final long length) throws UnexpectedRDataException {
 		if (data.getLength() < length) {
-			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength());
+			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but >= " + length + " expected.");
 		}
 		return data;
 	}
 	
 	
-	public static void checkColCountEqual(final RArray<?> array, final int count) throws UnexpectedRDataException {
-		if (array.getDim().getInt(1) != count) {
-			throw new UnexpectedRDataException("Unexpected R column count: " + array.getDim().getInt(1));
+	/*-- 2d --*/
+	
+	public static final int getRowCount(final RArray<?> array) throws UnexpectedRDataException {
+		return array.getDim().getInt(0);
+	}
+	
+	public static final void checkRowCountEqual(final RArray<?> array, final int count) throws UnexpectedRDataException {
+		if (array.getDim().getInt(0) != count) {
+			throw new UnexpectedRDataException("Unexpected R matrix row count: " + array.getDim().getInt(0) + ", but == " + count + " expected.");
 		}
 	}
 	
-	public static int checkColName(final RArray<?> array, final String name) throws UnexpectedRDataException {
-		final int idx = array.getNames(1).indexOf(name);
+	public static final void checkRowCountEqual(final RDataFrame dataframe, final long count) throws UnexpectedRDataException {
+		if (dataframe.getRowCount() != count) {
+			throw new UnexpectedRDataException("Unexpected R dataframe row count: " + dataframe.getRowCount() + ", but == " + count + " expected.");
+		}
+	}
+	
+	public static final int getColumnCount(final RArray<?> array) throws UnexpectedRDataException {
+		return array.getDim().getInt(1);
+	}
+	
+	public static final void checkColumnCountEqual(final RArray<?> array, final int count) throws UnexpectedRDataException {
+		if (array.getDim().getInt(1) != count) {
+			throw new UnexpectedRDataException("Unexpected R matrix column count: " + array.getDim().getInt(1) + ", but == " + count + " expected.");
+		}
+	}
+	
+	public static final long checkColumnName(final RArray<?> array, final String name) throws UnexpectedRDataException {
+		final long idx = array.getNames(1).indexOf(name);
 		if (idx < 0) {
-			throw new UnexpectedRDataException("Missing R data column: " + name);
+			throw new UnexpectedRDataException("Missing R matrix column: " + name);
 		}
 		return idx;
 	}
 	
+	public static final void checkColumnCountEqual(final RDataFrame dataframe, final long count) throws UnexpectedRDataException {
+		if (dataframe.getColumnCount() != count) {
+			throw new UnexpectedRDataException("Unexpected R dataframe column count: " + dataframe.getColumnCount() + ", but == " + count + " expected.");
+		}
+	}
 	
-	public static int binarySearch(final RVector<?> vector, final int value) {
+	
+	/*-- int --*/
+	
+	public static final long binarySearch(final RVector<?> vector, final int value) {
 		final RStore data = vector.getData();
 		return binarySearch(data, 0, data.getLength(), value);
 	}
 	
-	public static int binarySearch(final RStore data, final int value) {
+	public static final long binarySearch(final RStore data, final int value) {
 		return binarySearch(data, 0, data.getLength(), value);
 	}
 	
-	public static int binarySearch(final RStore data, final int fromIdx, final int toIdx, final int value) {
+	public static final int binarySearch(final RStore data, final int fromIdx, final int toIdx, final int value) {
 		if (fromIdx < 0 || fromIdx > data.getLength()
 				|| toIdx < 0 || toIdx > data.getLength()) {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException(Long.toString(fromIdx));
 		}
 		if (fromIdx > toIdx) {
 			throw new IllegalArgumentException();
 		}
 		
-		int low = fromIdx;
-		int high = toIdx - 1;
+		return doBinarySearch(data, fromIdx, toIdx - 1, value);
+	}
+	
+	private static int doBinarySearch(final RStore data, int low, int high, final int value) {
 		while (low <= high) {
 			final int mid = (low + high) >>> 1;
 			final int midValue = data.getInt(mid);
@@ -621,8 +713,40 @@ public class RDataUtil {
 		return -(low + 1);  // key not found.
 	}
 	
-	public static int binarySearch(final RStore data,
-			final int[] fromIdxs, final int length, final int[] values) {
+	public static final long binarySearch(final RStore data, final long fromIdx, final long toIdx, final int value) {
+		if (fromIdx < 0 || fromIdx > data.getLength()
+				|| toIdx < 0 || toIdx > data.getLength()) {
+			throw new IndexOutOfBoundsException(Long.toString(fromIdx));
+		}
+		if (fromIdx > toIdx) {
+			throw new IllegalArgumentException();
+		}
+		if (toIdx <= Integer.MAX_VALUE) {
+			return doBinarySearch(data, (int) fromIdx, (int) toIdx - 1, value);
+		}
+		
+		return doBinarySearch(data, fromIdx, toIdx - 1, value);
+	}
+	
+	private static long doBinarySearch(final RStore data, long low, long high, final int value) {
+		while (low <= high) {
+			final long mid = (low + high) >>> 1;
+			final int midValue = data.getInt(mid);
+			if (midValue < value) {
+				low = mid + 1;
+			}
+			else if (midValue > value) {
+				high = mid - 1;
+			}
+			else {
+				return mid; // key found
+			}
+		}
+		return -(low + 1);  // key not found.
+	}
+	
+	public static final int binarySearch(final RStore data,
+			final long[] fromIdxs, final int length, final int[] values) {
 		if (fromIdxs.length > values.length) {
 			throw new IllegalArgumentException();
 		}
@@ -631,7 +755,7 @@ public class RDataUtil {
 		}
 		for (int i = 0; i < fromIdxs.length; i++) {
 			if (fromIdxs[i] < 0 || fromIdxs[i] + length > data.getLength()) {
-				throw new IndexOutOfBoundsException();
+				throw new IndexOutOfBoundsException(Long.toString(fromIdxs[i]));
 			}
 		}
 		
@@ -655,7 +779,121 @@ public class RDataUtil {
 		return -(low + 1);  // key not found.
 	}
 	
-	public static int compare(final int[] values1, final int[] values2) {
+	public static final int compare(final int[] values1, final int[] values2) {
+		for (int i = 0; i < values1.length; i++) {
+			if (values1[i] < values2[i]) {
+				return -1;
+			}
+			if (values1[i] > values2[i]) {
+				return +1;
+			}
+		}
+		return 0; // equal
+	}
+	
+	
+	/*-- long ~ num -- */
+	
+	public static final long binarySearch(final RStore data, final long value) {
+		return binarySearch(data, 0, data.getLength(), value);
+	}
+	
+	public static final int binarySearch(final RStore data, final int fromIdx, final int toIdx, final long value) {
+		if (fromIdx < 0 || fromIdx > data.getLength()
+				|| toIdx < 0 || toIdx > data.getLength()) {
+			throw new IndexOutOfBoundsException(Long.toString(fromIdx));
+		}
+		if (fromIdx > toIdx) {
+			throw new IllegalArgumentException();
+		}
+		
+		return doBinarySearch(data, fromIdx, toIdx - 1, value);
+	}
+	
+	private static int doBinarySearch(final RStore data, int low, int high, final long value) {
+		while (low <= high) {
+			final int mid = (low + high) >>> 1;
+			final double midValue = data.getNum(mid);
+			if (midValue < value) {
+				low = mid + 1;
+			}
+			else if (midValue > value) {
+				high = mid - 1;
+			}
+			else {
+				return mid; // key found
+			}
+		}
+		return -(low + 1);  // key not found.
+	}
+	
+	public static final long binarySearch(final RStore data, final long fromIdx, final long toIdx, final long value) {
+		if (fromIdx < 0 || fromIdx > data.getLength()
+				|| toIdx < 0 || toIdx > data.getLength()) {
+			throw new IndexOutOfBoundsException(Long.toString(fromIdx));
+		}
+		if (fromIdx > toIdx) {
+			throw new IllegalArgumentException();
+		}
+		if (toIdx <= Integer.MAX_VALUE) {
+			return doBinarySearch(data, (int) fromIdx, (int) toIdx - 1, value);
+		}
+		
+		return doBinarySearch(data, fromIdx, toIdx - 1, value);
+	}
+	
+	private static long doBinarySearch(final RStore data, long low, long high, final long value) {
+		while (low <= high) {
+			final long mid = (low + high) >>> 1;
+		final double midValue = data.getNum(mid);
+		if (midValue < value) {
+			low = mid + 1;
+		}
+		else if (midValue > value) {
+			high = mid - 1;
+		}
+		else {
+			return mid; // key found
+		}
+		}
+		return -(low + 1);  // key not found.
+	}
+	
+	public static final int binarySearch(final RStore data,
+			final long[] fromIdxs, final int length, final long[] values) {
+		if (fromIdxs.length > values.length) {
+			throw new IllegalArgumentException();
+		}
+		if (length < 0 || length > data.getLength()) {
+			throw new IllegalArgumentException();
+		}
+		for (int i = 0; i < fromIdxs.length; i++) {
+			if (fromIdxs[i] < 0 || fromIdxs[i] + length > data.getLength()) {
+				throw new IndexOutOfBoundsException(Long.toString(fromIdxs[i]));
+			}
+		}
+		
+		int low = 0;
+		int high = length - 1;
+		ITER_IDX: while (low <= high) {
+			final int mid = (low + high) >>> 1;
+			for (int i = 0; i < fromIdxs.length; i++) {
+				final double midValue = data.getNum(fromIdxs[i] + mid);
+				if (midValue < values[i]) {
+					low = mid + 1;
+					continue ITER_IDX;
+				}
+				if (midValue > values[i]) {
+					high = mid - 1;
+					continue ITER_IDX;
+				}
+			}
+			return mid; // key found
+		}
+		return -(low + 1);  // key not found.
+	}
+	
+	public static final int compare(final long[] values1, final long[] values2) {
 		for (int i = 0; i < values1.length; i++) {
 			if (values1[i] < values2[i]) {
 				return -1;

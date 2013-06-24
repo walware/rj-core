@@ -18,7 +18,6 @@ public class RNumericDataStruct extends AbstractNumericData {
 	
 	
 	public RNumericDataStruct() {
-		this.length = -1;
 	}
 	
 	
@@ -28,15 +27,48 @@ public class RNumericDataStruct extends AbstractNumericData {
 	}
 	
 	
-	public final boolean isNaN(final int idx) {
+	@Override
+	public final long getLength() {
+		return -1;
+	}
+	
+	@Override
+	public boolean isNA(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isNA(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean isNaN(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean isNaN(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isMissing(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public Double get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public Double get(final long idx) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -46,8 +78,20 @@ public class RNumericDataStruct extends AbstractNumericData {
 	}
 	
 	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == NUMERIC && other.getLength() == -1);
+		return (NUMERIC == other.getStoreType()
+				&& -1 == other.getLength() );
 	}
 	
 }

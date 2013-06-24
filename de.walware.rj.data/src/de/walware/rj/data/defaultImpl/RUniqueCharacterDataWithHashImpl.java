@@ -35,15 +35,16 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 		initMap();
 	}
 	
-	public RUniqueCharacterDataWithHashImpl(final RJIO io) throws IOException {
-		super(io);
+	public RUniqueCharacterDataWithHashImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 		this.map = new HashMap<String, Integer>();
 		initMap();
 	}
 	
 	
 	protected void initMap() {
-		for (int idx = 0; idx < this.length; idx++) {
+		final int length = (int) getLength();
+		for (int idx = 0; idx < length; idx++) {
 			if (this.charValues[idx] != null) {
 				this.map.put(this.charValues[idx], idx);
 			}
@@ -52,16 +53,19 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	
 	
 	@Override
-	public int indexOf(final String name, final int fromIdx) {
-		return this.map.get(name);
-	}
-	
-	@Override
 	public void setChar(final int idx, final String value) {
 		final String previous = getChar(idx);
 		super.setChar(idx, value);
 		this.map.remove(previous);
 		this.map.put(value, idx);
+	}
+	
+	@Override
+	public void setChar(final long idx, final String value) {
+		if (idx < 0 || idx >= getLength()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		setChar((int) idx, value);
 	}
 	
 	@Override
@@ -80,6 +84,11 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	@Override
 	public boolean contains(final String value) {
 		return (value != null && this.map.containsKey(value));
+	}
+	
+	@Override
+	public long indexOf(final String name, final long fromIdx) {
+		return this.map.get(name);
 	}
 	
 }

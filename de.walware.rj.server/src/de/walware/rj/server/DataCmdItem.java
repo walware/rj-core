@@ -280,7 +280,7 @@ public final class DataCmdItem extends MainCmdItem {
 			return false;
 		}
 		if (((this.options & OV_WITHTEXT) != 0)
-				&& !this.getDataText().equals(otherItem.getDataText())) {
+				&& !getDataText().equals(otherItem.getDataText())) {
 			return false;
 		}
 		return true;

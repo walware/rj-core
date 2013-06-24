@@ -27,13 +27,8 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		implements RVector<DataType>, ExternalizableRObject {
 	
 	
-	final static int checkVectorLength(final long length) {
-		return (length <= Integer.MAX_VALUE) ? (int) length : -2;
-	}
-	
-	
 	private DataType data;
-	private int length;
+	private long length;
 	
 	private String className1;
 	private RStore namesAttribute;
@@ -51,7 +46,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 			throw new IllegalArgumentException();
 		}
 		this.data = data;
-		this.length = checkVectorLength(length);
+		this.length = length;
 		this.className1 = className1;
 		if (initialNames != null) {
 			this.namesAttribute = new RCharacterDataImpl(initialNames);
@@ -70,12 +65,12 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		if (customClass) {
 			this.className1 = io.readString();
 		}
-		this.length = io.readInt();
+		this.length = io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			this.namesAttribute = factory.readNames(io);
+			this.namesAttribute = factory.readNames(io, this.length);
 		}
 		//-- data
-		this.data = (DataType) factory.readStore(io);
+		this.data = (DataType) factory.readStore(io, this.length);
 		if (!customClass) {
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
@@ -87,10 +82,9 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		int options = 0;
-		final boolean customClass = this.className1 != null
-				&& !this.className1.equals(this.data.getBaseVectorRClassName());
-		if (customClass) {
+		int options = io.getVULongGrade(this.length);
+		if (this.className1 != null
+				&& !this.className1.equals(this.data.getBaseVectorRClassName())) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
 		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.namesAttribute != null) {
@@ -102,10 +96,10 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 		io.writeInt(options);
 		//-- special attributes
-		if (customClass) {
+		if ((options & RObjectFactory.O_CLASS_NAME) != 0) {
 			io.writeString(this.className1);
 		}
-		io.writeInt(this.length);
+		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), this.length);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			factory.writeNames(this.namesAttribute, io);
 		}
@@ -126,7 +120,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 		return (this.className1 != null) ? this.className1 : this.data.getBaseVectorRClassName();
 	}
 	
-	public int getLength() {
+	public long getLength() {
 		return this.length;
 	}
 	

@@ -74,7 +74,15 @@ public interface RComplexStore extends RStore {
 	}
 	
 	
+	boolean isNaN(int idx);
+	boolean isNaN(long idx);
+	
+	@Override
 	Complex get(int idx);
+	@Override
+	Complex get(long idx);
+	
+	@Override
 	Complex[] toArray();
 	
 }

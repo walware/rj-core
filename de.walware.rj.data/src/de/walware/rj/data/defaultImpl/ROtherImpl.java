@@ -56,28 +56,37 @@ public class ROtherImpl extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		final RList attributes = ((io.flags & RObjectFactory.F_WITH_ATTR) != 0) ? getAttributes() : null;
-		io.writeInt((attributes != null) ? RObjectFactory.F_WITH_ATTR : 0);
+		//-- options
+		final int options = (attributes != null) ? RObjectFactory.O_WITH_ATTR : 0;
+		io.writeInt(options);
+		//-- special attributes
 		io.writeString(this.className1);
+		//-- attributes
 		if (attributes != null) {
 			factory.writeAttributeList(attributes, io);
 		}
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_OTHER;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.className1;
 	}
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}

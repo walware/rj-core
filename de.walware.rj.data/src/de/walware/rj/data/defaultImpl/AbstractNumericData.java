@@ -20,13 +20,21 @@ public abstract class AbstractNumericData extends AbstractRData
 		implements RNumericStore {
 	
 	
+	protected static final String toChar(final double num) {
+		return Double.toString(num); // not exactly like R
+	}
+	
+	
+	@Override
 	public final byte getStoreType() {
 		return RStore.NUMERIC;
 	}
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_NUMERIC;
 	}
+	
 	
 	@Override
 	public boolean getLogi(final int idx) {
@@ -34,7 +42,17 @@ public abstract class AbstractNumericData extends AbstractRData
 	}
 	
 	@Override
-	public void setLogi(final int idx, final boolean logi) {
+	public final boolean getLogi(final long idx) {
+		return getNum(idx) != 0.0;
+	}
+	
+	@Override
+	public final void setLogi(final int idx, final boolean logi) {
+		setNum(idx, (logi) ? 1.0 : 0.0);
+	}
+	
+	@Override
+	public final void setLogi(final long idx, final boolean logi) {
 		setNum(idx, (logi) ? 1.0 : 0.0);
 	}
 	
@@ -44,35 +62,81 @@ public abstract class AbstractNumericData extends AbstractRData
 	}
 	
 	@Override
+	public final int getInt(final long idx) {
+		return (int) getNum(idx);
+	}
+	
+	@Override
 	public final void setInt(final int idx, final int integer) {
 		setNum(idx, integer);
 	}
 	
 	@Override
-	public String getChar(final int idx) {
-		return Double.toString(getNum(idx));
+	public final void setInt(final long idx, final int integer) {
+		setNum(idx, integer);
+	}
+	
+	@Override
+	public final double getCplxRe(final int idx) {
+		return getNum(idx);
+	}
+	
+	@Override
+	public final double getCplxRe(final long idx) {
+		return getNum(idx);
+	}
+	
+	@Override
+	public final double getCplxIm(final int idx) {
+		return 0.0;
+	}
+	
+	@Override
+	public final double getCplxIm(final long idx) {
+		return 0.0;
+	}
+	
+	@Override
+	public final String getChar(final int idx) {
+		return toChar(getNum(idx));
+	}
+	
+	@Override
+	public String getChar(final long idx) {
+		return toChar(getNum(idx));
 	}
 	
 	
-	public Double[] toArray() {
-		final Double[] array = new Double[this.length];
-		for (int i = 0; i < this.length; i++) {
-			if (!isNA(i)) {
-				array[i] = Double.valueOf(getNum(i));
-			}
-		}
-		return array;
-	}
+	@Override
+	public abstract Double[] toArray();
 	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		if (other.getStoreType() != NUMERIC || other.getLength() != this.length) {
+		final long length = getLength();
+		if (NUMERIC != other.getStoreType() || length != other.getLength()) {
 			return false;
 		}
-		for (int i = 0; i < this.length; i++) {
-			if (!(other.isNA(i) ? isNA(i) :
-					(other.isMissing(i) ? isMissing(i) :
-							(Math.abs(other.getNum(i) - getNum(i)) < 2.220446e-16 )) )) {
-				return false;
+		if (length < 0) {
+			return true;
+		}
+		else if (length <= Integer.MAX_VALUE) {
+			final int ilength = (int) length;
+			for (int idx = 0; idx < ilength; idx++) {
+				if (!(isMissing(idx) ?
+						(isNA(idx) ? other.isNA(idx) : other.isMissing(idx)) :
+						(Math.abs(getNum(idx) - other.getNum(idx)) < 2.220446e-16 )) ) {
+					return false;
+				}
+			}
+		}
+		else {
+			for (long idx = 0; idx < length; idx++) {
+				if (!(isMissing(idx) ?
+						(isNA(idx) ? other.isNA(idx) : other.isMissing(idx)) :
+						(Math.abs(getNum(idx) - other.getNum(idx)) < 2.220446e-16 )) ) {
+					return false;
+				}
 			}
 		}
 		return true;

@@ -23,30 +23,18 @@ import de.walware.rj.data.defaultImpl.RListImpl;
 public class JRIListImpl extends RListImpl {
 	
 	
-	public JRIListImpl(final RObject[] initialComponents, final int length) {
-		super(initialComponents, CLASSNAME_LIST, new String[length], length);
-	}
-	
 	public JRIListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
 		super(initialComponents, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, initialComponents.length);
 	}
 	
-	public JRIListImpl(final int length, final String className1, final String[] initialNames) {
-		super(null, (className1 != null) ? className1 : CLASSNAME_LIST, initialNames, length);
-	}
-	
 	@Override
 	protected RCharacterDataImpl createNamesStore(final String[] names) {
-		return new JRICharacterDataImpl(names, getLength());
+		return new JRICharacterDataImpl(names);
 	}
 	
-	public JRIListImpl(final RJIO io, final RObjectFactory factory) throws IOException {
-		super(io, factory);
+	public JRIListImpl(final RJIO io, final RObjectFactory factory, final int options) throws IOException {
+		super(io, factory, options);
 	}
 	
-	
-	public String[] getJRINamesArray() {
-		return ((JRICharacterDataImpl) getNames()).getJRIValueArray();
-	}
 	
 }

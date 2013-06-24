@@ -12,13 +12,16 @@
 package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
-import java.io.ObjectInput;
 
 import de.walware.rj.data.RJIO;
 
 
 public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
+	
+	public RUniqueCharacterDataImpl() {
+		super();
+	}
 	
 	public RUniqueCharacterDataImpl(final String[] initialValues) {
 		super(initialValues, initialValues.length);
@@ -28,12 +31,8 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 		super(source, reuse);
 	}
 	
-	public RUniqueCharacterDataImpl(final RJIO io) throws IOException {
-		super(io);
-	}
-	
-	public RUniqueCharacterDataImpl(final ObjectInput in) throws IOException {
-		super(in);
+	public RUniqueCharacterDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
@@ -49,6 +48,14 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	}
 	
 	@Override
+	public void setChar(final long idx, final String value) {
+		if (idx < 0 || idx >= getLength()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		setChar((int) idx, value);
+	}
+	
+	@Override
 	public void insertChar(final int idx, final String value) {
 		if (indexOf(value) >= 0) {
 			throw new IllegalArgumentException();
@@ -58,6 +65,10 @@ public class RUniqueCharacterDataImpl extends RCharacterDataImpl {
 	
 	@Override
 	public void setNA(final int idx) {
+	}
+	
+	@Override
+	public void setNA(final long idx) {
 	}
 	
 	@Override

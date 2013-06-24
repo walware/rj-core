@@ -18,6 +18,7 @@ import de.walware.rj.data.RArray;
 import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RDataFrame;
+import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RJIO;
@@ -45,16 +46,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	public static final RCharacterDataStruct CHR_STRUCT_DUMMY = new RCharacterDataStruct();
 	
 	
-	private static int getArrayLength(final int[] dim) {
-		if (dim.length == 0) {
-			return 0;
-		}
-		int length = 1;
-		for (int i = 0; i < dim.length; i++) {
-			length *= dim[i];
-		}
-		return length;
-	}
+	private final long storeLengthFixLong = AbstractRData.DEFAULT_LONG_DATA_SEGMENT_LENGTH;
 	
 	
 	public RObjectFactoryImpl() {
@@ -82,6 +74,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @param data the data store
 	 * @return the R vector
 	 */
+	@Override
 	public <DataType extends RStore> RVector<DataType> createVector(final DataType data) {
 		return createVector(data, data.getBaseVectorRClassName());
 	}
@@ -301,10 +294,12 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return new RArrayImpl<DataType>(data, classname, dim);
 	}
 	
+	@Override
 	public <DataType extends RStore> RArray<DataType> createArray(final DataType data, final int[] dim) {
 		return createArray(data, dim, (dim.length == 2) ? RObject.CLASSNAME_MATRIX :RObject.CLASSNAME_ARRAY);
 	}
 	
+	@Override
 	public <DataType extends RStore> RArray<DataType> createMatrix(final DataType data, final int dim1, final int dim2) {
 		return createArray(data, new int[] { dim1, dim2 }, RObject.CLASSNAME_MATRIX);
 	}
@@ -315,7 +310,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	public RArray<RLogicalStore> createLogiArray(final int[] dim) {
-		return createArray(createLogiData(getArrayLength(dim)), dim);
+		return createArray(createLogiData(RDataUtil.computeLengthFromDim(dim)), dim);
 	}
 	
 	public RArray<RIntegerStore> createIntArray(final int[] integers, final int[] dim) {
@@ -323,7 +318,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	public RArray<RIntegerStore> createIntArray(final int[] dim) {
-		return createArray(createIntData(getArrayLength(dim)), dim);
+		return createArray(createIntData(RDataUtil.computeLengthFromDim(dim)), dim);
 	}
 	
 	public RArray<RNumericStore> createNumArray(final double[] numerics, final int[] dim) {
@@ -331,7 +326,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	public RArray<RNumericStore> createNumArray(final int[] dim) {
-		return createArray(createNumData(getArrayLength(dim)), dim);
+		return createArray(createNumData(RDataUtil.computeLengthFromDim(dim)), dim);
 	}
 	
 	public RArray<RCharacterStore> createCharArray(final String[] characters, final int[] dim) {
@@ -339,7 +334,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	public RArray<RCharacterStore> createCharArray(final int[] dim) {
-		return createArray(createCharData(getArrayLength(dim)), dim);
+		return createArray(createCharData(RDataUtil.computeLengthFromDim(dim)), dim);
 	}
 	
 	
@@ -400,6 +395,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return new RListImpl(components, classname, names);
 	}
 	
+	@Override
 	public RList createList(final RObject[] components, final String[] names) {
 		return createList(components, names, RObject.CLASSNAME_LIST);
 	}
@@ -407,10 +403,12 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Language --*/
 	
+	@Override
 	public RLanguage createName(final String name) {
 		return new RLanguageImpl(RLanguage.NAME, name, RObject.CLASSNAME_NAME);
 	}
 	
+	@Override
 	public RLanguage createExpression(final String expr) {
 		return new RLanguageImpl(RLanguage.EXPRESSION, expr, RObject.CLASSNAME_EXPRESSION);
 	}
@@ -418,54 +416,73 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Data/RStore --*/
 	
+	@Override
 	public RLogicalStore createLogiData(final boolean[] logiValues) {
 		return new RLogicalDataByteImpl(logiValues);
 	}
 	
-	public RLogicalStore createLogiData(final int length) {
-		return new RLogicalDataByteImpl(length);
+	public RLogicalStore createLogiData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RLogicalDataByteImpl((int) length) :
+				new RLogicalDataByteFixLongImpl(length);
 	}
 	
+	@Override
 	public RIntegerStore createIntData(final int[] intValues) {
 		return new RIntegerDataImpl(intValues);
 	}
 	
-	public RIntegerStore createIntData(final int length) {
-		return new RIntegerDataImpl(length);
+	public RIntegerStore createIntData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RIntegerDataImpl((int) length) :
+				new RIntegerDataFixLongImpl(length);
 	}
 	
+	@Override
 	public RNumericStore createNumData(final double[] numValues) {
-		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(numValues) : new RNumericDataImpl(numValues);
+		return new RNumericDataBImpl(numValues);
 	}
 	
-	public RNumericStore createNumData(final int length) {
-		return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(length) : new RNumericDataImpl(length);
+	public RNumericStore createNumData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RNumericDataBImpl((int) length) :
+				new RNumericDataBFixLongImpl(length);
 	}
 	
+	@Override
 	public RComplexStore createCplxData(final double[] reValues, final double[] imValues) {
-		return RNumericDataBImpl.isBforNASupported() ? new RComplexDataBImpl(reValues, imValues, null) : new RComplexDataImpl(reValues, imValues, null);
+		return new RComplexDataBImpl(reValues, imValues, null);
 	}
 	
-	public RComplexStore createCplxData(final int length) {
-		return RNumericDataBImpl.isBforNASupported() ? new RComplexDataBImpl(length) : new RComplexDataImpl(length);
+	public RComplexStore createCplxData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RComplexDataBImpl((int) length) :
+				new RComplexDataBFixLongImpl(length);
 	}
 	
+	@Override
 	public RCharacterStore createCharData(final String[] charValues) {
 		return new RCharacterDataImpl(charValues);
 	}
 	
-	public RCharacterStore createCharData(final int length) {
-		return new RCharacterDataImpl(length);
+	public RCharacterStore createCharData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RCharacterDataImpl((int) length) :
+				new RCharacterDataFixLongImpl(length);
 	}
 	
+	@Override
 	public RRawStore createRawData(final byte[] rawValues) {
 		return new RRawDataImpl(rawValues);
 	}
 	
-	public RRawStore createRawData(final int length) {
-		return new RRawDataImpl(length);
+	public RRawStore createRawData(final long length) {
+		return (length <= this.storeLengthFixLong) ?
+				new RRawDataImpl((int) length) :
+				new RRawDataFixLongImpl(length);
 	}
 	
+	@Override
 	public RFactorStore createFactorData(final int[] codes, final String[] levels) {
 		return new RFactorDataImpl(codes, false, levels);
 	}
@@ -485,8 +502,10 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Streaming --*/
 	
+	@Override
 	public RObject readObject(final RJIO io) throws IOException {
 		final byte type = io.readByte();
+		int options;
 		switch (type) {
 		case -1:
 			return null;
@@ -497,9 +516,15 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		case RObject.TYPE_ARRAY:
 			return new RArrayImpl(io, this);
 		case RObject.TYPE_LIST:
-			return new RListImpl(io, this);
+			options = io.readInt();
+			return ((options & O_LENGTHGRADE_MASK) <= 3) ?
+					new RListImpl(io, this, options) :
+					new RListFixLongImpl(io, this, options);
 		case RObject.TYPE_DATAFRAME:
-			return new RDataFrameImpl(io, this);
+			options = io.readInt();
+			return ((options & O_LENGTHGRADE_MASK) <= 3) ?
+					new RDataFrameImpl(io, this, options) :
+					new RListFixLongImpl(io, this, options);
 		case RObject.TYPE_ENV:
 			return new REnvironmentImpl(io, this);
 		case RObject.TYPE_LANGUAGE:
@@ -521,6 +546,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
+	@Override
 	public void writeObject(final RObject robject, final RJIO io) throws IOException {
 		if (robject == null) {
 			io.writeByte(-1);
@@ -568,26 +594,49 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
-	public RStore readStore(final RJIO io) throws IOException {
+	@Override
+	public RStore readStore(final RJIO io, final long length) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			final byte storeType = io.readByte();
-			switch (storeType) {
-			case RStore.LOGICAL:
-				return new RLogicalDataByteImpl(io);
-			case RStore.INTEGER:
-				return new RIntegerDataImpl(io);
-			case RStore.NUMERIC:
-				return RNumericDataBImpl.isBforNASupported() ? new RNumericDataBImpl(io) : new RNumericDataImpl(io);
-			case RStore.COMPLEX:
-				return RComplexDataBImpl.isBforNASupported() ? new RComplexDataBImpl(io) : new RComplexDataImpl(io);
-			case RStore.CHARACTER:
-				return new RCharacterDataImpl(io);
-			case RStore.RAW:
-				return new RRawDataImpl(io);
-			case RStore.FACTOR:
-				return new RFactorDataImpl(io);
-			default:
-				throw new IOException("store type = " + storeType);
+			if (length <= Integer.MAX_VALUE) {
+				switch (storeType) {
+				case RStore.LOGICAL:
+					return new RLogicalDataByteImpl(io, (int) length);
+				case RStore.INTEGER:
+					return new RIntegerDataImpl(io, (int) length);
+				case RStore.NUMERIC:
+					return new RNumericDataBImpl(io, (int) length);
+				case RStore.COMPLEX:
+					return new RComplexDataBImpl(io, (int) length);
+				case RStore.CHARACTER:
+					return new RCharacterDataImpl(io, (int) length);
+				case RStore.RAW:
+					return new RRawDataImpl(io, (int) length);
+				case RStore.FACTOR:
+					return new RFactorDataImpl(io, (int) length);
+				default:
+					throw new IOException("store type = " + storeType);
+				}
+			}
+			else {
+				switch (storeType) {
+				case RStore.LOGICAL:
+					return new RLogicalDataByteFixLongImpl(io, length);
+				case RStore.INTEGER:
+					return new RIntegerDataFixLongImpl(io, length);
+				case RStore.NUMERIC:
+					return new RNumericDataBFixLongImpl(io, length);
+				case RStore.COMPLEX:
+					return new RComplexDataBFixLongImpl(io, length);
+				case RStore.CHARACTER:
+					return new RCharacterDataFixLongImpl(io, length);
+				case RStore.RAW:
+					return new RRawDataFixLongImpl(io, length);
+				case RStore.FACTOR:
+					return new RFactorDataFixLongImpl(io, length);
+				default:
+					throw new IOException("store type = " + storeType);
+				}
 			}
 		}
 		else {
@@ -613,6 +662,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
+	@Override
 	public void writeStore(final RStore data, final RJIO io) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			io.writeByte(data.getStoreType());
@@ -629,10 +679,12 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		}
 	}
 	
+	@Override
 	public RList readAttributeList(final RJIO io) throws IOException {
-		return new RListImpl(io, this);
+		return new RListImpl(io, this, io.readInt());
 	}
 	
+	@Override
 	public void writeAttributeList(final RList list, final RJIO io) throws IOException {
 		((ExternalizableRObject) list).writeExternal(io, this);
 	}
@@ -646,10 +698,13 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		return dim;
 	}
 	
-	public RStore readNames(final RJIO io) throws IOException {
+	@Override
+	public RStore readNames(final RJIO io, final long length) throws IOException {
 		final byte type = io.readByte();
 		if (type == RStore.CHARACTER) {
-			return new RCharacterDataImpl(io);
+			return (length <= Integer.MAX_VALUE) ?
+					new RCharacterDataImpl(io, (int) length) :
+					new RCharacterDataFixLongImpl(io, length);
 		}
 		if (type == 0) {
 			return null;
@@ -657,6 +712,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 		throw new IOException();
 	}
 	
+	@Override
 	public void writeNames(final RStore names, final RJIO io) throws IOException {
 		if (names != null) {
 			final byte type = names.getStoreType();

@@ -25,7 +25,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	
 	
 	private DataType data;
-	private int length;
+	private long length;
 	
 	private String className1;
 	private RStore namesAttribute;
@@ -43,7 +43,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		this(data, data.getLength(), className1, initialNames);
 	}
 	
-	public RVectorImpl(final DataType data, final int length, final String className1, final String[] initialNames) {
+	public RVectorImpl(final DataType data, final long length, final String className1, final String[] initialNames) {
 		if (data == null || className1 == null) {
 			throw new NullPointerException();
 		}
@@ -79,18 +79,17 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
 		final int options = io.readInt();
-		final boolean customClass = ((options & RObjectFactory.O_CLASS_NAME) != 0);
 		//-- special attributes
-		if (customClass) {
+		if ((options & RObjectFactory.O_CLASS_NAME) != 0) {
 			this.className1 = io.readString();
 		}
-		this.length = io.readInt();
+		this.length = io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
-			this.namesAttribute = factory.readNames(io);
+			this.namesAttribute = factory.readNames(io, this.length);
 		}
 		//-- data
-		this.data = (DataType) factory.readStore(io);
-		if (!customClass) {
+		this.data = (DataType) factory.readStore(io, this.length);
+		if ((options & RObjectFactory.O_CLASS_NAME) == 0) {
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
 		// attributes
@@ -99,11 +98,11 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		//-- options
-		int options = 0;
-		final boolean customClass = !this.className1.equals(this.data.getBaseVectorRClassName());
-		if (customClass) {
+		int options = io.getVULongGrade(this.length);
+		if (!this.className1.equals(this.data.getBaseVectorRClassName())) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
 		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.namesAttribute != null) {
@@ -115,10 +114,10 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 		io.writeInt(options);
 		//-- special attributes
-		if (customClass) {
+		if ((options & RObjectFactory.O_CLASS_NAME) != 0) {
 			io.writeString(this.className1);
 		}
-		io.writeInt(this.length);
+		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), this.length);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			factory.writeNames(this.namesAttribute, io);
 		}
@@ -131,23 +130,28 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_VECTOR;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.className1;
 	}
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return this.length;
 	}
 	
+	@Override
 	public RStore getNames() {
 		return this.namesAttribute;
 	}
 	
 	
+	@Override
 	public DataType getData() {
 		return this.data;
 	}
@@ -159,10 +163,12 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	
 	public void insert(final int idx) {
 		((RDataResizeExtension) this.data).insertNA(idx);
+		this.length++;
 	}
 	
 	public void remove(final int idx) {
 		((RDataResizeExtension) this.data).remove(idx);
+		this.length--;
 	}
 	
 	

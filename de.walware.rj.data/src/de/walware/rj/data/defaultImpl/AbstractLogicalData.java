@@ -20,16 +20,29 @@ public abstract class AbstractLogicalData extends AbstractRData
 		implements RLogicalStore {
 	
 	
+	protected static final String toChar(final boolean logi) {
+		return (logi) ? "TRUE" : "FALSE";
+	}
+	
+	
+	@Override
 	public final byte getStoreType() {
 		return RStore.LOGICAL;
 	} 
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_LOGICAL;
 	}
 	
+	
 	@Override
 	public final int getInt(final int idx) {
+		return getLogi(idx) ? 1 : 0;
+	}
+	
+	@Override
+	public final int getInt(final long idx) {
 		return getLogi(idx) ? 1 : 0;
 	}
 	
@@ -39,18 +52,73 @@ public abstract class AbstractLogicalData extends AbstractRData
 	}
 	
 	@Override
-	public final String getChar(final int idx) {
-		return getLogi(idx) ? "TRUE" : "FALSE";
+	public final void setInt(final long idx, final int integer) {
+		setLogi(idx, integer != 0);
 	}
 	
+	@Override
+	public final String getChar(final int idx) {
+		return toChar(getLogi(idx));
+	}
+	
+	@Override
+	public final String getChar(final long idx) {
+		return toChar(getLogi(idx));
+	}
+	
+	@Override
+	public void setChar(final int idx, final String character) {
+		setLogi(idx, AbstractCharacterData.toLogi(character));
+	}
+	
+	@Override
+	public void setChar(final long idx, final String character) {
+		setLogi(idx, AbstractCharacterData.toLogi(character));
+	}
+	
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		if (character == null) {
+			throw new NullPointerException();
+		}
+		try {
+			return indexOf(AbstractCharacterData.toLogi(character) ? 1 : 0, fromIdx);
+		}
+		catch (final NumberFormatException e) {
+			return -1;
+		}
+	}
+	
+	
+	@Override
+	public abstract Boolean[] toArray();
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		if (other.getStoreType() != LOGICAL || other.getLength() != this.length) {
+		final long length = getLength();
+		if (LOGICAL != other.getStoreType() || length != other.getLength()) {
 			return false;
 		}
-		for (int i = 0; i < this.length; i++) {
-			if (!(other.isNA(i) ? isNA(i) :
-					other.getLogi(i) == getLogi(i) )) {
-				return false;
+		if (length < 0) {
+			return true;
+		}
+		else if (length <= Integer.MAX_VALUE) {
+			final int ilength = (int) length;
+			for (int idx = 0; idx < ilength; idx++) {
+				if (!(isNA(idx) ? other.isNA(idx) :
+						getLogi(idx) == other.getLogi(idx) )) {
+					return false;
+				}
+			}
+		}
+		else {
+			for (long idx = 0; idx < length; idx++) {
+				if (!(isNA(idx) ? other.isNA(idx) :
+						getLogi(idx) == other.getLogi(idx) )) {
+					return false;
+				}
 			}
 		}
 		return true;

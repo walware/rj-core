@@ -21,63 +21,73 @@ import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 
 
-public class RListImpl extends AbstractRObject
+public class RListFixLongImpl extends AbstractRObject
 		implements RList, ExternalizableRObject {
 	
 	
-	private int length;
-	private RObject[] components; // null of RObject.F_NOCHILDREN
-	
-	private String className1;
-	private RCharacterDataImpl namesAttribute;
+	public static final int SEGMENT_LENGTH = AbstractRData.DEFAULT_LONG_DATA_SEGMENT_LENGTH;
 	
 	
-	public RListImpl(final RObject[] initialComponents, final String[] initialNames) {
-		this(initialComponents, RObject.CLASSNAME_LIST, initialNames, initialComponents.length);
+	private final long length;
+	private final RObject[][] components; // null of RObject.F_NOCHILDREN
+	
+	private final String className1;
+	private final RCharacterStore namesAttribute;
+	
+	
+	public RListFixLongImpl(final RObject[][] initialComponents, final String[][] initialNames) {
+		this(initialComponents, RObject.CLASSNAME_LIST, initialNames);
 	}
 	
-	public RListImpl(final RObject[] initialComponents, final String className1, final String[] initialNames) {
-		this(initialComponents, className1, initialNames, initialComponents.length);
-	}
-	
-	public RListImpl(final RObject[] initialComponents, final String className1, String[] initialNames, final int length) {
-		this.length = length;
+	public RListFixLongImpl(final RObject[][] initialComponents, final String className1, final String[][] initialNames) {
+		this.length = check2dArrayLength(initialComponents, SEGMENT_LENGTH);
 		this.components = initialComponents;
 		this.className1 = className1;
-		if (initialNames == null && initialComponents != null) {
-			initialNames = new String[length];
+		if (initialNames != null) {
+			this.namesAttribute = new RCharacterDataFixLongImpl(initialNames);
+			if (this.namesAttribute.getLength() != this.length) {
+				throw new IllegalArgumentException("Different length of components and names.");
+			}
 		}
-		this.namesAttribute = (initialNames != null) ? createNamesStore(initialNames) : null;
+		else {
+			this.namesAttribute = null;
+		}
 	}
 	
-	protected RCharacterDataImpl createNamesStore(final String[] names) {
-		return new RCharacterDataImpl(names, this.length);
-	}
-	
-	public RListImpl(final RObject[] initialComponents, final RCharacterDataImpl initialNames) {
+	public RListFixLongImpl(final RObject[][] initialComponents, final RCharacterDataImpl initialNames) {
 		this.components = initialComponents;
 		this.length = this.components.length;
+		this.className1 = RObject.CLASSNAME_LIST;
 		this.namesAttribute = initialNames;
 	}
 	
-	public RListImpl(final RJIO io, final RObjectFactory factory, final int options) throws IOException {
+	public RListFixLongImpl(final long length, final String className1) {
+		this.length = length;
+		this.className1 = className1;
+		this.components = null;
+		this.namesAttribute = null;
+	}
+	
+	public RListFixLongImpl(final RJIO io, final RObjectFactory factory, final int options) throws IOException {
 		//-- special attributes
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				io.readString() : ((getRObjectType() == RObject.TYPE_DATAFRAME) ?
 						RObject.CLASSNAME_DATAFRAME : RObject.CLASSNAME_LIST);
-		final int l = this.length = checkShortLength(
-				io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK)) );
+		final long l = this.length = io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = (RCharacterDataImpl) factory.readNames(io, l);
+			this.namesAttribute = (RCharacterStore) factory.readNames(io, l);
 			//-- data
-			this.components = new RObject[l];
-			for (int i = 0; i < l; i++) {
-				this.components[i] = factory.readObject(io);
+			this.components = new2dRObjectArray(options, SEGMENT_LENGTH);
+			for (int i = 0; i < this.components.length; i++) {
+				final RObject[] segment = this.components[i];
+				for (int j = 0; j < segment.length; j++) {
+					segment[j] = factory.readObject(io);
+				}
 			}
 		}
 		//-- attributes
@@ -88,10 +98,10 @@ public class RListImpl extends AbstractRObject
 	
 	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
-		doWriteExternal(io, factory, 0);
+		doWriteExternal(io, 0, factory);
 	}
-	protected final void doWriteExternal(final RJIO io, final RObjectFactory factory, int options) throws IOException {
-		final int l = this.length;
+	protected final void doWriteExternal(final RJIO io, int options, final RObjectFactory factory) throws IOException {
+		final long l = this.length;
 		//-- options
 		options |= io.getVULongGrade(l);
 		if (!this.className1.equals(getDefaultRClassName())) {
@@ -114,8 +124,11 @@ public class RListImpl extends AbstractRObject
 		if ((options & RObjectFactory.O_NO_CHILDREN) == 0) {
 			factory.writeNames(this.namesAttribute, io);
 			//-- data
-			for (int i = 0; i < l; i++) {
-				factory.writeObject(this.components[i], io);
+			for (int i = 0; i < this.components.length; i++) {
+				final RObject[] segment = this.components[i];
+				for (int j = 0; j < segment.length; j++) {
+					factory.writeObject(segment[j], io);
+				}
 			}
 		}
 		//-- attributes
@@ -139,10 +152,6 @@ public class RListImpl extends AbstractRObject
 		return this.className1;
 	}
 	
-	
-	protected int length() {
-		return this.length;
-	}
 	
 	@Override
 	public long getLength() {
@@ -172,23 +181,20 @@ public class RListImpl extends AbstractRObject
 	
 	@Override
 	public final RObject get(final int idx) {
-		return this.components[idx];
+		return this.components[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH];
 	}
 	
 	@Override
 	public final RObject get(final long idx) {
-		if (idx < 0 || idx >= Integer.MAX_VALUE) {
-			throw new IndexOutOfBoundsException(Long.toString(idx));
-		}
-		return this.components[(int) idx];
+		return this.components[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)];
 	}
 	
 	@Override
 	public final RObject get(final String name) {
 		if (this.namesAttribute != null) {
-			final int idx = this.namesAttribute.indexOf(name, 0);
+			final long idx = this.namesAttribute.indexOf(name);
 			if (idx >= 0) {
-				return this.components[idx];
+				return get(idx);
 			}
 		}
 		return null;
@@ -197,58 +203,6 @@ public class RListImpl extends AbstractRObject
 	@Override
 	public final RStore getData() {
 		return null;
-	}
-	
-	
-	public boolean set(final int idx, final RObject component) {
-		this.components[idx] = component;
-		return true;
-	}
-	
-//	public boolean set(final long idx, final RObject component) {
-//		if (idx < 0 || idx >= Integer.MAX_VALUE) {
-//			throw new IndexOutOfBoundsException(Long.toString(idx));
-//		}
-//		this.components[(int) idx] = component;
-//		return true;
-//	}
-	
-	public final boolean set(final String name, final RObject component) {
-		if (component == null) {
-			throw new NullPointerException();
-		}
-		final int idx = this.namesAttribute.indexOf(name, 0);
-		if (idx >= 0) {
-			set(idx, component);
-			return true;
-		}
-		return false;
-	}
-	
-	public void insert(final int idx, final String name, final RObject component) {
-		if (component == null) {
-			throw new NullPointerException();
-		}
-		final int[] idxs = new int[] { idx };
-		this.components = prepareInsert(this.components, this.length, idxs);
-		this.length++;
-		if (name == null) {
-			this.namesAttribute.insertNA(idxs);
-		}
-		else {
-			this.namesAttribute.insertChar(idx, name);
-		}
-	}
-	
-	public void add(final String name, final RObject component) {
-		insert(this.length, name, component);
-	}
-	
-	public void remove(final int idx) {
-		final int[] idxs = new int[] { idx };
-		this.components = remove(this.components, this.length, idxs);
-		this.length--;
-		this.namesAttribute.remove(idxs);
 	}
 	
 	

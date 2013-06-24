@@ -23,7 +23,6 @@ import de.walware.rj.data.RStore;
 import de.walware.rj.data.defaultImpl.AbstractRObject;
 import de.walware.rj.data.defaultImpl.ExternalizableRObject;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
-import de.walware.rj.data.defaultImpl.RUniqueCharacterDataWithHashImpl;
 
 
 public class JRIEnvironmentImpl extends AbstractRObject
@@ -64,16 +63,16 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		//-- data
 		this.handle = io.readLong();
 		this.id = io.readString();
-		this.length = io.readInt();
+		final int l = this.length = (int) io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(io);
-			this.components = new RObject[this.length];
-			for (int i = 0; i < this.length; i++) {
+			this.namesAttribute = new RCharacterDataImpl(io, l);
+			this.components = new RObject[l];
+			for (int i = 0; i < l; i++) {
 				this.components[i] = factory.readObject(io);
 			}
 		}
@@ -84,8 +83,9 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	}
 	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		final int l = this.length;
 		//-- options
-		int options = 0;
+		int options = io.getVULongGrade(l);
 		final boolean customClass = this.className1 != null
 				&& !this.className1.equals(RObject.CLASSNAME_ENV);
 		if (customClass) {
@@ -106,12 +106,12 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		
 		io.writeLong(this.handle);
 		io.writeString(this.id);
-		io.writeInt(this.length);
+		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), l);
 		
 		if (this.components != null) {
 			this.namesAttribute.writeExternal(io);
 			//-- data
-			for (int i = 0; i < this.length; i++) {
+			for (int i = 0; i < l; i++) {
 				factory.writeObject(this.components[i], io);
 			}
 		}
@@ -143,7 +143,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		return this.handle;
 	}
 	
-	public int getLength() {
+	public long getLength() {
 		return this.length;
 	}
 	
@@ -155,12 +155,29 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		return this.namesAttribute.getChar(idx);
 	}
 	
-	public RStore getData() {
-		return null;
+	public String getName(final long idx) {
+		return this.namesAttribute.getChar(idx);
 	}
 	
 	public RObject get(final int idx) {
 		return this.components[idx];
+	}
+	
+	public RObject get(final long idx) {
+		if (idx < 0 || idx >= Integer.MAX_VALUE) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.components[(int) idx];
+	}
+	
+	public RObject[] toArray() {
+		final RObject[] array = new RObject[this.length];
+		System.arraycopy(this.components, 0, array, 0, this.length);
+		return array;
+	}
+	
+	public RStore getData() {
+		return null;
 	}
 	
 	public boolean set(final int idx, final RObject component) {
@@ -172,7 +189,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		if (component == null) {
 			throw new NullPointerException();
 		}
-		final int idx = this.namesAttribute.indexOf(name);
+		final int idx = this.namesAttribute.indexOf(name, 0);
 		if (idx >= 0) {
 			this.components[idx] = component;
 			return true;
@@ -208,7 +225,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	
 	
 	public RObject get(final String name) {
-		final int idx = this.namesAttribute.indexOf(name);
+		final int idx = this.namesAttribute.indexOf(name, 0);
 		if (idx >= 0) {
 			return this.components[idx];
 		}
@@ -235,10 +252,6 @@ public class JRIEnvironmentImpl extends AbstractRObject
 			sb.append("\n<NODATA/>");
 		}
 		return sb.toString();
-	}
-	
-	public RObject[] toArray() {
-		throw new UnsupportedOperationException();
 	}
 	
 }

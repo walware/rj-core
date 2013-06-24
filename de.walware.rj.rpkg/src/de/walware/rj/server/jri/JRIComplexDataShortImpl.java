@@ -17,10 +17,10 @@ import de.walware.rj.data.RJIO;
 import de.walware.rj.data.defaultImpl.RComplexDataBImpl;
 
 
-public class JRIComplexDataImpl extends RComplexDataBImpl {
+public class JRIComplexDataShortImpl extends RComplexDataBImpl {
 	
 	
-	public JRIComplexDataImpl(final double[] realValues, final double[] imaginaryValues) {
+	public JRIComplexDataShortImpl(final double[] realValues, final double[] imaginaryValues) {
 		super(realValues, imaginaryValues);
 		for (int i = 0; i < imaginaryValues.length; i++) {
 			if (Double.isNaN(imaginaryValues[i])) {
@@ -36,26 +36,28 @@ public class JRIComplexDataImpl extends RComplexDataBImpl {
 		}
 	}
 	
-	public JRIComplexDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRIComplexDataShortImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	public double[] getJRIRealValueArray() {
-		if (this.realValues.length == this.length) {
+		final int l = length();
+		if (this.realValues.length == l) {
 			return this.realValues;
 		}
-		final double[] array = new double[this.length];
-		System.arraycopy(this.realValues, 0, array, 0, this.length);
+		final double[] array = new double[l];
+		System.arraycopy(this.realValues, 0, array, 0, l);
 		return array;
 	}
 	
 	public double[] getJRIImaginaryValueArray() {
-		if (this.imaginaryValues.length == this.length) {
+		final int l = length();
+		if (this.imaginaryValues.length == l) {
 			return this.imaginaryValues;
 		}
-		final double[] array = new double[this.length];
-		System.arraycopy(this.imaginaryValues, 0, array, 0, this.length);
+		final double[] array = new double[l];
+		System.arraycopy(this.imaginaryValues, 0, array, 0, l);
 		return array;
 	}
 	

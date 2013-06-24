@@ -11,12 +11,60 @@
 
 package de.walware.rj.data.defaultImpl;
 
+import java.io.IOException;
+
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
 public abstract class AbstractRObject implements RObject {
+	
+	
+	protected static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
+	protected static final RObject[][] EMPTY_ROBJECT_2dARRAY = new RObject[0][];
+	
+	
+	protected static final long check2dArrayLength(final RObject[][] array, final int segmentLength) {
+		long length = 0;
+		if (array.length > 0) {
+			final int last = array.length - 1;
+			for (int i = 0; i < last; i++) {
+				if (array[i].length != segmentLength) {
+					throw new IllegalArgumentException("Unexpected list segment length (" + array[i].length + ", but " + segmentLength + " expected)");
+				}
+			}
+			length = last * (long) segmentLength;
+			if (array[last].length > segmentLength) {
+				throw new IllegalArgumentException("Unexpected list segment length (" + array[last].length + ", but max " + segmentLength + " expected)");
+			}
+			length += array[last].length;
+		}
+		return length;
+	}
+	
+	protected static final RObject[][] new2dRObjectArray(final long length, final int segmentLength) {
+		if (length == 0) {
+			return EMPTY_ROBJECT_2dARRAY;
+		}
+		final RObject[][] array = new RObject[1 + (int) ((length - 1) / segmentLength)][];
+		final int last = array.length - 1;
+		for (int i = 0; i < last; i++) {
+			array[i] = new RObject[segmentLength];
+		}
+		{	final int restLength = (int) (length % segmentLength);
+			array[last] = new RObject[(restLength == 0) ? segmentLength : restLength];
+		}
+		return array;
+	}
+	
+	
+	protected static final int checkShortLength(final long length) throws IOException {
+		if (length >= Integer.MAX_VALUE) {
+			throw new IOException("Long length (" + length + ") not supported by this implementation.");
+		}
+		return (int) length;
+	}
 	
 	
 	protected static final int getNewArraySize(final int length) {
@@ -100,6 +148,7 @@ public abstract class AbstractRObject implements RObject {
 		this.attributes = attributes;
 	}
 	
+	@Override
 	public final RList getAttributes() {
 		return this.attributes;
 	}

@@ -20,31 +20,37 @@ import java.util.Arrays;
 import de.walware.rj.data.RJIO;
 
 
+/**
+ * This implementation is limited to length of 2<sup>31</sup>-1.
+ */
 public class RCharacterDataImpl extends AbstractCharacterData
 		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
+	
+	private int length;
 	
 	protected String[] charValues;
 	
 	
 	public RCharacterDataImpl() {
-		this.charValues = EMPTY_STRING_ARRAY;
 		this.length = 0;
-	}
-	
-	public RCharacterDataImpl(final String[] values) {
-		this(values, values.length);
-	}
-	
-	public RCharacterDataImpl(final String[] values, final int length) {
-		this.charValues = values;
-		this.length = length;
+		this.charValues = EMPTY_STRING_ARRAY;
 	}
 	
 	public RCharacterDataImpl(final int length) {
-		this.charValues = new String[length];
 		this.length = length;
+		this.charValues = new String[length];
 		Arrays.fill(this.charValues, "");
+	}
+	
+	public RCharacterDataImpl(final String[] values) {
+		this.length = values.length;
+		this.charValues = values;
+	}
+	
+	public RCharacterDataImpl(final String[] values, final int length) {
+		this.length = length;
+		this.charValues = values;
 	}
 	
 	
@@ -62,19 +68,18 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	}
 	
 	
-	public RCharacterDataImpl(final RJIO io) throws IOException {
-		readExternal(io);
+	public RCharacterDataImpl(final RJIO io, final int length) throws IOException {
+		this.length = length;
+		this.charValues = new String[length];
+		io.readStringData(this.charValues, length);
 	}
 	
-	public RCharacterDataImpl(final ObjectInput in) throws IOException {
-		readExternal(in);
+	@Override
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeStringData(this.charValues, this.length);
 	}
 	
-	public void readExternal(final RJIO io) throws IOException {
-		this.charValues = io.readStringArray();
-		this.length = this.charValues.length;
-	}
-	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.charValues = new String[this.length];
@@ -93,10 +98,7 @@ public class RCharacterDataImpl extends AbstractCharacterData
 		}
 	}
 	
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeStringArray(this.charValues, this.length);
-	}
-	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
@@ -117,37 +119,71 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	}
 	
 	
-	@Override
-	public String getChar(final int idx) {
-		return this.charValues[idx];
+	public final int length() {
+		return this.length;
 	}
 	
-	
 	@Override
-	public int indexOf(final String value, int fromIdx) {
-		if (value == null) {
-			throw new NullPointerException();
-		}
-		if (fromIdx < 0) {
-			fromIdx = 0;
-		}
-		while (fromIdx < this.length) {
-			if (this.charValues[fromIdx] != null && this.charValues[fromIdx].equals(value)) {
-				return fromIdx;
-			}
-			fromIdx++;
-		}
-		return -1;
+	public final long getLength() {
+		return this.length;
 	}
-	
 	
 	@Override
 	public boolean isNA(final int idx) {
 		return (this.charValues[idx] == null);
 	}
 	
+	@Override
+	public boolean isNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.charValues[(int) idx] == null);
+	}
+	
+	@Override
+	public void setNA(final int idx) {
+//		if (this.charValues[idx] == null) {
+//			return;
+//		}
+		this.charValues[idx] = null;
+	}
+	
+	@Override
+	public void setNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+//		if (this.charValues[(int) idx] == null) {
+//			return;
+//		}
+		this.charValues[(int) idx] = null;
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		return (this.charValues[idx] == null);
+	}
+	
+	@Override
+	public boolean isMissing(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.charValues[(int) idx] == null);
+	}
+	
+	@Override
+	public String getChar(final int idx) {
+		return this.charValues[idx];
+	}
+	
+	@Override
+	public String getChar(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.charValues[(int) idx];
 	}
 	
 	@Override
@@ -157,12 +193,14 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	}
 	
 	@Override
-	public void setNA(final int idx) {
-		if (this.charValues[idx] == null) {
-			return;
+	public void setChar(final long idx, final String value) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		this.charValues[idx] = null;
+//		assert (value != null);
+		this.charValues[(int) idx] = value;
 	}
+	
 	
 	private void prepareInsert(final int[] idxs) {
 		this.charValues = prepareInsert(this.charValues, this.length, idxs);
@@ -175,11 +213,13 @@ public class RCharacterDataImpl extends AbstractCharacterData
 		this.charValues[idx] = value;
 	}
 	
+	@Override
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.charValues[idx] = null;
 	}
 	
+	@Override
 	public void insertNA(final int[] idxs) {
 		if (idxs.length == 0) {
 			return;
@@ -190,28 +230,75 @@ public class RCharacterDataImpl extends AbstractCharacterData
 		}
 	}
 	
+	@Override
 	public void remove(final int idx) {
 		this.charValues = remove(this.charValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
+	@Override
 	public void remove(final int[] idxs) {
 		this.charValues = remove(this.charValues, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
 	
+	@Override
 	public String get(final int idx) {
-		if (idx < 0 || idx >= this.length) {
-			throw new IndexOutOfBoundsException();
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
 		return this.charValues[idx];
 	}
 	
+	@Override
+	public String get(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.charValues[(int) idx];
+	}
+	
+	@Override
 	public String[] toArray() {
-		final String[] array = new String[this.length];
-		System.arraycopy(this.charValues, 0, array, 0, this.length);
+		final String[] array = new String[length()];
+		System.arraycopy(this.charValues, 0, array, 0, array.length);
 		return array;
+	}
+	
+	
+	public int indexOf(final String character, int fromIdx) {
+		if (character == null) {
+			throw new NullPointerException();
+		}
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		final int l = length();
+		final String[] chars = this.charValues;
+		while (fromIdx < l) {
+			if (chars[fromIdx] != null && chars[fromIdx].equals(character)) {
+				return fromIdx;
+			}
+			fromIdx++;
+		}
+		return -1;
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		if (character == null
+				|| fromIdx >= Integer.MAX_VALUE) {
+			return -1;
+		}
+		final int l = length();
+		final String[] chars = this.charValues;
+		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			if (chars[i] != null && chars[i].equals(character)) {
+				return i;
+			}
+		}
+		return -1;
 	}
 	
 }

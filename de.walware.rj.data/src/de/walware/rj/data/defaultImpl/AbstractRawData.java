@@ -24,15 +24,41 @@ public abstract class AbstractRawData extends AbstractRData
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
 	};
 	
+	protected static final String toChar(final byte raw) {
+		return new String(new char[] { HEX_CHARS[(raw & 0xf0) >> 4], HEX_CHARS[(raw & 0x0f)] });
+	}
 	
+	
+	@Override
 	public final byte getStoreType() {
 		return RStore.RAW;
 	}
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_RAW;
 	}
 	
+	
+	@Override
+	public final boolean isNA(final int idx) {
+		return false;
+	}
+	
+	@Override
+	public final boolean isNA(final long idx) {
+		return false;
+	}
+	
+	@Override
+	public final boolean isMissing(final int idx) {
+		return false;
+	}
+	
+	@Override
+	public final boolean isMissing(final long idx) {
+		return false;
+	}
 	
 	@Override
 	public int getInt(final int idx) {
@@ -40,25 +66,28 @@ public abstract class AbstractRawData extends AbstractRData
 	}
 	
 	@Override
-	public final String getChar(final int idx) {
-		final byte b = getRaw(idx);
-		return new String(new char[] {
-				HEX_CHARS[(b & 0xf0) >> 4], HEX_CHARS[(b & 0xf)] });
+	public int getInt(final long idx) {
+		return (getRaw(idx) & 0xff);
 	}
 	
+	@Override
+	public void setInt(final long idx, final int integer) {
+		setRaw(idx, AbstractIntegerData.toRaw(integer));
+	}
 	
 	@Override
 	public void setInt(final int idx, final int integer) {
-		setRaw(idx, ((integer & 0xffffff00) == 0) ? (byte) integer : NA_byte_BYTE);
+		setRaw(idx, AbstractIntegerData.toRaw(integer));
 	}
 	
+	@Override
+	public final String getChar(final int idx) {
+		return toChar(getRaw(idx));
+	}
 	
-	public Byte[] toArray() {
-		final Byte[] array = new Byte[this.length];
-		for (int i = 0; i < this.length; i++) {
-			array[i] = Byte.valueOf(getRaw(i));
-		}
-		return array;
+	@Override
+	public final String getChar(final long idx) {
+		return toChar(getRaw(idx));
 	}
 	
 }

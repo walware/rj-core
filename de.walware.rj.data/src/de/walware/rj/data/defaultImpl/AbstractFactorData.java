@@ -23,14 +23,17 @@ public abstract class AbstractFactorData extends AbstractRData
 	protected boolean isOrdered;
 	
 	
+	@Override
 	public final byte getStoreType() {
 		return RStore.FACTOR;
 	}
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return (this.isOrdered) ? RObject.CLASSNAME_ORDERED : RObject.CLASSNAME_FACTOR;
 	}
 	
+	@Override
 	public final boolean isOrdered() {
 		return this.isOrdered;
 	}
@@ -42,11 +45,43 @@ public abstract class AbstractFactorData extends AbstractRData
 	}
 	
 	@Override
+	public final boolean getLogi(final long idx) {
+		return (getInt(idx) != 0);
+	}
+	
+	@Override
 	public final void setLogi(final int idx, final boolean logi) {
 		setInt(idx, logi ? 1 : 0);
 	}
 	
+	@Override
+	public final void setLogi(final long idx, final boolean logi) {
+		setInt(idx, logi ? 1 : 0);
+	}
 	
+	@Override
+	public final double getNum(final int idx) {
+		return getInt(idx);
+	}
+	
+	@Override
+	public final double getNum(final long idx) {
+		return getInt(idx);
+	}
+	
+	@Override
+	public final void setNum(final int idx, final double real) {
+		setInt(idx, (int) real);
+	}
+	
+	@Override
+	public final void setNum(final long idx, final double real) {
+		setInt(idx, (int) real);
+	}
+	
+	
+	@Override
 	public abstract Integer[] toArray();
+	
 	
 }

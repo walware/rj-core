@@ -21,48 +21,57 @@ import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 
 
-public class RDataFrameImpl extends RListImpl
+public class RDataFrameFixLongImpl extends RListFixLongImpl
 		implements RDataFrame, ExternalizableRObject {
 	
 	
-	private RStore rownamesAttribute;
-	private long rowCount;
+	private final RStore rownamesAttribute;
+	private final long rowCount;
 	
 	
-	public RDataFrameImpl(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames) {
+	public RDataFrameFixLongImpl(final RObject[][] columns, final String className1, final String[][] initialNames, final String[][] initialRownames) {
 		this(columns, className1, initialNames, initialRownames, true);
 	}
 	
-	protected RDataFrameImpl(final RObject[] columns, final String className1, final String[] initialNames, final String[] initialRownames, final boolean check) {
+	protected RDataFrameFixLongImpl(final RObject[][] columns, final String className1, final String[][] initialNames, final String[][] initialRownames, final boolean check) {
 		super(columns, className1, initialNames);
 		if (columns.length == 0) {
 			this.rowCount = 0;
 		}
 		else {
-			this.rowCount = columns[0].getLength();
+			this.rowCount = columns[0][0].getLength();
 			if (check) {
 				for (int i = 0; i < columns.length; i++) {
-					if (columns[i].getRObjectType() != RObject.TYPE_VECTOR
-							|| (columns[i].getLength() != this.rowCount)) {
-						throw new IllegalArgumentException("Length of column " + i + ": " + columns[i].getLength());
+					final RObject[] segment = columns[i];
+					for (int j = 0; j < segment.length; j++) {
+						if (segment[j].getRObjectType() != RObject.TYPE_VECTOR
+								|| (segment[j].getLength() != this.rowCount)) {
+							throw new IllegalArgumentException("Length of column " + (i * (long) SEGMENT_LENGTH + j) + ": " + segment[j].getLength());
+						}
 					}
 				}
 			}
 		}
-		if (initialRownames != null && initialRownames.length == this.rowCount) {
-			this.rownamesAttribute = new RUniqueCharacterDataImpl(initialRownames);
+		if (initialRownames != null) {
+			this.rownamesAttribute = new RCharacterDataFixLongImpl(initialRownames);
 			if (this.rownamesAttribute.getLength() != this.rowCount) {
 				throw new IllegalArgumentException("Length of row names: " + this.rownamesAttribute.getLength());
 			}
 		}
+		else {
+			this.rownamesAttribute = null;
+		}
 	}
 	
-	public RDataFrameImpl(final RJIO io, final RObjectFactory factory, final int options) throws IOException {
+	public RDataFrameFixLongImpl(final RJIO io, final RObjectFactory factory, final int options) throws IOException {
 		super(io, factory, options);
 		
 		this.rowCount = io.readLong();
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			this.rownamesAttribute = factory.readNames(io, this.rowCount);
+		}
+		else {
+			this.rownamesAttribute = null;
 		}
 	}
 	
@@ -72,7 +81,7 @@ public class RDataFrameImpl extends RListImpl
 		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0 && this.rownamesAttribute != null) {
 			options |= RObjectFactory.O_WITH_NAMES;
 		}
-		super.doWriteExternal(io, factory, options);
+		super.doWriteExternal(io, options, factory);
 		io.writeLong(this.rowCount);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			factory.writeNames(this.rownamesAttribute, io);
@@ -123,56 +132,6 @@ public class RDataFrameImpl extends RListImpl
 		return (obj != null) ? obj.getData() : null;
 	}
 	
-//	public void setColumn(final int idx, final RStore column) {
-//		if (this.length == 0) {
-//			throw new IndexOutOfBoundsException(Long.toString(idx));
-//		}
-//		else {
-//			if (column.getLength() != this.rowCount) {
-//				throw new IllegalArgumentException();
-//			}
-//		}
-//		this.columns[idx] = new RVectorImpl(column, RDataUtil.getStoreVectorClass(column));
-//	}
-	
-	@Override
-	public boolean set(final int idx, final RObject component) {
-		if (component == null) {
-			throw new NullPointerException();
-		}
-		if (getLength() == 0) {
-			throw new IndexOutOfBoundsException(Long.toString(idx));
-		}
-		else {
-			if (component.getRObjectType() != RObject.TYPE_VECTOR) {
-				throw new IllegalArgumentException();
-			}
-			if (component.getLength() != this.rowCount) {
-				throw new IllegalArgumentException();
-			}
-		}
-		return super.set(idx, component);
-	}
-	
-//	public void insertColumn(final int idx, final String name, final RStore column) {
-//		if (column == null) {
-//			throw new NullPointerException();
-//		}
-//		if (column.getDataType() <= 0) {
-//			throw new IllegalArgumentException();
-//		}
-//		if (this.length == 0) {
-//			this.rowCount = column.getLength();
-//		}
-//		else if (this.rowCount != column.getLength()) {
-//			throw new IllegalArgumentException();
-//		}
-//		prepareInsert(idx);
-//		this.columns[idx] = new RVectorImpl(column, RDataUtil.getStoreVectorClass(column));
-//		this.namesAttribute.insertChar(idx, name);
-//	}
-//
-	
 	
 	@Override
 	public long getRowCount() {
@@ -182,28 +141,6 @@ public class RDataFrameImpl extends RListImpl
 	@Override
 	public RStore getRowNames() {
 		return this.rownamesAttribute;
-	}
-	
-	public void insertRow(final int idx) {
-		final long length = getLength();
-		for (int i = 0; i < length; i++) {
-			((RDataResizeExtension) get(i)).insertNA(idx);
-		}
-		this.rowCount++;
-//		if (this.rownamesAttribute != null) {
-//			((RDataResizeExtension) this.rownamesAttribute).insertAuto(idx);
-//		}
-	}
-	
-	public void removeRow(final int idx) {
-		final long length = getLength();
-		for (int i = 0; i < length; i++) {
-			((RDataResizeExtension) this.get(i)).remove(idx);
-		}
-		this.rowCount--;
-//		if (this.rownamesAttribute != null) {
-//			this.rownamesAttribute.remove(idx);
-//		}
 	}
 	
 }

@@ -36,7 +36,7 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return the number of columns
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Returns the names of the columns of the data frame.
@@ -54,7 +54,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the column name
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
-	String getName(int idx);
+	String getName(long idx);
 	
 	/**
 	 * Returns the RVector object of the specified column of the data frame.
@@ -63,7 +63,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the column vector
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
-	RObject get(int idx);
+	RObject get(long idx);
 	
 	/**
 	 * Returns the RVector object of the column with the specified name of the data frame.
@@ -88,7 +88,7 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return the number of columns
 	 */
-	int getColumnCount();
+	long getColumnCount();
 	
 	/**
 	 * Returns the names of the columns of the data frame.
@@ -115,6 +115,19 @@ public interface RDataFrame extends RList, RObject {
 	public RStore getColumn(int idx);
 	
 	/**
+	 * Returns the data store for the specified column of the data frame.
+	 * <p>
+	 * This method is equivalent to <code>get(idx).getData()</code>.</p>
+	 * <p>
+	 * Each column data store has the length of {@link #getRowCount()}.</p>
+	 * 
+	 * @param idx the index (zero-based) of the column
+	 * @return the data store of the column
+	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
+	 */
+	public RStore getColumn(long idx);
+	
+	/**
 	 * Returns the data store for the column with the specified name of the data frame.
 	 * <p>
 	 * This method is equivalent to <code>get(name).getData()</code> (with additional <code>null</code>
@@ -130,11 +143,11 @@ public interface RDataFrame extends RList, RObject {
 	/**
 	 * Returns the number of rows of the data frame.
 	 * <p>
-	 * Each data store of a  column ({@link #getColumn(int)} has this length.
+	 * Each data store of a column ({@link #getColumn(int)} has this length.
 	 * 
 	 * @return the number of rows
 	 */
-	int getRowCount();
+	long getRowCount();
 	
 	/**
 	 * Returns the names of the rows of the data frame.

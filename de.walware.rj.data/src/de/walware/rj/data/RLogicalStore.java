@@ -21,7 +21,12 @@ package de.walware.rj.data;
 public interface RLogicalStore extends RStore {
 	
 	
+	@Override
 	Boolean get(int idx);
+	@Override
+	Boolean get(long idx);
+	
+	@Override
 	Boolean[] toArray();
 	
 }

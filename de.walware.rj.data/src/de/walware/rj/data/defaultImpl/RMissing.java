@@ -31,10 +31,12 @@ public class RMissing implements RObject {
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_MISSING;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return "<missing>";
 	}
@@ -45,11 +47,18 @@ public class RMissing implements RObject {
 	 * 
 	 * @return the length
 	 */
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public RStore getData() {
+		return null;
+	}
+	
+	@Override
+	public RList getAttributes() {
 		return null;
 	}
 	
@@ -62,10 +71,6 @@ public class RMissing implements RObject {
 	@Override
 	public String toString() {
 		return "RObject type=MISSING";
-	}
-	
-	public RList getAttributes() {
-		return null;
 	}
 	
 }

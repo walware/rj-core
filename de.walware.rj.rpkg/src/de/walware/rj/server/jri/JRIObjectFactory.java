@@ -54,7 +54,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	
 	@Override
 	public RComplexStore createCplxData(final double[] reValues, final double[] imValues) {
-		return new JRIComplexDataImpl(reValues, imValues);
+		return new JRIComplexDataShortImpl(reValues, imValues);
 	}
 	
 	@Override
@@ -71,6 +71,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	@Override
 	public RObject readObject(final RJIO io) throws IOException {
 		final byte type = io.readByte();
+		int options;
 		switch (type) {
 		case -1:
 			return null;
@@ -81,7 +82,8 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 		case RObject.TYPE_ARRAY:
 			return new JRIArrayImpl(io, this);
 		case RObject.TYPE_LIST:
-			return new JRIListImpl(io, this);
+			options = io.readInt();
+			return new JRIListImpl(io, this, options);
 		case RObject.TYPE_DATAFRAME:
 			return new JRIDataFrameImpl(io, this);
 		case RObject.TYPE_ENV:
@@ -106,24 +108,24 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readStore(final RJIO io) throws IOException {
+	public RStore readStore(final RJIO io, final long length) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			final byte storeType = io.readByte();
 			switch (storeType) {
 			case RStore.LOGICAL:
-				return new JRILogicalDataImpl(io);
+				return new JRILogicalDataImpl(io, (int) length);
 			case RStore.INTEGER:
-				return new JRIIntegerDataImpl(io);
+				return new JRIIntegerDataImpl(io, (int) length);
 			case RStore.NUMERIC:
-				return new JRINumericDataImpl(io);
+				return new JRINumericDataImpl(io, (int) length);
 			case RStore.COMPLEX:
-				return new JRIComplexDataImpl(io);
+				return new JRIComplexDataShortImpl(io, (int)length);
 			case RStore.CHARACTER:
-				return new JRICharacterDataImpl(io);
+				return new JRICharacterDataImpl(io, (int) length);
 			case RStore.RAW:
-				return new JRIRawDataImpl(io);
+				return new JRIRawDataImpl(io, (int) length);
 			case RStore.FACTOR:
-				return new JRIFactorDataImpl(io);
+				return new JRIFactorDataImpl(io, (int) length);
 			default:
 				throw new IOException("store type = " + storeType);
 			}
@@ -152,10 +154,10 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readNames(final RJIO io) throws IOException {
+	public RStore readNames(final RJIO io, final long length) throws IOException {
 		final byte type = io.readByte();
 		if (type == RStore.CHARACTER) {
-			return new JRICharacterDataImpl(io);
+			return new JRICharacterDataImpl(io, (int) length);
 		}
 		if (type == 0) {
 			return null;

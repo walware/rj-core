@@ -28,17 +28,18 @@ public class JRICharacterDataImpl extends RCharacterDataImpl {
 		super(values, length);
 	}
 	
-	public JRICharacterDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRICharacterDataImpl(final RJIO io, final int l) throws IOException {
+		super(io, l);
 	}
 	
 	
 	public String[] getJRIValueArray() {
-		if (this.charValues.length == this.length) {
+		final int l = length();
+		if (this.charValues.length == l) {
 			return this.charValues;
 		}
-		final String[] array = new String[this.length];
-		System.arraycopy(this.charValues, 0, array, 0, this.length);
+		final String[] array = new String[l];
+		System.arraycopy(this.charValues, 0, array, 0, l);
 		return array;
 	}
 	

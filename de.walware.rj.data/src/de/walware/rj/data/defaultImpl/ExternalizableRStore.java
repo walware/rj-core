@@ -19,8 +19,6 @@ import de.walware.rj.data.RJIO;
 public interface ExternalizableRStore {
 	
 	
-	public void readExternal(final RJIO io) throws IOException;
-	
-	public void writeExternal(final RJIO io) throws IOException;
+	void writeExternal(RJIO io) throws IOException;
 	
 }

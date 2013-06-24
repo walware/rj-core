@@ -43,6 +43,7 @@ import de.walware.rj.data.RS4Object;
 import de.walware.rj.data.RStore;
 import de.walware.rj.data.RVector;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
+import de.walware.rj.data.defaultImpl.RDataFrameImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataImpl;
 import de.walware.rj.data.defaultImpl.RFactorDataStruct;
 import de.walware.rj.data.defaultImpl.RFunctionImpl;
@@ -100,6 +101,7 @@ final class JRIServerRni {
 	public final long p_filenameSymbol;
 	public final long p_flagsSymbol;
 	public final long p_functionSymbol;
+	public final long p_fromSymbol;
 	public final long p_levelsSymbol;
 	public final long p_linesSymbol;
 	public final long p_linesSrcrefSymbol;
@@ -136,6 +138,10 @@ final class JRIServerRni {
 	public final long p_complexFun;
 	public final long p_ReFun;
 	public final long p_ImFun;
+	
+	private final long p_seqIntFun;
+	private final long p_lengthOutSymbol;
+	
 	private final long tryCatchFunP;
 	private final long slotNamesFunP;
 	private final long getFHeaderFunP;
@@ -200,6 +206,7 @@ final class JRIServerRni {
 			this.p_filenameSymbol = this.rEngine.rniInstallSymbol("filename");
 			this.p_flagsSymbol = this.rEngine.rniInstallSymbol("flags");
 			this.p_functionSymbol = this.rEngine.rniInstallSymbol("function");
+			this.p_fromSymbol = this.rEngine.rniInstallSymbol("from");
 			this.p_idSymbol = this.rEngine.rniInstallSymbol("id");
 			this.p_isGenericSymbol = this.rEngine.rniInstallSymbol("isGeneric");
 			this.p_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
@@ -256,6 +263,13 @@ final class JRIServerRni {
 			this.p_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"),
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_ImFun);
+			
+			
+			this.p_seqIntFun = this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("seq.int"),
+					this.p_BaseEnv );
+			this.rEngine.rniPreserve(this.p_seqIntFun);
+			this.p_lengthOutSymbol = this.rEngine.rniInstallSymbol("length.out");
 			
 			this.tryCatchFunP = this.rEngine.rniEval(
 					this.rEngine.rniInstallSymbol("tryCatch"),
@@ -475,7 +489,7 @@ final class JRIServerRni {
 	
 	public long createFCall(final String name, final RList args) throws RjsException {
 		long argsP = this.p_NULL;
-		for (int i = args.getLength() - 1; i >= 0; i--) {
+		for (int i = (int) args.getLength() - 1; i >= 0; i--) {
 			final String argName = args.getName(i);
 			final RObject argValue = args.get(i);
 			final long argValueP;
@@ -613,7 +627,7 @@ final class JRIServerRni {
 			objP = assignDataStore(obj.getData());
 			names = ((RVector<?>) obj).getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "names", assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
 			}
 			return objP; }
 		case RObject.TYPE_ARRAY:
@@ -623,33 +637,31 @@ final class JRIServerRni {
 			return objP;
 		case RObject.TYPE_DATAFRAME: {
 			final RDataFrame list = (RDataFrame) obj;
-			final int length = list.getLength();
-			final long[] itemPs = new long[length];
+			final long length = list.getLength();
+			if (length > Integer.MAX_VALUE) {
+				throw new UnsupportedOperationException("long list");
+			}
+			final long[] itemPs = new long[(int) length];
 			for (int i = 0; i < length; i++) {
 				itemPs[i] = assignDataStore(list.getColumn(i));
 			}
 			objP = protect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "names", assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
 			}
 			names = list.getRowNames();
-			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "row.names", assignDataStore(names));
-			}
-			else {
-				final int[] rownames = new int[list.getRowCount()];
-				for (int i = 0; i < rownames.length; ) {
-					rownames[i] = ++i;
-				}
-				this.rEngine.rniSetAttr(objP, "row.names", this.rEngine.rniPutIntArray(rownames));
-			}
+			this.rEngine.rniSetAttrBySym(objP, this.p_rowNamesSymbol, (names != null) ?
+					assignDataStore(names) : seqLength(list.getRowCount()) );
 			this.rEngine.rniSetAttrBySym(objP, this.p_classSymbol, this.p_dataframeClassString);
 			return objP; }
 		case RObject.TYPE_LIST: {
 			final RList list = (RList) obj;
-			final int length = list.getLength();
-			final long[] itemPs = new long[length];
+			final long length = list.getLength();
+			if (length > Integer.MAX_VALUE) {
+				throw new UnsupportedOperationException("long list");
+			}
+			final long[] itemPs = new long[(int) length];
 			final int savedProtectedCounter = this.rniProtectedCounter;
 			for (int i = 0; i < length; i++) {
 				itemPs[i] = assignDataObject(list.get(i));
@@ -661,7 +673,7 @@ final class JRIServerRni {
 			objP = protect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttr(objP, "names", assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
 			}
 			return objP; }
 		case RObject.TYPE_REFERENCE:
@@ -669,7 +681,7 @@ final class JRIServerRni {
 		case RObject.TYPE_S4OBJECT: {
 			final RS4Object s4obj = (RS4Object) obj;
 			objP = this.p_NULL;
-			for (int i = s4obj.getLength()-1; i >= 0; i--) {
+			for (int i = (int) s4obj.getLength()-1; i >= 0; i--) {
 				final RObject slotObj = s4obj.get(i);
 				if (slotObj != null && slotObj.getRObjectType() != RObject.TYPE_MISSING) {
 					objP = protect(this.rEngine.rniCons(
@@ -729,7 +741,7 @@ final class JRIServerRni {
 			return protect(this.rEngine.rniPutDoubleArray(
 					((JRINumericDataImpl) data).getJRIValueArray() ));
 		case RStore.COMPLEX: {
-			final JRIComplexDataImpl complex = (JRIComplexDataImpl) data;
+			final JRIComplexDataShortImpl complex = (JRIComplexDataShortImpl) data;
 			final long realP = protect(this.rEngine.rniPutDoubleArray(complex.getJRIRealValueArray()));
 			final long imaginaryP = this.rEngine.rniPutDoubleArray(complex.getJRIImaginaryValueArray());
 			return protect(this.rEngine.rniEval(this.rEngine.rniCons(
@@ -940,7 +952,7 @@ final class JRIServerRni {
 								RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
 								className1, dim ) :
 						new JRIArrayImpl<RComplexStore>(
-								new JRIComplexDataImpl(getComplexRe(objP), getComplexIm(objP)),
+								new JRIComplexDataShortImpl(getComplexRe(objP), getComplexIm(objP)),
 								className1, dim, getDimNames(objP, dim.length) );
 				}
 				else {
@@ -949,7 +961,7 @@ final class JRIServerRni {
 									RObjectFactoryImpl.CPLX_STRUCT_DUMMY,
 									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RComplexStore>(
-									new JRIComplexDataImpl(getComplexRe(objP), getComplexIm(objP)),
+									new JRIComplexDataShortImpl(getComplexRe(objP), getComplexIm(objP)),
 									className1, getNames(objP) );
 				}
 			}
@@ -1028,18 +1040,19 @@ final class JRIServerRni {
 					className1 = null;
 				}
 				
-				{	final long length = this.rEngine.rniGetVectorLength(objP);
-					if (length > Integer.MAX_VALUE) {
-						throw new UnsupportedOperationException("Long generic vectors (lists) are not yet supported.");
+				final long length = this.rEngine.rniGetVectorLength(objP);
+				if (length > Integer.MAX_VALUE) {
+					if ((flags & F_ONLY_STRUCT) != 0) {
+						return new JRIListLongImpl(length, className1);
 					}
+					throw new UnsupportedOperationException("long list");
 				}
-				final String[] itemNames = getNames(objP);
 				
 				final long[] itemP = this.rEngine.rniGetVector(objP);
-				final RObject[] itemObjects = new RObject[itemP.length];
-				DATA_FRAME: if (itemNames != null && className1 != null &&
+				DATA_FRAME: if (className1 != null &&
 						(className1.equals("data.frame") || this.rEngine.rniInherits(objP, "data.frame")) ) {
-					int length = -1;
+					final RObject[] itemObjects = new RObject[itemP.length];
+					long rowCount = -1;
 					for (int i = 0; i < itemP.length; i++) {
 						if (this.rniInterrupted) {
 							throw new CancellationException();
@@ -1048,29 +1061,32 @@ final class JRIServerRni {
 						if (itemObjects[i] == null || itemObjects[i].getRObjectType() != RObject.TYPE_VECTOR) {
 							break DATA_FRAME;
 						}
-						else if (length == -1) {
-							length = itemObjects[i].getLength();
+						else if (rowCount == -1) {
+							rowCount = itemObjects[i].getLength();
 						}
-						else if (length != itemObjects[i].getLength()){
+						else if (rowCount != itemObjects[i].getLength()){
 							break DATA_FRAME;
 						}
 					}
 					final String[] rowNames = ((flags & F_ONLY_STRUCT) != 0) ? null : getRowNames(objP);
-					if (rowNames != null && length != -1 && rowNames.length != length) {
+					if (rowNames != null && rowCount != -1 && rowNames.length != rowCount) {
 						break DATA_FRAME;
 					}
-					return new JRIDataFrameImpl(itemObjects, className1, itemNames, rowNames);
+					return new RDataFrameImpl(itemObjects, className1, getNames(objP), rowNames);
 				}
-				if ((flags & F_ONLY_STRUCT) != 0 && itemP.length > this.maxListsLength) {
-					return new JRIListImpl(itemP.length, className1, itemNames);
+				if (((flags & F_ONLY_STRUCT) != 0 && length > this.maxListsLength)
+						|| this.currentDepth >= this.maxDepth ) {
+					return new JRIListLongImpl(length, className1);
 				}
-				for (int i = 0; i < itemP.length; i++) {
-					if (this.rniInterrupted) {
-						throw new CancellationException();
+				{	final RObject[] itemObjects = new RObject[itemP.length];
+					for (int i = 0; i < itemP.length; i++) {
+						if (this.rniInterrupted) {
+							throw new CancellationException();
+						}
+						itemObjects[i] = createDataObject(itemP[i], flags, EVAL_MODE_DEFAULT);
 					}
-					itemObjects[i] = createDataObject(itemP[i], flags, EVAL_MODE_DEFAULT);
+					return new JRIListImpl(itemObjects, className1, getNames(objP));
 				}
-				return new JRIListImpl(itemObjects, className1, itemNames);
 			}
 			case REXP.LISTSXP:   // pairlist
 			/*case REXP.LANGSXP: */{
@@ -1297,7 +1313,7 @@ final class JRIServerRni {
 			final long[] names1P = this.rEngine.rniGetVector(namesP);
 			if (names1P != null && names1P.length == length) {
 				String[] s = getNames(namesP);
-				final RCharacterStore names0 = (s != null) ? new RCharacterDataImpl(s) :
+				final RCharacterDataImpl names0 = (s != null) ? new RCharacterDataImpl(s) :
 					new RCharacterDataImpl(names1P.length);
 				final RCharacterStore[] names1 = new RCharacterStore[names1P.length];
 				for (int i = 0; i < names1P.length; i++) {
@@ -1306,7 +1322,7 @@ final class JRIServerRni {
 						names1[i] = new RCharacterDataImpl(s);
 					}
 				}
-				return new SimpleRListImpl<RStore>(names0, names1);
+				return new SimpleRListImpl<RStore>(names1, names0);
 			}
 		}
 		return null;
@@ -1373,6 +1389,16 @@ final class JRIServerRni {
 		}
 		return null;
 	}
+	
+	public long seqLength(final double length) {
+		return this.rEngine.rniEval(this.rEngine.rniCons(
+				this.p_seqIntFun, this.rEngine.rniCons(
+						this.rEngine.rniPutDoubleArray(new double[] { length }), this.p_NULL,
+						this.p_lengthOutSymbol, false ),
+				0, true ),
+				this.p_BaseEnv );
+	}
+	
 	
 	public String getSourceLine(final long objP) {
 		this.rniEvalTempAssigned = true;

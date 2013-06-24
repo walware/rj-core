@@ -18,7 +18,6 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 	
 	
 	public RCharacterDataStruct() {
-		this.length = -1;
 	}
 	
 	
@@ -28,26 +27,61 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 	}
 	
 	
+	@Override
+	public final long getLength() {
+		return -1;
+	}
+	
+	@Override
+	public boolean isNA(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean isNA(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isMissing(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public String get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public final String[] toArray() {
+	@Override
+	public String get(final long idx) {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	public String[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
 	
 	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == CHARACTER && other.getLength() == -1);
-	}
-	
-	@Override
-	public int indexOf(final String value, final int fromIdx) {
-		throw new UnsupportedOperationException();
+		return (CHARACTER == other.getStoreType()
+				&& other.getLength() == -1 );
 	}
 	
 }

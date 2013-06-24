@@ -20,7 +20,11 @@ public class RFactorDataStruct extends AbstractFactorData {
 	
 	
 	public static RFactorDataStruct addLevels(final RFactorStore store, final RCharacterStore levels) {
-		return new RFactorDataStruct(store.isOrdered(), levels.getLength()) {
+		final long levelCount = levels.getLength();
+		if (levelCount > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("levelCount > 2^31-1");
+		}
+		return new RFactorDataStruct(store.isOrdered(), (int) levels.getLength()) {
 			@Override
 			public RCharacterStore getLevels() {
 				return levels;
@@ -33,7 +37,6 @@ public class RFactorDataStruct extends AbstractFactorData {
 	
 	
 	public RFactorDataStruct(final boolean isOrdered, final int levelCount) {
-		this.length = -1;
 		this.isOrdered = isOrdered;
 		this.levelCount = levelCount;
 	}
@@ -45,28 +48,37 @@ public class RFactorDataStruct extends AbstractFactorData {
 	}
 	
 	
-	public boolean isMissing(final int idx) {
-		throw new UnsupportedOperationException();
+	@Override
+	public final long getLength() {
+		return -1;
 	}
 	
-	public Integer get(final int idx) {
+	@Override
+	public boolean isNA(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public final Integer[] toArray() {
+	public boolean isNA(final long idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	
-	public void addLevel(final String label) {
+	@Override
+	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public int getLevelCount() {
+	@Override
+	public boolean isMissing(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final int getLevelCount() {
 		return this.levelCount;
 	}
 	
+	@Override
 	public RCharacterStore getLevels() {
 		throw new UnsupportedOperationException();
 	}
@@ -83,14 +95,43 @@ public class RFactorDataStruct extends AbstractFactorData {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public RCharacterStore toCharacterData() {
 		return new RCharacterDataStruct();
 	}
 	
+	@Override
+	public Integer get(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public Integer get(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public final Integer[] toArray() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == FACTOR
-				&& ((RFactorStore) other).isOrdered() == this.isOrdered
-				&& other.getLength() == -1);
+		return (FACTOR == other.getStoreType()
+				&& this.isOrdered == ((RFactorStore) other).isOrdered()
+				&& this.levelCount == ((RFactorStore) other).getLevelCount()
+				&& -1 == other.getLength() );
 	}
 	
 }

@@ -26,22 +26,27 @@ public class RPromise implements RObject {
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_PROMISE;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return "<promise>";
 	}
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}
 	
+	@Override
 	public RList getAttributes() {
 		return null;
 	}

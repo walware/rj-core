@@ -18,7 +18,6 @@ public class RLogicalDataStruct extends AbstractLogicalData {
 	
 	
 	public RLogicalDataStruct() {
-		this.length = -1;
 	}
 	
 	
@@ -28,21 +27,61 @@ public class RLogicalDataStruct extends AbstractLogicalData {
 	}
 	
 	
+	@Override
+	public final long getLength() {
+		return -1;
+	}
+	
+	@Override
+	public boolean isNA(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean isNA(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isMissing(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public Boolean get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public Boolean get(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public final Boolean[] toArray() {
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == LOGICAL && other.getLength() == -1);
+		return (LOGICAL == other.getStoreType()
+				&& -1 == other.getLength() );
 	}
 	
 }

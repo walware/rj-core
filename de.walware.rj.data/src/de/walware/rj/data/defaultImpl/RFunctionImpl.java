@@ -40,33 +40,40 @@ public class RFunctionImpl extends AbstractRObject
 		this.headerSource = io.readString();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		io.writeInt(/*options*/ 0);
 		io.writeString(this.headerSource);
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_FUNCTION;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return "function";
 	}
 	
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public String getHeaderSource() {
 		return this.headerSource;
 	}
 	
+	@Override
 	public String getBodySource() {
 		return this.bodySource;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}

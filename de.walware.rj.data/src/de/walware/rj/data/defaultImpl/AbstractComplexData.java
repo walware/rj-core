@@ -20,10 +20,22 @@ public abstract class AbstractComplexData extends AbstractRData
 		implements RComplexStore {
 	
 	
+	protected static final String toChar(final double real, final double imaginary) {
+		final StringBuilder sb = new StringBuilder();
+		sb.append(real);
+		sb.append('+');
+		sb.append(imaginary);
+		sb.append('i');
+		return sb.toString();
+	}
+	
+	
+	@Override
 	public final byte getStoreType() {
 		return RStore.COMPLEX;
 	}
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_COMPLEX;
 	}
@@ -31,12 +43,22 @@ public abstract class AbstractComplexData extends AbstractRData
 	
 	@Override
 	public final String getChar(final int idx) {
-		final StringBuilder sb = new StringBuilder();
-		sb.append(getCplxRe(idx));
-		sb.append('+');
-		sb.append(getCplxIm(idx));
-		sb.append('i');
-		return sb.toString();
+		return toChar(getCplxRe(idx), getCplxIm(idx));
 	}
+	
+	@Override
+	public final String getChar(final long idx) {
+		return toChar(getCplxRe(idx), getCplxIm(idx));
+	}
+	
+	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
+	public abstract Complex[] toArray();
 	
 }

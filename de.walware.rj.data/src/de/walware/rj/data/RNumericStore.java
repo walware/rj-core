@@ -21,7 +21,15 @@ package de.walware.rj.data;
 public interface RNumericStore extends RStore {
 	
 	
+	boolean isNaN(int idx);
+	boolean isNaN(long idx);
+	
+	@Override
 	Double get(int idx);
+	@Override
+	Double get(long idx);
+	
+	@Override
 	Double[] toArray();
 	
 }

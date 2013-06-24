@@ -17,11 +17,15 @@ import de.walware.rj.data.RJIO;
 
 
 /**
- * Based on int array
+ * Based on int array.
+ * 
+ * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RLogicalDataIntImpl extends AbstractLogicalData
 		implements RDataResizeExtension, ExternalizableRStore {
 	
+	
+	private int length;
 	
 	protected int[] boolValues;
 	
@@ -58,13 +62,9 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		this.boolValues = values;
 	}
 	
-	public RLogicalDataIntImpl(final RJIO io) throws IOException {
-		readExternal(io);
-	}
-	
-	public void readExternal(final RJIO io) throws IOException {
-		this.length = io.readInt();
-		this.boolValues = new int[this.length];
+	public RLogicalDataIntImpl(final RJIO io, final int length) throws IOException {
+		this.length = length;
+		this.boolValues = new int[length];
 		for (int i = 0; i < this.length; i++) {
 			final byte b = io.readByte();
 			if (b == TRUE_BYTE) {
@@ -79,8 +79,8 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io) throws IOException {
-		io.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
 			switch (this.boolValues[i]) {
 			case FALSE_INT:
@@ -103,9 +103,13 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	}
 	
 	
+	protected final int length() {
+		return this.length;
+	}
+	
 	@Override
-	public boolean getLogi(final int idx) {
-		return (this.boolValues[idx] != FALSE_INT);
+	public final long getLength() {
+		return this.length;
 	}
 	
 	@Override
@@ -113,8 +117,51 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		return (this.boolValues[idx] == NA_logical_INT);
 	}
 	
+	@Override
+	public boolean isNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.boolValues[(int) idx] == NA_logical_INT);
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		return (this.boolValues[idx] == NA_logical_INT);
+	}
+	
+	@Override
+	public boolean isMissing(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.boolValues[(int) idx] == NA_logical_INT);
+	}
+	
+	@Override
+	public void setNA(final int idx) {
+		this.boolValues[idx] = NA_logical_INT;
+	}
+	
+	@Override
+	public void setNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		this.boolValues[(int) idx] = NA_logical_INT;
+	}
+	
+	@Override
+	public boolean getLogi(final int idx) {
+		return (this.boolValues[idx] != FALSE_INT);
+	}
+	
+	@Override
+	public boolean getLogi(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.boolValues[(int) idx] != FALSE_INT);
 	}
 	
 	@Override
@@ -123,12 +170,13 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	}
 	
 	@Override
-	public void setNA(final int idx) {
-		if (this.boolValues[idx] == NA_logical_INT) {
-			return;
+	public void setLogi(final long idx, final boolean value) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		this.boolValues[idx] = NA_logical_INT;
+		this.boolValues[(int) idx] = value ? TRUE_INT : FALSE_INT;
 	}
+	
 	
 	private void prepareInsert(final int[] idxs) {
 		this.boolValues = prepareInsert(this.boolValues, this.length, idxs);
@@ -140,11 +188,13 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		this.boolValues[idx] = value ? TRUE_INT : FALSE_INT;
 	}
 	
+	@Override
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.boolValues[idx] = NA_logical_INT;
 	}
 	
+	@Override
 	public void insertNA(final int[] idxs) {
 		if (idxs.length == 0) {
 			return;
@@ -155,32 +205,72 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 		}
 	}
 	
+	@Override
 	public void remove(final int idx) {
 		this.boolValues = remove(this.boolValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
+	@Override
 	public void remove(final int[] idxs) {
 		this.boolValues = remove(this.boolValues, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
+	
+	@Override
 	public Boolean get(final int idx) {
-		if (idx < 0 || idx >= this.length) {
-			throw new IndexOutOfBoundsException();
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
 		return (this.boolValues[idx] != NA_logical_INT) ?
 				((this.boolValues[idx] == TRUE_INT) ? Boolean.TRUE : Boolean.FALSE) : null;
 	}
 	
+	@Override
+	public Boolean get(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.boolValues[(int) idx] != NA_logical_INT) ?
+				((this.boolValues[(int) idx] == TRUE_INT) ? Boolean.TRUE : Boolean.FALSE) : null;
+	}
+	
+	@Override
 	public Boolean[] toArray() {
-		final Boolean[] array = new Boolean[this.length];
-		for (int i = 0; i < this.length; i++) {
+		final Boolean[] array = new Boolean[length()];
+		for (int i = 0; i < array.length; i++) {
 			if (this.boolValues[i] != NA_logical_INT) {
 				array[i] = (this.boolValues[i] == TRUE_INT) ? Boolean.TRUE : Boolean.FALSE;
 			}
 		}
 		return array;
+	}
+	
+	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE
+				|| integer == NA_integer_INT ) {
+			return -1;
+		}
+		final int l = length();
+		final int[] ints = this.boolValues;
+		if (integer != 0) {
+			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+				if (ints[i] == TRUE_INT) {
+					return i;
+				}
+			}
+		}
+		else {
+			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+				if (ints[i] == FALSE_INT) {
+					return i;
+				}
+			}
+		}
+		return -1;
 	}
 	
 }

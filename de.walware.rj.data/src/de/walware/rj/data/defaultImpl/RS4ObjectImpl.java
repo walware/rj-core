@@ -39,7 +39,7 @@ public class RS4ObjectImpl extends AbstractRObject
 		this.className = className;
 		this.slotNames = new RCharacterDataImpl(slotNames);
 		
-		this.dataSlotIdx = this.slotNames.indexOf(".Data");
+		this.dataSlotIdx = this.slotNames.indexOf(".Data", 0);
 		this.slotValues = slotValues;
 	}
 	
@@ -48,43 +48,61 @@ public class RS4ObjectImpl extends AbstractRObject
 	}
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		//-- options
+		final int options = io.readInt();
+		//-- special attributes
 		this.className = io.readString();
+		//-- data
+		final int l = (int) io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
+		
 		this.dataSlotIdx = io.readInt();
-		this.slotNames = new RCharacterDataImpl(io);
-		final int length = this.slotNames.getLength();
-		this.slotValues = new RObject[length];
-		for (int i = 0; i < length; i++) {
+		this.slotNames = new RCharacterDataImpl(io, l);
+		this.slotValues = new RObject[l];
+		for (int i = 0; i < l; i++) {
 			this.slotValues[i] = factory.readObject(io);
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		final int l = this.slotValues.length;
+		//-- options
+		final int options = io.getVULongGrade(l);
+		io.writeInt(options);
+		//-- special attributes
 		io.writeString(this.className);
+		//-- data
+		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), l);
+		
 		io.writeInt(this.dataSlotIdx);
 		this.slotNames.writeExternal(io);
-		final int length = this.slotNames.getLength();
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < l; i++) {
 			factory.writeObject(this.slotValues[i], io);
 		}
 	}
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_S4OBJECT;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.className;
 	}
 	
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return this.slotValues.length;
 	}
 	
+	@Override
 	public boolean hasDataSlot() {
 		return (this.dataSlotIdx >= 0);
 	}
 	
+	@Override
 	public RObject getDataSlot() {
 		return (this.dataSlotIdx >= 0) ? this.slotValues[this.dataSlotIdx] : null;
 	}
@@ -94,35 +112,47 @@ public class RS4ObjectImpl extends AbstractRObject
 				this.slotValues[this.dataSlotIdx].getData().getStoreType() : 0;
 	}
 	
+	@Override
 	public RStore getData() {
 		return (this.dataSlotIdx >= 0 && this.slotValues[this.dataSlotIdx] != null) ?
 				this.slotValues[this.dataSlotIdx].getData() : null;
 	}
 	
+	@Override
 	public RCharacterStore getNames() {
 		return this.slotNames;
 	}
 	
+	@Override
 	public String getName(final int idx) {
 		return this.slotNames.getChar(idx);
 	}
 	
+	@Override
+	public String getName(final long idx) {
+		return this.slotNames.getChar(idx);
+	}
+	
+	@Override
 	public RObject get(final int idx) {
 		return this.slotValues[idx];
 	}
 	
+	@Override
+	public RObject get(final long idx) {
+		if (idx < 0 || idx >= Integer.MAX_VALUE) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.slotValues[(int) idx];
+	}
+	
+	@Override
 	public RObject get(final String name) {
-		final int idx = this.slotNames.indexOf(name);
+		final int idx = this.slotNames.indexOf(name, 0);
 		if (idx >= 0) {
 			return this.slotValues[idx];
 		}
 		throw new IllegalArgumentException();
-	}
-	
-	public final RObject[] toArray() {
-		final RObject[] array = new RObject[this.slotValues.length];
-		System.arraycopy(this.slotValues, 0, array, 0, this.slotValues.length);
-		return array;
 	}
 	
 	
@@ -149,7 +179,7 @@ public class RS4ObjectImpl extends AbstractRObject
 			return true;
 		}
 		else {
-			final int i = this.slotNames.indexOf(name);
+			final int i = this.slotNames.indexOf(name, 0);
 			if (i >= 0) {
 				this.slotValues[i] = component;
 				return true;

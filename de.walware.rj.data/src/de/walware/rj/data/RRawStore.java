@@ -21,7 +21,12 @@ package de.walware.rj.data;
 public interface RRawStore extends RStore {
 	
 	
+	@Override
 	Byte get(int idx);
+	@Override
+	Byte get(long idx);
+	
+	@Override
 	Byte[] toArray();
 	
 }

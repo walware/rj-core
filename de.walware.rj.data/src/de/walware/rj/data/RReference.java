@@ -23,7 +23,7 @@ public interface RReference extends RObject {
 	 */
 	long getHandle();
 	
-	int getReferencedRObjectType();
+	byte getReferencedRObjectType();
 	
 	RObject getResolvedRObject();
 	

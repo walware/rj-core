@@ -26,18 +26,19 @@ public class REnvironmentImpl extends AbstractRObject
 		implements REnvironment, ExternalizableRObject {
 	
 	
-	private String id;
+	private String className1;
+	
+	private String environmentName;
 	private long handle;
 	
-	private RObject[] components;
 	private int length;
+	private RObject[] components;
 	
-	private String className1;
 	private RCharacterDataImpl namesAttribute;
 	
 	
 	protected REnvironmentImpl(final String name, final long handle, final RObject[] initialComponents, String[] initialNames, final int length, final String className1) {
-		this.id = name;
+		this.environmentName = name;
 		this.handle = handle;
 		this.components = initialComponents;
 		this.length = length;
@@ -60,17 +61,17 @@ public class REnvironmentImpl extends AbstractRObject
 				io.readString() : RObject.CLASSNAME_ENV;
 		//-- data
 		this.handle = io.readLong();
-		this.id = io.readString();
-		final int length = this.length = io.readInt();
+		this.environmentName = io.readString();
+		final int l = this.length = (int) io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
 			this.namesAttribute = null;
 			this.components = null;
 		}
 		else {
-			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(io);
-			this.components = new RObject[length];
-			for (int i = 0; i < length; i++) {
+			this.namesAttribute = new RUniqueCharacterDataWithHashImpl(io, l);
+			this.components = new RObject[l];
+			for (int i = 0; i < l; i++) {
 				this.components[i] = factory.readObject(io);
 			}
 		}
@@ -80,9 +81,11 @@ public class REnvironmentImpl extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		final int l = this.length;
 		//-- options
-		int options = 0;
+		int options = io.getVULongGrade(l);
 		final boolean customClass = !this.className1.equals(RObject.CLASSNAME_ENV);
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
@@ -101,13 +104,13 @@ public class REnvironmentImpl extends AbstractRObject
 		}
 		
 		io.writeLong(this.handle);
-		io.writeString(this.id);
-		io.writeInt(this.length);
+		io.writeString(this.environmentName);
+		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), l);
 		
 		if (this.components != null) {
 			this.namesAttribute.writeExternal(io);
 			//-- data
-			for (int i = 0; i < this.length; i++) {
+			for (int i = 0; i < l; i++) {
 				factory.writeObject(this.components[i], io);
 			}
 		}
@@ -118,43 +121,74 @@ public class REnvironmentImpl extends AbstractRObject
 	}
 	
 	
+	@Override
 	public final byte getRObjectType() {
 		return TYPE_ENV;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.className1;
 	}
 	
 	
+	@Override
 	public int getSpecialType() {
 		// TODO implement including transfer
 		return 0;
 	}
 	
+	@Override
 	public String getEnvironmentName() {
-		return this.id;
+		return this.environmentName;
 	}
 	
+	@Override
 	public long getHandle() {
 		return this.handle;
 	}
 	
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return this.length;
 	}
 	
+	@Override
 	public RCharacterStore getNames() {
 		return this.namesAttribute;
 	}
 	
+	@Override
 	public String getName(final int idx) {
 		return this.namesAttribute.getChar(idx);
 	}
 	
+	@Override
+	public String getName(final long idx) {
+		return this.namesAttribute.getChar(idx);
+	}
+	
+	@Override
 	public RObject get(final int idx) {
 		return this.components[idx];
+	}
+	
+	@Override
+	public RObject get(final long idx) {
+		if (idx < 0 || idx >= Integer.MAX_VALUE) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.components[(int) idx];
+	}
+	
+	@Override
+	public RObject get(final String name) {
+		final int idx = this.namesAttribute.indexOf(name, 0);
+		if (idx >= 0) {
+			return this.components[idx];
+		}
+		return null;
 	}
 	
 	public RObject[] toArray() {
@@ -163,6 +197,7 @@ public class REnvironmentImpl extends AbstractRObject
 		return array;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}
@@ -176,7 +211,7 @@ public class REnvironmentImpl extends AbstractRObject
 		if (component == null) {
 			throw new NullPointerException();
 		}
-		final int idx = this.namesAttribute.indexOf(name);
+		final int idx = this.namesAttribute.indexOf(name, 0);
 		if (idx >= 0) {
 			this.components[idx] = component;
 			return true;
@@ -210,14 +245,6 @@ public class REnvironmentImpl extends AbstractRObject
 		this.namesAttribute.remove(idxs);
 	}
 	
-	
-	public RObject get(final String name) {
-		final int idx = this.namesAttribute.indexOf(name);
-		if (idx >= 0) {
-			return this.components[idx];
-		}
-		return null;
-	}
 	
 	public boolean containsName(final String name) {
 		return (this.namesAttribute.indexOf(name) >= 0);

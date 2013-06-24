@@ -20,31 +20,44 @@ import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
 
+/**
+ * This implementation is limited to length of 2<sup>31</sup>-1.
+ */
 public class RComplexDataBImpl extends AbstractComplexData
 		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
+	
+	private int length;
 	
 	protected double[] realValues;
 	protected double[] imaginaryValues;
 	
 	
 	public RComplexDataBImpl() {
+		this.length = 0;
 		this.realValues = EMPTY_DOUBLE_ARRAY;
 		this.imaginaryValues = EMPTY_DOUBLE_ARRAY;
-		this.length = 0;
 	}
 	
 	public RComplexDataBImpl(final int length) {
+		this.length = length;
 		this.realValues = new double[length];
 		this.imaginaryValues = new double[length];
-		this.length = length;
+	}
+	
+	protected RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues) {
+		this.length = realValues.length;
+		this.realValues = realValues;
+		this.imaginaryValues = imaginaryValues;
 	}
 	
 	public RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues, final int[] naIdxs) {
-		assert (realValues.length == imaginaryValues.length);
+		if (realValues.length != imaginaryValues.length) {
+			throw new IllegalArgumentException();
+		}
+		this.length = realValues.length;
 		this.realValues = realValues;
 		this.imaginaryValues = imaginaryValues;
-		this.length = realValues.length;
 		if (naIdxs != null) {
 			for (int i = 0; i < naIdxs.length; i++) {
 				this.realValues[naIdxs[i]] = NA_numeric_DOUBLE;
@@ -53,23 +66,23 @@ public class RComplexDataBImpl extends AbstractComplexData
 		}
 	}
 	
-	protected RComplexDataBImpl(final double[] realValues, final double[] imaginaryValues) {
-		this.realValues = realValues;
-		this.imaginaryValues = imaginaryValues;
-		this.length = realValues.length;
+	
+	public RComplexDataBImpl(final RJIO io, final int length) throws IOException {
+		this.length = length;
+		this.realValues = new double[length];
+		this.imaginaryValues = new double[length];
+		io.readDoubleData(this.realValues, length);
+		io.readDoubleData(this.imaginaryValues, length);
 	}
 	
-	public RComplexDataBImpl(final RJIO io) throws IOException {
-		readExternal(io);
+	@Override
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeDoubleData(this.realValues, this.length);
+		io.writeDoubleData(this.imaginaryValues, this.length);
 	}
 	
-	public void readExternal(final RJIO io) throws IOException {
-		this.realValues = io.readDoubleArrayPair1();
-		this.imaginaryValues = io.readDoubleArrayPair2();
-		this.length = this.realValues.length;
-	}
-	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	@Override
+	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.realValues = new double[this.length];
 		this.imaginaryValues = new double[this.length];
@@ -79,10 +92,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 		}
 	}
 	
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeDoubleArrayPair(this.realValues, this.imaginaryValues, this.length);
-	}
-	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
@@ -98,9 +108,88 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	
+	protected final int length() {
+		return this.length;
+	}
+	
+	@Override
+	public final long getLength() {
+		return this.length;
+	}
+	
+	@Override
+	public boolean isNA(final int idx) {
+		final double v = this.realValues[idx];
+		return (Double.isNaN(v)
+				&& (int) Double.doubleToRawLongBits(v) == NA_numeric_INT_MATCH);
+	}
+	
+	@Override
+	public boolean isNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		final double v = this.realValues[(int) idx];
+		return (Double.isNaN(v)
+				&& (int) Double.doubleToRawLongBits(v) == NA_numeric_INT_MATCH);
+	}
+	
+	@Override
+	public void setNA(final int idx) {
+		this.realValues[idx] = NA_numeric_DOUBLE;
+		this.imaginaryValues[idx] = NA_numeric_DOUBLE;
+	}
+	
+	@Override
+	public void setNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		this.realValues[(int) idx] = NA_numeric_DOUBLE;
+		this.imaginaryValues[(int) idx] = NA_numeric_DOUBLE;
+	}
+	
+	@Override
+	public boolean isNaN(final int idx) {
+		final double v = this.realValues[idx];
+		return (Double.isNaN(v)
+				&& (int) Double.doubleToRawLongBits(v) != NA_numeric_INT_MATCH);
+	}
+	
+	@Override
+	public boolean isNaN(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		final double value = this.realValues[(int) idx];
+		return (Double.isNaN(value)
+				&& (int) Double.doubleToRawLongBits(value) != NA_numeric_INT_MATCH);
+	}
+	
+	@Override
+	public boolean isMissing(final int idx) {
+		return (Double.isNaN(this.realValues[idx]));
+	}
+	
+	@Override
+	public boolean isMissing(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (Double.isNaN(this.realValues[(int) idx]));
+	}
+	
 	@Override
 	public double getCplxRe(final int idx) {
 		return this.realValues[idx];
+	}
+	
+	@Override
+	public double getCplxRe(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.realValues[(int) idx];
 	}
 	
 	@Override
@@ -109,30 +198,11 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	@Override
-	public boolean isNA(final int idx) {
-		return (Double.isNaN(this.realValues[idx])
-				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) == NA_numeric_INT_MATCH);
-	}
-	
-	public boolean isNaN(final int idx) {
-		return (Double.isNaN(this.realValues[idx])
-				&& (int) Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_INT_MATCH);
-	}
-	
-	public boolean isMissing(final int idx) {
-		return (Double.isNaN(this.realValues[idx]));
-	}
-	
-	@Override
-	public void setNum(final int idx, final double real) {
-		if (Double.isNaN(real)) {
-			this.realValues[idx] = NaN_numeric_DOUBLE;
-			this.imaginaryValues[idx] = NaN_numeric_DOUBLE;
+	public double getCplxIm(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		else {
-			this.realValues[idx] = real;
-			this.imaginaryValues[idx] = 0.0;
-		}
+		return this.imaginaryValues[(int) idx];
 	}
 	
 	@Override
@@ -148,10 +218,47 @@ public class RComplexDataBImpl extends AbstractComplexData
 	}
 	
 	@Override
-	public void setNA(final int idx) {
-		this.realValues[idx] = NA_numeric_DOUBLE;
-		this.imaginaryValues[idx] = NA_numeric_DOUBLE;
+	public void setCplx(final long idx, final double real, final double imaginary) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		if (Double.isNaN(real) || Double.isNaN(imaginary)) {
+			this.realValues[(int) idx] = NaN_numeric_DOUBLE;
+			this.imaginaryValues[(int) idx] = NaN_numeric_DOUBLE;
+		}
+		else {
+			this.realValues[(int) idx] = real;
+			this.imaginaryValues[(int) idx] = imaginary;
+		}
 	}
+	
+	@Override
+	public void setNum(final int idx, final double real) {
+		if (Double.isNaN(real)) {
+			this.realValues[idx] = NaN_numeric_DOUBLE;
+			this.imaginaryValues[idx] = NaN_numeric_DOUBLE;
+		}
+		else {
+			this.realValues[idx] = real;
+			this.imaginaryValues[idx] = 0.0;
+		}
+	}
+	
+	@Override
+	public void setNum(final long idx, final double real) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		if (Double.isNaN(real)) {
+			this.realValues[(int) idx] = NaN_numeric_DOUBLE;
+			this.imaginaryValues[(int) idx] = NaN_numeric_DOUBLE;
+		}
+		else {
+			this.realValues[(int) idx] = real;
+			this.imaginaryValues[(int) idx] = 0.0;
+		}
+	}
+	
 	
 	private void prepareInsert(final int[] idxs) {
 		this.realValues = prepareInsert(this.realValues, this.length, idxs);
@@ -171,12 +278,14 @@ public class RComplexDataBImpl extends AbstractComplexData
 		}
 	}
 	
+	@Override
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.realValues[idx] = NA_numeric_DOUBLE;
 		this.imaginaryValues[idx] = NA_numeric_DOUBLE;
 	}
 	
+	@Override
 	public void insertNA(final int[] idxs) {
 		if (idxs.length == 0) {
 			return;
@@ -188,31 +297,62 @@ public class RComplexDataBImpl extends AbstractComplexData
 		}
 	}
 	
+	@Override
 	public void remove(final int idx) {
 		this.realValues = remove(this.realValues, this.length, new int[] { idx });
 		this.imaginaryValues = remove(this.imaginaryValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
+	@Override
 	public void remove(final int[] idxs) {
 		this.realValues = remove(this.realValues, this.length, idxs);
 		this.imaginaryValues = remove(this.imaginaryValues, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
+	
+	@Override
 	public Complex get(final int idx) {
-		if (idx < 0 || idx >= this.length) {
-			throw new IndexOutOfBoundsException();
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		return (!Double.isNaN(this.realValues[idx])
-				|| Double.doubleToRawLongBits(this.realValues[idx]) != NA_numeric_LONG) ?
-			new Complex(this.realValues[idx], this.imaginaryValues[idx]) : null;
+		final double v = this.realValues[idx];
+		return (!Double.isNaN(v)
+				|| (int) Double.doubleToRawLongBits(v) != NA_numeric_INT_MATCH) ?
+			new Complex(v, this.imaginaryValues[idx]) :
+			null;
 	}
 	
+	@Override
+	public Complex get(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		final double v = this.realValues[(int) idx];
+		return (!Double.isNaN(v)
+				|| (int) Double.doubleToRawLongBits(v) != NA_numeric_INT_MATCH) ?
+			new Complex(v, this.imaginaryValues[(int) idx]) :
+			null;
+	}
+	
+	@Override
 	public Complex[] toArray() {
-		throw new UnsupportedOperationException();
+		final double[] reals = this.realValues;
+		final double[] imgs = this.imaginaryValues;
+		final Complex[] array = new Complex[length()];
+		for (int i = 0; i < array.length; i++) {
+			final double v = reals[i];
+			if (!Double.isNaN(v)
+					|| (int) Double.doubleToRawLongBits(v) != NA_numeric_INT_MATCH) {
+				array[i] = new Complex(v, imgs[i]);
+			}
+		}
+		return array;
 	}
 	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}

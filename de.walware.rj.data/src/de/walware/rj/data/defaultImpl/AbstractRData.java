@@ -30,7 +30,7 @@ public abstract class AbstractRData implements RStore {
 	
 	protected static final int NA_integer_INT = Integer.MIN_VALUE;
 	
-	protected static final byte NA_byte_BYTE = 0x0;
+	protected static final byte NA_byte_BYTE = 0x0; // no real NA, used e.g. for new values
 	
 	protected static final byte FALSE_BYTE = 0;
 	protected static final byte TRUE_BYTE = 1;
@@ -43,9 +43,15 @@ public abstract class AbstractRData implements RStore {
 	protected static final int WITH_NAMES = 0x1;
 	
 	protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+	protected static final byte[][] EMPTY_BYTE_2dARRAY = new byte[0][];
 	protected static final int[] EMPTY_INT_ARRAY = new int[0];
+	protected static final int[][] EMPTY_INT_2dARRAY = new int[0][];
 	protected static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
+	protected static final double[][] EMPTY_DOUBLE_2dARRAY = new double[0][];
 	protected static final String[] EMPTY_STRING_ARRAY = new String[0];
+	protected static final String[][] EMPTY_STRING_2dARRAY = new String[0][];
+	
+	protected static final int DEFAULT_LONG_DATA_SEGMENT_LENGTH = 1 << 28;
 	
 	
 	private final static boolean gIsBSupported;
@@ -73,6 +79,139 @@ public abstract class AbstractRData implements RStore {
 			return false;
 		}
 		return true;
+	}
+	
+	
+	protected static final long check2dArrayLength(final int[][] array, final int segmentLength) {
+		long length = 0;
+		if (array.length > 0) {
+			final int last = array.length - 1;
+			for (int i = 0; i < last; i++) {
+				if (array[i].length != segmentLength) {
+					throw new IllegalArgumentException("Unexpected data segment length (" + array[i].length + ", but " + segmentLength + " expected)");
+				}
+			}
+			length = last * (long) segmentLength;
+			if (array[last].length > segmentLength) {
+				throw new IllegalArgumentException("Unexpected data segment length (" + array[last].length + ", but max " + segmentLength + " expected)");
+			}
+			length += array[last].length;
+		}
+		return length;
+	}
+	
+	protected static final long check2dArrayLength(final double[][] array, final int segmentLength) {
+		long length = 0;
+		if (array.length > 0) {
+			final int last = array.length - 1;
+			for (int i = 0; i < last; i++) {
+				if (array[i].length != segmentLength) {
+					throw new IllegalArgumentException("Unexpected data segment length (" + array[i].length + ", but " + segmentLength + " expected)");
+				}
+			}
+			length = last * (long) segmentLength;
+			if (array[last].length > segmentLength) {
+				throw new IllegalArgumentException("Unexpected data segment length (" + array[last].length + ", but max " + segmentLength + " expected)");
+			}
+			length += array[last].length;
+		}
+		return length;
+	}
+	
+	protected static final long check2dArrayLength(final byte[][] array, final int segmentLength) {
+		long length = 0;
+		if (array.length > 0) {
+			final int last = array.length - 1;
+			for (int i = 0; i < last; i++) {
+				if (array[i].length != segmentLength) {
+					throw new IllegalArgumentException("Unexpected data segment length (" + array[i].length + ", but " + segmentLength + " expected)");
+				}
+			}
+			length = last * (long) segmentLength;
+			if (array[last].length > segmentLength) {
+				throw new IllegalArgumentException("Unexpected data segment length (" + array[last].length + ", but max " + segmentLength + " expected)");
+			}
+			length += array[last].length;
+		}
+		return length;
+	}
+	
+	protected static final long check2dArrayLength(final Object[][] array, final int segmentLength) {
+		long length = 0;
+		if (array.length > 0) {
+			final int last = array.length - 1;
+			for (int i = 0; i < last; i++) {
+				if (array[i].length != segmentLength) {
+					throw new IllegalArgumentException("Unexpected data segment length (" + array[i].length + ", but " + segmentLength + " expected)");
+				}
+			}
+			length = last * (long) segmentLength;
+			if (array[last].length > segmentLength) {
+				throw new IllegalArgumentException("Unexpected data segment length (" + array[last].length + ", but max " + segmentLength + " expected)");
+			}
+			length += array[last].length;
+		}
+		return length;
+	}
+	
+	protected static final int[][] new2dIntArray(final long length, final int segmentLength) {
+		if (length == 0) {
+			return EMPTY_INT_2dARRAY;
+		}
+		final int[][] array = new int[1 + (int) ((length - 1) / segmentLength)][];
+		final int last = array.length - 1;
+		for (int i = 0; i < last; i++) {
+			array[i] = new int[segmentLength];
+		}
+		{	final int restLength = (int) (length % segmentLength);
+		array[last] = new int[(restLength == 0) ? segmentLength : restLength];
+		}
+		return array;
+	}
+	
+	protected static final double[][] new2dDoubleArray(final long length, final int segmentLength) {
+		if (length == 0) {
+			return EMPTY_DOUBLE_2dARRAY;
+		}
+		final double[][] array = new double[1 + (int) ((length - 1) / segmentLength)][];
+		final int last = array.length - 1;
+		for (int i = 0; i < last; i++) {
+			array[i] = new double[segmentLength];
+		}
+		{	final int restLength = (int) (length % segmentLength);
+			array[last] = new double[(restLength == 0) ? segmentLength : restLength];
+		}
+		return array;
+	}
+	
+	protected static final String[][] new2dStringArray(final long length, final int segmentLength) {
+		if (length == 0) {
+			return EMPTY_STRING_2dARRAY;
+		}
+		final String[][] array = new String[1 + (int) ((length - 1) / segmentLength)][];
+		final int last = array.length - 1;
+		for (int i = 0; i < last; i++) {
+			array[i] = new String[segmentLength];
+		}
+		{	final int restLength = (int) (length % segmentLength);
+			array[last] = new String[(restLength == 0) ? segmentLength : restLength];
+		}
+		return array;
+	}
+	
+	protected static final byte[][] new2dByteArray(final long length, final int segmentLength) {
+		if (length == 0) {
+			return EMPTY_BYTE_2dARRAY;
+		}
+		final byte[][] array = new byte[1 + (int) ((length - 1) / segmentLength)][];
+		final int last = array.length - 1;
+		for (int i = 0; i < last; i++) {
+			array[i] = new byte[segmentLength];
+		}
+		{	final int restLength = (int) (length % segmentLength);
+		array[last] = new byte[(restLength == 0) ? segmentLength : restLength];
+		}
+		return array;
 	}
 	
 	
@@ -314,72 +453,143 @@ public abstract class AbstractRData implements RStore {
 	}
 	
 	
-	protected int length;
-	
-	
-	public final int getLength() {
-		return this.length;
-	}
-	
-	
-	public byte getRaw(final int idx) {
+	@Override
+	public void setNA(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public void setRaw(final int idx, final byte raw) {
+	@Override
+	public void setNA(final long idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public int getInt(final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public void setInt(final int idx, final int integer) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public double getNum(final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public void setNum(final int idx, final double real) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public String getChar(final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public void setChar(final int idx, final String character) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public double getCplxIm(final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public double getCplxRe(final int idx) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public void setCplx(final int idx, final double real, final double imaginary) {
-		throw new UnsupportedOperationException();
-	}
-	
+	@Override
 	public boolean getLogi(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean getLogi(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public void setLogi(final int idx, final boolean logi) {
 		throw new UnsupportedOperationException();
 	}
 	
-	
-	public boolean isNA(final int idx) {
+	@Override
+	public void setLogi(final long idx, final boolean logi) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public void setNA(final int idx) {
+	@Override
+	public int getInt(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public int getInt(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setInt(final int idx, final int integer) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setInt(final long idx, final int integer) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getNum(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getNum(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setNum(final int idx, final double real) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setNum(final long idx, final double real) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public String getChar(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public String getChar(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setChar(final int idx, final String character) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setChar(final long idx, final String character) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public byte getRaw(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public byte getRaw(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setRaw(final int idx, final byte raw) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setRaw(final long idx, final byte raw) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getCplxIm(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getCplxIm(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getCplxRe(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public double getCplxRe(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setCplx(final int idx, final double real, final double imaginary) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void setCplx(final long idx, final double real, final double imaginary) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -387,26 +597,30 @@ public abstract class AbstractRData implements RStore {
 	protected abstract boolean isStructOnly();
 	
 	
-	public boolean contains(final String value) {
-		return (indexOf(value) >= 0);
+	@Override
+	public boolean contains(final String character) {
+		return (indexOf(character) >= 0);
 	}
 	
-	public final int indexOf(final String value) {
-		return indexOf(value, 0);
+	@Override
+	public final long indexOf(final String character) {
+		return indexOf(character, 0);
 	}
 	
-	public int indexOf(final String value, int fromIdx) {
-		if (value == null) {
-			throw new NullPointerException();
-		}
+	@Override
+	public long indexOf(final String character, long fromIdx) {
 		if (isStructOnly()) {
 			throw new UnsupportedOperationException();
+		}
+		if (character == null) {
+			return -1;
 		}
 		if (fromIdx < 0) {
 			fromIdx = 0;
 		}
-		while (fromIdx < this.length) {
-			if (!isNA(fromIdx) && value.equals(getChar(fromIdx))) {
+		final long length = getLength();
+		while (fromIdx < length) {
+			if (!isNA(fromIdx) && character.equals(getChar(fromIdx))) {
 				return fromIdx;
 			}
 			fromIdx++;
@@ -414,28 +628,41 @@ public abstract class AbstractRData implements RStore {
 		return -1;
 	}
 	
-	public boolean contains(final int value) {
-		return (indexOf(value) >= 0);
+	@Override
+	public boolean contains(final int integer) {
+		return (indexOf(integer) >= 0);
 	}
 	
-	public final int indexOf(final int value) {
-		return indexOf(value, 0);
+	@Override
+	public final long indexOf(final int integer) {
+		return indexOf(integer, 0);
 	}
 	
-	public int indexOf(final int value, int fromIdx) {
+	@Override
+	public long indexOf(final int integer, long fromIdx) {
 		if (isStructOnly()) {
 			throw new UnsupportedOperationException();
 		}
 		if (fromIdx < 0) {
 			fromIdx = 0;
 		}
-		while (fromIdx < this.length) {
-			if (!isNA(fromIdx) && value == getInt(fromIdx)) {
+		final long length = getLength();
+		while (fromIdx < length) {
+			if (!isNA(fromIdx) && integer == getInt(fromIdx)) {
 				return fromIdx;
 			}
 			fromIdx++;
 		}
 		return -1;
+	}
+	
+	
+	protected int checkToArrayLength() {
+		final long length = getLength();
+		if (length > Integer.MAX_VALUE) {
+			throw new UnsupportedOperationException("Not supported for long data");
+		}
+		return (int) length;
 	}
 	
 	
@@ -444,60 +671,61 @@ public abstract class AbstractRData implements RStore {
 		final StringBuilder sb = new StringBuilder();
 		sb.append(RDataUtil.getStoreAbbr(this));
 		sb.append(' ');
+		final long length;
 		if (isStructOnly()) {
 			sb.append("<struct only>");
 		}
-		else if (this.length > 0) {
-			int end = (this.length <= 25) ? this.length : 10;
+		else if ((length = getLength()) > 0) {
+			long end = (length <= 25) ? length : 10;
 			if (getStoreType() == CHARACTER) {
-				for (int i = 0; true;) {
-					if (isNA(i)) {
+				for (long idx = 0; true;) {
+					if (isNA(idx)) {
 						sb.append("NA");
 					}
 					else {
 						sb.append('"');
-						sb.append(getChar(i));
+						sb.append(getChar(idx));
 						sb.append('"');
 					}
-					i++;
-					if (i < end) {
+					idx++;
+					if (idx < end) {
 						sb.append(", ");
 						continue;
 					}
 					else {
-						if (end == this.length) {
+						if (end == length) {
 							break;
 						}
 						else {
 							sb.append(", .., ");
-							i = this.length - 10;
-							end = this.length;
+							idx = length - 10;
+							end = length;
 							continue;
 						}
 					}
 				}
 			}
 			else {
-				for (int i = 0; true;) {
-					if (isNA(i)) {
+				for (long idx = 0; true;) {
+					if (isNA(idx)) {
 						sb.append("NA");
 					}
 					else {
-						sb.append(getChar(i));
+						sb.append(getChar(idx));
 					}
-					i++;
-					if (i < end) {
+					idx++;
+					if (idx < end) {
 						sb.append(", ");
 						continue;
 					}
 					else {
-						if (end == this.length) {
+						if (end == length) {
 							break;
 						}
 						else {
 							sb.append(", .., ");
-							i = this.length - 10;
-							end = this.length;
+							idx = length - 10;
+							end = length;
 							continue;
 						}
 					}

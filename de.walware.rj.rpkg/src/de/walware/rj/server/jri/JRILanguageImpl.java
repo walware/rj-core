@@ -94,7 +94,7 @@ public class JRILanguageImpl extends AbstractRObject
 	}
 	
 	
-	public int getLength() {
+	public long getLength() {
 		return 0;
 	}
 	

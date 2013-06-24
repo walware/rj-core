@@ -20,9 +20,14 @@ import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
 
+/**
+ * This implementation is limited to length of 2<sup>31</sup>-1.
+ */
 public class RRawDataImpl extends AbstractRawData
 		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
+	
+	private int length;
 	
 	protected byte[] byteValues;
 	
@@ -37,30 +42,31 @@ public class RRawDataImpl extends AbstractRawData
 		this.length = length;
 	}
 	
-	public RRawDataImpl(final byte[] initialValues) {
-		this.byteValues = initialValues;
+	public RRawDataImpl(final byte[] values) {
+		this.byteValues = values;
 		this.length = this.byteValues.length;
 	}
 	
-	public RRawDataImpl(final RJIO io) throws IOException {
-		readExternal(io);
+	
+	public RRawDataImpl(final RJIO io, final int length) throws IOException {
+		this.length = length;
+		this.byteValues = new byte[length];
+		io.readByteData(this.byteValues, length);
 	}
 	
-	public void readExternal(final RJIO io) throws IOException {
-		this.byteValues = io.readByteArray();
-		this.length = this.byteValues.length;
+	@Override
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeByteData(this.byteValues, this.length);
 	}
 	
+	@Override
 	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.byteValues = new byte[this.length];
 		in.readFully(this.byteValues, 0, this.length);
 	}
 	
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeByteArray(this.byteValues, this.length);
-	}
-	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		out.write(this.byteValues, 0, this.length);
@@ -73,28 +79,26 @@ public class RRawDataImpl extends AbstractRawData
 	}
 	
 	
+	protected final int length() {
+		return this.length;
+	}
+	
+	@Override
+	public final long getLength() {
+		return this.length;
+	}
+	
 	@Override
 	public byte getRaw(final int idx) {
 		return this.byteValues[idx];
 	}
 	
 	@Override
-	public final int getInt(final int idx) {
-		return (this.byteValues[idx] & 0xff);
-	}
-	
-	@Override
-	public boolean isNA(final int idx) {
-		return false;
-	}
-	
-	public boolean isMissing(final int idx) {
-		return false;
-	}
-	
-	@Override
-	public final void setInt(final int idx, final int integer) {
-		this.byteValues[idx] = ((integer & 0xffffff00) == 0) ? (byte) integer : NA_byte_BYTE;
+	public byte getRaw(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.byteValues[(int) idx];
 	}
 	
 	@Override
@@ -103,9 +107,13 @@ public class RRawDataImpl extends AbstractRawData
 	}
 	
 	@Override
-	public void setNA(final int idx) {
-		this.byteValues[idx] = NA_byte_BYTE;
+	public void setRaw(final long idx, final byte value) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		this.byteValues[(int) idx] = value;
 	}
+	
 	
 	private void prepareInsert(final int[] idxs) {
 		this.byteValues = prepareInsert(this.byteValues, this.length, idxs);
@@ -117,11 +125,13 @@ public class RRawDataImpl extends AbstractRawData
 		this.byteValues[idx] = value;
 	}
 	
+	@Override
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.byteValues[idx] = NA_byte_BYTE;
 	}
 	
+	@Override
 	public void insertNA(final int[] idxs) {
 		if (idxs.length == 0) {
 			return;
@@ -132,32 +142,65 @@ public class RRawDataImpl extends AbstractRawData
 		}
 	}
 	
+	@Override
 	public void remove(final int idx) {
 		this.byteValues = remove(this.byteValues, this.length, new int[] { idx });
 		this.length--;
 	}
 	
+	@Override
 	public void remove(final int[] idxs) {
 		this.byteValues = remove(this.byteValues, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
+	
+	@Override
 	public Byte get(final int idx) {
-		if (idx < 0 || idx >= this.length) {
-			throw new IndexOutOfBoundsException();
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
 		return Byte.valueOf(this.byteValues[idx]);
 	}
 	
 	@Override
+	public Byte get(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return Byte.valueOf(this.byteValues[(int) idx]);
+	}
+	
+	@Override
 	public Byte[] toArray() {
-		final Byte[] array = new Byte[this.length];
-		for (int i = 0; i < this.length; i++) {
-			array[i] = Byte.valueOf(this.byteValues[i]);
+		final Byte[] array = new Byte[length()];
+		final byte[] raws = this.byteValues;
+		for (int i = 0; i < array.length; i++) {
+			array[i] = Byte.valueOf(raws[i]);
 		}
 		return array;
 	}
 	
+	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE
+				|| (integer & 0xffffff00) != 0 ) {
+			return -1;
+		}
+		final byte raw = (byte) (integer & 0xff);
+		final int l = length();
+		final byte[] raws = this.byteValues;
+		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			if (raws[i] == raw) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}

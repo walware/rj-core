@@ -45,7 +45,7 @@ public interface RVector<DataType extends RStore> extends RObject {
 	 * 
 	 * @return the length
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Returns the names for the indexes of the vector. This corresponds to the values of the

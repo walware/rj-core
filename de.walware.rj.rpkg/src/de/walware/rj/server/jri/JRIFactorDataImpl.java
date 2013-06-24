@@ -25,23 +25,24 @@ public class JRIFactorDataImpl extends RFactorDataImpl {
 		super(values, isOrdered, levelLabels);
 	}
 	
-	public JRIFactorDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRIFactorDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	@Override
-	protected RCharacterDataImpl readLabels(final RJIO io) throws IOException {
-		return new JRICharacterDataImpl(io);
+	protected RCharacterDataImpl readLabels(final RJIO io, final int l) throws IOException {
+		return new JRICharacterDataImpl(io, l);
 	}
 	
 	
 	public int[] getJRIValueArray() {
-		if (this.codes.length == this.length) {
+		final int l = length();
+		if (this.codes.length == l) {
 			return this.codes;
 		}
-		final int[] array = new int[this.length];
-		System.arraycopy(this.codes, 0, array, 0, this.length);
+		final int[] array = new int[l];
+		System.arraycopy(this.codes, 0, array, 0, l);
 		return array;
 	}
 	

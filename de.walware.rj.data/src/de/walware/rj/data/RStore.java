@@ -161,7 +161,7 @@ public interface RStore {
 	 * 
 	 * @return the length or <code>-1</code>
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Tests if the value at the specified index is NA.
@@ -177,6 +177,19 @@ public interface RStore {
 	boolean isNA(int idx);
 	
 	/**
+	 * Tests if the value at the specified index is NA.
+	 * <p>
+	 * Note that the analogous method to the R function <code>is.na(x)</code>
+	 * is {@link #isMissing(int)}; this method returns <code>false</code> for NaN values.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return <code>true</code>, if the value at the specified index is NA, otherwise <code>false</code>
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	boolean isNA(long idx);
+	
+	/**
 	 * Tests if the value at the specified index is NA <b>or</b> NaN (if supported by data type).
 	 * It works by analogy with the R function <code>is.na(x)</code>.
 	 * 
@@ -186,6 +199,17 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	boolean isMissing(int idx);
+	
+	/**
+	 * Tests if the value at the specified index is NA <b>or</b> NaN (if supported by data type).
+	 * It works by analogy with the R function <code>is.na(x)</code>.
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return <code>true</code>, if the value at the specified index is NA or NaN, otherwise <code>false</code>
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	boolean isMissing(long idx);
 	
 	/**
 	 * Sets the value at the specified index to NA.
@@ -201,6 +225,19 @@ public interface RStore {
 	void setNA(int idx);
 	
 	/**
+	 * Sets the value at the specified index to NA.
+	 * <p>
+	 * Note that raw doesn't support NAs.</p>.
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param idx the index of the value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setNA(long idx);
+	
+	/**
 	 * Return the logical/boolean value at the specified index.
 	 * <p>
 	 * Logical values in R matches exactly the Java boolean values.</p>
@@ -211,6 +248,18 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	boolean getLogi(int idx);
+	
+	/**
+	 * Return the logical/boolean value at the specified index.
+	 * <p>
+	 * Logical values in R matches exactly the Java boolean values.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current logical value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	boolean getLogi(long idx);
 	
 	/**
 	 * Sets the logical/boolean value at the specified index.
@@ -226,6 +275,19 @@ public interface RStore {
 	void setLogi(int idx, boolean logical);
 	
 	/**
+	 * Sets the logical/boolean value at the specified index.
+	 * <p>
+	 * Logical values in R matches exactly the Java boolean values.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param logical the logical value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setLogi(long idx, boolean logical);
+	
+	/**
 	 * Return the integer/int value at the specified index.
 	 * <p>
 	 * Integer values in R matches exactly the Java int values, except
@@ -237,6 +299,19 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	int getInt(int idx);
+	
+	/**
+	 * Return the integer/int value at the specified index.
+	 * <p>
+	 * Integer values in R matches exactly the Java int values, except
+	 * {@link Integer#MIN_VALUE} which doesn't exists in R and is mapped to NA.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current integer value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	int getInt(long idx);
 	
 	/**
 	 * Sets the integer/int value at the specified index.
@@ -253,6 +328,20 @@ public interface RStore {
 	void setInt(int idx, int integer);
 	
 	/**
+	 * Sets the integer/int value at the specified index.
+	 * <p>
+	 * Integer values in R matches exactly the Java int values, except
+	 * {@link Integer#MIN_VALUE} which doesn't exists in R and is mapped to NA.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param integer the integer value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setInt(long idx, int integer);
+	
+	/**
 	 * Return the numeric/real/double value at the specified index.
 	 * <p>
 	 * Numeric values in R matches exactly the Java double values.
@@ -266,6 +355,21 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	double getNum(int idx);
+	
+	/**
+	 * Return the numeric/real/double value at the specified index.
+	 * <p>
+	 * Numeric values in R matches exactly the Java double values.
+	 * Also NaN, Inf and -Inf respectively {@link Double#isNaN(double)}, 
+	 * {@link Double#POSITIVE_INFINITY} and {@link Double#NEGATIVE_INFINITY} are 
+	 * supported.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current real value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	double getNum(long idx);
 	
 	/**
 	 * Sets the numeric/real/double value at the specified index.
@@ -284,6 +388,22 @@ public interface RStore {
 	void setNum(int idx, double numeric);
 	
 	/**
+	 * Sets the numeric/real/double value at the specified index.
+	 * <p>
+	 * Numeric values in R matches exactly the Java double values.
+	 * Also NaN, Inf and -Inf respectively {@link Double#NaN}, 
+	 * {@link Double#POSITIVE_INFINITY} and {@link Double#NEGATIVE_INFINITY} are 
+	 * supported.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param numeric the real value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setNum(long idx, double numeric);
+	
+	/**
 	 * Returns the real part the complex number value at the specified index.
 	 * <p>
 	 * The numeric values of the parts of the complex number in R matches 
@@ -300,6 +420,22 @@ public interface RStore {
 	double getCplxRe(int idx);
 	
 	/**
+	 * Returns the real part the complex number value at the specified index.
+	 * <p>
+	 * The numeric values of the parts of the complex number in R matches 
+	 * exactly the Java double values.
+	 * Also NaN, Inf and -Inf respectively {Double#isNaN(double)}, 
+	 * {@link Double#POSITIVE_INFINITY} and {@link Double#NEGATIVE_INFINITY} are 
+	 * supported.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current real part of the complex number value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	double getCplxRe(long idx);
+	
+	/**
 	 * Returns the imaginary part the complex number value at the specified index.
 	 * <p>
 	 * The numeric values of the parts of the complex number in R matches 
@@ -314,6 +450,22 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	double getCplxIm(int idx);
+	
+	/**
+	 * Returns the imaginary part the complex number value at the specified index.
+	 * <p>
+	 * The numeric values of the parts of the complex number in R matches 
+	 * exactly the Java double values.
+	 * Also NaN, Inf and -Inf respectively {Double#isNaN(double)}, 
+	 * {@link Double#POSITIVE_INFINITY} and {@link Double#NEGATIVE_INFINITY} are 
+	 * supported.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current imaginary part of the complex number value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	double getCplxIm(long idx);
 	
 	/**
 	 * Sets the complex number value at the specified index.
@@ -334,6 +486,24 @@ public interface RStore {
 	void setCplx(int idx, double real, double imaginary);
 	
 	/**
+	 * Sets the complex number value at the specified index.
+	 * <p>
+	 * The numeric values of the parts of the complex number in R matches 
+	 * exactly the Java double values.
+	 * Also NaN, Inf and -Inf respectively {@link Double#NaN}, 
+	 * {@link Double#POSITIVE_INFINITY} and {@link Double#NEGATIVE_INFINITY} are 
+	 * supported.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param real the real part of the complex number value
+	 * @param imaginary the imaginary part of the complex number value
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setCplx(long idx, double real, double imaginary);
+	
+	/**
 	 * Returns the character value at the specified index.
 	 * <p>
 	 * R character values matches exactly Java string values, if R supports
@@ -345,6 +515,19 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	String getChar(int idx);
+	
+	/**
+	 * Returns the character value at the specified index.
+	 * <p>
+	 * R character values matches exactly Java string values, if R supports
+	 * UTF encoding.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current character value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	String getChar(long idx);
 	
 	/**
 	 * Sets the character/String value at the specified index.
@@ -364,6 +547,23 @@ public interface RStore {
 	void setChar(int idx, String character);
 	
 	/**
+	 * Sets the character/String value at the specified index.
+	 * <p>
+	 * R character values matches exactly Java string values, if R supports
+	 * UTF encoding.</p>
+	 * <p>
+	 * No quoting or escaping is required. Quoting or escaping the value
+	 * would change the real value.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param character the character value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setChar(long idx, String character);
+	
+	/**
 	 * Returns the raw/byte value at the specified index.
 	 * <p>
 	 * R raw values matches exactly Java byte values.</p>
@@ -374,6 +574,18 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	byte getRaw(int idx);
+	
+	/**
+	 * Returns the raw/byte value at the specified index.
+	 * <p>
+	 * R raw values matches exactly Java byte values.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return the current raw value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	byte getRaw(long idx);
 	
 	/**
 	 * Sets the raw/byte value at the specified index.
@@ -389,6 +601,19 @@ public interface RStore {
 	void setRaw(int idx, byte raw);
 	
 	/**
+	 * Sets the raw/byte value at the specified index.
+	 * <p>
+	 * R raw values matches exactly Java byte values.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @param raw the raw value to set
+	 * @throws OperationNotSupportedException if the store is not modifiable
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	void setRaw(long idx, byte raw);
+	
+	/**
 	 * Returns the value at the specified index as Java object. The subtypes of 
 	 * RStore defines more specific array types.
 	 * <p>
@@ -401,6 +626,20 @@ public interface RStore {
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
 	Object get(int idx);
+	
+	/**
+	 * Returns the value at the specified index as Java object. The subtypes of 
+	 * RStore defines more specific array types.
+	 * <p>
+	 * R NA values are represented as <code>null</code>. Java primitives are converted
+	 * into its wrapper classes.</p>
+	 * 
+	 * @param idx the index (zero-based) of the value
+	 * @return an object for the current value
+	 * @throws IndexOutOfBoundsException if the index is out of range
+	 *     (idx &lt; 0 || idx &gt;= length()).
+	 */
+	Object get(long idx);
 	
 	/**
 	 * Returns the values of the store as Java object array. The subtypes of 
@@ -428,20 +667,20 @@ public interface RStore {
 	/**
 	 * Returns the index of the first item in the store equal to the of the specified character value.
 	 * 
-	 * @param value the value to search for
+	 * @param character the value to search for
 	 * @return index (zero-base) of first equal value, otherwise <code>-1</code>
 	 */
-	int indexOf(String value);
+	long indexOf(String character);
 	
 	/**
 	 * Returns the index of the first item in the store equal to the of the specified character value,
 	 * starting from the specified index.
 	 * 
-	 * @param value the value to search for
+	 * @param character the value to search for
 	 * @param fromIdx index (zero-based) from which to start the search
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
 	 */
-	int indexOf(String value, int fromIdx);
+	long indexOf(String character, long fromIdx);
 	
 	/**
 	 * Returns if the store contains the specified integer value.
@@ -449,23 +688,23 @@ public interface RStore {
 	 * @param value the value to search for
 	 * @return <code>true</code> if the store contains the value, otherwise false
 	 */
-	boolean contains(final int value);
+	boolean contains(final int integer);
 	
 	/**
 	 * Returns the index of the first item in the store equal to the of the specified integer value.
 	 * 
-	 * @param value the value to search for
+	 * @param integer the value to search for
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
 	 */
-	int indexOf(int value);
+	long indexOf(int integer);
 	
 	/**
 	 * Returns if the store contains the specified integer value.
 	 * 
-	 * @param value the value to search for
+	 * @param integer the value to search for
 	 * @param fromIdx index (zero-based) from which to start the search
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
 	 */
-	int indexOf(int value, int fromIdx);
+	long indexOf(int integer, long fromIdx);
 	
 }

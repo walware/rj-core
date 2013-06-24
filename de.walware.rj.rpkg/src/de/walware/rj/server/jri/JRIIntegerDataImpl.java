@@ -28,17 +28,18 @@ public class JRIIntegerDataImpl extends RIntegerDataImpl {
 		super(values, length);
 	}
 	
-	public JRIIntegerDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRIIntegerDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	public int[] getJRIValueArray() {
-		if (this.intValues.length == this.length) {
+		final int l = length();
+		if (this.intValues.length == l) {
 			return this.intValues;
 		}
-		final int[] array = new int[this.length];
-		System.arraycopy(this.intValues, 0, array, 0, this.length);
+		final int[] array = new int[l];
+		System.arraycopy(this.intValues, 0, array, 0, l);
 		return array;
 	}
 	

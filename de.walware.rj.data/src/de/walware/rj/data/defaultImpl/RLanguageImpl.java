@@ -58,10 +58,12 @@ public class RLanguageImpl extends AbstractRObject
 	}
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
+		//-- options
 		final int options = io.readInt();
-		this.type = io.readByte();
 		//-- special attributes
-		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ? io.readString() :
+		this.type = io.readByte();
+		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
+				io.readString() :
 				getBaseClassname(this.type);
 		//-- data
 		if ((io.flags & RObjectFactory.F_ONLY_STRUCT) == 0) {
@@ -69,16 +71,16 @@ public class RLanguageImpl extends AbstractRObject
 		}
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		int options = 0;
-		final boolean customClass = !this.className1.equals(getBaseClassname(this.type));
-		if (customClass) {
+		if (!this.className1.equals(getBaseClassname(this.type))) {
 			options |= RObjectFactory.O_CLASS_NAME;
 		}
 		io.writeInt(options);
 		io.writeByte(this.type);
 		//-- special attributes
-		if (customClass) {
+		if ((options & RObjectFactory.O_CLASS_NAME) != 0) {
 			io.writeString(this.className1);
 		}
 		//-- data
@@ -88,27 +90,33 @@ public class RLanguageImpl extends AbstractRObject
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_LANGUAGE;
 	}
 	
+	@Override
 	public byte getLanguageType() {
 		return this.type;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.className1;
 	}
 	
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public String getSource() {
 		return this.source;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}

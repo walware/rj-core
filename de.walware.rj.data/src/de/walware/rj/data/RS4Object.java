@@ -47,9 +47,12 @@ public interface RS4Object extends RList {
 	 * An equivalent command in R is for example <code>length(slotNames(obj))</code>, but
 	 * not <code>length(obj)</code>.</p>
 	 * 
+	 * At moment, the length of an {@link RObject#TYPE_S4OBJECT S4 object} is always &le; 2<sup>31</sup>-1
+	 * (representable by Java int).
+	 * 
 	 * @return the slot count
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Tests if the object respectively its class provides a data slot.

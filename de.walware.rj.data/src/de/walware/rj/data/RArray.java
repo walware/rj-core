@@ -43,7 +43,7 @@ public interface RArray<DataType extends RStore> extends RObject {
 	 * 
 	 * @return the length
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Returns the dimension of this array. This corresponds to the R dimension

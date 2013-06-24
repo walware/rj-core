@@ -28,17 +28,18 @@ public class JRILogicalDataImpl extends RLogicalDataIntImpl {
 		super(value);
 	}
 	
-	public JRILogicalDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRILogicalDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	public int[] getJRIValueArray() {
-		if (this.boolValues.length == this.length) {
+		final int l = length();
+		if (this.boolValues.length == l) {
 			return this.boolValues;
 		}
-		final int[] array = new int[this.length];
-		System.arraycopy(this.boolValues, 0, array, 0, this.length);
+		final int[] array = new int[l];
+		System.arraycopy(this.boolValues, 0, array, 0, l);
 		return array;
 	}
 	

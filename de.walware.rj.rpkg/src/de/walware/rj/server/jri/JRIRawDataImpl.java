@@ -24,17 +24,18 @@ public class JRIRawDataImpl extends RRawDataImpl {
 		super(values);
 	}
 	
-	public JRIRawDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRIRawDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	public byte[] getJRIValueArray() {
-		if (this.byteValues.length == this.length) {
+		final int l = length();
+		if (this.byteValues.length == l) {
 			return this.byteValues;
 		}
-		final byte[] array = new byte[this.length];
-		System.arraycopy(this.byteValues, 0, array, 0, this.length);
+		final byte[] array = new byte[length()];
+		System.arraycopy(this.byteValues, 0, array, 0, l);
 		return array;
 	}
 	

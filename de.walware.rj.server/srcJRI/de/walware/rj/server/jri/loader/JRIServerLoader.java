@@ -98,7 +98,7 @@ public final class JRIServerLoader {
 			if (implVersion.length < 2
 					|| implVersion[0] != rjVersion[0] || implVersion[1] != rjVersion[1]) {
 				final StringBuilder sb = new StringBuilder();
-				sb.append("The version of the loaded RJ server ");
+				sb.append("The version of the loaded RJ server engine ");
 				ServerUtil.prettyPrintVersion(implVersion, sb);
 				sb.append(" is not compatible to RJ version ");
 				ServerUtil.prettyPrintVersion(rjVersion, sb);

@@ -26,10 +26,12 @@ public class RNull implements RObject {
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_NULL;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return CLASSNAME_NULL;
 	}
@@ -40,11 +42,18 @@ public class RNull implements RObject {
 	 * 
 	 * @return the length
 	 */
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public RStore getData() {
+		return null;
+	}
+	
+	@Override
+	public RList getAttributes() {
 		return null;
 	}
 	
@@ -57,10 +66,6 @@ public class RNull implements RObject {
 	@Override
 	public String toString() {
 		return "RObject type=NULL";
-	}
-	
-	public RList getAttributes() {
-		return null;
 	}
 	
 }

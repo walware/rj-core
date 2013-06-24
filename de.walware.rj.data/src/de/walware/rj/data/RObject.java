@@ -177,7 +177,7 @@ public interface RObject {
 	 * 
 	 * @return the length
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Returns the data store containing object data in a one-dimensional structure.

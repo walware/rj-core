@@ -20,16 +20,32 @@ public abstract class AbstractIntegerData extends AbstractRData
 		implements RIntegerStore {
 	
 	
+	protected static final byte toRaw(final int integer) {
+		if ((integer & 0xffffff00) == 0) {
+			return (byte) (integer & 0xff);
+		}
+		throw new NumberFormatException(Integer.toString(integer));
+	}
+	
+	
+	@Override
 	public final byte getStoreType() {
 		return RStore.INTEGER;
 	}
 	
+	@Override
 	public final String getBaseVectorRClassName() {
 		return RObject.CLASSNAME_INTEGER;
 	}
 	
+	
 	@Override
 	public final boolean getLogi(final int idx) {
+		return (getInt(idx) != 0);
+	}
+	
+	@Override
+	public final boolean getLogi(final long idx) {
 		return (getInt(idx) != 0);
 	}
 	
@@ -39,7 +55,17 @@ public abstract class AbstractIntegerData extends AbstractRData
 	}
 	
 	@Override
+	public final void setLogi(final long idx, final boolean logi) {
+		setInt(idx, logi ? 1 : 0);
+	}
+	
+	@Override
 	public final double getNum(final int idx) {
+		return getInt(idx);
+	}
+	
+	@Override
+	public final double getNum(final long idx) {
 		return getInt(idx);
 	}
 	
@@ -49,45 +75,73 @@ public abstract class AbstractIntegerData extends AbstractRData
 	}
 	
 	@Override
+	public final void setNum(final long idx, final double real) {
+		setInt(idx, (int) real);
+	}
+	
+	@Override
 	public final String getChar(final int idx) {
 		return Integer.toString(getInt(idx));
 	}
 	
-	public Integer[] toArray() {
-		final Integer[] array = new Integer[this.length];
-		for (int i = 0; i < this.length; i++) {
-			if (!isNA(i)) {
-				array[i] = Integer.valueOf(getInt(i));
-			}
-		}
-		return array;
+	@Override
+	public final String getChar(final long idx) {
+		return Integer.toString(getInt(idx));
 	}
 	
-	public boolean allEqual(final RStore other) {
-		if (other.getStoreType() != INTEGER || other.getLength() != this.length) {
-			return false;
-		}
-		for (int i = 0; i < this.length; i++) {
-			if (!(other.isNA(i) ? isNA(i) :
-					other.getInt(i) == getInt(i) )) {
-				return false;
-			}
-		}
-		return true;
+	@Override
+	public byte getRaw(final int idx) {
+		return toRaw(getInt(idx));
+	}
+	
+	@Override
+	public byte getRaw(final long idx) {
+		return toRaw(getInt(idx));
 	}
 	
 	
 	@Override
-	public int indexOf(final String value, final int fromIdx) {
-		if (value == null) {
-			throw new NullPointerException();
-		}
+	public abstract Integer[] toArray();
+	
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
 		try {
-			return indexOf(Integer.parseInt(value), fromIdx);
+			return indexOf(Integer.parseInt(character), fromIdx);
 		}
 		catch (final NumberFormatException e) {
 			return -1;
 		}
+	}
+	
+	
+	@Override
+	public boolean allEqual(final RStore other) {
+		final long length = getLength();
+		if (INTEGER != other.getStoreType() || length != other.getLength()) {
+			return false;
+		}
+		if (length < 0) {
+			return true;
+		}
+		else if (length <= Integer.MAX_VALUE) {
+			final int ilength = (int) length;
+			for (int idx = 0; idx < ilength; idx++) {
+				if (!(isNA(idx) ? other.isNA(idx) :
+						getInt(idx) == other.getInt(idx) )) {
+					return false;
+				}
+			}
+		}
+		else {
+			for (long idx = 0; idx < length; idx++) {
+				if (!(isNA(idx) ? other.isNA(idx) :
+						getInt(idx) == other.getInt(idx) )) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 	
 }

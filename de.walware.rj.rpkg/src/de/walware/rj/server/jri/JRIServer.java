@@ -337,7 +337,7 @@ public final class JRIServer extends RJ
 		this.rConfig = new RConfig();
 		// default 16M, overwritten by arg --max-cssize, if set
 		this.rConfig.MainCStack_Size = s2long(
-				System.getProperty("de.walware.rj.rMainCStack_Size"), 16 * MEGA );
+				System.getProperty("de.walware.rj.rMainCStack_Size"), 64 * MEGA );
 		// default true
 		this.rConfig.MainCStack_SetLimit = !"false".equalsIgnoreCase(
 				System.getProperty("de.walware.rj.rMainCStack_SetLimit") );

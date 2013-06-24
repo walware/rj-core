@@ -18,7 +18,6 @@ public class RComplexDataStruct extends AbstractComplexData {
 	
 	
 	public RComplexDataStruct() {
-		this.length = -1;
 	}
 	
 	
@@ -28,24 +27,71 @@ public class RComplexDataStruct extends AbstractComplexData {
 	}
 	
 	
+	@Override
+	public final long getLength() {
+		return -1;
+	}
+	
+	@Override
+	public boolean isNA(final int idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean isNA(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public boolean isNaN(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isNaN(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public boolean isMissing(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public Complex get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public Complex get(final long idx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
 	public Complex[] toArray() {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == COMPLEX && other.getLength() == -1);
+		return (COMPLEX == other.getStoreType()
+				&& -1 == other.getLength() );
 	}
 	
 }

@@ -60,8 +60,6 @@ public final class RJIO {
 	private static final int DB_LENGTH = BB_LENGTH / 8;
 	
 	private static final int[] EMPTY_INT_ARRAY = new int[0];
-	private static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
-	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	
 	private static final byte MODE_BBARRAY = 0;
 	private static final byte MODE_IPARRAY = 1;
@@ -214,17 +212,137 @@ public final class RJIO {
 		}
 	}
 	
+	public void writeIntData(final int[] array, final int length) throws IOException {
+		final ObjectOutput out = this.out;
+		if (length <= 32) {
+			for (int i = 0; i < length; i++) {
+				out.writeInt(array[i]);
+			}
+		}
+		else if (length <= IB_LENGTH) {
+			this.ib.clear();
+			this.ib.put(array, 0, length);
+			writeFullyBB((length << 2));
+		}
+		else {
+			int iw = 0;
+			while (iw < length) {
+				final int icount = Math.min(length - iw, IB_LENGTH);
+				this.ib.clear();
+				this.ib.put(array, iw, icount);
+				writeFullyBB((icount << 2));
+				iw += icount;
+			}
+		}
+	}
+	
 	public void writeLong(final long value) throws IOException {
 		this.out.writeLong(value);
+	}
+	
+	public byte getVULongGrade(final long value) {
+		if ((value & 0xffffffffffffff00L) == 0) {
+			return (byte) 0;
+		}
+		if ((value & 0xffffffffffff0000L) == 0) {
+			return (byte) 1;
+		}
+		if ((value & 0xffffffffff000000L) == 0) {
+			return (byte) 2;
+		}
+		if ((value & 0xffffffff00000000L) == 0) {
+			return (byte) 3;
+		}
+		if ((value & 0xffffff0000000000L) == 0) {
+			return (byte) 4;
+		}
+		if ((value & 0xffff000000000000L) == 0) {
+			return (byte) 5;
+		}
+		if ((value & 0xff00000000000000L) == 0) {
+			return (byte) 6;
+		}
+		return 7;
+	}
+	
+	public void writeVULong(final byte grade, final long value) throws IOException {
+		if (grade == 0) {
+			this.out.writeByte((int) value);
+			return;
+		}
+		final byte[] ba = this.ba;
+		switch (grade) {
+//		case 0:
+//			ba[0] = (byte) (value);
+//			this.out.write(ba, 0, 1);
+//			return;
+		case 1:
+			ba[0] = (byte) (value >>> 8);
+			ba[1] = (byte) (value);
+			this.out.write(ba, 0, 2);
+			return;
+		case 2:
+			ba[0] = (byte) (value >>> 16);
+			ba[1] = (byte) (value >>> 8);
+			ba[2] = (byte) (value);
+			this.out.write(ba, 0, 3);
+			return;
+		case 3:
+			ba[0] = (byte) (value >>> 24);
+			ba[1] = (byte) (value >>> 16);
+			ba[2] = (byte) (value >>> 8);
+			ba[3] = (byte) (value);
+			this.out.write(ba, 0, 4);
+			return;
+		case 4:
+			ba[0] = (byte) (value >>> 32);
+			ba[1] = (byte) (value >>> 24);
+			ba[2] = (byte) (value >>> 16);
+			ba[3] = (byte) (value >>> 8);
+			ba[4] = (byte) (value);
+			this.out.write(ba, 0, 5);
+			return;
+		case 5:
+			ba[0] = (byte) (value >>> 40);
+			ba[1] = (byte) (value >>> 32);
+			ba[2] = (byte) (value >>> 24);
+			ba[3] = (byte) (value >>> 16);
+			ba[4] = (byte) (value >>> 8);
+			ba[5] = (byte) (value);
+			this.out.write(ba, 0, 6);
+			return;
+		case 6:
+			ba[0] = (byte) (value >>> 48);
+			ba[1] = (byte) (value >>> 40);
+			ba[2] = (byte) (value >>> 32);
+			ba[3] = (byte) (value >>> 24);
+			ba[4] = (byte) (value >>> 16);
+			ba[5] = (byte) (value >>> 8);
+			ba[6] = (byte) (value);
+			this.out.write(ba, 0, 7);
+			return;
+		case 7:
+			ba[0] = (byte) (value >>> 56);
+			ba[1] = (byte) (value >>> 48);
+			ba[2] = (byte) (value >>> 40);
+			ba[3] = (byte) (value >>> 32);
+			ba[4] = (byte) (value >>> 24);
+			ba[5] = (byte) (value >>> 16);
+			ba[6] = (byte) (value >>> 8);
+			ba[7] = (byte) (value);
+			this.out.write(ba, 0, 8);
+			return;
+		default:
+			throw new IOException("Unsupported data format (c = " + grade + ").");
+		}
 	}
 	
 	public void writeDouble(final double value) throws IOException {
 		this.out.writeDouble(value);
 	}
 	
-	public void writeDoubleArray(final double[] array, final int length) throws IOException {
+	public void writeDoubleData(final double[] array, final int length) throws IOException {
 		final ObjectOutput out = this.out;
-		out.writeInt(length);
 		if (length <= 16) {
 			for (int i = 0; i < length; i++) {
 				out.writeLong(Double.doubleToRawLongBits(array[i]));
@@ -247,54 +365,8 @@ public final class RJIO {
 		}
 	}
 	
-	public void writeDoubleArrayPair(final double[] array1, final double[] array2, final int length) throws IOException {
+	public void writeByteData(final byte[] array, final int length) throws IOException {
 		final ObjectOutput out = this.out;
-		out.writeInt(length);
-		if (length <= 16) {
-			for (int i = 0; i < length; i++) {
-				out.writeLong(Double.doubleToRawLongBits(array1[i]));
-			}
-			for (int i = 0; i < length; i++) {
-				out.writeLong(Double.doubleToRawLongBits(array2[i]));
-			}
-		}
-		else if (length <= DB_LENGTH / 2) {
-			this.db.clear();
-			this.db.put(array1, 0, length);
-			this.db.put(array2, 0, length);
-			writeFullyBB((length << 4));
-		}
-		else if (length <= DB_LENGTH) {
-			this.db.clear();
-			this.db.put(array1, 0, length);
-			writeFullyBB((length << 3));
-			this.db.clear();
-			this.db.put(array2, 0, length);
-			writeFullyBB((length << 3));
-		}
-		else {
-			int dw = 0;
-			while (dw < length) {
-				final int dcount = Math.min(length - dw, DB_LENGTH);
-				this.db.clear();
-				this.db.put(array1, dw, dcount);
-				writeFullyBB((dcount << 3));
-				dw += dcount;
-			}
-			dw = 0;
-			while (dw < length) {
-				final int dcount = Math.min(length - dw, DB_LENGTH);
-				this.db.clear();
-				this.db.put(array2, dw, dcount);
-				writeFullyBB((dcount << 3));
-				dw += dcount;
-			}
-		}
-	}
-	
-	public void writeByteArray(final byte[] array, final int length) throws IOException {
-		final ObjectOutput out = this.out;
-		out.writeInt(length);
 		out.write(array, 0, length);
 	}
 	
@@ -332,9 +404,8 @@ public final class RJIO {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public void writeStringArray(final String[] sa, final int length) throws IOException {
+	public void writeStringData(final String[] sa, final int length) throws IOException {
 		final ObjectOutput out = this.out;
-		out.writeInt(length);
 		ARRAY: for (int i = 0; i < length; i++) {
 			final String s = sa[i];
 			if (s != null) {
@@ -392,6 +463,102 @@ public final class RJIO {
 	
 	public int readInt() throws IOException {
 		return this.in.readInt();
+	}
+	
+	public void readIntData(final int[] array, final int length) throws IOException {
+		final ObjectInput in = this.in;
+		if (length <= 256) {
+			switch (length) {
+			case 0:
+				return;
+			case 1:
+				array[0] = in.readInt();
+				return;
+			case 2:
+				array[0] = in.readInt();
+				array[1] = in.readInt();
+				return;
+			case 3:
+				array[0] = in.readInt();
+				array[1] = in.readInt();
+				array[2] = in.readInt();
+				return;
+			case 4:
+				array[0] = in.readInt();
+				array[1] = in.readInt();
+				array[2] = in.readInt();
+				array[3] = in.readInt();
+				return;
+			default:
+				final int bn = length << 2;
+				in.readFully(this.ba, 0, bn);
+				for (int ib = 0; ib < bn; ib += 4) {
+					array[ib >>> 2] = (
+							((this.ba[ib] & 0xff) << 24) |
+							((this.ba[ib+1] & 0xff) << 16) |
+							((this.ba[ib+2] & 0xff) << 8) |
+							((this.ba[ib+3] & 0xff)) );
+				}
+				return;
+			}
+		}
+		else if (length <= IB_LENGTH) {
+			readFullyBB((length << 2));
+			this.ib.clear();
+			this.ib.get(array, 0, length);
+			return;
+		}
+		else {
+			int ir = 0;
+			int position = 0;
+			final int bToComplete;
+			while (true) {
+				position += in.read(this.ba, position, BA_LENGTH-position);
+				if (position >= BB_PART) {
+					final int icount = (position >>> 2);
+					final int bcount = (icount << 2);
+					if (this.mode != MODE_BBARRAY) {
+						this.bb.clear();
+						this.bb.put(this.ba, 0, bcount);
+					}
+					this.ib.clear();
+					this.ib.get(array, ir, icount);
+					ir += icount;
+					switch (position - bcount) {
+					case 0:
+						position = 0;
+						break;
+					case 1:
+						this.ba[0] = this.ba[bcount];
+						position = 1;
+						break;
+					case 2:
+						this.ba[0] = this.ba[bcount];
+						this.ba[1] = this.ba[bcount+1];
+						position = 2;
+						break;
+					case 3:
+						array[ir++] = (
+								((this.ba[bcount] & 0xff) << 24) |
+								((this.ba[bcount+1] & 0xff) << 16) |
+								((this.ba[bcount+2] & 0xff) << 8) |
+								((in.read() & 0xff)) );
+						position = 0;
+						break;
+					}
+					if (length - ir <= IB_LENGTH) {
+						bToComplete = ((length - ir) << 2);
+						break;
+					}
+				}
+			}
+			if (bToComplete > 0) {
+				readFullyBB(position, bToComplete-position);
+				this.ib.clear();
+				this.ib.get(array, ir, bToComplete >>> 2);
+			}
+			return;
+		}
 	}
 	
 	public int[] readIntArray() throws IOException {
@@ -490,27 +657,89 @@ public final class RJIO {
 		return this.in.readLong();
 	}
 	
+	public long readVULong(final byte grade) throws IOException {
+		if (grade == 0) {
+			return this.in.readUnsignedByte();
+		}
+		final byte[] ba = this.ba;
+		switch (grade) {
+//		case 0:
+//			this.in.read(ba, 0, 1);
+//			return (ba[0] & 0xff);
+		case 1:
+			this.in.read(ba, 0, 2);
+			return (((ba[0] & 0xff) << 8) |
+					(ba[1] & 0xff) );
+		case 2:
+			this.in.read(ba, 0, 3);
+			return (((ba[0] & 0xff) << 16) |
+					((ba[1] & 0xff) << 8) |
+					(ba[2] & 0xff) );
+		case 3:
+			this.in.read(ba, 0, 4);
+			return (((long) (ba[0] & 0xff) << 24) |
+					((ba[1] & 0xff) << 16) |
+					((ba[2] & 0xff) << 8) |
+					(ba[3] & 0xff) );
+		case 4:
+			this.in.read(ba, 0, 5);
+			return (((long) (ba[0] & 0xff) << 32) |
+					((long) (ba[1] & 0xff) << 24) |
+					((ba[2] & 0xff) << 16) |
+					((ba[3] & 0xff) << 8) |
+					(ba[4] & 0xff) );
+		case 5:
+			this.in.read(ba, 0, 6);
+			return (((long) (ba[0] & 0xff) << 40) |
+					((long) (ba[1] & 0xff) << 32) |
+					((long) (ba[2] & 0xff) << 24) |
+					((ba[3] & 0xff) << 16) |
+					((ba[4] & 0xff) << 8) |
+					(ba[5] & 0xff) );
+		case 6:
+			this.in.read(ba, 0, 7);
+			return (((long) (ba[0] & 0xff) << 48) |
+					((long) (ba[1] & 0xff) << 40) |
+					((long) (ba[2] & 0xff) << 32) |
+					((long) (ba[3] & 0xff) << 24) |
+					((ba[4] & 0xff) << 16) |
+					((ba[5] & 0xff) << 8) |
+					(ba[6] & 0xff) );
+		case 7:
+			this.in.read(ba, 0, 8);
+			return (((long) (ba[0] & 0xff) << 56) |
+					((long) (ba[1] & 0xff) << 48) |
+					((long) (ba[2] & 0xff) << 40) |
+					((long) (ba[3] & 0xff) << 32) |
+					((long) (ba[4] & 0xff) << 24) |
+					((ba[5] & 0xff) << 16) |
+					((ba[6] & 0xff) << 8) |
+					(ba[7] & 0xff) );
+		default:
+			throw new IOException("Unsupported data format (c = " + grade + ").");
+		}
+	}
+	
 	public double readDouble() throws IOException {
 		return this.in.readDouble();
 	}
 	
-	private double[] readDoubleArray(final int length) throws IOException {
+	public void readDoubleData(final double[] array, final int length) throws IOException {
 		final ObjectInput in = this.in;
 		if (length <= 32) {
 			switch (length) {
 			case 0:
-				return EMPTY_DOUBLE_ARRAY;
+				return;
 			case 1:
-				return new double[] {
-						Double.longBitsToDouble(in.readLong()) };
+				array[0] = Double.longBitsToDouble(in.readLong());
+				return;
 			case 2:
-				return new double[] {
-						Double.longBitsToDouble(in.readLong()),
-						Double.longBitsToDouble(in.readLong()) };
+				array[0] = Double.longBitsToDouble(in.readLong());
+				array[1] = Double.longBitsToDouble(in.readLong());
+				return;
 			default:
 				final int bn = length << 3;
 				in.readFully(this.ba, 0, bn);
-				final double[] array = new double[length];
 				for (int db = 0; db < bn; db += 8) {
 					array[db >>> 3] = Double.longBitsToDouble(
 							((long) (this.ba[db] & 0xff) << 56) |
@@ -522,18 +751,16 @@ public final class RJIO {
 							((this.ba[db+6] & 0xff) << 8) |
 							((this.ba[db+7] & 0xff)) );
 				}
-				return array;
+				return;
 			}
 		}
 		else if (length <= DB_LENGTH) {
 			readFullyBB((length << 3));
-			final double[] array = new double[length];
 			this.db.clear();
 			this.db.get(array, 0, length);
-			return array;
+			return;
 		}
 		else {
-			final double[] array = new double[length];
 			int dr = 0;
 			int position = 0;
 			final int bToComplete;
@@ -619,26 +846,36 @@ public final class RJIO {
 				this.db.clear();
 				this.db.get(array, dr, bToComplete >>> 3);
 			}
-			return array;
+			return;
 		}
 	}
 	
 	public double[] readDoubleArray() throws IOException {
-		return readDoubleArray(this.in.readInt());
+		final double[] array = new double[this.temp = this.in.readInt()];
+		readDoubleData(array, array.length);
+		return array;
 	}
 	
-	public double[] readDoubleArrayPair1() throws IOException {
-		return readDoubleArray(this.temp = this.in.readInt());
+	public double[] readDoubleArray2() throws IOException {
+		final double[] array = new double[this.temp];
+		readDoubleData(array, array.length);
+		return array;
 	}
 	
-	public double[] readDoubleArrayPair2() throws IOException {
-		return readDoubleArray(this.temp);
+	public void readByteData(final byte[] array, final int length) throws IOException {
+		this.in.readFully(array, 0, length);
+		return;
 	}
 	
 	public byte[] readByteArray() throws IOException {
-		final ObjectInput in = this.in;
-		final byte[] array = new byte[in.readInt()];
-		in.readFully(array);
+		final byte[] array = new byte[this.temp = this.in.readInt()];
+		readByteData(array, array.length);
+		return array;
+	}
+	
+	public byte[] readByteArray2() throws IOException {
+		final byte[] array = new byte[this.temp];
+		readByteData(array, array.length);
 		return array;
 	}
 	
@@ -722,10 +959,8 @@ public final class RJIO {
 	}
 	
 	@SuppressWarnings("deprecation")
-	public String[] readStringArray() throws IOException {
+	public void readStringData(final String[] array, final int length) throws IOException {
 		final ObjectInput in = this.in;
-		final int length = in.readInt();
-		final String[] array = new String[length];
 		ARRAY: for (int i = 0; i < length; i++) {
 			final int cn = in.readInt();
 			if (cn >= 0) {
@@ -774,7 +1009,7 @@ public final class RJIO {
 				}
 			}
 		}
-		return array;
+		return;
 	}
 	
 	public HashMap<String, Object> readStringKeyHashMap() throws IOException {

@@ -21,7 +21,12 @@ package de.walware.rj.data;
 public interface RIntegerStore extends RStore {
 	
 	
+	@Override
 	Integer get(int idx);
+	@Override
+	Integer get(long idx);
+	
+	@Override
 	Integer[] toArray();
 	
 }

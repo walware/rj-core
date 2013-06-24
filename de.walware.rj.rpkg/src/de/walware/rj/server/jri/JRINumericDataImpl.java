@@ -24,17 +24,18 @@ public class JRINumericDataImpl extends RNumericDataBImpl {
 		super(values);
 	}
 	
-	public JRINumericDataImpl(final RJIO io) throws IOException {
-		super(io);
+	public JRINumericDataImpl(final RJIO io, final int length) throws IOException {
+		super(io, length);
 	}
 	
 	
 	public double[] getJRIValueArray() {
-		if (this.realValues.length == this.length) {
+		final int l = length();
+		if (this.realValues.length == l) {
 			return this.realValues;
 		}
-		final double[] array = new double[this.length];
-		System.arraycopy(this.realValues, 0, array, 0, this.length);
+		final double[] array = new double[l];
+		System.arraycopy(this.realValues, 0, array, 0, l);
 		return array;
 	}
 	

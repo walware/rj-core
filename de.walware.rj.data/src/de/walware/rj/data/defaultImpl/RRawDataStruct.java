@@ -18,7 +18,6 @@ public class RRawDataStruct extends AbstractRawData {
 	
 	
 	public RRawDataStruct() {
-		this.length = -1;
 	}
 	
 	
@@ -28,11 +27,18 @@ public class RRawDataStruct extends AbstractRawData {
 	}
 	
 	
-	public boolean isMissing(final int idx) {
+	@Override
+	public final long getLength() {
+		return -1;
+	}
+	
+	@Override
+	public Byte get(final int idx) {
 		throw new UnsupportedOperationException();
 	}
 	
-	public Byte get(final int idx) {
+	@Override
+	public Byte get(final long idx) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -41,8 +47,21 @@ public class RRawDataStruct extends AbstractRawData {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public long indexOf(final int integer, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public long indexOf(final String character, final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
+	
+	@Override
 	public boolean allEqual(final RStore other) {
-		return (other.getStoreType() == RAW && other.getLength() == -1);
+		return (RAW == other.getStoreType()
+				&& -1 == other.getLength() );
 	}
 	
 }

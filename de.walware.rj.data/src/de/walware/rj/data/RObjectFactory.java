@@ -30,13 +30,15 @@ public interface RObjectFactory {
 	int F_LOAD_PROMISE = 0x20;
 	
 	
-	int O_WITH_ATTR = 0x2;
+	int O_LENGTHGRADE_MASK = 7; // 3 bits
 	
-	int O_CLASS_NAME = 0x4;
+	int O_WITH_ATTR = 1 << 3;
 	
-	int O_NO_CHILDREN = 0x8;
+	int O_CLASS_NAME = 1 << 4;
 	
-	int O_WITH_NAMES = 0x10;
+	int O_NO_CHILDREN = 1 << 5;
+	
+	int O_WITH_NAMES = 1 << 6;
 	
 	
 //	RArgument createArgument(String name, String defaultSource);
@@ -63,12 +65,12 @@ public interface RObjectFactory {
 	RObject readObject(RJIO io) throws IOException;
 	
 	void writeStore(RStore data, RJIO io) throws IOException;
-	RStore readStore(RJIO io) throws IOException;
+	RStore readStore(RJIO io, long length) throws IOException;
 	
 	void writeAttributeList(RList list, RJIO io) throws IOException;
 	RList readAttributeList(RJIO io) throws IOException;
 	
 	void writeNames(RStore names, RJIO io) throws IOException;
-	RStore readNames(RJIO io) throws IOException;
+	RStore readNames(RJIO io, long length) throws IOException;
 	
 }

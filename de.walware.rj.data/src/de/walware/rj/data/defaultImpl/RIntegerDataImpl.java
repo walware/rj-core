@@ -19,36 +19,21 @@ import java.io.ObjectOutput;
 import de.walware.rj.data.RJIO;
 
 
+/**
+ * This implementation is limited to length of 2<sup>31</sup>-1.
+ */
 public class RIntegerDataImpl extends AbstractIntegerData
 		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
 	
+	
+	private int length;
 	
 	protected int[] intValues;
 	
 	
 	public RIntegerDataImpl() {
-		this.intValues = EMPTY_INT_ARRAY;
 		this.length = 0;
-	}
-	
-	public RIntegerDataImpl(final int[] values) {
-		this.intValues = values;
-		this.length = values.length;
-	}
-	
-	public RIntegerDataImpl(final int[] values, final int length) {
-		this.intValues = values;
-		this.length = length;
-	}
-	
-	public RIntegerDataImpl(final int[] values, final int[] naIdxs) {
-		this.intValues = values;
-		this.length = values.length;
-		if (naIdxs != null) {
-			for (int i = 0; i < naIdxs.length; i++) {
-				this.intValues[naIdxs[i]] = NA_integer_INT;
-			}
-		}
+		this.intValues = EMPTY_INT_ARRAY;
 	}
 	
 	public RIntegerDataImpl(final int length) {
@@ -56,17 +41,40 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		this.length = length;
 	}
 	
-	
-	public RIntegerDataImpl(final RJIO io) throws IOException {
-		readExternal(io);
+	public RIntegerDataImpl(final int[] values) {
+		this.length = values.length;
+		this.intValues = values;
 	}
 	
-	public void readExternal(final RJIO io) throws IOException {
-		this.intValues = io.readIntArray();
-		this.length = this.intValues.length;
+	public RIntegerDataImpl(final int[] values, final int length) {
+		this.length = length;
+		this.intValues = values;
 	}
 	
-	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+	public RIntegerDataImpl(final int[] values, final int[] naIdxs) {
+		this.length = values.length;
+		this.intValues = values;
+		if (naIdxs != null) {
+			for (int i = 0; i < naIdxs.length; i++) {
+				this.intValues[naIdxs[i]] = NA_integer_INT;
+			}
+		}
+	}
+	
+	
+	public RIntegerDataImpl(final RJIO io, final int length) throws IOException {
+		this.length = length;
+		this.intValues = new int[length];
+		io.readIntData(this.intValues, length);
+	}
+	
+	@Override
+	public void writeExternal(final RJIO io) throws IOException {
+		io.writeIntData(this.intValues, this.length);
+	}
+	
+	@Override
+	public void readExternal(final ObjectInput in) throws IOException {
 		this.length = in.readInt();
 		this.intValues = new int[this.length];
 		for (int i = 0; i < this.length; i++) {
@@ -74,10 +82,7 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		}
 	}
 	
-	public void writeExternal(final RJIO io) throws IOException {
-		io.writeIntArray(this.intValues, this.length);
-	}
-	
+	@Override
 	public void writeExternal(final ObjectOutput out) throws IOException {
 		out.writeInt(this.length);
 		for (int i = 0; i < this.length; i++) {
@@ -92,9 +97,13 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	}
 	
 	
+	protected final int length() {
+		return this.length;
+	}
+	
 	@Override
-	public int getInt(final int idx) {
-		return this.intValues[idx];
+	public final long getLength() {
+		return this.length;
 	}
 	
 	@Override
@@ -102,8 +111,51 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		return (this.intValues[idx] == NA_integer_INT);
 	}
 	
+	@Override
+	public boolean isNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.intValues[(int) idx] == NA_integer_INT);
+	}
+	
+	@Override
+	public void setNA(final int idx) {
+		this.intValues[idx] = NA_integer_INT;
+	}
+	
+	@Override
+	public void setNA(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		this.intValues[(int) idx] = NA_integer_INT;
+	}
+	
+	@Override
 	public boolean isMissing(final int idx) {
 		return (this.intValues[idx] == NA_integer_INT);
+	}
+	
+	@Override
+	public boolean isMissing(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return (this.intValues[(int) idx] == NA_integer_INT);
+	}
+	
+	@Override
+	public int getInt(final int idx) {
+		return this.intValues[idx];
+	}
+	
+	@Override
+	public int getInt(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		return this.intValues[(int) idx];
 	}
 	
 	@Override
@@ -113,9 +165,14 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	}
 	
 	@Override
-	public void setNA(final int idx) {
-		this.intValues[idx] = NA_integer_INT;
+	public void setInt(final long idx, final int value) {
+//		assert (value != NA_integer_INT);
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		this.intValues[(int) idx] = value;
 	}
+	
 	
 	private void prepareInsert(final int[] idxs) {
 		this.intValues = prepareInsert(this.intValues, this.length, idxs);
@@ -128,11 +185,13 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		this.intValues[idx] = value;
 	}
 	
+	@Override
 	public void insertNA(final int idx) {
 		prepareInsert(new int[] { idx });
 		this.intValues[idx] = NA_integer_INT;
 	}
 	
+	@Override
 	public void insertNA(final int[] idxs) {
 		if (idxs.length == 0) {
 			return;
@@ -143,31 +202,47 @@ public class RIntegerDataImpl extends AbstractIntegerData
 		}
 	}
 	
+	@Override
 	public void remove(final int idx) {
 		this.intValues = remove(this.intValues, this.length, new int[] { idx });
 		this.length --;
 	}
 	
+	@Override
 	public void remove(final int[] idxs) {
 		this.intValues = remove(this.intValues, this.length, idxs);
 		this.length -= idxs.length;
 	}
 	
 	
+	@Override
 	public Integer get(final int idx) {
-		if (idx < 0 || idx >= this.length) {
-			throw new IndexOutOfBoundsException();
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		return (this.intValues[idx] != NA_integer_INT) ?
-				Integer.valueOf(this.intValues[idx]) : null;
+		final int v = this.intValues[idx];
+		return (v != NA_integer_INT) ?
+				Integer.valueOf(v) : null;
+	}
+	
+	@Override
+	public Integer get(final long idx) {
+		if (idx < 0 || idx >= length()) {
+			throw new IndexOutOfBoundsException(Long.toString(idx));
+		}
+		final int v = this.intValues[(int) idx];
+		return (v != NA_integer_INT) ?
+				Integer.valueOf(v) : null;
 	}
 	
 	@Override
 	public Integer[] toArray() {
-		final Integer[] array = new Integer[this.length];
-		for (int i = 0; i < this.length; i++) {
-			if (this.intValues[i] != NA_integer_INT) {
-				array[i] = Integer.valueOf(this.intValues[i]);
+		final Integer[] array = new Integer[length()];
+		final int[] ints = this.intValues;
+		for (int i = 0; i < array.length; i++) {
+			final int v = ints[i];
+			if (v != NA_integer_INT) {
+				array[i] = Integer.valueOf(v);
 			}
 		}
 		return array;
@@ -175,16 +250,16 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	
 	@Override
-	public final int indexOf(final int value, int fromIdx) {
-		if (fromIdx < 0) {
-			fromIdx = 0;
+	public final long indexOf(final int integer, final long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE
+				|| integer == NA_integer_INT ) {
+			return -1;
 		}
-		if (value != NA_integer_INT) {
-			while (fromIdx < this.length) {
-				if (this.intValues[fromIdx] == value) {
-					return fromIdx;
-				}
-				fromIdx++;
+		final int l = length();
+		final int[] ints = this.intValues;
+		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			if (ints[i] == integer) {
+				return i;
 			}
 		}
 		return -1;
@@ -193,9 +268,11 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	public void appendTo(final StringBuilder sb) {
 		sb.append('[');
-		if (this.length > 0) {
-			for (int i = 0; i < this.length; i++) {
-				sb.append(this.intValues[i]);
+		final int l = length();
+		if (l > 0) {
+			final int[] ints = this.intValues;
+			for (int i = 0; i < l; i++) {
+				sb.append(ints[i]);
 				sb.append(", ");
 			}
 			sb.delete(sb.length()-2, sb.length());

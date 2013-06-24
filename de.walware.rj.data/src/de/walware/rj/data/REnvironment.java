@@ -68,9 +68,12 @@ public interface REnvironment extends RList {
 	 * Returns the length of the object. The length of an {@link RObject#TYPE_ENV environment}
 	 * is the count the objects in the environment.
 	 * 
+	 * At moment, the length of an {@link RObject#TYPE_ENV environment} is always &le; 2<sup>31</sup>-1
+	 * (representable by Java int).
+	 * 
 	 * @return the length
 	 */
-	int getLength();
+	long getLength();
 	
 	/**
 	 * Indicates a special environment type (> 0)

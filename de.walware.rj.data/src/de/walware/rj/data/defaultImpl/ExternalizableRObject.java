@@ -20,8 +20,6 @@ import de.walware.rj.data.RObjectFactory;
 public interface ExternalizableRObject {
 	
 	
-	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException;
-	
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException;
 	
 }

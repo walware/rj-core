@@ -25,11 +25,11 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	
 	
 	private long handle;
-	private int type;
+	private byte type;
 	private String baseClassName;
 	
 	
-	public RReferenceImpl(final long handler, final int type, final String baseClass) {
+	public RReferenceImpl(final long handler, final byte type, final String baseClass) {
 		this.handle = handler;
 		this.type = type;
 		this.baseClassName = baseClass;
@@ -41,45 +41,54 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	
 	public void readExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		this.handle = io.readLong();
-		this.type = io.readInt();
+		this.type = io.readByte();
 		this.baseClassName = io.readString();
 	}
 	
+	@Override
 	public void writeExternal(final RJIO io, final RObjectFactory factory) throws IOException {
 		io.writeLong(this.handle);
-		io.writeInt(this.type);
+		io.writeByte(this.type);
 		io.writeString(this.baseClassName);
 	}
 	
 	
+	@Override
 	public byte getRObjectType() {
 		return TYPE_REFERENCE;
 	}
 	
-	public int getReferencedRObjectType() {
+	@Override
+	public byte getReferencedRObjectType() {
 		return this.type;
 	}
 	
+	@Override
 	public String getRClassName() {
 		return this.baseClassName;
 	}
 	
-	public int getLength() {
+	@Override
+	public long getLength() {
 		return 0;
 	}
 	
+	@Override
 	public long getHandle() {
 		return this.handle;
 	}
 	
+	@Override
 	public RObject getResolvedRObject() {
 		return null;
 	}
 	
+	@Override
 	public RStore getData() {
 		return null;
 	}
 	
+	@Override
 	public RList getAttributes() {
 		return null;
 	}
