@@ -569,19 +569,19 @@ public abstract class AbstractRJComClient implements ComHandler {
 				return;
 			case GDCmdItem.DRAW_POLYLINE:
 				getGraphic(devId).addDrawPolyline(
-						io.readDoubleArrayPair1(),
-						io.readDoubleArrayPair2() );
+						io.readDoubleArray(),
+						io.readDoubleArray2() );
 				return;
 			case GDCmdItem.DRAW_POLYGON:
 				getGraphic(devId).addDrawPolygon(
-						io.readDoubleArrayPair1(),
-						io.readDoubleArrayPair2() );
+						io.readDoubleArray(),
+						io.readDoubleArray2() );
 				return;
 			case GDCmdItem.DRAW_PATH:
 				getGraphic(devId).addDrawPath(
 						io.readIntArray(),
-						io.readDoubleArrayPair1(),
-						io.readDoubleArrayPair2(),
+						io.readDoubleArray(),
+						io.readDoubleArray2(),
 						io.readInt() );
 				return;
 			case GDCmdItem.DRAW_CIRCLE:
