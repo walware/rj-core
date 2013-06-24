@@ -24,13 +24,13 @@
 		return (paste("rhelp:///page", helpObj$name, "", sep= "/"))
 	}
 	if (inherits(helpObj, "help_files_with_topic")) {
-		topic <- attr(helpObj, "topic")
+		topic <- attr(helpObj, "topic", exact= TRUE)
 		if (is.null(topic)) {
 			topic <- "help"
 			package <- "utils"
 		}
 		else {
-			package <- attr(helpObj, "call")[["package"]]
+			package <- attr(helpObj, "call", exact= TRUE)[["package"]]
 		}
 		if (is.name(y <- substitute(package))) {
 			package <- as.character(y)
@@ -61,7 +61,7 @@
 		return (invisible(NULL))
 	}
 	
-	if (attr(x, "tried_all_packages")) {
+	if (attr(x, "tried_all_packages", exact= TRUE)) {
 		paths <- unique(dirname(dirname(paths)))
 		msg <- gettextf("Help for topic '%s' is not in any loaded package but can be found in the following packages:",
 				topic)
@@ -159,7 +159,7 @@ statet.help <- function(topic, package= NULL, lib.loc= NULL,
 		
 		result <- withVisible(eval(nextCall, envir= parent.frame()))
 		
-		result.call <- attr(result$value, "call")
+		result.call <- attr(result$value, "call", exact= TRUE)
 		if (!is.null(result.call)) {
 			result.call[[1]] <- callName
 			attr(result$value, "call") <- result.call
@@ -228,7 +228,7 @@ help.body <- function() {
 	
 	result <- withVisible(eval(nextCall, envir= parent.frame()))
 	
-	result.call <- attr(result$value, "call")
+	result.call <- attr(result$value, "call", exact= TRUE)
 	if (!is.null(result.call)) {
 		result.call[[1]] <- callName
 		attr(result$value, "call") <- result.call
@@ -238,7 +238,7 @@ help.body <- function() {
 }
 
 print.help_files_with_topic <- statet.print.help <- function(x, ...) {
-	type <- attr(x, "type")
+	type <- attr(x, "type", exact= TRUE)
 	if (length(x) == 0
 			|| (!is.null(type) && type != "html")
 			|| is.null(.rj.tmp$help) ) {
