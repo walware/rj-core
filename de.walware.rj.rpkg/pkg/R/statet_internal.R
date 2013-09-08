@@ -110,7 +110,7 @@
 				}
 				return (txts)
 			}
-			if (is.character(x) && attr(x, "Rd_tag") %in% tags) {
+			if (is.character(x) && attr(x, "Rd_tag", exact= TRUE) %in% tags) {
 				return (x)
 			}
 		}
@@ -126,7 +126,7 @@
 	
 	extractFields <- function(rd, rdData) {
 		for (i in seq(along = rd)) {
-			tag <- attr(rd[[i]], "Rd_tag")
+			tag <- attr(rd[[i]], "Rd_tag", exact= TRUE)
 			if (is.null(tag)) {
 				next
 			}
@@ -250,7 +250,7 @@
 	if (is.null(expr)) {
 		stop("Commands not available.")
 	}
-	srcrefs <- attr(expr, "srcref")
+	srcrefs <- attr(expr, "srcref", exact= TRUE)
 	exi <- call("{", expr[[1]])
 	if (1 <= length(srcrefs)) {
 		attr(exi, "srcref") <- list(NULL, srcrefs[[1]])
@@ -271,7 +271,7 @@
 	if (is.null(expr)) {
 		return (expr)
 	}
-	srcfile <- attr(expr, "srcfile")
+	srcfile <- attr(expr, "srcfile", exact= TRUE)
 	if (is.null(srcfile)
 			|| is.null(srcfile$statet.Path) || is.null(srcfile$timestamp)
 			|| srcfile$statet.Path != info$path

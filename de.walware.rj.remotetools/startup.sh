@@ -24,7 +24,7 @@
 #
 # Note: This script does not start an RMI registry! You have to launch it
 # as system daemon or manually (see Java documentation), e.g. by:
-#     $JAVA_HOME/bin/rmiregistry &
+#     $JAVA_HOME/bin/rmiregistry -J-Djava.rmi.server.codebase=file:///<path to file de.walware.rj.server.jar> &
 ##
 # Author: Stephan Wahlbrink
 ###############################################################################
@@ -262,8 +262,6 @@ AUTH_FX_MASK=600
 # Usually you don't have to edit the lines below
 PATH_SEP=":"
 
-#$JAVA_HOME/bin/rmiregistry &
-
 mkdir -p "$RJS_WORK"
 
 ## Final RMI address
@@ -277,6 +275,12 @@ then
 	S_ADDRESS="$S_ADDRESS/$S_NAME"
 else
 	S_ADDRESS="///$S_NAME"
+fi
+
+S_FINAL_REGISTRYPORT="$S_REGISTRYPORT"
+if [ -z "$S_FINAL_REGISTRYPORT" ]
+then
+	S_FINAL_REGISTRYPORT=1099
 fi
 
 ## Finish auth configuration
@@ -351,6 +355,25 @@ fi
 PATH=$R_HOME/bin$PATH_SEP$PATH
 LD_LIB_PATH=$R_HOME/lib
 
+
+#export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
+
+
+## Start registry
+# For codebase see also:
+# http://docs.oracle.com/javase/7/docs/technotes/guides/rmi/enhancements-7.html
+
+# Netcat (nc) is used to test if the registry port is in use
+#nc -z $S_HOSTADDRESS $S_FINAL_REGISTRYPORT
+#if [ $? -ne 0 ]
+#then
+#	echo "No registry found at port $S_FINAL_REGISTRYPORT, starting registry..."
+#	nohup $JAVA_HOME/bin/rmiregistry $S_REGISTRYPORT "-J-Djava.rmi.server.codebase=$RMI_BASE" >> "$RJS_WORK/registry-$S_FINAL_REGISTRYPORT.out" 2>&1 < /dev/null &
+#fi
+
+
+## Prepare start
+
 export PATH
 export $LD_LIB_VAR=$LD_LIB_PATH
 export JAVA_HOME
@@ -372,9 +395,11 @@ START_ARGS="-cp $JAVA_CP $JAVA_OPTS de.walware.rj.server.RMIServerControl start 
 if [ $DEBUG ]
 then
 	echo "S_HOSTADDRESS = $S_HOSTADDRESS"
-	echo "S_REGISTRYPORT = $S_REGISTRY_PORT"
+	echo "S_REGISTRYPORT = $S_REGISTRYPORT"
+	echo "S_FINAL_REGISTRYPORT = $S_FINAL_REGISTRYPORT"
 	echo "PATH = $PATH"
-	echo $LD_LIB_VAR = ${!LD_LIB_VAR}
+	# ${!LD_LIB_VAR} does not work e.g. in dash
+	echo "$LD_LIB_VAR = $LD_LIB_PATH"
 	echo "R_HOME = $R_HOME"
 	echo "R_ARCH = $R_ARCH"
 	echo "JAVA_HOME = $JAVA_HOME"

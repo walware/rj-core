@@ -81,7 +81,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
 		// attributes
-		if ((options & RObjectFactory.F_WITH_ATTR) != 0) {
+		if ((options & RObjectFactory.O_WITH_ATTR) != 0) {
 			setAttributes(factory.readAttributeList(io));
 		}
 	}
