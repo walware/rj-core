@@ -363,10 +363,11 @@ LD_LIB_PATH=$R_HOME/lib
 # For codebase see also:
 # http://docs.oracle.com/javase/7/docs/technotes/guides/rmi/enhancements-7.html
 
+# Netcat (nc) is used to test if the registry port is in use
 #nc -z $S_HOSTADDRESS $S_FINAL_REGISTRYPORT
 #if [ $? -ne 0 ]
 #then
-#	echo "No registry fonud at port $S_FINAL_REGISTRYPORT, starting registry..."
+#	echo "No registry found at port $S_FINAL_REGISTRYPORT, starting registry..."
 #	nohup $JAVA_HOME/bin/rmiregistry $S_REGISTRYPORT "-J-Djava.rmi.server.codebase=$RMI_BASE" >> "$RJS_WORK/registry-$S_FINAL_REGISTRYPORT.out" 2>&1 < /dev/null &
 #fi
 
