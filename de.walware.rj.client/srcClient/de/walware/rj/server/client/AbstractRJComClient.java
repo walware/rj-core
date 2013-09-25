@@ -408,13 +408,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				processPrompt(new ConsoleReadCmdItem(this.mainIO));
 				continue;
-			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
+			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
 				runGC = true;
-				writeStdOutput(this.mainIO.readString());
-				continue;
-			case MainCmdItem.T_CONSOLE_WRITE_ERR_ITEM:
-				runGC = true;
-				writeErrOutput(this.mainIO.readString());
+				writeConsoleOutput(this.mainIO.readByte(), this.mainIO.readString());
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				runGC = true;
@@ -1069,10 +1065,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	protected void updatePrompt(final String text, final boolean addToHistory) {
 	}
 	
-	protected void writeStdOutput(final String text) {
-	}
-	
-	protected void writeErrOutput(final String text) {
+	protected void writeConsoleOutput(final byte streamId, final String text) {
 	}
 	
 	protected void showMessage(final String text) {
