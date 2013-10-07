@@ -37,10 +37,12 @@ case "$OS" in
 darwin)
 	C_READLINK=greadlink
 	LD_LIB_VAR="DYLD_LIBRARY_PATH"
+	LD_PRELOAD_VAR="DYLD_INSERT_LIBRARIES"
 	;;
 *)
 	C_READLINK=readlink
 	LD_LIB_VAR="LD_LIBRARY_PATH"
+	LD_PRELOAD_VAR="LD_PRELOAD"
 	;;
 esac
 
@@ -354,7 +356,7 @@ fi
 ## Other environment
 PATH=$R_HOME/bin$PATH_SEP$PATH
 LD_LIB_PATH=$R_HOME/lib
-
+#LD_PRELOAD_VALUE=$JAVA_HOME/jre/lib/amd64/server/libjsig.so
 
 #export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
 
@@ -376,6 +378,7 @@ LD_LIB_PATH=$R_HOME/lib
 
 export PATH
 export $LD_LIB_VAR=$LD_LIB_PATH
+export $LD_PRELOAD_VAR=$LD_PRELOAD_VALUE
 export JAVA_HOME
 export R_HOME
 #export R_ARCH
@@ -400,6 +403,7 @@ then
 	echo "PATH = $PATH"
 	# ${!LD_LIB_VAR} does not work e.g. in dash
 	echo "$LD_LIB_VAR = $LD_LIB_PATH"
+	echo "$LD_PRELOAD_VAR = $LD_PRELOAD_VALUE"
 	echo "R_HOME = $R_HOME"
 	echo "R_ARCH = $R_ARCH"
 	echo "JAVA_HOME = $JAVA_HOME"
