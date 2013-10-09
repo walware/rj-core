@@ -1188,8 +1188,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
-					0, expression, null, envir )), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_EXPR_VOID,
+					0, expression, null, null, envir )), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1217,8 +1217,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_VOID,
-					0, name, args, envir )), monitor );
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_FCALL_VOID,
+					0, name, args, null, envir )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1245,8 +1245,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
-					options, checkedDepth, expression, null, envir, factoryId )), monitor);
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_EXPR_DATA,
+					options, checkedDepth, expression, null, null, envir, factoryId )), monitor);
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1276,8 +1276,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
 		try {
-			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_DATA,
-					options, checkedDepth, name, args, envir, factoryId )), monitor );
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_FCALL_DATA,
+					options, checkedDepth, name, args, null, envir, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1303,7 +1303,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		try {
 			final long handle = reference.getHandle();
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.RESOLVE_DATA,
-					options, checkedDepth, Long.toString(handle), null, null, factoryId )), monitor );
+					options, checkedDepth, Long.toString(handle), null, null, null, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1332,7 +1332,40 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_DATA,
-					0, expression, data, envir )), monitor );
+					0, null, data, expression, envir )), monitor );
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Assignment failed: " + status.getMessage(), null));
+				}
+			}
+			return;
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public final void assignData(final String name, final RObject args, final String expression,
+			final RObject envir,
+			final IProgressMonitor monitor) throws CoreException {
+		if (name == null) {
+			throw new NullPointerException("name");
+		}
+		if (args == null) {
+			throw new NullPointerException("args");
+		}
+		if (expression == null) {
+			throw new NullPointerException("expression");
+		}
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_FCALL,
+					0, name, args, expression, envir )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
@@ -1361,7 +1394,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.FIND_DATA,
 					(inherits) ? (options | 0x1000) : options, checkedDepth,
-					symbol, null, envir, factoryId )), monitor );
+					symbol, null, null, envir, factoryId )), monitor );
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {

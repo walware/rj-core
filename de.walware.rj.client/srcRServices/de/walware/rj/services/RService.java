@@ -142,22 +142,22 @@ public interface RService {
 	/**
 	 * Performs the assignment of the given R data object to an expression in R. The method returns
 	 * after the assignment is finished.
-	 * <p>
-	 * The name must be a valid target expression for a R <code>&lt;-</code> assignment operation.
-	 * A single symbol like <code>x</code> or <code>`x-y`</code>, a path in an object tree
-	 * like <code>xlist$item1</code> or <code>xobj@slotName</code> is valid as well as
-	 * special function calls which supports assignments like <code>dim(x)</code>.</p>
-	 * <p>
-	 * The assignment is performed in the global environment of R.</p>
 	 * 
-	 * @param expression a single valid expression to assign the data to
+	 * <p>The target have to be a valid target expression for a R <code>&lt;-</code> assignment 
+	 * operation.  A single symbol like <code>x</code> or <code>`x-y`</code>, a path in an object 
+	 * tree like <code>xlist$item1</code> or <code>xobj@slotName</code> is valid as well as
+	 * special function calls which supports assignments like <code>dim(x)</code>.</p>
+	 * 
+	 * <p>The assignment is performed in the global environment of R.</p>
+	 * 
+	 * @param target a single valid expression to assign the data to
 	 * @param data a valid R data object to assign to the expression
 	 * @param monitor a progress monitor to catch cancellation and provide progress feedback
 	 * @return the evaluated value as R data object
 	 * @throws CoreException if the operation was canceled or was failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	void assignData(String expression, RObject data, IProgressMonitor monitor) throws CoreException;
+	void assignData(String target, RObject data, IProgressMonitor monitor) throws CoreException;
 	
 //	void assignDataToAttribute(String expression, String attributeName, RObject data, IProgressMonitor monitor) throws CoreException;
 	
@@ -253,7 +253,7 @@ public interface RService {
 	 * The builder is valid as long as the RService owns the consumer. After the service is for example
 	 * closed, it must not longer be used.</p>
 	 * 
-	 * @name name of the function
+	 * @name name the name of the function, optional with prefix namespace
 	 * @return a new function creator
 	 * @throws CoreException if the operation failed; the status
 	 *     of the exception contains detail about the cause

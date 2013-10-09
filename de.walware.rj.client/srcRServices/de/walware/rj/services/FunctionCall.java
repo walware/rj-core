@@ -273,6 +273,24 @@ public interface FunctionCall {
 	 */
 	RObject evalData(String factoryId, int options, int depth, IProgressMonitor monitor) throws CoreException;
 	
-//	void evalAssign(IProgressMonitor monitor);
+	/**
+	 * Performs the evaluation of the this function call in R and assign its return value to
+	 * the specified expression.
+	 * 
+	 * <p>The target have to be a valid target expression for a R <code>&lt;-</code> assignment 
+	 * operation.  A single symbol like <code>x</code> or <code>`x-y`</code>, a path in an object 
+	 * tree like <code>xlist$item1</code> or <code>xobj@slotName</code> is valid as well as
+	 * special function calls which supports assignments like <code>dim(x)</code>.</p>
+	 * 
+	 * <p>The evaluation and assignment is performed in the global environment of R.</p>
+	 * 
+	 * @param target a single valid expression to assign the result to
+	 * @param monitor a progress monitor to catch cancellation and provide progress feedback
+	 * @throws CoreException if the operation was canceled or failed; the status
+	 *     of the exception contains detail about the cause
+	 * 
+	 * @since 2.0
+	 */
+	void evalAssign(String target, IProgressMonitor monitor) throws CoreException;
 	
 }

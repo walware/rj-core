@@ -187,6 +187,12 @@ public class FunctionCallImpl implements FunctionCall {
 	}
 	
 	@Override
+	public void evalAssign(final String target, final IProgressMonitor monitor) throws CoreException {
+		final RList args = prepareArgs(monitor);
+		this.rjs.assignData(this.name, args, target, null, monitor);
+	}
+	
+	@Override
 	public String toString() {
 		final StringBuilder call = new StringBuilder();
 		call.append(this.name);
@@ -197,19 +203,19 @@ public class FunctionCallImpl implements FunctionCall {
 				if (argName != null) {
 					call.append('\n');
 					call.append(argName);
-					call.append(" = ");
+					call.append("= "); //$NON-NLS-1$
 				}
 				final Object value = this.argValues.get(i);
 				if (value instanceof String) {
 					call.append((String) value);
 				}
 				else if (value instanceof RObject) {
-					call.append("\n<DATA>\n");
+					call.append("\n<DATA>\n"); //$NON-NLS-1$
 					call.append(value.toString());
-					call.append("\n</DATA>");
+					call.append("\n</DATA>"); //$NON-NLS-1$
 				}
 			}
-			call.append("\n");
+			call.append("\n"); //$NON-NLS-1$
 		}
 		call.append(')');
 		return call.toString();
