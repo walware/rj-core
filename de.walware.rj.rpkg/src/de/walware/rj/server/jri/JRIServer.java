@@ -25,7 +25,6 @@ import static de.walware.rj.server.jri.JRIServerErrors.CODE_CTRL_REQUEST_HOT_MOD
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_ASSIGN_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_EVAL_DATA;
-import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_RESOLVE_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_DBG_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_SRV_COMMON;
 import static de.walware.rj.server.jri.JRIServerErrors.CODE_SRV_EVAL_DATA;
@@ -66,6 +65,7 @@ import de.walware.rj.server.ConsoleWriteErrCmdItem;
 import de.walware.rj.server.ConsoleWriteOutCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
+import de.walware.rj.server.DataCmdItem.Operation;
 import de.walware.rj.server.DbgCmdItem;
 import de.walware.rj.server.ExtUICmdItem;
 import de.walware.rj.server.GraOpCmdItem;
@@ -657,10 +657,10 @@ public final class JRIServer extends RJ
 	private void loadPlatformData() {
 		try {
 			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
-				final DataCmdItem dataCmd = internalEvalData(new DataCmdItem(DataCmdItem.EVAL_DATA,
-						0, (byte) 1, dataEntry.getValue(), null, null, null ));
+				final DataCmdItem dataCmd= internalEvalData(new DataCmdItem(DataCmdItem.EVAL_EXPR_DATA,
+						0, (byte) 1, dataEntry.getValue(), null, null, null, null ));
 				if (dataCmd != null && dataCmd.isOK()) {
-					final RObject data = dataCmd.getData();
+					final RObject data= dataCmd.getData();
 					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
 						switch (data.getData().getStoreType()) {
 						case RStore.CHARACTER:
@@ -679,7 +679,7 @@ public final class JRIServer extends RJ
 		}
 		
 		if (LOGGER.isLoggable(Level.FINE)) {
-			final StringBuilder sb = new StringBuilder("R Platform Data");
+			final StringBuilder sb= new StringBuilder("R Platform Data");
 			ServerUtil.prettyPrint(this.platformDataValues, sb);
 			LOGGER.log(Level.FINE, sb.toString());
 		}
@@ -1339,71 +1339,16 @@ public final class JRIServer extends RJ
 		final int savedProtected = this.rni.saveProtected();
 		final int savedSafeMode = beginSafeMode();
 		try {
-			final String input = cmd.getDataText();
-			if (input == null) {
-				throw new IllegalStateException("Missing input.");
+			if (this.rni.rniInterrupted) {
+				throw new CancellationException();
 			}
-			final RObject data = cmd.getData();
-			final RObject envir = cmd.getRho();
-			CMD_OP: switch (cmd.getOp()) {
 			
-			case DataCmdItem.EVAL_VOID: {
-				if (this.rni.rniInterrupted) {
-					throw new CancellationException();
-				}
-				if (data == null) {
-					rniEval(input, envir);
-				}
-				else {
-					rniEval(input, (RList) data, envir);
-				}
-				if (this.rni.rniInterrupted) {
-					throw new CancellationException();
-				}
-				cmd.setAnswer(RjsStatus.OK_STATUS); }
-				break CMD_OP;
+			final Operation operation= cmd.getOperation();
 			
-			case DataCmdItem.EVAL_DATA: {
-				if (this.rni.rniInterrupted) {
-					throw new CancellationException();
-				}
-				final long objP;
-				if (data == null) {
-					objP = rniEval(input, envir);
-				}
-				else {
-					objP = rniEval(input, (RList) data, envir);
-				}
-				if (this.rni.rniInterrupted) {
-					throw new CancellationException();
-				}
-				cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()), null);
-				break CMD_OP; }
+			final long envirP= this.rni.resolveEnvironment(cmd.getRho());
 			
-			case DataCmdItem.RESOLVE_DATA: {
-				final long objP = Long.parseLong(input);
-				if (objP != 0) {
-					if (this.rni.rniInterrupted) {
-						throw new CancellationException();
-					}
-					cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()), null);
-				}
-				else {
-					cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_RESOLVE_DATA | 0x1),
-							"Invalid reference." ));
-				}
-				break CMD_OP; }
-			
-			case DataCmdItem.ASSIGN_DATA: {
-				if (this.rni.rniInterrupted) {
-					throw new CancellationException();
-				}
-				rniAssign(input, data, envir);
-				cmd.setAnswer(RjsStatus.OK_STATUS);
-				break CMD_OP; }
-			
-			case DataCmdItem.FIND_DATA: {
-				final long[] foundP = rniFind(input, envir, (cmd.getCmdOption() & 0x1000) != 0);
+			if (operation == DataCmdItem.FIND_DATA) {
+				final long[] foundP= rniFind(cmd.getDataText(), envirP, (cmd.getCmdOption() & 0x1000) != 0);
 				if (foundP != null) {
 					cmd.setAnswer(
 							this.rni.createDataObject(foundP[1], cmd.getCmdOption() & 0xfff),
@@ -1414,15 +1359,53 @@ public final class JRIServer extends RJ
 				else {
 					cmd.setAnswer(null, null);
 				}
-				break CMD_OP; }
-			
-			default:
-				throw new IllegalStateException("Unsupported command.");
-			
 			}
+			else {
+				final long objP;
+				switch (operation.source) {
+				case Operation.NONE:
+					objP= 0;
+					break;
+				case Operation.EXPR:
+					objP= rniEval(cmd.getDataText(), envirP);
+					break;
+				case Operation.POINTER:
+					objP= Long.parseLong(cmd.getDataText());
+					break;
+				case Operation.FCALL:
+					objP= rniEval(cmd.getDataText(), (RList) cmd.getData(), envirP);
+					break;
+				case Operation.RDATA:
+					objP= this.rni.assignDataObject(cmd.getData());
+					break;
+				default:
+					throw new UnsupportedOperationException("source: " + operation.source); //$NON-NLS-1$
+				}
+				
+				if (this.rni.rniInterrupted) {
+					throw new CancellationException();
+				}
+				
+				switch (operation.target) {
+				case Operation.NONE:
+					break;
+				case Operation.EXPR:
+					rniAssign(cmd.getDataText(), objP, envirP);
+					break;
+				}
+				
+				if (operation.returnData) {
+					cmd.setAnswer(this.rni.createDataObject(objP, cmd.getCmdOption()), null);
+				}
+				else {
+					cmd.setAnswer(RjsStatus.OK_STATUS);
+				}
+			}
+			
 			if (this.rni.rniInterrupted) {
 				throw new CancellationException();
 			}
+			
 		}
 		catch (final RjsException e) {
 			cmd.setAnswer(e.getStatus());
@@ -1456,29 +1439,26 @@ public final class JRIServer extends RJ
 		return cmd.waitForClient() ? cmd : null;
 	}
 	
-	private long rniEval(final String expression, final RObject envir) throws RjsException {
-		final long envP = this.rni.resolveEnvironment(envir);
-		final long exprP = this.rni.resolveExpression(expression);
-		return this.rni.evalExpr(exprP, envP, (CODE_DATA_EVAL_DATA | 0x3));
+	private long rniEval(final String expression, final long envirP) throws RjsException {
+		final long exprP= this.rni.resolveExpression(expression);
+		return this.rni.evalExpr(exprP, envirP, (CODE_DATA_EVAL_DATA | 0x3));
 	}
 	
-	private long rniEval(final String name, final RList args, final RObject envir) throws RjsException {
-		final long envP = this.rni.resolveEnvironment(envir);
-		final long exprP = this.rni.createFCall(name, args);
-		return this.rni.evalExpr(exprP, envP, (CODE_DATA_EVAL_DATA | 0x4));
+	private long rniEval(final String name, final RList args, final long envirP) throws RjsException {
+		final long exprP= this.rni.createFCall(name, args);
+		return this.rni.evalExpr(exprP, envirP, (CODE_DATA_EVAL_DATA | 0x4));
 	}
 	
-	private long[] rniFind(final String name, final RObject envir, final boolean inherits) throws RjsException {
-		long envP = this.rni.resolveEnvironment(envir);
-		final long symbolP = this.rEngine.rniInstallSymbol(name);
-		long p = this.rEngine.rniGetVarBySym(envP, symbolP);
+	private long[] rniFind(final String name, long envirP, final boolean inherits) throws RjsException {
+		final long symbolP= this.rEngine.rniInstallSymbol(name);
+		long p= this.rEngine.rniGetVarBySym(envirP, symbolP);
 		if (inherits) {
-			while (p == 0 && (envP = this.rEngine.rniParentEnv(envP)) != 0
-					&& envP != this.rni.p_EmptyEnv ) {
-				p = this.rEngine.rniGetVarBySym(envP, symbolP);
+			while (p == 0 && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
+					&& envirP != this.rni.p_EmptyEnv ) {
+				p= this.rEngine.rniGetVarBySym(envirP, symbolP);
 			}
 		}
-		return (p != 0) ? new long[] { envP, p } : null;
+		return (p != 0) ? new long[] { envirP, p } : null;
 	}
 	
 	/**
@@ -1488,15 +1468,12 @@ public final class JRIServer extends RJ
 	 * @param obj an R object to assign
 	 * @throws RjException
 	*/ 
-	private void rniAssign(final String expression, final RObject obj, final RObject envir) throws RjsException {
-		final long envP = this.rni.resolveEnvironment(envir); // TODO
-		if (obj == null) {
-			throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x2),
-					"The R object to assign is missing." );
+	private void rniAssign(final String expression, final long objP, final long envirP) throws RjsException {
+		if (objP == 0) {
+			throw new IllegalArgumentException("objP: 0x0"); //$NON-NLS-1$
 		}
-		long exprP = this.rni.protect(this.rni.resolveExpression(expression));
-		final long objP = this.rni.assignDataObject(obj);
-		exprP = this.rEngine.rniCons(
+		long exprP= this.rni.protect(this.rni.resolveExpression(expression));
+		exprP= this.rEngine.rniCons(
 				this.rni.p_AssignSymbol, this.rEngine.rniCons(
 						exprP, this.rEngine.rniCons(
 								objP, this.rni.p_NULL,

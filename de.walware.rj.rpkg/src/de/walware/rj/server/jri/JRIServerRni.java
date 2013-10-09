@@ -772,6 +772,9 @@ final class JRIServerRni {
 	}
 	
 	public RObject createDataObject(final long objP, final int flags) {
+		if (objP == 0) {
+			throw new IllegalArgumentException("objP: 0x0");
+		}
 		if (this.maxDepth > 0) {
 			return createDataObject(objP, flags, EVAL_MODE_FORCE);
 		}

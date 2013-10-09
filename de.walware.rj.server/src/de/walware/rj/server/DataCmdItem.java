@@ -27,27 +27,111 @@ import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 public final class DataCmdItem extends MainCmdItem {
 	
 	
-	public static final byte EVAL_VOID = 0x01;
-	public static final byte EVAL_DATA = 0x02;
-	public static final byte RESOLVE_DATA = 0x04;
-	public static final byte ASSIGN_DATA = 0x06;
-	public static final byte FIND_DATA = 0x08;
+	public static final class Operation {
+		
+		public static final byte NONE= 0;
+		public static final byte EXPR= 1;
+		public static final byte POINTER= 2;
+		public static final byte FCALL= 3;
+		public static final byte RDATA= 4;
+		
+		public final byte op;
+		
+		public final String name;
+		
+		public final byte source;
+		public final byte target;
+		public final boolean returnData;
+		
+		private final boolean reqSourceExpr;
+		private final boolean reqRData;
+		private final boolean reqTargetExpr;
+		
+		private Operation(final String name, final int op,
+				final byte source, final byte target, boolean returnData) {
+			this.op= (byte) op;
+			this.name= name;
+			this.source= source;
+			this.target= target;
+			this.returnData= returnData;
+			
+			this.reqSourceExpr= (source == EXPR || source == POINTER || source == FCALL);
+			this.reqRData= (source == FCALL || source == RDATA);
+			this.reqTargetExpr= (target == EXPR || target == POINTER);
+		}
+		
+		
+		@Override
+		public String toString() {
+			return this.name;
+		}
+		
+	}
 	
-	private static final int OV_WITHTEXT =                  0x01000000;
-	private static final int OV_WITHDATA =                  0x02000000;
-	private static final int OV_WITHRHO =                   0x04000000;
-	private static final int OV_WITHSTATUS =                0x08000000;
+	
+	public static Operation EVAL_EXPR_VOID= new Operation("EVAL_EXPR_VOID", 1, //$NON-NLS-1$
+			Operation.EXPR, Operation.NONE, false);
+	public static Operation EVAL_FCALL_VOID= new Operation("EVAL_FCALL_VOID", 2, //$NON-NLS-1$
+			Operation.FCALL, Operation.NONE, false);
+	
+	public static Operation EVAL_EXPR_DATA= new Operation("EVAL_EXPR_DATA", 3, //$NON-NLS-1$
+			Operation.EXPR, Operation.NONE, true);
+	public static Operation EVAL_FCALL_DATA= new Operation("EVAL_FCALL_DATA", 4, //$NON-NLS-1$
+			Operation.FCALL, Operation.NONE, true);
+	public static Operation RESOLVE_DATA= new Operation("RESOLVE_DATA", 5, // EVAL_REF_DATA //$NON-NLS-1$
+			Operation.POINTER, Operation.NONE, true);
+	
+	public static Operation ASSIGN_DATA= new Operation("ASSIGN_DATA", 6, //$NON-NLS-1$
+			Operation.RDATA, Operation.EXPR, false);
+	public static Operation ASSIGN_FCALL= new Operation("ASSIGN_FCALL", 7, //$NON-NLS-1$
+			Operation.FCALL, Operation.EXPR, false);
+	
+	public static Operation FIND_DATA= new Operation("FIND_DATA", 8, //$NON-NLS-1$
+			Operation.EXPR, Operation.NONE, true);
 	
 	
-	public static final String DEFAULT_FACTORY_ID = "default"; //$NON-NLS-1$
+	private static final Operation[] OPERATIONS= new Operation[9];
+	
+	private static final void addOp(final Operation operation) {
+		if (OPERATIONS[operation.op] != null) {
+			throw new IllegalArgumentException();
+		}
+		OPERATIONS[operation.op]= operation;
+	}
+	
+	private static final Operation getOperation(final byte op) {
+		if (op <= 0 || op >= OPERATIONS.length) {
+			throw new UnsupportedOperationException("data op: " + op); //$NON-NLS-1$
+		}
+		return OPERATIONS[op];
+	}
+	
+	static {
+		addOp(EVAL_EXPR_VOID);
+		addOp(EVAL_FCALL_VOID);
+		addOp(EVAL_EXPR_DATA);
+		addOp(EVAL_FCALL_DATA);
+		addOp(RESOLVE_DATA);
+		addOp(ASSIGN_DATA);
+		addOp(ASSIGN_FCALL);
+		addOp(FIND_DATA);
+	}
+	
+	
+	private static final int OV_WITHDATA=                  0x02000000;
+	private static final int OV_WITHRHO=                   0x04000000;
+	private static final int OV_WITHSTATUS=                0x08000000;
+	
+	
+	public static final String DEFAULT_FACTORY_ID= "default"; //$NON-NLS-1$
 	
 	
 	static RObjectFactory gDefaultFactory;
 	
-	static final Map<String, RObjectFactory> gFactories = new ConcurrentHashMap<String, RObjectFactory>();
+	static final Map<String, RObjectFactory> gFactories= new ConcurrentHashMap<String, RObjectFactory>();
 	
 	private static final RObjectFactory getFactory(final String id) {
-		final RObjectFactory factory = gFactories.get(id);
+		final RObjectFactory factory= gFactories.get(id);
 		if (factory != null) {
 			return factory;
 		}
@@ -59,10 +143,11 @@ public final class DataCmdItem extends MainCmdItem {
 	}
 	
 	
-	private byte op;
+	private final Operation operation;
 	
 	private byte depth;
-	private String text;
+	private String sourceExpr;
+	private String targetExpr;
 	private RObject rdata;
 	private RObject rho;
 	
@@ -73,54 +158,52 @@ public final class DataCmdItem extends MainCmdItem {
 	
 	/**
 	 * Constructor for operations with returned data
-	 * <ul>
-	 *     <li>evalData operation (send text, load data)</li>
-	 *     <li>evalData (send call, load data)</li>
-	 * </ul>
 	 */
-	public DataCmdItem(final byte type, final int options, final byte depth,
-			final String text, final RObject data, final RObject rho,
+	public DataCmdItem(final Operation op, final int options, final byte depth,
+			final String sourceExpr, final RObject data, final String targetExpr,
+			final RObject rho,
 			final String factoryId) {
-		assert (text != null);
+		assert (op.reqSourceExpr == (sourceExpr != null));
+		assert (op.reqRData == (data != null));
+		assert (op.reqTargetExpr == (targetExpr != null));
 		assert (factoryId == null || gFactories.containsKey(factoryId));
-		this.op = type;
-		this.text = text;
-		this.options = (OV_WITHTEXT | OV_WAITFORCLIENT | (options & OM_CUSTOM));
+		this.operation= op;
+		this.targetExpr= targetExpr;
+		this.sourceExpr= sourceExpr;
+		this.options= (OV_WAITFORCLIENT | (options & OM_CUSTOM));
 		if (data != null) {
-			this.rdata = data;
+			this.rdata= data;
 			this.options |= OV_WITHDATA;
 		}
 		if (rho != null) {
-			this.rho = rho;
+			this.rho= rho;
 			this.options |= OV_WITHRHO;
 		}
-		this.depth = depth;
-		this.factoryId = (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
+		this.depth= depth;
+		this.factoryId= (factoryId != null) ? factoryId : DEFAULT_FACTORY_ID;
 	}
 	
 	/**
 	 * Constructor for operations without returned data:
-	 * <ul>
-	 *     <li>assignData (send text and data)</li>
-	 *     <li>evalVoid (send call)</li>
-	 *     <li>evalVoid (send expr, data=null)</li>
-	 * </ul>
 	 */
-	public DataCmdItem(final byte type, final int options,
-			final String text, final RObject data, final RObject rho) {
-		assert (text != null);
-		this.op = type;
-		this.text = text;
-		this.options = ((OV_WITHTEXT | OV_WAITFORCLIENT) | (options & OM_CUSTOM));
+	public DataCmdItem(final Operation op, final int options,
+			final String sourceExpr, final RObject data, final String targetExpr,
+			final RObject rho) {
+		assert (op.reqSourceExpr == (sourceExpr != null));
+		assert (op.reqRData == (data != null));
+		assert (op.reqTargetExpr == (targetExpr != null));
+		this.operation= op;
+		this.sourceExpr= sourceExpr;
+		this.options= (OV_WAITFORCLIENT | (options & OM_CUSTOM));
 		if (data != null) {
-			this.rdata = data;
+			this.rdata= data;
 			this.options |= OV_WITHDATA;
 		}
 		if (rho != null) {
-			this.rho = rho;
+			this.rho= rho;
 			this.options |= OV_WITHRHO;
 		}
-		this.factoryId = "";
+		this.factoryId= "";
 	}
 	
 	
@@ -128,36 +211,39 @@ public final class DataCmdItem extends MainCmdItem {
 	 * Constructor for deserialization
 	 */
 	public DataCmdItem(final RJIO in) throws IOException {
-		this.requestId = in.readInt();
-		this.op = in.readByte();
-		this.options = in.readInt();
+		this.requestId= in.readInt();
+		this.operation= getOperation(in.readByte());
+		this.options= in.readInt();
 		if ((this.options & OV_WITHSTATUS) != 0) {
-			this.status = new RjsStatus(in);
+			this.status= new RjsStatus(in);
 			return;
 		}
-		this.depth = in.readByte();
-		this.factoryId = in.readString();
-		if ((this.options & OV_WITHTEXT) != 0) {
-			this.text = in.readString();
+		this.depth= in.readByte();
+		this.factoryId= in.readString();
+		if ((this.options & OV_ANSWER) == 0) { // request
+			if (this.operation.reqSourceExpr) {
+				this.sourceExpr= in.readString();
+			}
+			if (this.operation.reqRData) {
+				in.flags= 0;
+				this.rdata= gDefaultFactory.readObject(in);
+			}
+			if (this.operation.reqTargetExpr) {
+				this.targetExpr= in.readString();
+			}
+			if ((this.options & OV_WITHRHO) != 0) {
+				in.flags= 0;
+				this.rho= gDefaultFactory.readObject(in);
+			}
 		}
-		if ((this.options & OV_WITHDATA) != 0) {
-			if ((this.options & OV_ANSWER) != 0) {
-				in.flags = (this.options & 0xff);
-				this.rdata = getFactory(this.factoryId).readObject(in);
+		else { // answer
+			if ((this.options & OV_WITHDATA) != 0) {
+				in.flags= (this.options & 0xff);
+				this.rdata= getFactory(this.factoryId).readObject(in);
 			}
-			else {
-				in.flags = 0;
-				this.rdata = gDefaultFactory.readObject(in);
-			}
-		}
-		if ((this.options & OV_WITHRHO) != 0) {
-			if ((this.options & OV_ANSWER) != 0) {
-				in.flags = RObjectFactory.F_ONLY_STRUCT;
-				this.rho = getFactory(this.factoryId).readObject(in);
-			}
-			else {
-				in.flags = 0;
-				this.rho = gDefaultFactory.readObject(in);
+			if ((this.options & OV_WITHRHO) != 0) {
+				in.flags= RObjectFactory.F_ONLY_STRUCT;
+				this.rho= getFactory(this.factoryId).readObject(in);
 			}
 		}
 	}
@@ -165,7 +251,7 @@ public final class DataCmdItem extends MainCmdItem {
 	@Override
 	public void writeExternal(final RJIO out) throws IOException {
 		out.writeInt(this.requestId);
-		out.writeByte(this.op);
+		out.writeByte(this.operation.op);
 		out.writeInt(this.options);
 		if ((this.options & OV_WITHSTATUS) != 0) {
 			this.status.writeExternal(out);
@@ -173,23 +259,31 @@ public final class DataCmdItem extends MainCmdItem {
 		}
 		out.writeByte(this.depth);
 		out.writeString(this.factoryId);
-		if ((this.options & OV_WITHTEXT) != 0) {
-			out.writeString(this.text);
-		}
-		if ((this.options & OV_WITHDATA) != 0) {
-			if ((this.options & OV_ANSWER) != 0) {
-				out.flags = (this.options & 0xff);
+		if ((this.options & OV_ANSWER) == 0) { // request
+			if (this.operation.reqSourceExpr) {
+				out.writeString(this.sourceExpr);
+			}
+			if (this.operation.reqRData) {
+				out.flags= 0;
 				gDefaultFactory.writeObject(this.rdata, out);
 			}
-			else {
-				out.flags = 0;
-				gDefaultFactory.writeObject(this.rdata, out);
+			if (this.operation.reqTargetExpr) {
+				out.writeString(this.targetExpr);
+			}
+			if ((this.options & OV_WITHRHO) != 0) {
+				out.flags= 0;
+				gDefaultFactory.writeObject(this.rho, out);
 			}
 		}
-		if ((this.options & OV_WITHRHO) != 0) {
-			out.flags = ((this.options & OV_ANSWER) != 0) ?
-					RObjectFactory.F_ONLY_STRUCT : 0;
-			gDefaultFactory.writeObject(this.rho, out);
+		else { // anwser
+			if ((this.options & OV_WITHDATA) != 0) {
+				out.flags= (this.options & 0xff);
+				gDefaultFactory.writeObject(this.rdata, out);
+			}
+			if ((this.options & OV_WITHRHO) != 0) {
+				out.flags= RObjectFactory.F_ONLY_STRUCT;
+				gDefaultFactory.writeObject(this.rho, out);
+			}
 		}
 	}
 	
@@ -204,39 +298,46 @@ public final class DataCmdItem extends MainCmdItem {
 	public void setAnswer(final RjsStatus status) {
 		assert (status != null);
 		if (status == RjsStatus.OK_STATUS) {
-			this.options = (this.options & OM_CLEARFORANSWER) | OV_ANSWER;
-			this.status = null;
-			this.text = null;
-			this.rdata = null;
-			this.rho = null;
+			this.options= (this.options & OM_CLEARFORANSWER) | OV_ANSWER;
+			this.status= null;
+			this.sourceExpr= null;
+			this.rdata= null;
+			this.targetExpr= null;
+			this.rho= null;
 		}
 		else {
-			this.options = ((this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHSTATUS));
-			this.status = status;
-			this.text = null;
-			this.rdata = null;
-			this.rho = null;
+			this.options= ((this.options & OM_CLEARFORANSWER) | (OV_ANSWER | OV_WITHSTATUS));
+			this.status= status;
+			this.sourceExpr= null;
+			this.rdata= null;
+			this.targetExpr= null;
+			this.rho= null;
 		}
 	}
 	
 	public void setAnswer(final RObject rdata, final RObject rho) {
-		this.options = ((this.options & OM_CLEARFORANSWER) | OV_ANSWER);
+		this.options= ((this.options & OM_CLEARFORANSWER) | OV_ANSWER);
 		if (rdata != null) {
 			this.options |= OV_WITHDATA;
 		}
 		if (rho != null) {
 			this.options |= OV_WITHRHO;
 		}
-		this.status = null;
-		this.text = null;
-		this.rdata = rdata;
-		this.rho = rho;
+		this.status= null;
+		this.sourceExpr= null;
+		this.rdata= rdata;
+		this.targetExpr= null;
+		this.rho= rho;
 	}
 	
 	
 	@Override
 	public byte getOp() {
-		return this.op;
+		return this.operation.op;
+	}
+	
+	public Operation getOperation() {
+		return this.operation;
 	}
 	
 	@Override
@@ -249,17 +350,21 @@ public final class DataCmdItem extends MainCmdItem {
 		return this.status;
 	}
 	
+	@Override
+	public String getDataText() {
+		return this.sourceExpr;
+	}
+	
 	public RObject getData() {
 		return this.rdata;
 	}
 	
-	public RObject getRho() {
-		return this.rho;
+	public String getTargetExpr() {
+		return this.targetExpr;
 	}
 	
-	@Override
-	public String getDataText() {
-		return this.text;
+	public RObject getRho() {
+		return this.rho;
 	}
 	
 	public byte getDepth() {
@@ -272,15 +377,31 @@ public final class DataCmdItem extends MainCmdItem {
 		if (!(other instanceof DataCmdItem)) {
 			return false;
 		}
-		final DataCmdItem otherItem = (DataCmdItem) other;
+		final DataCmdItem otherItem= (DataCmdItem) other;
 		if (getOp() != otherItem.getOp()) {
 			return false;
 		}
 		if (this.options != otherItem.options) {
 			return false;
 		}
-		if (((this.options & OV_WITHTEXT) != 0)
-				&& !getDataText().equals(otherItem.getDataText())) {
+		if (!((this.sourceExpr != null) ?
+				this.sourceExpr.equals(otherItem.sourceExpr) :
+				null == otherItem.sourceExpr )) {
+			return false;
+		}
+		if (!((this.rdata != null) ?
+				this.rdata.equals(otherItem.rdata) :
+				null == otherItem.rdata )) {
+			return false;
+		}
+		if (!((this.targetExpr != null) ?
+				this.targetExpr.equals(otherItem.targetExpr) :
+				null == otherItem.targetExpr )) {
+			return false;
+		}
+		if (!((this.rho != null) ?
+				this.rho.equals(otherItem.rho) :
+				null == otherItem.rho )) {
 			return false;
 		}
 		return true;
@@ -288,36 +409,17 @@ public final class DataCmdItem extends MainCmdItem {
 	
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer(100);
+		final StringBuffer sb= new StringBuffer(100);
 		sb.append("DataCmdItem ");
-		switch (this.op) {
-		case EVAL_VOID:
-			sb.append("EVAL_VOID");
-			break;
-		case EVAL_DATA:
-			sb.append("EVAL_DATA");
-			break;
-		case RESOLVE_DATA:
-			sb.append("RESOLVE_DATA");
-			break;
-		case ASSIGN_DATA:
-			sb.append("ASSIGN_DATA");
-			break;
-		case FIND_DATA:
-			sb.append("FIND_DATA");
-			break;
-		default:
-			sb.append(this.op);
-			break;
-		}
+		sb.append(this.operation.name);
 		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
-		if ((this.options & OV_WITHTEXT) != 0) {
-			sb.append("\n<TEXT>\n");
-			sb.append(this.text);
-			sb.append("\n</TEXT>");
+		if (this.sourceExpr != null) {
+			sb.append("\n<SOURCE-EXPR>\n");
+			sb.append(this.sourceExpr);
+			sb.append("\n</SOURCE-EXPR>");
 		}
 		else {
-			sb.append("\n<TEXT/>");
+			sb.append("\n<SOURCE-EXPR/>");
 		}
 		if ((this.options & OV_WITHDATA) != 0) {
 			sb.append("\n<DATA>\n");
@@ -326,6 +428,14 @@ public final class DataCmdItem extends MainCmdItem {
 		}
 		else {
 			sb.append("\n<DATA/>");
+		}
+		if (this.targetExpr != null) {
+			sb.append("\n<TARGET-EXPR>\n");
+			sb.append(this.targetExpr);
+			sb.append("\n</TARGET-EXPR>");
+		}
+		else {
+			sb.append("\n<TARGET-EXPR/>");
 		}
 		if ((this.options & OV_WITHRHO) != 0) {
 			sb.append("\n<RHO>\n");
