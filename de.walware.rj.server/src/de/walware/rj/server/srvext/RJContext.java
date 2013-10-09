@@ -105,11 +105,11 @@ public class RJContext {
 					sb = new StringBuilder("Missing RJ library ");
 				}
 				else {
-					sb.append(',');
+					sb.append(", ");
 				}
-				sb.append(" '");
+				sb.append('\'');
 				sb.append(libsIds[i]);
-				sb.append("'");
+				sb.append('\'');
 			}
 			else {
 				resolved[i] = entry.getPath();
