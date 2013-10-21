@@ -61,8 +61,7 @@ import de.walware.rj.data.RStore;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
-import de.walware.rj.server.ConsoleWriteErrCmdItem;
-import de.walware.rj.server.ConsoleWriteOutCmdItem;
+import de.walware.rj.server.ConsoleWriteCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
 import de.walware.rj.server.DataCmdItem.Operation;
@@ -124,8 +123,6 @@ public final class JRIServer extends RJ
 	private static final int KILO = 1024;
 	private static final int MEGA = 1048576;
 	private static final int GIGA = 1073741824;
-	
-	private static final int STDOUT_BUFFER_SIZE = 0x2000;
 	
 	private static final long REQUIRED_JRI_API = 0x010a;
 	
@@ -277,7 +274,7 @@ public final class JRIServer extends RJ
 	private final RConfig rConfig;
 	private long rMemSize;
 	
-	private final ReentrantLock mainExchangeLock = new ReentrantLock();
+	final ReentrantLock mainExchangeLock = new ReentrantLock();
 	private final Condition mainExchangeClient = this.mainExchangeLock.newCondition();
 	private final Condition mainExchangeR = this.mainExchangeLock.newCondition();
 	private final ReentrantLock mainInterruptLock = new ReentrantLock();
@@ -287,9 +284,9 @@ public final class JRIServer extends RJ
 	private int mainLoopClient0State;
 	private int mainLoopClientListen;
 	private int mainLoopServerStack;
-	private final char[] mainLoopStdOutBuffer = new char[STDOUT_BUFFER_SIZE];
-	private String mainLoopStdOutSingle;
-	private int mainLoopStdOutSize;
+	
+	private final JRIServerIOStreams ioStreams= new JRIServerIOStreams(this);
+	
 	private final MainCmdItem[] mainLoopS2CNextCommandsFirst = new MainCmdItem[2];
 	private final MainCmdItem[] mainLoopS2CNextCommandsLast = new MainCmdItem[2];
 	private final MainCmdS2CList[] mainLoopS2CLastCommands = new MainCmdS2CList[] { new MainCmdS2CList(), new MainCmdS2CList() };
@@ -521,6 +518,8 @@ public final class JRIServer extends RJ
 					LOGGER.log(Level.CONFIG, sb.toString());
 				}
 				
+//				this.ioStreams.init();
+				
 				this.mainLoopState = ENGINE_RUN_IN_R;
 				this.hotMode = true;
 				final Rengine re = new Rengine(args, this.rConfig, true, new InitCallbacks());
@@ -635,6 +634,8 @@ public final class JRIServer extends RJ
 					}
 				}
 			}
+			
+			this.ioStreams.init();
 			
 			this.graphics = new JRIServerGraphics(this, this.rEngine, this.rni);
 			
@@ -1075,7 +1076,7 @@ public final class JRIServer extends RJ
 						|| this.hotModeRequested)
 				&& ((slot > 0)
 						|| ( (this.mainLoopClient0State == CLIENT_OK_WAIT)
-							&& (this.mainLoopStdOutSize == 0)
+							&& (!this.ioStreams.domexHasOut())
 							&& (this.mainLoopBusyAtClient == this.mainLoopBusyAtServer) )
 				)) {
 			this.mainLoopClientListen++;
@@ -1097,10 +1098,7 @@ public final class JRIServer extends RJ
 		
 		// answer
 		if (slot > 0 || this.mainLoopClient0State == CLIENT_OK) {
-			if (this.mainLoopStdOutSize > 0) {
-				internalClearStdOutBuffer();
-				this.mainLoopStdOutSize = 0;
-			}
+			this.ioStreams.domexSendOut();
 			if (this.mainLoopState == ENGINE_STOPPED && this.mainLoopS2CNextCommandsFirst[slot] == null) {
 				return new RjsStatus(RjsStatus.INFO, S_STOPPED);
 			}
@@ -1127,10 +1125,7 @@ public final class JRIServer extends RJ
 //				System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
 				
 				if (item != null) {
-					if (this.mainLoopStdOutSize > 0) {
-						internalClearStdOutBuffer();
-						this.mainLoopStdOutSize = 0;
-					}
+					this.ioStreams.domexSendOut();
 					if (this.mainLoopS2CNextCommandsFirst[item.slot] == null) {
 						this.mainLoopS2CNextCommandsFirst[item.slot] = this.mainLoopS2CNextCommandsLast[item.slot] = item;
 					}
@@ -1261,7 +1256,7 @@ public final class JRIServer extends RJ
 			case MainCmdItem.T_DBG_ITEM:
 				item = internalEvalDbg((DbgCmdItem) item);
 				continue;
-			case SrvCmdItem.T_SRV_ITEM:
+			case MainCmdItem.T_SRV_ITEM:
 				item = internalExecSrv(item);
 				continue;
 				
@@ -1272,15 +1267,7 @@ public final class JRIServer extends RJ
 		}
 	}
 	
-	private void internalClearStdOutBuffer() {
-		final MainCmdItem item;
-		if (this.mainLoopStdOutSingle != null) {
-			item = new ConsoleWriteOutCmdItem(this.mainLoopStdOutSingle);
-			this.mainLoopStdOutSingle = null;
-		}
-		else {
-			item = new ConsoleWriteOutCmdItem(new String(this.mainLoopStdOutBuffer, 0, this.mainLoopStdOutSize));
-		}
+	void domlAppendCmd(final MainCmdItem item) {
 		if (this.mainLoopS2CNextCommandsFirst[0] == null) {
 			this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = item;
 		}
@@ -1773,50 +1760,36 @@ public final class JRIServer extends RJ
 	
 	@Override
 	public void rWriteConsole(final Rengine re, final String text, final int type) {
-		if (type == 0) {
-			this.mainExchangeLock.lock();
-			try {
-				// first
-				if (this.mainLoopStdOutSize == 0) {
-					this.mainLoopStdOutSingle = text;
-					this.mainLoopStdOutSize = text.length();
-				}
-				
-				// buffer full
-				else if (this.mainLoopStdOutSize + text.length() > STDOUT_BUFFER_SIZE) {
-					internalClearStdOutBuffer();
-					this.mainLoopStdOutSingle = text;
-					this.mainLoopStdOutSize = text.length();
-				}
-				
-				// add to buffer
-				else {
-					if (this.mainLoopStdOutSingle != null) {
-						this.mainLoopStdOutSingle.getChars(0, this.mainLoopStdOutSingle.length(),
-								this.mainLoopStdOutBuffer, 0 );
-						this.mainLoopStdOutSingle = null;
-					}
-					text.getChars(0, text.length(), this.mainLoopStdOutBuffer, this.mainLoopStdOutSize);
-					this.mainLoopStdOutSize += text.length();
-				}
-				
-				if (this.mainLoopClientListen > 0) {
-					this.mainExchangeClient.signalAll();
-				}
-				return;
+		final byte streamId = (type == 0) ? ConsoleWriteCmdItem.R_OUTPUT : ConsoleWriteCmdItem.R_ERROR;
+		
+		this.mainExchangeLock.lock();
+		try {
+			this.ioStreams.domexAppendOut(streamId, text);
+			
+			if (this.mainLoopClientListen > 0) {
+				this.mainExchangeClient.signalAll();
 			}
-			finally {
-				this.mainExchangeLock.unlock();
-			}
+			return;
 		}
-		else {
-			internalMainFromR(new ConsoleWriteErrCmdItem(text));
+		finally {
+			this.mainExchangeLock.unlock();
 		}
 	}
 	
 	@Override
 	public void rFlushConsole(final Rengine re) {
-		internalMainFromR(null);
+		this.mainExchangeLock.lock();
+		try {
+			this.ioStreams.domexFlushOut();
+			
+			if (this.mainLoopClientListen > 0) {
+				this.mainExchangeClient.signalAll();
+			}
+			return;
+		}
+		finally {
+			this.mainExchangeLock.unlock();
+		}
 	}
 	
 	@Override
@@ -2047,7 +2020,7 @@ public final class JRIServer extends RJ
 			this.mainLoopState = ENGINE_STOPPED;
 			
 			this.mainExchangeClient.signalAll();
-			while (this.mainLoopS2CNextCommandsFirst != null || this.mainLoopStdOutSize > 0) {
+			while (this.mainLoopS2CNextCommandsFirst != null || this.ioStreams.domexHasOut()) {
 				try {
 					this.mainExchangeR.awaitNanos(100000000L);
 				}

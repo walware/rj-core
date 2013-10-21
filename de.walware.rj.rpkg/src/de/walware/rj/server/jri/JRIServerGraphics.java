@@ -13,6 +13,7 @@ package de.walware.rj.server.jri;
 
 import org.rosuda.JRI.Rengine;
 
+import de.walware.rj.server.RJ;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.gr.Coord;
 import de.walware.rj.server.gr.RjsGraphic;
@@ -31,8 +32,8 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 	private final long p_convertDev2UserFun;
 	
 	
-	public JRIServerGraphics(final JRIServer server, final Rengine rEngine, final JRIServerRni rni) {
-		super(server);;
+	public JRIServerGraphics(final RJ server, final Rengine rEngine, final JRIServerRni rni) {
+		super(server);
 		this.rEngine = rEngine;
 		this.rni = rni;
 		

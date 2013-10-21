@@ -28,14 +28,10 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	public static final byte T_CONSOLE_READ_ITEM =          0x01;
 	
 	/**
-	 * {@link ConsoleWriteOutCmdItem}
+	 * {@link ConsoleWriteCmdItem}
 	 */
-	public static final byte T_CONSOLE_WRITE_OUT_ITEM =     0x02;
+	public static final byte T_CONSOLE_WRITE_ITEM =         0x02;
 	
-	/**
-	 * {@link ConsoleWriteErrCmdItem}
-	 */
-	public static final byte T_CONSOLE_WRITE_ERR_ITEM =     0x03;
 	
 	/**
 	 * {@link ConsoleMessageCmdItem}

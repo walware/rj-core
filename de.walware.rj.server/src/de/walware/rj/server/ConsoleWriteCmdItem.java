@@ -17,40 +17,50 @@ import de.walware.rj.data.RJIO;
 
 
 /**
- * Command for main loop console standard output.
+ * Command for main loop console output.
  */
-public final class ConsoleWriteOutCmdItem extends MainCmdItem {
+public final class ConsoleWriteCmdItem extends MainCmdItem {
 	
+	
+	public static final byte R_OUTPUT=                      1;
+	public static final byte R_ERROR=                       2;
+	public static final byte SYS_OUTPUT=                    5;
+	
+	
+	private final byte streamId;
 	
 	private final String text;
 	
 	
-	public ConsoleWriteOutCmdItem(final String text) {
+	public ConsoleWriteCmdItem(final byte streamId, final String text) {
 		assert (text != null);
-		this.text = text;
+		this.streamId= streamId;
+		this.text= text;
 	}
 	
 	/**
 	 * Constructor for deserialization
 	 */
-	public ConsoleWriteOutCmdItem(final RJIO in) throws IOException {
-		this.text = in.readString();
+	public ConsoleWriteCmdItem(final RJIO in) throws IOException {
+		this.streamId= in.readByte();
+		this.text= in.readString();
 	}
 	
 	@Override
 	public void writeExternal(final RJIO out) throws IOException {
+		out.writeByte(this.streamId);
 		out.writeString(this.text);
 	}
 	
 	
 	@Override
 	public byte getCmdType() {
-		return T_CONSOLE_WRITE_OUT_ITEM;
+		return T_CONSOLE_WRITE_ITEM;
 	}
 	
 	@Override
 	public byte getOp() {
-		return 0;
+		return this.streamId;
 	}
 	
 	
@@ -78,20 +88,19 @@ public final class ConsoleWriteOutCmdItem extends MainCmdItem {
 	
 	@Override
 	public boolean testEquals(final MainCmdItem other) {
-		if (!(other instanceof ConsoleWriteOutCmdItem)) {
+		if (!(other instanceof ConsoleWriteCmdItem)) {
 			return false;
 		}
-		final ConsoleWriteOutCmdItem otherItem = (ConsoleWriteOutCmdItem) other;
-		if (this.options != otherItem.options) {
-			return false;
-		}
-		return this.text.equals(otherItem.getDataText());
+		final ConsoleWriteCmdItem otherItem= (ConsoleWriteCmdItem) other;
+		return (this.options == otherItem.options
+				&& this.streamId == otherItem.streamId
+				&& this.text.equals(otherItem.getDataText()) );
 	}
 	
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder(128);
-		sb.append("ConsoleWriteOutCmdItem");
+		final StringBuilder sb= new StringBuilder(128);
+		sb.append("ConsoleWriteCmdItem (").append(this.streamId).append(")");
 		sb.append("\n\t").append("options= 0x").append(Integer.toHexString(this.options));
 		sb.append("\n<TEXT>\n");
 		sb.append(this.text);

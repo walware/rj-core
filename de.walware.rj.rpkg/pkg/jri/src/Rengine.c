@@ -6,6 +6,7 @@
 #include "rjava.h"
 #include <Rversion.h>
 #include <R_ext/Parse.h>
+#include <errno.h>
 
 #ifndef WIN32 /* this is for interrupt handing since GD uses R_interrupts_pending */
 #include <R_ext/GraphicsEngine.h>
@@ -52,7 +53,7 @@ extern int UserBreak;
 
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
-(JNIEnv *env, jclass this)
+(JNIEnv *env, jclass clazz)
 {
     return (jlong) JRI_API;
 }
@@ -946,3 +947,4 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGDResize(
 	GEplayDisplayList(gd);
 	return 0;
 }
+

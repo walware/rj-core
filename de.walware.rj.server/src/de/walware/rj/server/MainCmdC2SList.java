@@ -83,8 +83,8 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				this.first = new ConsoleReadCmdItem(io);
 				break;
-			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				this.first = new ConsoleWriteOutCmdItem(io);
+			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
+				this.first = new ConsoleWriteCmdItem(io);
 				break;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				this.first = new ConsoleMessageCmdItem(io);
@@ -121,8 +121,8 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_CONSOLE_READ_ITEM:
 				item = item.next = new ConsoleReadCmdItem(io);
 				continue;
-			case MainCmdItem.T_CONSOLE_WRITE_OUT_ITEM:
-				item = item.next = new ConsoleWriteOutCmdItem(io);
+			case MainCmdItem.T_CONSOLE_WRITE_ITEM:
+				item = item.next = new ConsoleWriteCmdItem(io);
 				continue;
 			case MainCmdItem.T_MESSAGE_ITEM:
 				item = item.next = new ConsoleMessageCmdItem(io);

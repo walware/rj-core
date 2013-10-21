@@ -29,12 +29,15 @@ rjava.o: rjava.c rjava.h
 	$(CC) -c -o $@ $< $(CFLAGS) $(CPICF) $(JAVAINC)
 
 Rengine.o: Rengine.c org_rosuda_JRI_Rengine.h globals.h Rcallbacks.h Rinit.h
-	$(CC) -c -o $@ Rengine.c $(CFLAGS) $(CPICF) $(JAVAINC) $(RINC)
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPICF) $(JAVAINC) $(RINC)
+
+Rengine-sysutils.o: Rengine-sysutils.c org_rosuda_JRI_Rengine.h
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPICF) $(JAVAINC)
 
 jri.o: jri.c
-	$(CC) -c -o $@ jri.c $(CFLAGS) $(CPICF) $(JAVAINC) $(RINC)
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPICF) $(JAVAINC) $(RINC)
 
-$(JNIPREFIX)jri$(JNISO): Rengine.o jri.o Rcallbacks.o Rinit.o globals.o rjava.o $(JRIDEPS)
+$(JNIPREFIX)jri$(JNISO): Rengine.o jri.o Rcallbacks.o Rinit.o globals.o rjava.o Rengine-sysutils.o $(JRIDEPS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(JNILD) $(RLD)
 
 win32/libjvm.dll.a:
