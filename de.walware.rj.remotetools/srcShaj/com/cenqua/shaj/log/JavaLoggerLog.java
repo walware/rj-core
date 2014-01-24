@@ -7,23 +7,27 @@ public class JavaLoggerLog implements Log {
 
     private final Logger logger;
 
-    public JavaLoggerLog(Logger logger) {
+    public JavaLoggerLog(final Logger logger) {
         this.logger = logger;
     }
 
-    public boolean isDebug() {
+    @Override
+	public boolean isDebug() {
         return logger.isLoggable(Level.FINE);
     }
 
-    public void error(String msg) {
+    @Override
+	public void error(final String msg) {
         logger.severe(msg);
     }
 
-    public void error(String msg, Throwable e) {
+    @Override
+	public void error(final String msg, final Throwable e) {
         logger.log(Level.SEVERE, msg, e);
     }
 
-    public void debug(String msg) {
+    @Override
+	public void debug(final String msg) {
         logger.fine(msg);
     }
 }

@@ -1,7 +1,9 @@
 /* Copyright 2005 Cenqua Pty Ltd. All Rights Reserved. See LICENSE.TXT in the distribution. */
+
 package com.cenqua.shaj.log;
 
 import java.util.logging.Logger;
+
 
 /**
  * Used by Shaj to log errors and debug information.
@@ -9,7 +11,7 @@ import java.util.logging.Logger;
  * <p>Setting the system propeerty "shaj.debug" will force Shaj to output error and debug logging
  * to System.err. Shaj is reasonably verbose in this mode, which is useful for debugging your programs.
  * </p>
- *
+ * 
  * <p>
  * By default, Shaj will attempt delegate logging to (in order):</p>
  * <ul>
@@ -18,7 +20,7 @@ import java.util.logging.Logger;
  *   <li> java.util.logging
  *   <li> System.err
  * </ul>
- *
+ * 
  * <p>You can override this by setting your own default logger</p>
  */
 public interface Log

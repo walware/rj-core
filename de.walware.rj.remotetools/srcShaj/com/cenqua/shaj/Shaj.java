@@ -1,7 +1,9 @@
 /* Copyright 2005 Cenqua Pty Ltd. All Rights Reserved. See LICENSE.TXT in the distribution. */
+
 package com.cenqua.shaj;
 
 import com.cenqua.shaj.log.Log;
+
 
 /**
  * A simple way of verifying username/passwords (authentication) and
@@ -15,27 +17,26 @@ import com.cenqua.shaj.log.Log;
  * platform-specific. These static methods simply call through to the corresponding methods
  * in the default {@link Authenticator}.
  * </p>
- *
+ * 
  * <p>
  * This class is multi-thread safe.
  * </p>
- *
+ * 
  * <p>
  * <b>Note</b>: Shaj needs to load the "shaj" native library (e.g. "libshaj.so" on Linux, "shaj.dll" on win32, etc.).
  * If this process fails for any reason, an error is logged and most of the methods will throw <code>IllegalStateException</code>.
  * The {@link #init()} method can be called to determine if Shaj was sucessfully initialized.
  * </p>
- *
+ * 
  * <p>
  * When necessary, Shaj performs logging using the {@link com.cenqua.shaj.log.Log} class.
  * </p>
- *
+ * 
  * <p>
  * <b>Platform specific notes:</b>
  * For further information, see the specific implementation classes
  * {@link Win32Authenticator} and {@link PAMAuthenticator}.
  * </p>
- *
  */
 public class Shaj {
 
@@ -46,7 +47,7 @@ public class Shaj {
         try {
             System.loadLibrary("shaj");
             sInitOkay = initlibrary(Log.Factory.getInstance());
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             Log.Factory.getInstance().error("could not load native library, host-auth disabled", e);
         }
     }
@@ -77,7 +78,7 @@ public class Shaj {
      *  or <code>password</code> are <code>null</code>.
      * @throws IllegalStateException if Shaj did not load correctly (if {@link Shaj#init()} returns false).
      */
-    public static boolean checkPassword(String domain, String username, String password) {
+    public static boolean checkPassword(final String domain, final String username, final String password) {
         return Authenticator.getDefault().checkPassword(domain, username, password, Log.Factory.getInstance());
     }
 
@@ -93,7 +94,7 @@ public class Shaj {
      *  or <code>group</code> are <code>null</code>.
      * @throws IllegalStateException if Shaj did not load correctly (if {@link Shaj#init()} returns false).
      */
-    public static boolean checkGroupMembership(String domain, String username, String group) {
+    public static boolean checkGroupMembership(final String domain, final String username, final String group) {
         return Authenticator.getDefault().checkGroupMembership(domain, username, group, Log.Factory.getInstance());
     }
 

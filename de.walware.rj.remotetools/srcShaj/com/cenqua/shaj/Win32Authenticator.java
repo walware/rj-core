@@ -1,7 +1,9 @@
 /* Copyright 2005 Cenqua Pty Ltd. All Rights Reserved. See LICENSE.TXT in the distribution. */
+
 package com.cenqua.shaj;
 
 import com.cenqua.shaj.log.Log;
+
 
 /**
  * Checks user passwords and group-memebership with a Windows domain or computer.
@@ -12,7 +14,7 @@ import com.cenqua.shaj.log.Log;
  * may work for {@link #checkWin32Password(String, String, String, com.cenqua.shaj.log.Log)}
  * but not for {@link #checkWin32GroupMembership(String, String, String, com.cenqua.shaj.log.Log)}.
  * </p>
- *
+ * 
  * <p>This class contains some static methods that can be used if you
  * wish to call to Windows directly.</p>
  */
@@ -34,18 +36,20 @@ public class Win32Authenticator extends Authenticator {
         return isSupported(Log.Factory.getInstance());
     }
 
-    private static boolean isSupported(Log log) {
+    private static boolean isSupported(final Log log) {
         if (!Shaj.sInitOkay) {
             return false;
         }
         return isSupportedImpl(log);
     }
 
-    public boolean checkPassword(String domain, String username, String password, Log log) {
+    @Override
+	public boolean checkPassword(final String domain, final String username, final String password, final Log log) {
         return checkWin32Password(domain, username, password, log);
     }
 
-    public boolean checkGroupMembership(String domain, String username, String group, Log log) {
+    @Override
+	public boolean checkGroupMembership(final String domain, final String username, final String group, final Log log) {
         return checkWin32GroupMembership(domain, username, group, log);
     }
 
@@ -64,7 +68,7 @@ public class Win32Authenticator extends Authenticator {
      *  or <code>password</code> are <code>null</code>.
      * @throws IllegalStateException if Shaj did not load correctly (if {@link Shaj#init()} returns false).
      */
-    public static boolean checkWin32Password(String domain, String username, String password, Log log) {
+    public static boolean checkWin32Password(final String domain, final String username, final String password, final Log log) {
         if (username == null) {
             throw new IllegalArgumentException("username cannot be null");
         }
@@ -93,7 +97,7 @@ public class Win32Authenticator extends Authenticator {
      *  or <code>password</code> are <code>null</code>.
      * @throws IllegalStateException if Shaj did not load correctly (if {@link Shaj#init()} returns false).
      */
-    public static boolean checkWin32GroupMembership(String domain, String username, String group, Log log) {
+    public static boolean checkWin32GroupMembership(final String domain, final String username, final String group, final Log log) {
         if (username == null) {
             throw new IllegalArgumentException("username cannot be null");
         }

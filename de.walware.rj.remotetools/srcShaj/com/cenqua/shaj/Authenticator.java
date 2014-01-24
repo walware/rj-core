@@ -1,11 +1,13 @@
 /* Copyright 2005 Cenqua Pty Ltd. All Rights Reserved. See LICENSE.TXT in the distribution. */
+
 package com.cenqua.shaj;
 
 import com.cenqua.shaj.log.Log;
 
+
 /**
  * Base-class for platform-specific authentication.
- *
+ * 
  * <p>This class is multi-thread safe.</p>
  */
 public abstract class Authenticator {
