@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.graphics;
 
@@ -193,6 +193,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 	}
 	
 	
+	@Override
 	public void init(final IWorkbench workbench) {
 		fSerifPref = new FontPref(RGraphics.PREF_FONTS_SERIF_FONTNAME_KEY);
 		fSansPref = new FontPref(RGraphics.PREF_FONTS_SANS_FONTNAME_KEY);
@@ -360,6 +361,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 		button.setText("Edit...");
 		button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		button.addSelectionListener(new SelectionListener() {
+			@Override
 			public void widgetSelected(final SelectionEvent e) {
 				final FontDialog dialog = new FontDialog(button.getShell(), SWT.NONE);
 				dialog.setFontList((pref.currentFont != null) ? pref.currentFont.getFontData() : null);
@@ -368,6 +370,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 					set(pref, result.getName());
 				}
 			}
+			@Override
 			public void widgetDefaultSelected(final SelectionEvent e) {
 			}
 		});
@@ -386,6 +389,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 		
 		final AggregateValidationStatus validationStatus = new AggregateValidationStatus(fDbc, AggregateValidationStatus.MAX_SEVERITY);
 		validationStatus.addValueChangeListener(new IValueChangeListener() {
+			@Override
 			public void handleValueChange(final ValueChangeEvent event) {
 				final IStatus currentStatus = (IStatus) event.diff.getNewValue();
 				updateStatus(currentStatus);
@@ -407,6 +411,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 						"The value for Vertical (x) DPI is invalid (10-10000)." )), null);
 		
 		fCustomHDpiVisibleValue.addValueChangeListener(new IValueChangeListener() {
+			@Override
 			public void handleValueChange(final ValueChangeEvent event) {
 				if (fCustomEnabled) {
 					fCustomHDpiUserValue = (Double) fCustomHDpiVisibleValue.getValue();
@@ -414,6 +419,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 			}
 		});
 		fCustomVDpiVisibleValue.addValueChangeListener(new IValueChangeListener() {
+			@Override
 			public void handleValueChange(final ValueChangeEvent event) {
 				if (fCustomEnabled) {
 					fCustomVDpiUserValue = (Double) fCustomVDpiVisibleValue.getValue();

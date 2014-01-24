@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.internal.graphics;
 
@@ -23,13 +23,13 @@ import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
-import de.walware.rj.server.client.RClientGraphic;
-import de.walware.rj.server.client.RClientGraphicActions;
-import de.walware.rj.server.client.RClientGraphicFactory;
-
 import de.walware.ecommons.FastList;
 import de.walware.ecommons.collections.ConstList;
 import de.walware.ecommons.ui.util.UIAccess;
+
+import de.walware.rj.server.client.RClientGraphic;
+import de.walware.rj.server.client.RClientGraphicActions;
+import de.walware.rj.server.client.RClientGraphicFactory;
 
 import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.IERGraphicsManager;
@@ -51,10 +51,12 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		IERGraphic fGraphic;
 		IERGraphicsManager.Listener fListener;
 		
+		@Override
 		public void run() {
 			fListener.graphicAdded(fGraphic);
 		}
 		
+		@Override
 		public void handleException(final Throwable exception) {
 //			RGraphicsPlugin.getDefault().getLog().log(new Status(IStatus.ERROR, RGraphicsPlugin.PLUGIN_ID,
 //					ICommonStatusConstants.INTERNAL_PLUGGED_IN, "An error occurred when notifying.", exception));  //$NON-NLS-1$
@@ -67,10 +69,12 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		IERGraphic fGraphic;
 		IERGraphicsManager.Listener fListener;
 		
+		@Override
 		public void run() {
 			fListener.graphicRemoved(fGraphic);
 		}
 		
+		@Override
 		public void handleException(final Throwable exception) {
 		}
 		
@@ -84,6 +88,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		int fBestPriority;
 		IERGraphicsManager.ListenerShowExtension fBestListener;
 		
+		@Override
 		public void run() {
 			if (fListener != null) {
 				final int priority = fListener.canShowGraphic(fGraphic);
@@ -97,6 +102,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 			}
 		}
 		
+		@Override
 		public void handleException(final Throwable exception) {
 //			RGraphicsPlugin.getDefault().getLog().log(new Status(IStatus.ERROR, RGraphicsPlugin.PLUGIN_ID,
 //					ICommonStatusConstants.INTERNAL_PLUGGED_IN, "An error occurred when notifying.", exception));  //$NON-NLS-1$
@@ -122,8 +128,10 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		fFontManager = new FontManager(fDefaultDisplay);
 		fColorManager = new ColorManager(fDefaultDisplay);
 		fDefaultDisplay.asyncExec(new Runnable() {
+			@Override
 			public void run() {
 				fDefaultDisplay.disposeExec(new Runnable() {
+					@Override
 					public void run() {
 						fFontManager.dispose();
 						fColorManager.dispose();
@@ -134,6 +142,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	}
 	
 	
+	@Override
 	public Map<String, ? extends Object> getInitServerProperties() {
 		final Map<String, Object> map = new HashMap<String, Object>();
 		final IPreferencesService preferences = Platform.getPreferencesService();
@@ -142,6 +151,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 				RGraphics.PREF_DISPLAY_QUALIFIER, RGraphics.PREF_DISPLAY_CUSTOM_DPI_KEY, null, null )));
 		if (dpi.get() == null) {
 			Display.getDefault().syncExec(new Runnable() {
+				@Override
 				public void run() {
 					final Point point = Display.getCurrent().getDPI();
 					dpi.set(new double[] { point.x, point.y });
@@ -155,6 +165,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		return map;
 	}
 	
+	@Override
 	public RClientGraphic newGraphic(final int devId, final double w, final double h,
 			final RClientGraphic.InitConfig config,
 			final boolean active, final RClientGraphicActions actions, final int options) {
@@ -163,6 +174,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 				options, this );
 		if ((options & MANAGED_OFF) == 0) {
 			fDefaultDisplay.syncExec(new Runnable() {
+				@Override
 				public void run() {
 					fGraphics.add(egraphic);
 					final Listener[] listeners = fListeners.toArray();
@@ -195,6 +207,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 		return egraphic;
 	}
 	
+	@Override
 	public void closeGraphic(final RClientGraphic graphic) {
 		final EclipseRGraphic egraphic = (EclipseRGraphic) graphic;
 		close(egraphic);
@@ -204,6 +217,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	void close(final EclipseRGraphic graphic) {
 		if (!fDefaultDisplay.isDisposed()) {
 			fDefaultDisplay.syncExec(new Runnable() {
+				@Override
 				public void run() {
 					fGraphics.remove(graphic);
 					final Listener[] listeners = fListeners.toArray();
@@ -236,14 +250,17 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	}
 	
 	
+	@Override
 	public List<? extends IERGraphic> getAllGraphics() {
 		return new ConstList<EclipseRGraphic>(fGraphics.toArray());
 	}
 	
+	@Override
 	public void addListener(final Listener listener) {
 		fListeners.add(listener);
 	}
 	
+	@Override
 	public void removeListener(final Listener listener) {
 		fListeners.remove(listener);
 	}

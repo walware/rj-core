@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.graphics;
 
@@ -83,6 +83,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 			setBaseEnabled(fGraphic != null);
 		}
 		
+		@Override
 		public Object execute(final ExecutionEvent event) throws ExecutionException {
 			if (fGraphic == null) {
 				return null;
@@ -112,6 +113,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 					&& fGraphic.getLocatorStopTypes().contains(fType) );
 		}
 		
+		@Override
 		public Object execute(final ExecutionEvent event) throws ExecutionException {
 			if (fGraphic == null) {
 				return null;
@@ -222,6 +224,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 		private double[] fCurrentTarget;
 		
 		
+		@Override
 		public void handleEvent(final Event event) {
 			switch (event.type) {
 			case SWT.MouseDown:
@@ -231,6 +234,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 							fGraphicComposite.convertWidget2GraphicY(event.y) };
 					fCurrentTarget = null;
 					event.display.timerExec(1000, new Runnable() {
+						@Override
 						public void run() {
 							if (fCurrentTarget == null && fCurrentGraphic == request
 									&& !fGraphicComposite.isDisposed()) {
@@ -245,6 +249,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 									final double[] source, final double[] target) {
 								if (fGraphic == graphic) {
 									fDisplay.asyncExec(new Runnable() {
+										@Override
 										public void run() {
 											if (fGraphic == graphic
 													&& source != null && target != null && fCurrentGraphic != null
@@ -346,6 +351,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 			public void setEnabled(final Object evaluationContext) {
 				setBaseEnabled(fGraphic != null && !fGraphic.isLocatorStarted());
 			}
+			@Override
 			public Object execute(final ExecutionEvent event) throws ExecutionException {
 				if (fGraphic == null || fGraphic.isLocatorStarted()) {
 					return null;
@@ -358,6 +364,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 							sb.append(Arrays.toString(user.get(i))).append("\n");
 						}
 						Display.getDefault().asyncExec(new Runnable() {
+							@Override
 							public void run() {
 								MessageDialog.openInformation(null, "Locator Result",
 										sb.toString());
@@ -407,22 +414,28 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 	}
 	
 	
+	@Override
 	public void activated() {
 	}
 	
+	@Override
 	public void deactivated() {
 	}
 	
+	@Override
 	public void drawingStarted() {
 	}
 	
+	@Override
 	public void drawingStopped() {
 	}
 	
+	@Override
 	public void locatorStarted() {
 		update();
 	}
 	
+	@Override
 	public void locatorStopped() {
 		update();
 	}

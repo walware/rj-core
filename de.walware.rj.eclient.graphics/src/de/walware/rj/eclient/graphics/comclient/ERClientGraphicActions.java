@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.graphics.comclient;
 
@@ -16,12 +16,12 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 
-import de.walware.rj.server.client.AbstractRJComClient;
-import de.walware.rj.server.client.AbstractRJComClientGraphicActions;
-
 import de.walware.ecommons.collections.IntArrayMap;
 import de.walware.ecommons.ts.ISystemRunnable;
 import de.walware.ecommons.ts.ITool;
+
+import de.walware.rj.server.client.AbstractRJComClient;
+import de.walware.rj.server.client.AbstractRJComClientGraphicActions;
 
 import de.walware.rj.eclient.AbstractRToolRunnable;
 import de.walware.rj.eclient.IRToolService;
@@ -120,14 +120,17 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 	}
 	
 	
+	@Override
 	public ITool getRHandle() {
 		return fTool;
 	}
 	
+	@Override
 	public String getRLabel() {
 		return fTool.getLabel(ITool.DEFAULT_LABEL);
 	}
 	
+	@Override
 	public IStatus resizeGraphic(final int devId, final Runnable beforeResize) {
 		synchronized (fResizeTasks) {
 			if (fResizeTasks.put(devId, Boolean.TRUE) == Boolean.TRUE) {
@@ -137,6 +140,7 @@ public class ERClientGraphicActions extends AbstractRJComClientGraphicActions
 		return fTool.getQueue().add(new ResizeRunnable(devId, beforeResize));
 	}
 	
+	@Override
 	public IStatus closeGraphic(final int devId) {
 		synchronized (fCloseTasks) {
 			if (fCloseTasks.put(devId, Boolean.TRUE) == Boolean.TRUE) {

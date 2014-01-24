@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.graphics;
 
@@ -137,6 +137,7 @@ public class RGraphicComposite extends Composite
 		private boolean started;
 		private Point startMouse;
 		
+		@Override
 		public void handleEvent(final Event event) {
 			switch (event.type) {
 			case SWT.MouseDown:
@@ -207,7 +208,7 @@ public class RGraphicComposite extends Composite
 			}
 		}
 		
-		private void pan(Point point) {
+		private void pan(final Point point) {
 			if (update(getHorizontalBar(), startMouse.x - point.x)) {
 				scrollH();
 			}
@@ -217,7 +218,7 @@ public class RGraphicComposite extends Composite
 			startMouse = point;
 		}
 		
-		private boolean update(ScrollBar bar, int step) {
+		private boolean update(final ScrollBar bar, final int step) {
 			if (bar != null && bar.isVisible()) {
 				int selection = bar.getSelection() + step;
 				if (selection < 0) {
@@ -266,6 +267,7 @@ public class RGraphicComposite extends Composite
 		final ScrollBar hBar = getHorizontalBar();
 		hBar.setVisible(false);
 		hBar.addListener(SWT.Selection, new Listener() {
+			@Override
 			public void handleEvent(final Event event) {
 				scrollH();
 			}
@@ -274,18 +276,21 @@ public class RGraphicComposite extends Composite
 		final ScrollBar vBar = getVerticalBar();
 		vBar.setVisible(false);
 		vBar.addListener(SWT.Selection, new Listener() {
+			@Override
 			public void handleEvent(final Event event) {
 				scrollV();
 			}
 		});
 		vBar.setIncrement(fPanIncrement);
 		addListener(SWT.Resize, new Listener() {
+			@Override
 			public void handleEvent(final Event event) {
 //				checkContentSize();
 			}
 		});
 		createCanvas();
 		final Listener updateListener = new Listener() {
+			@Override
 			public void handleEvent(final Event event) {
 				if (fChangedContent) {
 					updateGraphic();
@@ -310,6 +315,7 @@ public class RGraphicComposite extends Composite
 		setGraphic(graphic);
 		
 		addDisposeListener(new DisposeListener() {
+			@Override
 			public void widgetDisposed(final DisposeEvent e) {
 				disconnect();
 			}
@@ -391,15 +397,19 @@ public class RGraphicComposite extends Composite
 		return;
 	}
 	
+	@Override
 	public void activated() {
 	}
 	
+	@Override
 	public void deactivated() {
 	}
 	
+	@Override
 	public void drawingStarted() {
 	}
 	
+	@Override
 	public void instructionsChanged(final boolean reset, final List<IERGraphicInstruction> added) {
 		fChangedContent = true;
 		if (isVisible()) {
@@ -407,12 +417,15 @@ public class RGraphicComposite extends Composite
 		}
 	}
 	
+	@Override
 	public void drawingStopped() {
 	}
 	
+	@Override
 	public void locatorStarted() {
 		if (fLocatorListener == null) {
 			fLocatorListener = new MouseListener() {
+				@Override
 				public void mouseDown(final MouseEvent e) {
 					switch (e.button) { 
 					case 1:
@@ -426,8 +439,10 @@ public class RGraphicComposite extends Composite
 						break;
 					}
 				}
+				@Override
 				public void mouseUp(final MouseEvent e) {
 				}
+				@Override
 				public void mouseDoubleClick(final MouseEvent e) {
 				}
 			};
@@ -436,6 +451,7 @@ public class RGraphicComposite extends Composite
 		}
 	}
 	
+	@Override
 	public void locatorStopped() {
 		if (fLocatorListener != null) {
 			fCanvas.removeMouseListener(fLocatorListener);

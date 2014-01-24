@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.internal.graphics;
 
@@ -32,6 +32,12 @@ import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.statushandlers.StatusManager;
 
+import de.walware.ecommons.FastList;
+import de.walware.ecommons.IStatusChangeListener;
+import de.walware.ecommons.collections.ConstList;
+import de.walware.ecommons.ts.ITool;
+import de.walware.ecommons.ui.util.UIAccess;
+
 import de.walware.rj.graphic.RGraphicInitialization;
 import de.walware.rj.graphic.utils.CachedMapping;
 import de.walware.rj.graphic.utils.CharMapping;
@@ -40,12 +46,6 @@ import de.walware.rj.server.client.RClientGraphic;
 import de.walware.rj.server.client.RClientGraphicFactory;
 import de.walware.rj.services.RService;
 import de.walware.rj.services.RServiceControlExtension;
-
-import de.walware.ecommons.FastList;
-import de.walware.ecommons.IStatusChangeListener;
-import de.walware.ecommons.collections.ConstList;
-import de.walware.ecommons.ts.ITool;
-import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.eclient.graphics.DefaultGCRenderer;
 import de.walware.rj.eclient.graphics.IERGraphic;
@@ -136,6 +136,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			fSize = size;
 		}
 		
+		@Override
 		public void run() {
 			if (fDelay) {
 				fDelay = false;
@@ -169,6 +170,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private boolean fStateNotificationDirectScheduled;
 	private boolean fStateNotificationDelayedScheduled;
 	private final Runnable fStateNotificationRunnable = new Runnable() {
+		@Override
 		public void run() {
 			int type = 0;
 			Runnable runnable = null;
@@ -355,6 +357,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private boolean fLocatorNotificationDeferredScheduled;
 	private long fLocatorDeferredStamp;
 	private final Runnable fLocatorNotificationRunnable = new Runnable() {
+		@Override
 		public void run() {
 			int type = 0;
 			try {
@@ -447,6 +450,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	
+	@Override
 	public String getLabel() {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("Device ");
@@ -517,6 +521,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(new GraphicInitialization(w, h, fCanvasColor, fSWTColorManager.getColor(fCanvasColor)));
 	}
 	
+	@Override
 	public void reset(final double w, final double h, final InitConfig config) {
 		synchronized (fStateLock) {
 			internalReset();
@@ -556,10 +561,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public int getDevId() {
 		return fDevId;
 	}
 	
+	@Override
 	public void setActive(final boolean active) {
 		if (fIsActive == active) {
 			return;
@@ -576,10 +583,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public boolean isActive() {
 		return fIsActive;
 	}
 	
+	@Override
 	public void setMode(final int mode) {
 		synchronized (fStateLock) {
 			if (fMode == mode) {
@@ -637,6 +646,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public double[] computeSize() {
 		return fSize;
 	}
@@ -646,12 +656,14 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		System.out.println(fCurrentFontFamily.fName + " " + fCurrentFontStyle + " " + fCurrentFontSize);
 	}
 	
+	@Override
 	public double[] computeFontMetric(final int ch) {
 //		System.out.println("==\nTextMetrics: \"" + ((char) ch) + "\" (" + ch + ")"); printFont();
 		return fCurrentFontFamily.getCharMetrics(fCurrentFontStyle, fCurrentFontSize,
 				(fCurrentFontMapping != null) ? fCurrentFontMapping.encode(ch) : ch );
 	}
 	
+	@Override
 	public double[] computeStringWidth(final String txt) {
 //		System.out.println("==\nTextWidth: \"" + txt + "\""); printFont();
 		return computeStringWidthEnc((fCurrentFontMapping != null) ? fCurrentFontMapping.encode(txt) : txt);
@@ -669,23 +681,27 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	
+	@Override
 	public void addSetClip(final double x0, final double y0, final double x1, final double y1) {
 		final ClipSetting instr = new ClipSetting(x0, y0, x1, y1);
 		add(instr);
 	}
 	
+	@Override
 	public void addSetColor(final int color) {
 		final ColorSetting instr = new ColorSetting(color,
 				fSWTColorManager.getColor((color & 0xffffff)) );
 		add(instr);
 	}
 	
+	@Override
 	public void addSetFill(final int color) {
 		final FillSetting instr = new FillSetting(color,
 				fSWTColorManager.getColor((color & 0xffffff)) );
 		add(instr);
 	}
 	
+	@Override
 	public void addSetFont(String family, final int face, final double pointSize,
 			final double lineHeight) {
 //		System.out.println("==\nSetFont: \"" + family + "\" " + face + " " + pointSize + " (cex= " + cex + ")");
@@ -738,31 +754,37 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public void addSetLine(final int type, final double width) {
 		final LineSetting instr = new LineSetting(type, width);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawLine(final double x0, final double y0, final double x1, final double y1) {
 		final LineElement instr = new LineElement(x0, y0, x1, y1);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawRect(final double x0, final double y0, final double x1, final double y1) {
 		final RectElement instr = new RectElement(x0, y0, x1, y1);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawPolyline(final double[] x, final double[] y) {
 		final PolylineElement instr = new PolylineElement(x, y);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawPolygon(final double[] x, final double[] y) {
 		final PolygonElement instr = new PolygonElement(x, y);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawPath(final int[] n, final double[] x, final double[] y, final int winding) {
 		final Path path = new Path(fDisplay);
 		int k = 0, end = 0;
@@ -778,11 +800,13 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawCircle(final double x, final double y, final double r) {
 		final CircleElement instr = new CircleElement(x, y, r);
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawText(final String txt,
 			final double x, final double y, final double rDeg, final double hAdj) {
 //		System.out.println("==\nDrawText: " + x + ", " + y + " " + hAdj + " \"" + txt + "\""); printFont();
@@ -792,6 +816,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
+	@Override
 	public void addDrawRaster(final byte[] imgData, final boolean hasAlpha,
 			final int imgWidth, final int imgHeight,
 			final double x, final double y, final double w, final double h,
@@ -810,6 +835,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		add(instr);
 	}
 	
+	@Override
 	public byte[] capture(final int width, final int height) {
 		ImageData imageData;
 		{	Image image = null;
@@ -972,6 +998,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public double[] runRLocator(final RService r, final IProgressMonitor monitor) {
 		synchronized (fUserExchangeLock) {
 			if (fLocatorCallback != null && fLocatorCallback != R_LOCATOR_CALLBACK) {
@@ -983,6 +1010,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 			fLocatorLocationValue = null;
 		}
 		waitRUserExchange("locator", r, monitor, new Callable<Boolean>() {
+			@Override
 			public Boolean call() {
 				return Boolean.valueOf(answerLocator(null, null, true));
 			}
@@ -999,6 +1027,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return value;
 	}
 	
+	@Override
 	public IStatus startLocalLocator(final LocatorCallback callback) {
 		if (callback == null) {
 			throw new NullPointerException("callback"); //$NON-NLS-1$
@@ -1012,18 +1041,22 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return Status.OK_STATUS;
 	}
 	
+	@Override
 	public boolean isLocatorStarted() {
 		return (fLocatorCallback != null);
 	}
 	
+	@Override
 	public Collection<String> getLocatorStopTypes() {
 		return fLocatorStopTypes;
 	}
 	
+	@Override
 	public void returnLocator(final double x, final double y) {
 		answerLocator(null, new double[] { x, y }, false);
 	}
 	
+	@Override
 	public void stopLocator(final String type) {
 		answerLocator(type, null, false);
 	}
@@ -1128,6 +1161,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	}
 	
 	
+	@Override
 	public List<IERGraphicInstruction> getInstructions() {
 		synchronized (fInstructionsLock) {
 			return (fInstructionsSize > 0) ?
@@ -1136,6 +1170,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public ITool getRHandle() {
 		if (fActions != null) {
 			return fActions.getRHandle();
@@ -1143,10 +1178,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return null;
 	}
 	
+	@Override
 	public IStatus resize(final double w, final double h) {
 		if (fActions != null) {
 			fNextSize = new double[] { w, h };
 			return fActions.resizeGraphic(fDevId, new Runnable() {
+				@Override
 				public void run() {
 					fSize = fNextSize;
 				}
@@ -1155,6 +1192,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return null;
 	}
 	
+	@Override
 	public IStatus close() {
 		if (fIsRClosed) {
 			fIsLocalClosed = true;
@@ -1173,10 +1211,12 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		return null;
 	}
 	
+	@Override
 	public void addListener(final Listener listener) {
 		fGraphicListeners.add(listener);
 	}
 	
+	@Override
 	public void removeListener(final Listener listener) {
 		fGraphicListeners.remove(listener);
 	}
@@ -1198,14 +1238,17 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	public IStatus getMessage() {
 		return fMessage;
 	}
 	
+	@Override
 	public void addMessageListener(final IStatusChangeListener listener) {
 		fMessageListeners.add(listener);
 	}
 	
+	@Override
 	public void removeMessageListener(final IStatusChangeListener listener) {
 		fMessageListeners.remove(listener);
 	}
@@ -1221,6 +1264,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 		}
 	}
 	
+	@Override
 	@Deprecated
 	public IStatus copy(final String toDev, final String toDevFile, final String toDevArgs)
 			throws CoreException {
@@ -1229,18 +1273,21 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 				toDev, toDevFile, toDevArgs ));
 	}
 	
+	@Override
 	public void copy(final String toDev, final String toDevFile, final String toDevArgs,
 			final IProgressMonitor monitor) throws CoreException {
 		preAction();
 		fActions.copy(fDevId, toDev, toDevFile, toDevArgs, monitor);
 	}
 	
+	@Override
 	public double[] convertGraphic2User(final double[] xy,
 			final IProgressMonitor monitor) throws CoreException {
 		preAction();
 		return fActions.convertGraphic2User(fDevId, xy, monitor);
 	}
 	
+	@Override
 	public double[] convertUser2Graphic(final double[] xy,
 			final IProgressMonitor monitor) throws CoreException {
 		preAction();

@@ -1,13 +1,13 @@
-/*******************************************************************************
- * Copyright (c) 2009-2013 WalWare/RJ-Project (www.walware.de/goto/opensource).
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * 
- * Contributors:
- *     Stephan Wahlbrink - initial API and implementation
- *******************************************************************************/
+/*=============================================================================#
+ # Copyright (c) 2009-2014 Stephan Wahlbrink (WalWare.de) and others.
+ # All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the Eclipse Public License v1.0
+ # which accompanies this distribution, and is available at
+ # http://www.eclipse.org/legal/epl-v10.html
+ # 
+ # Contributors:
+ #     Stephan Wahlbrink - initial API and implementation
+ #=============================================================================*/
 
 package de.walware.rj.eclient.graphics;
 
@@ -18,10 +18,10 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
-import de.walware.rj.graphic.RGraphic;
-
 import de.walware.ecommons.IStatusChangeListener;
 import de.walware.ecommons.ts.ITool;
+
+import de.walware.rj.graphic.RGraphic;
 
 import de.walware.rj.eclient.graphics.utils.CopyToDevRunnable;
 
@@ -92,6 +92,7 @@ public interface IERGraphic extends RGraphic {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	int getDevId();
 	
 	/**
@@ -107,10 +108,12 @@ public interface IERGraphic extends RGraphic {
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	boolean isActive();
 	
 	ITool getRHandle();
 	
+	@Override
 	List<? extends IERGraphicInstruction> getInstructions();
 	
 	IStatus resize(double w, double h);
