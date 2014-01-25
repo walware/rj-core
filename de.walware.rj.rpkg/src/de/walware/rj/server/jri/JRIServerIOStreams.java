@@ -13,6 +13,7 @@ package de.walware.rj.server.jri;
 
 import static de.walware.rj.server.jri.JRIServerErrors.LOGGER;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -103,9 +104,18 @@ class JRIServerIOStreams {
 		@Override
 		public final void run() {
 			while (true) {
-				final int read= doRead();
+				int read;
+				try {
+					read= doRead();
+				}
+				catch (final IOException e) {
+					read= -1;
+					LOGGER.log(Level.SEVERE, "An error occurred when reading output stream.", e);
+				}
 				
-				this.bb.position(this.bb.position() + read);
+				if (read > 0) {
+					this.bb.position(this.bb.position() + read);
+				}
 				this.bb.flip();
 				
 				JRIServerIOStreams.this.server.mainExchangeLock.lock();
@@ -169,28 +179,29 @@ class JRIServerIOStreams {
 			}
 		}
 		
-		protected abstract int doRead();
+		protected abstract int doRead() throws IOException;
 		
 	}
 	
 	private class SysOutPipe extends AbstractOutPipe {
 		
-		public SysOutPipe(final Charset charset) throws RjInitFailedException {
+		public SysOutPipe(final Charset charset) throws Exception {
 			super(ConsoleWriteCmdItem.SYS_OUTPUT, charset);
 			
 			final ConsoleHandler[] consoleHandlers= getConsoleHandlers();
+			
 			System.out.flush();
 			System.err.flush();
 			
 			final int code= Rengine.rniInitSysPipes(this.bb, consoleHandlers);
 			if (code != 0) {
-				throw new RjInitFailedException("Initializing sys pipes failed: " + code + ".");
+				throw new RjInitFailedException("Error code of InitSysPipes: " + code); //$NON-NLS-1$
 			}
 		}
 		
 		
 		@Override
-		protected int doRead() {
+		protected int doRead() throws IOException {
 			return Rengine.rniReadSysOut(this.bb.position());
 		}
 		
@@ -220,34 +231,34 @@ class JRIServerIOStreams {
 	void init() {
 		// Sys pipes
 		if (!Boolean.parseBoolean(System.getProperty("de.walware.rj.sysout.disable"))) { //$NON-NLS-1$ 
-			Charset charset= null;
-			{	final String enc= System.getProperty("de.walware.rj.sysout.encoding"); //$NON-NLS-1$
-				if (enc != null) {
-					try {
-						charset= Charset.forName(enc);
-					}
-					catch (final Exception e) {
-						LOGGER.log(Level.WARNING, "Failed to setup specified encoding for system output.", e);
-					}
-				}
-			}
-			{	final String enc= Rengine.rniGetSysOutEnc();
-				if (enc != null) {
-					try {
-						charset= Charset.forName(enc);
-					}
-					catch (final Exception e) {}
-				}
-			}
-			if (charset == null) {
-				charset= Charset.defaultCharset();
-			}
-			
 			try {
+				Charset charset= null;
+				{	final String enc= System.getProperty("de.walware.rj.sysout.encoding"); //$NON-NLS-1$
+					if (enc != null) {
+						try {
+							charset= Charset.forName(enc);
+						}
+						catch (final Exception e) {
+							LOGGER.log(Level.WARNING, "Failed to setup specified encoding for system output.", e);
+						}
+					}
+				}
+				{	final String enc= Rengine.rniGetSysOutEnc();
+					if (enc != null) {
+						try {
+							charset= Charset.forName(enc);
+						}
+						catch (final Exception e) {}
+					}
+				}
+				if (charset == null) {
+					charset= Charset.defaultCharset();
+				}
+				
 				final AbstractOutPipe abstractOutPipe= new SysOutPipe(charset);
 				abstractOutPipe.start();
 			}
-			catch (final RjInitFailedException e) {
+			catch (final Exception e) {
 				LOGGER.log(Level.WARNING, "Failed to setup redirect of system pipes.", e);
 			}
 		}

@@ -89,7 +89,7 @@ JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetSysOutEnc(
 #endif
 }
 
-static jint closeSysOut(jint code) {
+static void closeSysOut() {
 	STREAM_HANDLE old_rdHandle= sysOut_rdHandle;
 	STREAM_HANDLE old_wrHandle= sysOut_wrHandle;
 	
@@ -109,113 +109,106 @@ static jint closeSysOut(jint code) {
 	if (old_wrHandle != INVALID_HANDLE_VALUE) {
 		closeHandle(old_wrHandle);
 	}
-	
-	return code;
 }
 
 #ifndef Win32
 static jint resetJOutput(JNIEnv *env, jarray consoleHandlers) {
-	if (bakOut_wrHandle == INVALID_HANDLE_VALUE || bakErr_wrHandle == INVALID_HANDLE_VALUE) {
-		return 171001;
-	}
-	
 	jclass jc;
 	jmethodID jm;
 	jobject joOut, joErr;
 	
 	jc= (*env)->FindClass(env, "java/io/FileDescriptor");
 	if (jc == NULL) {
-		return 181001;
+		return -1;
 	}
 	jm= (*env)->GetMethodID(env, jc, "<init>", "(I)V");
 	if (jm == NULL) {
-		return 181003;
+		return -1;
 	}
 	joOut= (*env)->NewObject(env, jc, jm, (jint) bakOut_wrHandle);
 	if (joOut == NULL) {
-		return 181005;
+		return -1;
 	}
 	joErr= (*env)->NewObject(env, jc, jm, (jint) bakErr_wrHandle);
 	if (joOut == NULL) {
-		return 181006;
+		return -1;
 	}
 	
 	jc= (*env)->FindClass(env, "java/io/FileOutputStream");
 	if (jc == NULL) {
-		return 182001;
+		return -1;
 	}
 	jm= (*env)->GetMethodID(env, jc, "<init>", "(Ljava/io/FileDescriptor;)V");
 	if (jm == NULL) {
-		return 182003;
+		return -1;
 	}
 	joOut= (*env)->NewObject(env, jc, jm, joOut);
 	if (joOut == NULL) {
-		return 182005;
+		return -1;
 	}
 	joErr= (*env)->NewObject(env, jc, jm, joErr);
 	if (joOut == NULL) {
-		return 182006;
+		return -1;
 	}
 	
 	jc= (*env)->FindClass(env, "java/io/PrintStream");
 	if (jc == NULL) {
-		return 183001;
+		return -1;
 	}
 	jm= (*env)->GetMethodID(env, jc, "<init>", "(Ljava/io/OutputStream;Z)V");
 	if (jm == NULL) {
-		return 183003;
+		return -1;
 	}
 	joOut= (*env)->NewObject(env, jc, jm, joOut, JNI_TRUE);
 	if (joOut == NULL) {
-		return 183005;
+		return -1;
 	}
 	joErr= (*env)->NewObject(env, jc, jm, joErr, JNI_TRUE);
 	if (joOut == NULL) {
-		return 183006;
+		return -1;
 	}
 	
 	jc= (*env)->FindClass(env, "java/lang/System");
 	if (jc == NULL) {
-		return 185001;
+		return -1;
 	}
 	jm= (*env)->GetStaticMethodID(env, jc, "setOut", "(Ljava/io/PrintStream;)V");
 	if (jm == NULL) {
-		return 185003;
+		return -1;
 	}
 	(*env)->CallStaticVoidMethod(env, jc, jm, joOut);
 	if ((*env)->ExceptionCheck(env)) {
-		(*env)->ExceptionClear(env);
-		return 185013;
+		return -1;
 	}
 	jm= (*env)->GetStaticMethodID(env, jc, "setErr", "(Ljava/io/PrintStream;)V");
 	if (jm == NULL) {
-		return 185004;
+		return -1;
 	}
 	(*env)->CallStaticVoidMethod(env, jc, jm, joErr);
 	if ((*env)->ExceptionCheck(env)) {
-		(*env)->ExceptionClear(env);
-		return 185014;
+		return -1;
 	}
 	
 	jc= (*env)->FindClass(env, "java/util/logging/StreamHandler");
 	if (jc == NULL) {
-		return 187001;
+		return -1;
 	}
 	jm= (*env)->GetMethodID(env, jc, "setOutputStream", "(Ljava/io/OutputStream;)V");
 	if (jm == NULL) {
-		return 187003;
+		return -1;
 	}
 	jint n= (*env)->GetArrayLength(env, consoleHandlers);
 	for (jint i= 0; i < n; i++) {
 		jobject handler = (*env)->GetObjectArrayElement(env, consoleHandlers, i);
 		if ((*env)->ExceptionCheck(env)) {
-			return 187009;
+			return -1;
 		}
 		(*env)->CallVoidMethod(env, handler, jm, joErr);
 		if ((*env)->ExceptionCheck(env)) {
-			return 187013;
+			return -1;
 		}
 	}
+	return 0;
 }
 #endif
 
@@ -229,6 +222,10 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniInitSysPipes(
 	bakOut_wrHandle= bakStdHandle(STD_OUT_ID);
 	bakErr_wrHandle= bakStdHandle(STD_ERR_ID);
 	
+	if (bakOut_wrHandle == INVALID_HANDLE_VALUE || bakErr_wrHandle == INVALID_HANDLE_VALUE) {
+		return 171001;
+	}
+	
 #ifdef Win32
 	SECURITY_ATTRIBUTES saAttr; 
 	saAttr.nLength= sizeof(SECURITY_ATTRIBUTES); 
@@ -241,17 +238,19 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniInitSysPipes(
 		return 201000;
 	}
 	if (!SetHandleInformation(sysOut_rdHandle, HANDLE_FLAG_INHERIT, 0)) {
-		return closeSysOut(203000);
+		closeSysOut();
+		return 203000;
 	}
 	if (!SetHandleInformation(sysOut_wrHandle, HANDLE_FLAG_INHERIT | HANDLE_FLAG_PROTECT_FROM_CLOSE,
 			HANDLE_FLAG_INHERIT | HANDLE_FLAG_PROTECT_FROM_CLOSE )) {
-		return closeSysOut(204000);
+		closeSysOut();
+		return 204000;
 	}
 	
 	SetStdHandle(STD_INPUT_HANDLE, INVALID_HANDLE_VALUE);
 #else
-	if (code= resetJOutput(env, consoleHandlers)) {
-		return code;
+	if (resetJOutput(env, consoleHandlers)) {
+		return 181000;
 	}
 	{	STREAM_HANDLE sysOut_Handles[2];
 		if (pipe(sysOut_Handles)) {
@@ -264,15 +263,18 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniInitSysPipes(
 #endif
 	
 	if ((code= setStdHandle(STD_OUT_ID, sysOut_wrHandle))) {
-		return closeSysOut(211000);
+		closeSysOut();
+		return 211000;
 	}
 	if ((code= setStdHandle(STD_ERR_ID, sysOut_wrHandle))) {
-		return closeSysOut(212000);
+		closeSysOut();
+		return 212000;
 	}
 	
 	sysOut_Buffer= (*env)->GetDirectBufferAddress(env, buffer);
 	if (sysOut_Buffer == NULL) {
-		return closeSysOut(131);
+		closeSysOut();
+		return 131;
 	}
 	sysOut_BufferSize= (*env)->GetDirectBufferCapacity(env, buffer);
 	

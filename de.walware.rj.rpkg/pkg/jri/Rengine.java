@@ -1,5 +1,6 @@
 package org.rosuda.JRI;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.logging.ConsoleHandler;
 
@@ -33,10 +34,10 @@ public class Rengine extends Thread {
 	}
 	
 	
-	public static native String rniGetSysOutEnc();
-	public static native int rniInitSysPipes(ByteBuffer buffer, ConsoleHandler[] consoleHandlers);
-	public static native int rniReadSysOut(int pos);
-	public static native int rniFlushSysOut();
+	public static native String rniGetSysOutEnc() throws Exception;
+	public static native int rniInitSysPipes(ByteBuffer buffer, ConsoleHandler[] consoleHandlers) throws Exception;
+	public static native int rniReadSysOut(int pos) throws IOException;
+	public static native int rniFlushSysOut() throws IOException;
 	
 	
 	static Thread mainRThread = null;
