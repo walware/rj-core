@@ -13,7 +13,7 @@ package de.walware.rj.eclient.graphics;
 
 import java.util.Collection;
 
-import de.walware.ecommons.collections.ConstList;
+import de.walware.ecommons.collections.ConstArrayList;
 
 
 /**
@@ -44,7 +44,7 @@ import de.walware.ecommons.collections.ConstList;
 public abstract class LocatorCallback {
 	
 	
-	protected static final Collection<String> DEFAULT_STOP_TYPES = new ConstList<String>(IERGraphic.LOCATOR_DONE);
+	protected static final Collection<String> DEFAULT_STOP_TYPES = new ConstArrayList<String>(IERGraphic.LOCATOR_DONE);
 	
 	/**
 	 * Return code for {@link #located(double, double)} indicating to stop directly the locator

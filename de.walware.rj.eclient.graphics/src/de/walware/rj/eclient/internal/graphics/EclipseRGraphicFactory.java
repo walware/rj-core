@@ -24,7 +24,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
 import de.walware.ecommons.FastList;
-import de.walware.ecommons.collections.ConstList;
+import de.walware.ecommons.collections.ConstArrayList;
 import de.walware.ecommons.ui.util.UIAccess;
 
 import de.walware.rj.server.client.RClientGraphic;
@@ -252,7 +252,7 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	
 	@Override
 	public List<? extends IERGraphic> getAllGraphics() {
-		return new ConstList<EclipseRGraphic>(fGraphics.toArray());
+		return new ConstArrayList<EclipseRGraphic>(fGraphics.toArray());
 	}
 	
 	@Override

@@ -34,7 +34,8 @@ import org.eclipse.ui.statushandlers.StatusManager;
 
 import de.walware.ecommons.FastList;
 import de.walware.ecommons.IStatusChangeListener;
-import de.walware.ecommons.collections.ConstList;
+import de.walware.ecommons.collections.CollectionUtils;
+import de.walware.ecommons.collections.ConstArrayList;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.util.UIAccess;
 
@@ -212,7 +213,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 									fInstructions = fInstructionsUpdate;
 									fInstructionsSize = fInstructionsUpdateStart + fInstructionsUpdateSize;
 								}
-								update = new ConstList<IERGraphicInstruction>(fInstructionsUpdate)
+								update = new ConstArrayList<IERGraphicInstruction>(fInstructionsUpdate)
 										.subList(fInstructionsUpdateStart, fInstructionsUpdateStart + fInstructionsUpdateSize);
 //								System.out.println("InstrUpdate: \treset= " + reset + " \tcount= " + update.size() + " \ttdiff= " + ((stamp - fInstructionsNotifiedStamp) / MILLI_NANOS));
 								fInstructionsUpdateStart = fInstructionsSize;
@@ -641,7 +642,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private List<IERGraphicInstruction> getCurrentInstructions() {
 		synchronized (fStateLock) {
 			flushNewInstructions();
-			return new ConstList<IERGraphicInstruction>(fInstructionsUpdate).subList(0,
+			return new ConstArrayList<IERGraphicInstruction>(fInstructionsUpdate).subList(0,
 					fInstructionsSize + fInstructionsUpdateSize );
 		}
 	}
@@ -1165,8 +1166,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	public List<IERGraphicInstruction> getInstructions() {
 		synchronized (fInstructionsLock) {
 			return (fInstructionsSize > 0) ?
-					new ConstList<IERGraphicInstruction>(fInstructions).subList(0, fInstructionsSize) :
-					new ConstList<IERGraphicInstruction>();
+					new ConstArrayList<IERGraphicInstruction>(fInstructions).subList(0, fInstructionsSize) :
+					CollectionUtils.<IERGraphicInstruction>emptyConstList();
 		}
 	}
 	

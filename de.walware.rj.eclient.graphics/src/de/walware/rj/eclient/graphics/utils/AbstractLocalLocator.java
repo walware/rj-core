@@ -18,7 +18,7 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import de.walware.ecommons.collections.ConstList;
+import de.walware.ecommons.collections.ConstArrayList;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ts.IToolRunnable;
 import de.walware.ecommons.ts.IToolService;
@@ -35,7 +35,7 @@ import de.walware.rj.eclient.graphics.LocatorCallback;
  */
 public abstract class AbstractLocalLocator extends LocatorCallback implements IToolRunnable {
 	
-	protected static final Collection<String> OK_CANCEL_STOP_TYPES = new ConstList<String>(
+	protected static final Collection<String> OK_CANCEL_STOP_TYPES = new ConstArrayList<String>(
 			IERGraphic.LOCATOR_DONE, IERGraphic.LOCATOR_CANCEL);
 	
 	
