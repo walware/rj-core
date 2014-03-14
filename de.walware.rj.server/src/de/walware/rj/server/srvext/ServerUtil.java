@@ -223,11 +223,11 @@ public class ServerUtil {
 							sb = new StringBuilder("Missing RJ library ");
 						}
 						else {
-							sb.append(',');
+							sb.append(", ");
 						}
-						sb.append(" '");
+						sb.append('\'');
 						sb.append(libs[i]);
-						sb.append("'");
+						sb.append('\'');
 					}
 					else {
 						resolved[i] = check(entry);
