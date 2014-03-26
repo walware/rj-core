@@ -24,11 +24,11 @@ public class DbgFilterState implements RJIOExternalizable {
 	
 	
 	public DbgFilterState(final boolean stepFilterEnabled) {
-		this.stepFilterState = (stepFilterEnabled) ? 0x1 : 0x0;
+		this.stepFilterState= (stepFilterEnabled) ? 0x1 : 0x0;
 	}
 	
 	public DbgFilterState(final RJIO io) throws IOException {
-		this.stepFilterState = io.readInt();
+		this.stepFilterState= io.readInt();
 	}
 	
 	@Override

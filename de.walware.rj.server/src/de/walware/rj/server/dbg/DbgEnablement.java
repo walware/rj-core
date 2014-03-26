@@ -20,18 +20,18 @@ import de.walware.rj.data.RJIOExternalizable;
 public class DbgEnablement implements RJIOExternalizable {
 	
 	
-	private static final int ENABLE_BREAKPOINTS =           0x00000001;
+	private static final int ENABLE_BREAKPOINTS=           0x00000001;
 	
 	
 	private final int properties;
 	
 	
 	public DbgEnablement(final boolean breakpointsEnabled) {
-		this.properties = (breakpointsEnabled) ? ENABLE_BREAKPOINTS : 0;
+		this.properties= (breakpointsEnabled) ? ENABLE_BREAKPOINTS : 0;
 	}
 	
 	public DbgEnablement(final RJIO io) throws IOException {
-		this.properties = io.readInt();
+		this.properties= io.readInt();
 	}
 	
 	@Override

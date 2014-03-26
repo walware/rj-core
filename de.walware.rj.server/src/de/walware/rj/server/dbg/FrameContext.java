@@ -20,10 +20,10 @@ import de.walware.rj.data.RJIOExternalizable;
 public class FrameContext implements RJIOExternalizable {
 	
 	
-	public static final int SOURCETYPE_1_LINES = 1;
-	public static final int SOURCETYPE_1_FILE = 2;
-	public static final int SOURCETYPE_2_LINES = 3;
-	public static final int SOURCETYPE_3_DEPARSE = 4;
+	public static final int SOURCETYPE_1_LINES= 1;
+	public static final int SOURCETYPE_1_FILE= 2;
+	public static final int SOURCETYPE_2_LINES= 3;
+	public static final int SOURCETYPE_3_DEPARSE= 4;
 	
 	
 	private final int position;
@@ -47,39 +47,39 @@ public class FrameContext implements RJIOExternalizable {
 			final String fileName, final long fileTimestamp, final String fileEncoding,
 			final String filePath, final int sourceType, final String sourceCode, final int[] sourceSrcref,
 			final int[] firstSrcref, final int[] lastSrcref, final int[] exprSrcref) {
-		this.position = position;
-		this.call = call;
+		this.position= position;
+		this.call= call;
 		
-		this.fileName = fileName;
-		this.fileTimestamp = fileTimestamp;
-		this.fileEncoding = fileEncoding;
-		this.filePath = filePath;
+		this.fileName= fileName;
+		this.fileTimestamp= fileTimestamp;
+		this.fileEncoding= fileEncoding;
+		this.filePath= filePath;
 		
-		this.sourceType = sourceType;
-		this.sourceCode = sourceCode;
-		this.sourceSrcref = sourceSrcref;
+		this.sourceType= sourceType;
+		this.sourceCode= sourceCode;
+		this.sourceSrcref= sourceSrcref;
 		
-		this.firstSrcref = firstSrcref;
-		this.lastSrcref = lastSrcref;
-		this.exprSrcref = exprSrcref;
+		this.firstSrcref= firstSrcref;
+		this.lastSrcref= lastSrcref;
+		this.exprSrcref= exprSrcref;
 	}
 	
 	public FrameContext(final RJIO io) throws IOException {
-		this.position = io.readInt();
-		this.call = io.readString();
+		this.position= io.readInt();
+		this.call= io.readString();
 		
-		this.fileName = io.readString();
-		this.fileTimestamp = io.readLong();
-		this.fileEncoding = io.readString();
-		this.filePath = io.readString();
+		this.fileName= io.readString();
+		this.fileTimestamp= io.readLong();
+		this.fileEncoding= io.readString();
+		this.filePath= io.readString();
 		
-		this.sourceType = io.readInt();
-		this.sourceCode = io.readString();
-		this.sourceSrcref = io.readIntArray();
+		this.sourceType= io.readInt();
+		this.sourceCode= io.readString();
+		this.sourceSrcref= io.readIntArray();
 		
-		this.firstSrcref = io.readIntArray();
-		this.lastSrcref = io.readIntArray();
-		this.exprSrcref = io.readIntArray();
+		this.firstSrcref= io.readIntArray();
+		this.lastSrcref= io.readIntArray();
+		this.exprSrcref= io.readIntArray();
 	}
 	
 	@Override

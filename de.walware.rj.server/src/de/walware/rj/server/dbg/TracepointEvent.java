@@ -20,7 +20,7 @@ import de.walware.rj.data.RJIOExternalizable;
 public class TracepointEvent implements Tracepoint, RJIOExternalizable {
 	
 	
-	public static final byte KIND_ABOUT_TO_HIT =            0x01;
+	public static final byte KIND_ABOUT_TO_HIT=            0x01;
 	
 	
 	private final byte kind;
@@ -37,23 +37,23 @@ public class TracepointEvent implements Tracepoint, RJIOExternalizable {
 	
 	public TracepointEvent(final byte kind, final int type, final String filePath, final long id,
 			final String label, final int flags, final String message) {
-		this.kind = kind;
-		this.type = type;
-		this.filePath = filePath;
-		this.id = id;
-		this.label = label;
-		this.flags = flags;
-		this.message = message;
+		this.kind= kind;
+		this.type= type;
+		this.filePath= filePath;
+		this.id= id;
+		this.label= label;
+		this.flags= flags;
+		this.message= message;
 	}
 	
 	public TracepointEvent(final RJIO io) throws IOException {
-		this.kind = io.readByte();
-		this.type = io.readInt();
-		this.filePath = io.readString();
-		this.id = io.readLong();
-		this.label = io.readString();
-		this.flags = io.readInt();
-		this.message = io.readString();
+		this.kind= io.readByte();
+		this.type= io.readInt();
+		this.filePath= io.readString();
+		this.id= io.readLong();
+		this.label= io.readString();
+		this.flags= io.readInt();
+		this.message= io.readString();
 	}
 	
 	@Override

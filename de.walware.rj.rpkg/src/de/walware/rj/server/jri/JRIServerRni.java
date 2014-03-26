@@ -18,6 +18,7 @@ import static de.walware.rj.server.jri.JRIServerErrors.CODE_DATA_EVAL_DATA;
 import static de.walware.rj.server.jri.JRIServerErrors.LOGGER;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.logging.Level;
 
@@ -68,7 +69,7 @@ final class JRIServerRni {
 	
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
-	private static final String[] DATA_NAME_ARRAY = new String[] { ".Data" };
+	private static final String[] DATA_NAME_ARRAY = new String[] { ".Data" }; //$NON-NLS-1$
 	
 	
 	private final Rengine rEngine;
@@ -148,7 +149,6 @@ final class JRIServerRni {
 	private final long deparseLineXCallP;
 	private final long deparseLinesXCallP;
 	private final long getEnvNameFunP;
-	private final long getTopFrameCallP;
 	
 	public final long p_evalTryCatch_errorExpr;
 	public final long p_evalTemp_classExpr;
@@ -185,53 +185,53 @@ final class JRIServerRni {
 			this.p_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
 			this.p_GlobalEnv = this.rEngine.rniSpecialObject(Rengine.SO_GlobalEnv);
 			this.p_EmptyEnv = this.rEngine.rniSpecialObject(Rengine.SO_EmptyEnv);
-			{	final long p = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"),
+			{	final long p = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"), //$NON-NLS-1$
 						this.p_BaseEnv );
 				this.p_AutoloadEnv = (p != 0 && this.rEngine.rniExpType(p) == REXP.ENVSXP) ? p : 0;
 			}
 			
-			this.p_AssignSymbol = this.rEngine.rniInstallSymbol("<-");
-			this.p_BlockSymbol = this.rEngine.rniInstallSymbol("{");
-			this.p_DotsSymbol = this.rEngine.rniInstallSymbol("...");
-			this.p_DotAllMTable = this.rEngine.rniInstallSymbol(".AllMTable");
-			this.p_atSymbol = this.rEngine.rniInstallSymbol("at");
-			this.p_ClassSymbol = this.rEngine.rniInstallSymbol("Class");
-			this.p_classSymbol = this.rEngine.rniInstallSymbol("class");
-			this.p_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames");
-			this.p_editSymbol = this.rEngine.rniInstallSymbol("edit");
-			this.p_envSymbol = this.rEngine.rniInstallSymbol("env");
-			this.p_errorSymbol = this.rEngine.rniInstallSymbol("error");
-			this.p_exprSymbol = this.rEngine.rniInstallSymbol("expr");
-			this.p_fdefSymbol = this.rEngine.rniInstallSymbol("fdef");
-			this.p_filenameSymbol = this.rEngine.rniInstallSymbol("filename");
-			this.p_flagsSymbol = this.rEngine.rniInstallSymbol("flags");
-			this.p_functionSymbol = this.rEngine.rniInstallSymbol("function");
-			this.p_fromSymbol = this.rEngine.rniInstallSymbol("from");
-			this.p_idSymbol = this.rEngine.rniInstallSymbol("id");
-			this.p_isGenericSymbol = this.rEngine.rniInstallSymbol("isGeneric");
-			this.p_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary");
-			this.p_levelsSymbol = this.rEngine.rniInstallSymbol("levels");
-			this.p_linesSymbol = this.rEngine.rniInstallSymbol("lines");
-			this.p_linesSrcrefSymbol = this.rEngine.rniInstallSymbol("linesSrcref");
-			this.p_nameSymbol = this.rEngine.rniInstallSymbol("name");
-			this.p_namesSymbol = this.rEngine.rniInstallSymbol("names");
-			this.p_newSymbol = this.rEngine.rniInstallSymbol("new");
-			this.p_onExitSymbol = this.rEngine.rniInstallSymbol("on.exit");
-			this.p_originalSymbol = this.rEngine.rniInstallSymbol("original");
-			this.p_realSymbol = this.rEngine.rniInstallSymbol("real");
-			this.p_rowNamesSymbol = this.rEngine.rniInstallSymbol("row.names");
-			this.p_signatureSymbol = this.rEngine.rniInstallSymbol("signature");
-			this.p_srcfileSymbol = this.rEngine.rniInstallSymbol("srcfile");
-			this.p_srcrefSymbol = this.rEngine.rniInstallSymbol("srcref");
-			this.p_timestampSymbol = this.rEngine.rniInstallSymbol("timestamp");
-			this.p_traceSymbol = this.rEngine.rniInstallSymbol("trace");
-			this.p_untraceSymbol = this.rEngine.rniInstallSymbol("untrace");
-			this.p_valueSymbol = this.rEngine.rniInstallSymbol("value");
-			this.p_whatSymbol = this.rEngine.rniInstallSymbol("what");
-			this.p_whereSymbol = this.rEngine.rniInstallSymbol("where");
-			this.p_wdSymbol = this.rEngine.rniInstallSymbol("wd");
-			this.p_xSymbol = this.rEngine.rniInstallSymbol("x");
-			this.p_zSymbol = this.rEngine.rniInstallSymbol("z");
+			this.p_AssignSymbol = this.rEngine.rniInstallSymbol("<-"); //$NON-NLS-1$
+			this.p_BlockSymbol = this.rEngine.rniInstallSymbol("{"); //$NON-NLS-1$
+			this.p_DotsSymbol = this.rEngine.rniInstallSymbol("..."); //$NON-NLS-1$
+			this.p_DotAllMTable = this.rEngine.rniInstallSymbol(".AllMTable"); //$NON-NLS-1$
+			this.p_atSymbol = this.rEngine.rniInstallSymbol("at"); //$NON-NLS-1$
+			this.p_ClassSymbol = this.rEngine.rniInstallSymbol("Class"); //$NON-NLS-1$
+			this.p_classSymbol = this.rEngine.rniInstallSymbol("class"); //$NON-NLS-1$
+			this.p_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames"); //$NON-NLS-1$
+			this.p_editSymbol = this.rEngine.rniInstallSymbol("edit"); //$NON-NLS-1$
+			this.p_envSymbol = this.rEngine.rniInstallSymbol("env"); //$NON-NLS-1$
+			this.p_errorSymbol = this.rEngine.rniInstallSymbol("error"); //$NON-NLS-1$
+			this.p_exprSymbol = this.rEngine.rniInstallSymbol("expr"); //$NON-NLS-1$
+			this.p_fdefSymbol = this.rEngine.rniInstallSymbol("fdef"); //$NON-NLS-1$
+			this.p_filenameSymbol = this.rEngine.rniInstallSymbol("filename"); //$NON-NLS-1$
+			this.p_flagsSymbol = this.rEngine.rniInstallSymbol("flags"); //$NON-NLS-1$
+			this.p_functionSymbol = this.rEngine.rniInstallSymbol("function"); //$NON-NLS-1$
+			this.p_fromSymbol = this.rEngine.rniInstallSymbol("from"); //$NON-NLS-1$
+			this.p_idSymbol = this.rEngine.rniInstallSymbol("id"); //$NON-NLS-1$
+			this.p_isGenericSymbol = this.rEngine.rniInstallSymbol("isGeneric"); //$NON-NLS-1$
+			this.p_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary"); //$NON-NLS-1$
+			this.p_levelsSymbol = this.rEngine.rniInstallSymbol("levels"); //$NON-NLS-1$
+			this.p_linesSymbol = this.rEngine.rniInstallSymbol("lines"); //$NON-NLS-1$
+			this.p_linesSrcrefSymbol = this.rEngine.rniInstallSymbol("linesSrcref"); //$NON-NLS-1$
+			this.p_nameSymbol = this.rEngine.rniInstallSymbol("name"); //$NON-NLS-1$
+			this.p_namesSymbol = this.rEngine.rniInstallSymbol("names"); //$NON-NLS-1$
+			this.p_newSymbol = this.rEngine.rniInstallSymbol("new"); //$NON-NLS-1$
+			this.p_onExitSymbol = this.rEngine.rniInstallSymbol("on.exit"); //$NON-NLS-1$
+			this.p_originalSymbol = this.rEngine.rniInstallSymbol("original"); //$NON-NLS-1$
+			this.p_realSymbol = this.rEngine.rniInstallSymbol("real"); //$NON-NLS-1$
+			this.p_rowNamesSymbol = this.rEngine.rniInstallSymbol("row.names"); //$NON-NLS-1$
+			this.p_signatureSymbol = this.rEngine.rniInstallSymbol("signature"); //$NON-NLS-1$
+			this.p_srcfileSymbol = this.rEngine.rniInstallSymbol("srcfile"); //$NON-NLS-1$
+			this.p_srcrefSymbol = this.rEngine.rniInstallSymbol("srcref"); //$NON-NLS-1$
+			this.p_timestampSymbol = this.rEngine.rniInstallSymbol("timestamp"); //$NON-NLS-1$
+			this.p_traceSymbol = this.rEngine.rniInstallSymbol("trace"); //$NON-NLS-1$
+			this.p_untraceSymbol = this.rEngine.rniInstallSymbol("untrace"); //$NON-NLS-1$
+			this.p_valueSymbol = this.rEngine.rniInstallSymbol("value"); //$NON-NLS-1$
+			this.p_whatSymbol = this.rEngine.rniInstallSymbol("what"); //$NON-NLS-1$
+			this.p_whereSymbol = this.rEngine.rniInstallSymbol("where"); //$NON-NLS-1$
+			this.p_wdSymbol = this.rEngine.rniInstallSymbol("wd"); //$NON-NLS-1$
+			this.p_xSymbol = this.rEngine.rniInstallSymbol("x"); //$NON-NLS-1$
+			this.p_zSymbol = this.rEngine.rniInstallSymbol("z"); //$NON-NLS-1$
 			
 			this.p_appFilePathSymbol = this.rEngine.rniInstallSymbol("statet.Path");
 			this.p_appElementIdSymbol = this.rEngine.rniInstallSymbol("statet.ElementId");
@@ -243,68 +243,68 @@ final class JRIServerRni {
 			this.rEngine.rniPreserve(this.p_FALSE);
 			
 			this.p_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rEngine.rniInstallSymbol("new.env"), this.p_NULL, 0, true ),
+					this.rEngine.rniInstallSymbol("new.env"), this.p_NULL, 0, true ), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_RJTempEnv);
 			this.p_orderedClassString = this.rEngine.rniPutStringArray(
-					new String[] { "ordered", "factor" } );
+					new String[] { "ordered", "factor" } ); //$NON-NLS-1$ //$NON-NLS-2$
 			this.rEngine.rniPreserve(this.p_orderedClassString);
-			this.p_factorClassString = this.rEngine.rniPutString("factor");
+			this.p_factorClassString = this.rEngine.rniPutString("factor"); //$NON-NLS-1$
 			this.rEngine.rniPreserve(this.p_factorClassString);
-			this.p_dataframeClassString = this.rEngine.rniPutString("data.frame");
+			this.p_dataframeClassString = this.rEngine.rniPutString("data.frame"); //$NON-NLS-1$
 			this.rEngine.rniPreserve(this.p_dataframeClassString);
 			
-			this.p_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"),
+			this.p_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_complexFun);
-			this.p_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"),
+			this.p_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_ReFun);
-			this.p_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"),
+			this.p_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_ImFun);
 			
 			
 			this.p_seqIntFun = this.rEngine.rniEval(
-					this.rEngine.rniInstallSymbol("seq.int"),
+					this.rEngine.rniInstallSymbol("seq.int"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_seqIntFun);
-			this.p_lengthOutSymbol = this.rEngine.rniInstallSymbol("length.out");
+			this.p_lengthOutSymbol = this.rEngine.rniInstallSymbol("length.out"); //$NON-NLS-1$
 			
 			this.tryCatchFunP = this.rEngine.rniEval(
-					this.rEngine.rniInstallSymbol("tryCatch"),
+					this.rEngine.rniInstallSymbol("tryCatch"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.tryCatchFunP);
 			this.slotNamesFunP = this.rEngine.rniEval(
-					this.rEngine.rniParse("methods::.slotNames", 1),
+					this.rEngine.rniParse("methods::.slotNames", 1), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.slotNamesFunP);
 			this.getEnvNameFunP = this.rEngine.rniEval(
-					this.rEngine.rniInstallSymbol("environmentName"),
+					this.rEngine.rniInstallSymbol("environmentName"), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.getEnvNameFunP);
 			
 			{	final long pasteFunP = protect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("paste"),
+						this.rEngine.rniInstallSymbol("paste"), //$NON-NLS-1$
 						this.p_BaseEnv ));
 				final long deparseFunP = protect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("deparse"),
+						this.rEngine.rniInstallSymbol("deparse"), //$NON-NLS-1$
 						this.p_BaseEnv ));
 				
-				final long controlSymbolP = this.rEngine.rniInstallSymbol("control");
-				final long widthcutoffSymbolP = this.rEngine.rniInstallSymbol("width.cutoff");
-				final long collapseSymbolP = this.rEngine.rniInstallSymbol("collapse");
+				final long controlSymbolP = this.rEngine.rniInstallSymbol("control"); //$NON-NLS-1$
+				final long widthcutoffSymbolP = this.rEngine.rniInstallSymbol("width.cutoff"); //$NON-NLS-1$
+				final long collapseSymbolP = this.rEngine.rniInstallSymbol("collapse"); //$NON-NLS-1$
 				
 				final long deparseControlValueP = protect(this.rEngine.rniPutStringArray(
-						new String[] { "keepInteger", "keepNA" } ));
-				final long collapseValueP = protect(this.rEngine.rniPutString(""));
+						new String[] { "keepInteger", "keepNA" } )); //$NON-NLS-1$ //$NON-NLS-2$
+				final long collapseValueP = protect(this.rEngine.rniPutString("")); //$NON-NLS-1$
 				
 				{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
 					final long fArgsP = protect(this.rEngine.rniCons(
 							this.p_MissingArg, this.p_NULL,
 							this.p_xSymbol, false ));
 					final long argsFunP = protect(this.rEngine.rniEval(
-							this.rEngine.rniInstallSymbol("args"),
+							this.rEngine.rniInstallSymbol("args"), //$NON-NLS-1$
 							this.p_BaseEnv ));
 					final long argsCallP = protect(this.rEngine.rniCons(
 							argsFunP, this.rEngine.rniCons(
@@ -372,20 +372,6 @@ final class JRIServerRni {
 				}
 			}
 			
-			{	final long sysFrameFunP = protect(this.rEngine.rniEval(
-						this.rEngine.rniInstallSymbol("sys.frame"), this.p_BaseEnv ));
-				final long sysNFrameCallP = protect(this.rEngine.rniCons(
-						this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.nframe"),
-								this.p_BaseEnv ), this.p_NULL,
-						0, true ));
-				this.getTopFrameCallP = this.rEngine.rniCons(
-						sysFrameFunP, this.rEngine.rniCons(
-								sysNFrameCallP, this.p_NULL,
-								0, false), // which
-						0, true );
-				this.rEngine.rniPreserve(this.getTopFrameCallP);
-			}
-			
 			this.p_evalTryCatch_errorExpr = this.rEngine.rniCons(
 					this.rEngine.rniEval(this.rEngine.rniParse("function(e){" +
 							"s<-raw(5);" +
@@ -442,6 +428,10 @@ final class JRIServerRni {
 		}
 	}
 	
+	
+	public Rengine getREngine() {
+		return this.rEngine;
+	}
 	
 	public long protect(final long p) {
 		this.rEngine.rniProtect(p);
@@ -1450,8 +1440,15 @@ final class JRIServerRni {
 		}
 	}
 	
-	public long getTopFrame() {
-		return this.rEngine.rniEval(this.getTopFrameCallP, this.p_BaseEnv);
+	public void addAllEnvs(final List<Long> envs, long envP) {
+		while (envP != 0 && envP != this.p_EmptyEnv) {
+			final Long handler= Long.valueOf(envP);
+			if (envs.contains(handler)) {
+				return;
+			}
+			envs.add(handler);
+			envP= this.rEngine.rniParentEnv(envP);
+		}
 	}
 	
 }

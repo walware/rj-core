@@ -276,7 +276,7 @@ class JRIServerIOStreams {
 		}
 		
 		if (text.length() >= CHAR_BUFFER_SIZE) {
-			this.server.domlAppendCmd(new ConsoleWriteCmdItem(streamId, text));
+			this.server.domexAppend2C(new ConsoleWriteCmdItem(streamId, text));
 			return;
 		}
 		
@@ -301,7 +301,7 @@ class JRIServerIOStreams {
 	void domexSendOut() {
 		if (this.outputBuffer.position() > 0) {
 			this.outputBuffer.flip();
-			this.server.domlAppendCmd(new ConsoleWriteCmdItem(this.currentStreamId,
+			this.server.domexAppend2C(new ConsoleWriteCmdItem(this.currentStreamId,
 					this.outputBuffer.toString() ));
 			this.outputBuffer.clear();
 		}

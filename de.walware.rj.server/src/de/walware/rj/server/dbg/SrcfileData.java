@@ -26,15 +26,15 @@ public class SrcfileData implements RJIOExternalizable {
 	
 	
 	public SrcfileData(final String path, final String name, final long timestamp) {
-		this.path = path;
-		this.name = name;
-		this.timestamp = timestamp;
+		this.path= path;
+		this.name= name;
+		this.timestamp= timestamp;
 	}
 	
 	public SrcfileData(final RJIO io) throws IOException {
-		this.path = io.readString();
-		this.name = io.readString();
-		this.timestamp = io.readLong();
+		this.path= io.readString();
+		this.name= io.readString();
+		this.timestamp= io.readLong();
 	}
 	
 	@Override
@@ -75,10 +75,10 @@ public class SrcfileData implements RJIOExternalizable {
 	
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("SrcfileData");
-		sb.append("\n\t").append("path= ").append(this.path);
-		sb.append("\n\t").append("name= ").append(this.name);
-		sb.append("\n\t").append("timestamp= ").append(this.timestamp);
+		final StringBuilder sb= new StringBuilder("SrcfileData"); //$NON-NLS-1$
+		sb.append("\n\t" + "path= ").append(this.path); //$NON-NLS-1$ //$NON-NLS-2$
+		sb.append("\n\t" + "name= ").append(this.name); //$NON-NLS-1$ //$NON-NLS-2$
+		sb.append("\n\t" + "timestamp= ").append(this.timestamp); //$NON-NLS-1$ //$NON-NLS-2$
 		return sb.toString();
 	}
 	

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Server
 Bundle-SymbolicName: de.walware.rj.server;singleton:=true
-Bundle-Version: 2.0.0.qualifier
+Bundle-Version: 2.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: de.walware.rj.data;bundle-version="[2.0.0,2.1.0)"
 Import-Package: org.osgi.framework;resolution:=optional,

@@ -33,24 +33,24 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 	public ElementTracepointPositions(final SrcfileData fileInfo,
 			final String elementId, final int[] elementSrcref) {
 		if (fileInfo == null) {
-			throw new NullPointerException("fileInfo");
+			throw new NullPointerException("fileInfo"); //$NON-NLS-1$
 		}
 		if (elementId == null) {
-			throw new NullPointerException("elementId");
+			throw new NullPointerException("elementId"); //$NON-NLS-1$
 		}
-		this.fileInfo = fileInfo;
-		this.elementId = elementId;
-		this.elementSrcref = elementSrcref;
-		this.positions = new ArrayList<TracepointPosition>(4);
+		this.fileInfo= fileInfo;
+		this.elementId= elementId;
+		this.elementSrcref= elementSrcref;
+		this.positions= new ArrayList<TracepointPosition>(4);
 	}
 	
 	public ElementTracepointPositions(final RJIO io) throws IOException {
-		this.fileInfo = new SrcfileData(io);
-		this.elementId = io.readString();
-		this.elementSrcref = io.readIntArray();
-		final int l = io.readInt();
-		this.positions = new ArrayList<TracepointPosition>(l);
-		for (int i = 0; i < l; i++) {
+		this.fileInfo= new SrcfileData(io);
+		this.elementId= io.readString();
+		this.elementSrcref= io.readIntArray();
+		final int l= io.readInt();
+		this.positions= new ArrayList<TracepointPosition>(l);
+		for (int i= 0; i < l; i++) {
 			this.positions.add(new TracepointPosition(io));
 		}
 	}
@@ -60,9 +60,9 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 		this.fileInfo.writeExternal(io);
 		io.writeString(this.elementId);
 		io.writeIntArray(this.elementSrcref, (this.elementSrcref != null) ? 6 : -1);
-		final int l = this.positions.size();
+		final int l= this.positions.size();
 		io.writeInt(l);
-		for (int i = 0; i < l; i++) {
+		for (int i= 0; i < l; i++) {
 			this.positions.get(i).writeExternal(io);
 		}
 	}
@@ -87,11 +87,11 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 	
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("ElementTracepointPositions");
-		sb.append(" for ").append(this.elementId);
-		sb.append("\n").append("list (count= ").append(this.positions.size()).append("):");
-		for (int i = 0; i < this.positions.size(); i++) {
-			sb.append("\n").append(this.positions.get(i).toString());
+		final StringBuilder sb= new StringBuilder("ElementTracepointPositions"); //$NON-NLS-1$
+		sb.append(" for ").append(this.elementId); //$NON-NLS-1$
+		sb.append("\n").append("list (count= ").append(this.positions.size()).append("):"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		for (int i= 0; i < this.positions.size(); i++) {
+			sb.append("\n").append(this.positions.get(i).toString()); //$NON-NLS-1$
 		}
 		return sb.toString();
 	}

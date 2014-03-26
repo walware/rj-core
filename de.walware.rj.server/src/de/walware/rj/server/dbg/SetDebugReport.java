@@ -20,18 +20,18 @@ import de.walware.rj.data.RJIOExternalizable;
 public class SetDebugReport implements RJIOExternalizable {
 	
 	
-	private static final int CHANGED =                      0x000000001;
+	private static final int CHANGED=                      0x000000001;
 	
 	
 	private final int resultCode;
 	
 	
 	public SetDebugReport(final boolean changed) {
-		this.resultCode = (changed) ? CHANGED : 0;
+		this.resultCode= (changed) ? CHANGED : 0;
 	}
 	
 	public SetDebugReport(final RJIO io) throws IOException {
-		this.resultCode = io.readInt();
+		this.resultCode= io.readInt();
 	}
 	@Override
 	public void writeExternal(final RJIO io) throws IOException {

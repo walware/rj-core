@@ -19,11 +19,11 @@ import de.walware.rj.data.RJIOExternalizable;
 
 public class SetDebugRequest implements RJIOExternalizable {
 	
-	public static final int FRAME =                       0x00000001;
-	public static final int FUNCTION =                    0x00000002;
+	public static final int FRAME=                       0x00000001;
+	public static final int FUNCTION=                    0x00000002;
 	
-	private static final int ENABLED =                     0x01000000;
-	private static final int TEMP =                        0x00000100;
+	private static final int ENABLED=                     0x01000000;
+	private static final int TEMP=                        0x00000100;
 	
 	
 	private final long frameId;
@@ -33,45 +33,45 @@ public class SetDebugRequest implements RJIOExternalizable {
 	
 	
 	public SetDebugRequest(final long frameId, final boolean enable, final boolean temp) {
-		this.frameId = frameId;
-		this.fName = null;
-		int properties = FRAME;
+		this.frameId= frameId;
+		this.fName= null;
+		int props= FRAME;
 		if (enable) {
-			properties |= ENABLED;
+			props |= ENABLED;
 		}
 		if (temp) {
-			properties |= TEMP;
+			props |= TEMP;
 		}
-		this.properties = properties;
+		this.properties= props;
 	}
 	
 	public SetDebugRequest(final int position, final String fName, final boolean enable, final boolean temp) {
-		this.frameId = position;
-		this.fName = fName;
-		int properties = FUNCTION;
+		this.frameId= position;
+		this.fName= fName;
+		int props= FUNCTION;
 		if (enable) {
-			properties |= ENABLED;
+			props |= ENABLED;
 		}
 		if (temp) {
-			properties |= TEMP;
+			props |= TEMP;
 		}
-		this.properties = properties;
+		this.properties= props;
 	}
 	
 	public SetDebugRequest(final RJIO io) throws IOException {
-		this.properties = io.readInt();
+		this.properties= io.readInt();
 		switch (this.properties & 0xf) {
 		case FRAME:
-			this.frameId = io.readLong();
-			this.fName = null;
+			this.frameId= io.readLong();
+			this.fName= null;
 			break;
 		case FUNCTION:
-			this.frameId = io.readInt();
-			this.fName = io.readString();
+			this.frameId= io.readInt();
+			this.fName= io.readString();
 			break;
 		default:
-			this.frameId = 0;
-			this.fName = null;
+			this.frameId= 0;
+			this.fName= null;
 			break;
 		}
 	}

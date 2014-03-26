@@ -23,54 +23,54 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	
 	
 	static final List<TracepointState> readList(final RJIO io) throws IOException {
-		final int l = io.readInt();
-		final List<TracepointState> list = new ArrayList<TracepointState>(l);
-		String filePath = null;
-		String elementId = null;
-		for (int i = 0; i < l; i++) {
-			final TracepointState state = new TracepointState();
+		final int l= io.readInt();
+		final List<TracepointState> list= new ArrayList<TracepointState>(l);
+		String filePath= null;
+		String elementId= null;
+		for (int i= 0; i < l; i++) {
+			final TracepointState state= new TracepointState();
 			list.add(state);
-			state.type = io.readInt();
-			state.id = io.readLong();
-			state.filePath = io.readString();
+			state.type= io.readInt();
+			state.id= io.readLong();
+			state.filePath= io.readString();
 			if (state.filePath != null) {
-				filePath = state.filePath;
+				filePath= state.filePath;
 			}
 			else {
-				state.filePath = filePath;
+				state.filePath= filePath;
 			}
 			if (state.type == TYPE_DELETED) {
 				continue;
 			}
-			state.elementId = io.readString();
+			state.elementId= io.readString();
 			if (state.elementId != null) {
-				elementId = state.elementId;
+				elementId= state.elementId;
 			}
 			else {
-				state.elementId = elementId;
+				state.elementId= elementId;
 			}
-			state.index = io.readIntArray();
-			state.elementLabel = io.readString();
-			state.flags = io.readInt();
-			state.expr = io.readString();
+			state.index= io.readIntArray();
+			state.elementLabel= io.readString();
+			state.flags= io.readInt();
+			state.expr= io.readString();
 		}
 		return list;
 	}
 	
 	static final void writeList(final List<TracepointState> list, final RJIO io) throws IOException {
-		final int l = list.size();
+		final int l= list.size();
 		io.writeInt(l);
-		String filePath = null;
-		String elementId = null;
-		for (int i = 0; i < l; i++) {
-			final TracepointState state = list.get(i);
+		String filePath= null;
+		String elementId= null;
+		for (int i= 0; i < l; i++) {
+			final TracepointState state= list.get(i);
 			io.writeInt(state.type);
 			io.writeLong(state.id);
 			if (state.filePath.equals(filePath)) {
 				io.writeString(null);
 			}
 			else {
-				filePath = state.filePath;
+				filePath= state.filePath;
 				io.writeString(filePath);
 			}
 			if (state.type == TYPE_DELETED) {
@@ -80,7 +80,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 				io.writeString(null);
 			}
 			else {
-				elementId = state.elementId;
+				elementId= state.elementId;
 				io.writeString(elementId);
 			}
 			io.writeIntArray(state.index, state.index.length);
@@ -91,13 +91,13 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	}
 	
 	
-	public static final int FLAG_ENABLED =                  0x00000001;
+	public static final int FLAG_ENABLED=                  0x00000001;
 	
-	public static final int FLAG_MB_ENTRY =                 0x00010000;
-	public static final int FLAG_MB_EXIT =                  0x00020000;
+	public static final int FLAG_MB_ENTRY=                 0x00010000;
+	public static final int FLAG_MB_EXIT=                  0x00020000;
 	
-	public static final int FLAG_EXPR_INVALID =             0x01000000;
-	public static final int FLAG_EXPR_EVAL_FAILED =         0x02000000;
+	public static final int FLAG_EXPR_INVALID=             0x01000000;
+	public static final int FLAG_EXPR_EVAL_FAILED=         0x02000000;
 	
 	
 	private int type;
@@ -120,41 +120,41 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 		if (filePath == null || elementId == null || index == null) {
 			throw new NullPointerException();
 		}
-		this.type = type;
-		this.filePath = filePath;
-		this.id = id;
-		this.elementId = elementId;
-		this.index = index;
-		this.elementLabel = elementLabel;
-		this.flags = flags;
-		this.expr = expr;
+		this.type= type;
+		this.filePath= filePath;
+		this.id= id;
+		this.elementId= elementId;
+		this.index= index;
+		this.elementLabel= elementLabel;
+		this.flags= flags;
+		this.expr= expr;
 	}
 	
 	public TracepointState(final int type,
 			final String filePath, final long id) {
 		if (type != TYPE_DELETED) {
-			throw new IllegalArgumentException("type= " + type);
+			throw new IllegalArgumentException("type= " + type); //$NON-NLS-1$
 		}
-		this.type = type;
-		this.filePath = filePath;
-		this.id = id;
+		this.type= type;
+		this.filePath= filePath;
+		this.id= id;
 	}
 	
 	private TracepointState() {
 	}
 	
 	public TracepointState(final RJIO io) throws IOException {
-		this.type = io.readInt();
-		this.id = io.readLong();
-		this.filePath = io.readString();
+		this.type= io.readInt();
+		this.id= io.readLong();
+		this.filePath= io.readString();
 		if (this.type == TYPE_DELETED) {
 			return;
 		}
-		this.elementId = io.readString();
-		this.index = io.readIntArray();
-		this.elementLabel = io.readString();
-		this.flags = io.readInt();
-		this.expr = io.readString();
+		this.elementId= io.readString();
+		this.index= io.readIntArray();
+		this.elementLabel= io.readString();
+		this.flags= io.readInt();
+		this.expr= io.readString();
 	}
 	
 	@Override
@@ -220,14 +220,14 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	
 	@Override
 	public int compareTo(final TracepointState other) {
-		{	final int diff = this.filePath.compareTo(other.filePath);
+		{	final int diff= this.filePath.compareTo(other.filePath);
 			if (diff != 0) {
 				return diff;
 			}
 		}
 		if (this.elementId != null) {
 			if (other.elementId != null) {
-				final int diff = this.elementId.compareTo(other.elementId);
+				final int diff= this.elementId.compareTo(other.elementId);
 				if (diff != 0) {
 					return diff;
 				}
@@ -255,7 +255,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 		if (!(obj instanceof TracepointState)) {
 			return false;
 		}
-		final TracepointState other = (TracepointState) obj;
+		final TracepointState other= (TracepointState) obj;
 		return (this.id == other.id
 				&& this.filePath.equals(other.filePath) );
 	}

@@ -15,13 +15,13 @@ package de.walware.rj.server.dbg;
 public interface Tracepoint {
 	
 	/** all breakpoint types */
-	int TYPE_BREAKPOINT =                                   0x00000003;
+	int TYPE_BREAKPOINT=                                   0x00000003;
 	/** function breakpoint */
-	int TYPE_FB =                                           0x00000001;
+	int TYPE_FB=                                           0x00000001;
 	/** line breakpoint */
-	int TYPE_LB =                                           0x00000002;
+	int TYPE_LB=                                           0x00000002;
 	
-	int TYPE_DELETED =                                      0x01000000;
+	int TYPE_DELETED=                                      0x01000000;
 	
 	
 	int getType();

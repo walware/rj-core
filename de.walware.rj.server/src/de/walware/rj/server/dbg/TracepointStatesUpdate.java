@@ -21,7 +21,7 @@ import de.walware.rj.data.RJIOExternalizable;
 public class TracepointStatesUpdate implements RJIOExternalizable {
 	
 	
-	private final static int RESET =                        0x00000001;
+	private final static int RESET=                         0x00000001;
 	
 	
 	private final List<TracepointState> states;
@@ -31,13 +31,13 @@ public class TracepointStatesUpdate implements RJIOExternalizable {
 	
 	public TracepointStatesUpdate(final List<TracepointState> states,
 			final boolean reset) {
-		this.states = states;
-		this.properties = (reset) ? RESET : 0;
+		this.states= states;
+		this.properties= (reset) ? RESET : 0;
 	}
 	
 	public TracepointStatesUpdate(final RJIO io) throws IOException {
-		this.properties = io.readInt();
-		this.states = TracepointState.readList(io);
+		this.properties= io.readInt();
+		this.states= TracepointState.readList(io);
 	}
 	
 	@Override

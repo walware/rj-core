@@ -20,21 +20,21 @@ import de.walware.rj.data.RJIOExternalizable;
 public class ElementTracepointInstallationReport implements RJIOExternalizable {
 	
 	
-	public static final int NOTFOUND = 1;
-	public static final int FOUND_UNCHANGED = 2;
-	public static final int FOUND_UNSET = 3;
-	public static final int FOUND_SET = 4;
+	public static final int NOTFOUND= 1;
+	public static final int FOUND_UNCHANGED= 2;
+	public static final int FOUND_UNSET= 3;
+	public static final int FOUND_SET= 4;
 	
 	
 	private final int[] results;
 	
 	
 	public ElementTracepointInstallationReport(final int[] resultCodes) {
-		this.results = resultCodes;
+		this.results= resultCodes;
 	}
 	
 	public ElementTracepointInstallationReport(final RJIO io) throws IOException {
-		this.results = io.readIntArray();
+		this.results= io.readIntArray();
 	}
 	
 	@Override

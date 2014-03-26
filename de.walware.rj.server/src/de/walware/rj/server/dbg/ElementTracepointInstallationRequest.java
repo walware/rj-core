@@ -26,23 +26,23 @@ public class ElementTracepointInstallationRequest implements RJIOExternalizable 
 	
 	
 	public ElementTracepointInstallationRequest(final List<? extends ElementTracepointPositions> checkedList) {
-		this.requests = checkedList;
+		this.requests= checkedList;
 	}
 	
 	public ElementTracepointInstallationRequest(final RJIO io) throws IOException {
-		final int l = io.readInt();
-		final List<ElementTracepointPositions> list = new ArrayList<ElementTracepointPositions>(l);
-		for (int i = 0; i < l; i++) {
+		final int l= io.readInt();
+		final List<ElementTracepointPositions> list= new ArrayList<ElementTracepointPositions>(l);
+		for (int i= 0; i < l; i++) {
 			list.add(new ElementTracepointPositions(io));
 		}
-		this.requests = list;
+		this.requests= list;
 	}
 	
 	@Override
 	public void writeExternal(final RJIO io) throws IOException {
-		final int l = this.requests.size();
+		final int l= this.requests.size();
 		io.writeInt(l);
-		for (int i = 0; i < l; i++) {
+		for (int i= 0; i < l; i++) {
 			this.requests.get(i).writeExternal(io);
 		}
 	}

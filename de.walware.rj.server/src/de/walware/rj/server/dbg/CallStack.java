@@ -22,123 +22,46 @@ import de.walware.rj.data.RJIOExternalizable;
 public class CallStack implements RJIOExternalizable {
 	
 	
-	public static final int FLAG_TOPFRAME =                0x00001000;
+	public static final int FLAG_TOPFRAME=                  0x00001000;
 	
-	public static final int FLAG_NOSTEPPING =              0x00000100;
+	public static final int FLAG_NOSTEPPING=                0x00000100;
 	
-	public static final int FLAG_SOURCE =                  0x00000010;
-	public static final int FLAG_COMMAND =                 0x00000020;
-	
-	
-	public static class Frame {
-		
-		private final int position;
-		private final String call;
-		
-		protected long handle;
-		
-		protected String fileName;
-		protected long fileTimestamp;
-		
-		protected int[] exprSrcref;
-		
-		protected int flags;
-		
-		
-		public Frame(final int position, final String call, final long handle,
-				final String fileName, final long fileTimestamp, final int[] exprSrcref) {
-			this.position = position;
-			this.call = call;
-			this.handle = handle;
-			this.fileName = fileName;
-			this.fileTimestamp = fileTimestamp;
-			this.exprSrcref = exprSrcref;
-		}
-		
-		protected Frame(final int position, final String call) {
-			this.position = position;
-			this.call = call;
-		}
-		
-		
-		public int getPosition() {
-			return this.position;
-		}
-		
-		public String getCall() {
-			return this.call;
-		}
-		
-		public long getHandle() {
-			return this.handle;
-		}
-		
-		public String getFileName() {
-			return this.fileName;
-		}
-		
-		public long getFileTimestamp() {
-			return this.fileTimestamp;
-		}
-		
-		public int[] getExprSrcref() {
-			return this.exprSrcref;
-		}
-		
-		
-		public int getFlags() {
-			return this.flags;
-		}
-		
-		public void addFlags(final int flags) {
-			this.flags |= flags;
-		}
-		
-		/** top frame */
-		public boolean isTopFrame() {
-			return ((this.flags & FLAG_TOPFRAME) != 0);
-		}
-		
-		/** frame of top level command */
-		public boolean isTopLevelCommand() {
-			return (this.position == 3 &&(this.flags & 0xff) == (FLAG_COMMAND | 2));
-		}
-		
-	}
+	public static final int FLAG_SOURCE=                    0x00000010;
+	public static final int FLAG_COMMAND=                   0x00000020;
 	
 	
 	private final List<? extends Frame> frames;
 	
 	
 	public CallStack(final List<? extends Frame> list, final boolean setDefaultFlags) {
-		this.frames = list;
+		this.frames= list;
 		if (setDefaultFlags) {
 			setDefaultFlags();
 		}
 	}
 	
 	public CallStack(final RJIO io) throws IOException {
-		final int l = io.readInt();
-		final ArrayList<Frame> list = new ArrayList<Frame>(l);
-		for (int i = 0; i < l; i++) {
-			final Frame frame = new Frame(i, io.readString());
-			frame.handle = io.readLong();
-			frame.fileName = io.readString();
-			frame.fileTimestamp = io.readLong();
-			frame.exprSrcref = io.readIntArray();
-			frame.flags = io.readInt();
+		final int l= io.readInt();
+		final ArrayList<Frame> list= new ArrayList<Frame>(l);
+		for (int i= 0; i < l; i++) {
+			final Frame frame= new Frame(i, io.readString());
+			frame.handle= io.readLong();
+			frame.fileName= io.readString();
+			frame.fileTimestamp= io.readLong();
+			frame.exprSrcref= io.readIntArray();
+			frame.flags= io.readInt();
 			list.add(frame);
 		}
-		this.frames = list;
+		this.frames= list;
 	}
 	
 	@Override
 	public void writeExternal(final RJIO io) throws IOException {
-		final int l = this.frames.size();
+		final int l= this.frames.size();
 		io.writeInt(l);
-		for (int i = 0; i < l; i++) {
-			final Frame frame = this.frames.get(i);
-			io.writeString(frame.call);
+		for (int i= 0; i < l; i++) {
+			final Frame frame= this.frames.get(i);
+			io.writeString(frame.getCall());
 			io.writeLong(frame.handle);
 			io.writeString(frame.fileName);
 			io.writeLong(frame.fileTimestamp);
@@ -148,50 +71,50 @@ public class CallStack implements RJIOExternalizable {
 	}
 	
 	protected void setDefaultFlags() {
-		final int n = this.frames.size();
-		for (int i = 0; i < n; i++) {
-			final Frame frame0 = this.frames.get(i);
+		final int n= this.frames.size();
+		for (int i= 0; i < n; i++) {
+			final Frame frame0= this.frames.get(i);
 			if (frame0.getCall() != null) {
-				if (frame0.getCall().startsWith("source(")) {
+				if (frame0.getCall().startsWith("source(")) { //$NON-NLS-1$
 					Frame frame1;
 					Frame frame2;
-					if (i+1 < n && (frame1 = this.frames.get(i+1)).getCall() != null
-							&& frame1.getCall().startsWith("eval.with.vis(") ) {
+					if (i+1 < n && (frame1= this.frames.get(i+1)).getCall() != null
+							&& frame1.getCall().startsWith("eval.with.vis(") ) { //$NON-NLS-1$
 						frame0.addFlags((FLAG_SOURCE | 0));
 						frame1.addFlags((FLAG_SOURCE | 1));
 						i++;
-						if (i+1 < n && (frame2 = this.frames.get(i+1)).getCall() != null
-								&& frame2.getCall().startsWith("eval.with.vis(") ) {
+						if (i+1 < n && (frame2= this.frames.get(i+1)).getCall() != null
+								&& frame2.getCall().startsWith("eval.with.vis(") ) { //$NON-NLS-1$
 							frame2.addFlags((FLAG_SOURCE | 2));
 							i++;
 						}
 					}
-					else if (i+2 < n && (frame1 = this.frames.get(i+1)).getCall() != null
-							&& frame1.getCall().startsWith("withVisible(")
-							&& (frame2 = this.frames.get(i+2)).getCall() != null
-							&& frame2.getCall().startsWith("eval(") ) {
+					else if (i+2 < n && (frame1= this.frames.get(i+1)).getCall() != null
+							&& frame1.getCall().startsWith("withVisible(") //$NON-NLS-1$
+							&& (frame2= this.frames.get(i+2)).getCall() != null
+							&& frame2.getCall().startsWith("eval(") ) { //$NON-NLS-1$
 						frame0.addFlags((FLAG_SOURCE | 0));
 						frame1.addFlags((FLAG_SOURCE | 1));
 						frame2.addFlags((FLAG_SOURCE | 2));
 						i += 2;
-						if (i+1 < n && (frame2 = this.frames.get(i+1)).getCall() != null
-								&& frame2.getCall().startsWith("eval(") ) {
+						if (i+1 < n && (frame2= this.frames.get(i+1)).getCall() != null
+								&& frame2.getCall().startsWith("eval(") ) { //$NON-NLS-1$
 							frame2.addFlags((FLAG_SOURCE | 3));
 							i++;
 						}
 					}
 				}
-				else if (frame0.getCall().startsWith("rj:::.statet.evalCommand(")
-						|| frame0.getCall().startsWith(".statet.evalCommand(") ) {
+				else if (frame0.getCall().startsWith("rj:::.statet.evalCommand(") //$NON-NLS-1$
+						|| frame0.getCall().startsWith(".statet.evalCommand(") ) { //$NON-NLS-1$
 					frame0.addFlags((FLAG_COMMAND | 0));
 					final Frame frame1;
-					if (i+1 < n && (frame1 = this.frames.get(i+1)).getCall() != null
-							&& frame1.getCall().startsWith("eval(") ) {
+					if (i+1 < n && (frame1= this.frames.get(i+1)).getCall() != null
+							&& frame1.getCall().startsWith("eval(") ) { //$NON-NLS-1$
 						frame1.addFlags((FLAG_COMMAND | 1));
 						i++;
 						final Frame frame2;
-						if (i+1 < n && (frame2 = this.frames.get(i+1)).getCall() != null
-								&& frame2.getCall().startsWith("eval(") ) {
+						if (i+1 < n && (frame2= this.frames.get(i+1)).getCall() != null
+								&& frame2.getCall().startsWith("eval(") ) { //$NON-NLS-1$
 							frame2.addFlags((FLAG_COMMAND | 2));
 							i++;
 						}
@@ -199,11 +122,22 @@ public class CallStack implements RJIOExternalizable {
 				}
 			}
 		}
+		
 		this.frames.get(n-1).addFlags(FLAG_TOPFRAME);
 	}
 	
 	public List<? extends Frame> getFrames() {
 		return this.frames;
+	}
+	
+	public Frame findFrame(final long handle) {
+		for (int i= 0; i < this.frames.size(); i++) {
+			final Frame frame= this.frames.get(i);
+			if (frame.getHandle() == handle) {
+				return frame;
+			}
+		}
+		return null;
 	}
 	
 }

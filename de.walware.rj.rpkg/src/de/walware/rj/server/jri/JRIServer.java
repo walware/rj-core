@@ -79,11 +79,12 @@ import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.dbg.DbgEnablement;
 import de.walware.rj.server.dbg.DbgFilterState;
+import de.walware.rj.server.dbg.DbgListener;
+import de.walware.rj.server.dbg.DbgRequest;
 import de.walware.rj.server.dbg.ElementTracepointInstallationRequest;
 import de.walware.rj.server.dbg.FrameContextDetailRequest;
 import de.walware.rj.server.dbg.SetDebugRequest;
 import de.walware.rj.server.dbg.TracepointEvent;
-import de.walware.rj.server.dbg.TracepointListener;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
 import de.walware.rj.server.gr.Coord;
 import de.walware.rj.server.gr.GraOp;
@@ -103,7 +104,7 @@ import de.walware.rj.server.srvext.ServerUtil;
  * Remove server based on
  */
 public final class JRIServer extends RJ
-		implements InternalEngine, RMainLoopCallbacks, ExtServer, TracepointListener {
+		implements InternalEngine, RMainLoopCallbacks, ExtServer, DbgListener {
 	
 	
 	private static final int[] VERSION = new int[] { 2, 0, 0 };
@@ -294,6 +295,8 @@ public final class JRIServer extends RJ
 	private MainCmdItem mainLoopC2SCommandFirst;
 	private int mainLoopS2CAnswerFail;
 	
+	private ConsoleReadCmdItem mainLoopPrompt;
+	
 	private boolean safeMode;
 	
 	private boolean hotModeRequested;
@@ -314,20 +317,19 @@ public final class JRIServer extends RJ
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
-	private final JRIServerUtils utils = new JRIServerUtils();
+	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
+	
+	private final ServerUtils utils = new ServerUtils(this.platformDataValues);
 	
 	private RObjectFactory rObjectFactory;
 	
 	private JRIServerGraphics graphics;
 	
-	private Map<String, String> platformDataCommands;
-	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
-	
 	private int rniListsMaxLength = 10000;
 	private int rniEnvsMaxLength = 10000;
 	private JRIServerRni rni;
 	
-	private JRIServerDbg dbgSupport;
+	private JRIServerDbg dbg;
 	
 	
 	public JRIServer() {
@@ -363,12 +365,6 @@ public final class JRIServer extends RJ
 		this.control = control;
 		this.publicServer = publicServer;
 		this.rClassLoader = loader;
-		
-		this.platformDataCommands = new HashMap<String, String>();
-		this.platformDataCommands.put("os.type", ".Platform$OS.type");
-		this.platformDataCommands.put("file.sep", ".Platform$file.sep");
-		this.platformDataCommands.put("path.sep", ".Platform$path.sep");
-		this.platformDataCommands.put("version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
 	}
 	
 	@Override
@@ -612,9 +608,9 @@ public final class JRIServer extends RJ
 		
 		this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
 		try {
-			this.rni = new JRIServerRni(this.rEngine);
+			this.rni= new JRIServerRni(this.rEngine);
 			
-			this.dbgSupport = new JRIServerDbg(re, this.rni, this.utils, this);
+			this.dbg= new JRIServerDbg(this, this.rni, this.utils);
 			
 			loadPlatformData();
 			
@@ -656,8 +652,14 @@ public final class JRIServer extends RJ
 	}
 	
 	private void loadPlatformData() {
+		final Map<String, String> platformDataCommands = new HashMap<String, String>();
+		platformDataCommands.put("os.type", ".Platform$OS.type");
+		platformDataCommands.put("file.sep", ".Platform$file.sep");
+		platformDataCommands.put("path.sep", ".Platform$path.sep");
+		platformDataCommands.put("version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
+		
 		try {
-			for (final Entry<String, String> dataEntry : this.platformDataCommands.entrySet()) {
+			for (final Entry<String, String> dataEntry : platformDataCommands.entrySet()) {
 				final DataCmdItem dataCmd= internalEvalData(new DataCmdItem(DataCmdItem.EVAL_EXPR_DATA,
 						0, (byte) 1, dataEntry.getValue(), null, null, null, null ));
 				if (dataCmd != null && dataCmd.isOK()) {
@@ -952,8 +954,8 @@ public final class JRIServer extends RJ
 						this.rni.rniInterrupted = true;
 						this.rEngine.rniStop(0);
 						
-						if (this.dbgSupport != null) {
-							this.dbgSupport.rCancelled();
+						if (this.dbg != null) {
+							this.dbg.rCancelled();
 						}
 						
 						return RjsStatus.OK_STATUS;
@@ -1010,20 +1012,6 @@ public final class JRIServer extends RJ
 		return new RjsStatus(RjsStatus.WARNING, S_STOPPED);
 	}
 	
-	private void doAppend(final MainCmdItem first) {
-		this.rni.rniInterrupted = false; // TODO remove, call always checkInterrupted before operations
-		if (this.mainLoopC2SCommandFirst == null) {
-			this.mainLoopC2SCommandFirst = first;
-		}
-		else {
-			MainCmdItem cmd = this.mainLoopC2SCommandFirst;
-			while (cmd.next != null) {
-				cmd = cmd.next;
-			}
-			cmd.next = first;
-		}
-	}
-	
 	private RjsComObject internalMainCallbackFromClient(final byte slot, final MainCmdC2SList mainC2SCmdList) {
 //		System.out.println("fromClient 1: " + mainC2SCmdList);
 //		System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
@@ -1058,12 +1046,12 @@ public final class JRIServer extends RJ
 			}
 		}
 		if (mainC2SCmdList != null) {
-			doAppend(mainC2SCmdList.getItems());
+			domexAppend2S(mainC2SCmdList.getItems());
 		}
 		
-//			System.out.println("fromClient 2: " + mainC2SCmdList);
-//			System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
-//			System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
+//		System.out.println("fromClient 2: " + mainC2SCmdList);
+//		System.out.println("C2S: " + this.mainLoopC2SCommandFirst);
+//		System.out.println("S2C: " + this.mainLoopS2CNextCommandsFirst[1]);
 		
 		this.mainExchangeR.signalAll();
 		if (slot == 0) {
@@ -1267,12 +1255,52 @@ public final class JRIServer extends RJ
 		}
 	}
 	
-	void domlAppendCmd(final MainCmdItem item) {
+	void domexAppend2C(final MainCmdItem item) {
 		if (this.mainLoopS2CNextCommandsFirst[0] == null) {
-			this.mainLoopS2CNextCommandsFirst[0] = this.mainLoopS2CNextCommandsLast[0] = item;
+			this.mainLoopS2CNextCommandsFirst[0]= this.mainLoopS2CNextCommandsLast[0]= item;
 		}
 		else {
-			this.mainLoopS2CNextCommandsLast[0] = this.mainLoopS2CNextCommandsLast[0].next = item;
+			this.mainLoopS2CNextCommandsLast[0]= this.mainLoopS2CNextCommandsLast[0].next= item;
+		}
+	}
+	
+	void domexAppend2S(final MainCmdItem first) {
+		this.rni.rniInterrupted= false; // TODO remove, call always checkInterrupted before operations
+		if (this.mainLoopC2SCommandFirst == null) {
+			this.mainLoopC2SCommandFirst= first;
+		}
+		else {
+			MainCmdItem cmd= this.mainLoopC2SCommandFirst;
+			while (cmd.next != null) {
+				cmd= cmd.next;
+			}
+			cmd.next= first;
+		}
+	}
+	
+	void domexInsert2S(final MainCmdItem first) {
+		if (this.mainLoopC2SCommandFirst != null) {
+			MainCmdItem cmd= first;
+			while (cmd.next != null) {
+				cmd= cmd.next;
+			}
+			cmd.next = this.mainLoopC2SCommandFirst;
+		}
+		this.mainLoopC2SCommandFirst= first;
+	}
+	
+	void dorAppend2SConsoleAnswer(final String input) {
+		if (this.mainLoopPrompt == null) {
+			return;
+		}
+		this.mainLoopPrompt.setAnswer(input + '\n');
+		
+		this.mainExchangeLock.lock();
+		try {
+			domexInsert2S(this.mainLoopPrompt);
+		}
+		finally {
+			this.mainExchangeLock.unlock();
 		}
 	}
 	
@@ -1287,7 +1315,7 @@ public final class JRIServer extends RJ
 		}
 		try {
 			this.safeMode = true;
-			this.dbgSupport.beginSafeMode();
+			this.dbg.beginSafeMode();
 			return 1;
 		}
 		catch (final Exception e) {
@@ -1300,7 +1328,7 @@ public final class JRIServer extends RJ
 		if (mode > 0) {
 			try {
 				this.safeMode = false;
-				this.dbgSupport.endSafeMode();
+				this.dbg.endSafeMode();
 			}
 			catch (final Exception e) {
 				LOGGER.log(Level.SEVERE, "An error occurred when running 'endSafeMode' command.", e);
@@ -1559,17 +1587,17 @@ public final class JRIServer extends RJ
 			CMD_OP: switch (cmd.getOp()) {
 			
 			case DbgCmdItem.OP_LOAD_FRAME_LIST:
-				cmd.setAnswer(this.dbgSupport.loadCallStack());
+				cmd.setAnswer(this.dbg.getCallStack());
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_LOAD_FRAME_CONTEXT:
-				cmd.setAnswer(this.dbgSupport.loadFrameDetail(
+				cmd.setAnswer(this.dbg.loadFrameDetail(
 						(FrameContextDetailRequest) cmd.getData() ));
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_SET_DEBUG:
 				if (savedSafeMode != 0) { // was already inSafeMode
-					cmd.setAnswer(this.dbgSupport.setDebug(
+					cmd.setAnswer(this.dbg.setDebug(
 							(SetDebugRequest) cmd.getData() ));
 				}
 				else {
@@ -1577,28 +1605,35 @@ public final class JRIServer extends RJ
 				}
 				break CMD_OP;
 			
+			case DbgCmdItem.OP_CTRL_RESUME:
+			case DbgCmdItem.OP_CTRL_STEP_INTO:
+			case DbgCmdItem.OP_CTRL_STEP_OVER:
+			case DbgCmdItem.OP_CTRL_STEP_RETURN:
+				cmd.setAnswer(this.dbg.exec((DbgRequest) cmd.getData()));
+				break CMD_OP;
+			
 			case DbgCmdItem.OP_REQUEST_SUSPEND:
-				this.dbgSupport.requestSuspend();
+				this.dbg.requestSuspend();
 				cmd.setAnswer(RjsStatus.OK_STATUS);
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_INSTALL_TP_POSITIONS:
-				cmd.setAnswer(this.dbgSupport.installTracepoints(
+				cmd.setAnswer(this.dbg.getTracepointManager().installTracepoints(
 						(ElementTracepointInstallationRequest) cmd.getData() ));
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_RESET_FILTER_STATE:
-				cmd.setAnswer(this.dbgSupport.setFilterState(
+				cmd.setAnswer(this.dbg.setFilterState(
 						(DbgFilterState) cmd.getData() ));
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_UPDATE_TP_STATES:
-				cmd.setAnswer(this.dbgSupport.updateTracepointStates(
+				cmd.setAnswer(this.dbg.getTracepointManager().updateTracepointStates(
 						(TracepointStatesUpdate) cmd.getData() ));
 				break CMD_OP;
 			
 			case DbgCmdItem.OP_SET_ENABLEMENT:
-				this.dbgSupport.setEnablement((DbgEnablement) cmd.getData());
+				this.dbg.setEnablement((DbgEnablement) cmd.getData());
 				cmd.setAnswer(RjsStatus.OK_STATUS);
 				break CMD_OP;
 				
@@ -1665,15 +1700,15 @@ public final class JRIServer extends RJ
 		switch (cmd.getOp()) {
 		
 		case DbgCmdItem.OP_RESET_FILTER_STATE:
-			return this.dbgSupport.setFilterState(
+			return this.dbg.setFilterState(
 					(DbgFilterState) cmd.getData() );
 		
 		case DbgCmdItem.OP_SET_ENABLEMENT:
-			this.dbgSupport.setEnablement((DbgEnablement) cmd.getData());
+			this.dbg.setEnablement((DbgEnablement) cmd.getData());
 			return RjsStatus.OK_STATUS;
 		
 		case DbgCmdItem.OP_UPDATE_TP_STATES:
-			return this.dbgSupport.updateTracepointStates(
+			return this.dbg.getTracepointManager().updateTracepointStates(
 					(TracepointStatesUpdate) cmd.getData() );
 		
 		}
@@ -1738,24 +1773,27 @@ public final class JRIServer extends RJ
 	
 	@Override
 	public String rReadConsole(final Rengine re, final String prompt, final int addToHistory) {
-		if (prompt.startsWith("Browse")) {
-			final String input = this.dbgSupport.handleBrowserPrompt(prompt);
+		if (prompt.startsWith("Browse")) { //$NON-NLS-1$
+			final String input= this.dbg.handleBrowserPrompt(prompt);
 			if (input != null) {
 				return input;
 			}
 		}
 		else if (inSafeMode()) {
-			return "\n";
+			return "\n"; //$NON-NLS-1$
+		}
+		else {
+			this.dbg.clearContext();
 		}
 		
-		this.dbgSupport.clearContext();
+		this.mainLoopPrompt= new ConsoleReadCmdItem((addToHistory == 1) ? V_TRUE : V_FALSE, prompt);
+		final MainCmdItem cmd= internalMainFromR(this.mainLoopPrompt);
+		this.mainLoopPrompt= null;
 		
-		final MainCmdItem cmd = internalMainFromR(new ConsoleReadCmdItem(
-				(addToHistory == 1) ? V_TRUE : V_FALSE, prompt ));
 		if (cmd.isOK()) {
 			return cmd.getDataText();
 		}
-		return "\n";
+		return "\n"; //$NON-NLS-1$
 	}
 	
 	@Override
@@ -1864,8 +1902,8 @@ public final class JRIServer extends RJ
 				final RList answer = execUICommand(commandId, createJCommandArgs(argsP), wait);
 				return createJCommandAnswer(answer);
 			}
-			if (commandGroup.equals("dbg") && this.dbgSupport != null) {
-				return this.dbgSupport.execRJCommand(commandId, argsP);
+			if (commandGroup.equals("dbg") && this.dbg != null) {
+				return this.dbg.execRJCommand(commandId, argsP);
 			}
 		}
 		catch (final Exception e) {
@@ -2001,7 +2039,7 @@ public final class JRIServer extends RJ
 					LOGGER.log(Level.SEVERE, "An error occurrend when trying to cancel hot loop.", e);
 				}
 				
-				doAppend(new SrvCmdItem(SrvCmdItem.OP_CLEAR_SESSION));
+				domexAppend2S(new SrvCmdItem(SrvCmdItem.OP_CLEAR_SESSION));
 				this.mainExchangeR.signalAll();
 			}
 		}
