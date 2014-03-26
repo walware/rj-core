@@ -64,6 +64,7 @@ import de.walware.rj.server.RjsPing;
 import de.walware.rj.server.RjsStatus;
 import de.walware.rj.server.Server;
 import de.walware.rj.server.client.RClientGraphic.InitConfig;
+import de.walware.rj.server.dbg.CtrlReport;
 import de.walware.rj.services.RPlatform;
 import de.walware.rj.services.RService;
 
@@ -1492,7 +1493,15 @@ public abstract class AbstractRJComClient implements ComHandler {
 							"Dbg operation failed: " + status.getMessage(), null));
 				}
 			}
-			return this.dbgOpAnswer.getData();
+			{	final Object data= this.dbgOpAnswer.getData();
+				if (data instanceof CtrlReport) {
+					final CtrlReport report= (CtrlReport) data;
+					if (!report.isEngineSuspended()) {
+						this.consoleReadCallback= null;
+					}
+				}
+				return data;
+			}
 		}
 		finally {
 			this.dbgOpRequest = false;
