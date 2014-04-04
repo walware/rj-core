@@ -44,7 +44,7 @@ import javax.naming.OperationNotSupportedException;
  * <p>
  * Indexes are zero-based (as usual in Java) and not one-base like in R.</p>
  */
-public interface RStore {
+public interface RStore<P> {
 	
 	/**
 	 * Constant indicating a store for R data type <code>logical<code>.
@@ -625,7 +625,7 @@ public interface RStore {
 	 * @throws IndexOutOfBoundsException if the index is out of range
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
-	Object get(int idx);
+	P get(int idx);
 	
 	/**
 	 * Returns the value at the specified index as Java object. The subtypes of 
@@ -639,7 +639,7 @@ public interface RStore {
 	 * @throws IndexOutOfBoundsException if the index is out of range
 	 *     (idx &lt; 0 || idx &gt;= length()).
 	 */
-	Object get(long idx);
+	P get(long idx);
 	
 	/**
 	 * Returns the values of the store as Java object array. The subtypes of 
@@ -651,9 +651,9 @@ public interface RStore {
 	 * 
 	 * @return a object array with the values of the store
 	 */
-	Object[] toArray();
+	P[] toArray();
 	
-	boolean allEqual(RStore other);
+	boolean allEqual(RStore<?> other);
 	
 	
 	/**

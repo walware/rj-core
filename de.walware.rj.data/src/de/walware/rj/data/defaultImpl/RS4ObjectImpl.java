@@ -113,7 +113,7 @@ public class RS4ObjectImpl extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return (this.dataSlotIdx >= 0 && this.slotValues[this.dataSlotIdx] != null) ?
 				this.slotValues[this.dataSlotIdx].getData() : null;
 	}

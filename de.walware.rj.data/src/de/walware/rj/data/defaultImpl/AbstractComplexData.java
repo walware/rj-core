@@ -16,7 +16,7 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractComplexData extends AbstractRData
+public abstract class AbstractComplexData extends AbstractRData<RComplexStore.Complex>
 		implements RComplexStore {
 	
 	

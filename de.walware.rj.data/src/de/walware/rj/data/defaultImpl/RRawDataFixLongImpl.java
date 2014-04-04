@@ -144,7 +144,7 @@ public class RRawDataFixLongImpl extends AbstractRawData
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	

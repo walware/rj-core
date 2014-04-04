@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RStore;
 
@@ -24,7 +25,7 @@ import de.walware.rj.data.RStore;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RComplexDataBImpl extends AbstractComplexData
-		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
+		implements RDataResizeExtension<RComplexStore.Complex>, ExternalizableRStore, Externalizable {
 	
 	
 	private int length;
@@ -353,7 +354,7 @@ public class RComplexDataBImpl extends AbstractComplexData
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	

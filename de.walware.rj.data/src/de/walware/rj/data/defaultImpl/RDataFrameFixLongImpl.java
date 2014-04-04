@@ -25,7 +25,7 @@ public class RDataFrameFixLongImpl extends RListFixLongImpl
 		implements RDataFrame, ExternalizableRObject {
 	
 	
-	private final RStore rownamesAttribute;
+	private final RStore<?> rownamesAttribute;
 	private final long rowCount;
 	
 	
@@ -115,19 +115,19 @@ public class RDataFrameFixLongImpl extends RListFixLongImpl
 	}
 	
 	@Override
-	public RStore getColumn(final int idx) {
+	public RStore<?> getColumn(final int idx) {
 		final RObject obj = get(idx);
 		return (obj != null) ? obj.getData() : null;
 	}
 	
 	@Override
-	public RStore getColumn(final long idx) {
+	public RStore<?> getColumn(final long idx) {
 		final RObject obj = get(idx);
 		return (obj != null) ? obj.getData() : null;
 	}
 	
 	@Override
-	public RStore getColumn(final String name) {
+	public RStore<?> getColumn(final String name) {
 		final RObject obj = get(name);
 		return (obj != null) ? obj.getData() : null;
 	}
@@ -139,7 +139,7 @@ public class RDataFrameFixLongImpl extends RListFixLongImpl
 	}
 	
 	@Override
-	public RStore getRowNames() {
+	public RStore<?> getRowNames() {
 		return this.rownamesAttribute;
 	}
 	

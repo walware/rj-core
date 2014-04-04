@@ -14,7 +14,7 @@ package de.walware.rj.data.defaultImpl;
 import de.walware.rj.data.RStore;
 
 
-public interface RDataResizeExtension extends RStore {
+public interface RDataResizeExtension<P> extends RStore<P> {
 	
 	void remove(int idx);
 	void remove(int[] idxs);

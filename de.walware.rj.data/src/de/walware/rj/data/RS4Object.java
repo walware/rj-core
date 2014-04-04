@@ -78,7 +78,7 @@ public interface RS4Object extends RList {
 	 * @return the data of the data slot
 	 */
 	@Override
-	RStore getData();
+	RStore<?> getData();
 	
 	/**
 	 * Returns the names of the slots.

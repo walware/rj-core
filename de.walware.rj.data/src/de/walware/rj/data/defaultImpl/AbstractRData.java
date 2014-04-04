@@ -17,7 +17,7 @@ import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractRData implements RStore {
+public abstract class AbstractRData<P> implements RStore<P> {
 	
 	
 	protected static final long NA_numeric_LONG = 0x7ff80000000007a2L;

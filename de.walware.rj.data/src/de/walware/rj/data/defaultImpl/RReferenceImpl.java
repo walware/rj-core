@@ -84,7 +84,7 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return null;
 	}
 	

@@ -22,7 +22,7 @@ import de.walware.rj.data.RJIO;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RLogicalDataIntImpl extends AbstractLogicalData
-		implements RDataResizeExtension, ExternalizableRStore {
+		implements RDataResizeExtension<Boolean>, ExternalizableRStore {
 	
 	
 	private int length;

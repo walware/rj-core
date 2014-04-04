@@ -18,7 +18,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'raw'.</p>
  */
-public interface RRawStore extends RStore {
+public interface RRawStore extends RStore<Byte> {
 	
 	
 	@Override

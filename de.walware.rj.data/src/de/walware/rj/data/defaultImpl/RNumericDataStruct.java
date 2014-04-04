@@ -89,7 +89,7 @@ public class RNumericDataStruct extends AbstractNumericData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (NUMERIC == other.getStoreType()
 				&& -1 == other.getLength() );
 	}

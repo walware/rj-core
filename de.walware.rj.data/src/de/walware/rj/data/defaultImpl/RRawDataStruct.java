@@ -59,7 +59,7 @@ public class RRawDataStruct extends AbstractRawData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (RAW == other.getStoreType()
 				&& -1 == other.getLength() );
 	}

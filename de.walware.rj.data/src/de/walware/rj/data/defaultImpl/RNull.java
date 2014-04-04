@@ -48,7 +48,7 @@ public class RNull implements RObject {
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return null;
 	}
 	

@@ -24,7 +24,7 @@ import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 
 
-public class RArrayImpl<DataType extends RStore> extends AbstractRObject
+public class RArrayImpl<DataType extends RStore<?>> extends AbstractRObject
 		implements RArray<DataType>, ExternalizableRObject {
 	
 	
@@ -33,7 +33,7 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 	
 	private String className1;
 	private RIntegerDataImpl dimAttribute;
-	private SimpleRListImpl<RStore> dimnamesAttribute;
+	private SimpleRListImpl<RStore<?>> dimnamesAttribute;
 	
 	
 	public RArrayImpl(final DataType data, final String className1, final int[] dim) {
@@ -65,11 +65,11 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 		this.dimAttribute = new RIntegerDataImpl(dim);
 		if ((options & RObjectFactory.O_WITH_NAMES) != 0) {
 			final RCharacterDataImpl names0 = new RCharacterDataImpl(io, dim.length);
-			final RStore[] names1 = new RStore[dim.length];
+			final RStore<?>[] names1 = new RStore[dim.length];
 			for (int i = 0; i < dim.length; i++) {
 				names1[i] = factory.readNames(io, dim[i]);
 			}
-			this.dimnamesAttribute = new SimpleRListImpl<RStore>(names1, names0);
+			this.dimnamesAttribute = new SimpleRListImpl<RStore<?>>(names1, names0);
 		}
 		//-- data
 		this.data = (DataType) factory.readStore(io, this.length);
@@ -151,7 +151,7 @@ public class RArrayImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getNames(final int dim) {
+	public RStore<?> getNames(final int dim) {
 		if (this.dimnamesAttribute != null) {
 			return this.dimnamesAttribute.get(dim);
 		}

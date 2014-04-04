@@ -25,7 +25,7 @@ import de.walware.rj.data.RJIO;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RLogicalDataByteImpl extends AbstractLogicalData
-		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
+		implements RDataResizeExtension<Boolean>, ExternalizableRStore, Externalizable {
 	
 	
 	public static final byte TRUE = TRUE_BYTE;

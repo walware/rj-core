@@ -16,7 +16,7 @@ import de.walware.rj.data.RRawStore;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractRawData extends AbstractRData
+public abstract class AbstractRawData extends AbstractRData<Byte>
 		implements RRawStore {
 	
 	

@@ -23,7 +23,7 @@ import de.walware.rj.data.RJIO;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RIntegerDataImpl extends AbstractIntegerData
-		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
+		implements RDataResizeExtension<Integer>, ExternalizableRStore, Externalizable {
 	
 	
 	private int length;

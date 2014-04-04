@@ -44,9 +44,9 @@ public interface RObjectFactory {
 //	RArgument createArgument(String name, String defaultSource);
 //	RFunction createFunction(RArgument[] argument);
 //	
-	<DataType extends RStore> RVector<DataType> createVector(DataType data);
-	<DataType extends RStore> RArray<DataType> createArray(DataType data, int[] dim);
-	<DataType extends RStore> RArray<DataType> createMatrix(DataType data, int dim1, int dim2);
+	<DataType extends RStore<?>> RVector<DataType> createVector(DataType data);
+	<DataType extends RStore<?>> RArray<DataType> createArray(DataType data, int[] dim);
+	<DataType extends RStore<?>> RArray<DataType> createMatrix(DataType data, int dim1, int dim2);
 	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
 	
@@ -64,13 +64,13 @@ public interface RObjectFactory {
 	void writeObject(RObject object, RJIO io) throws IOException;
 	RObject readObject(RJIO io) throws IOException;
 	
-	void writeStore(RStore data, RJIO io) throws IOException;
-	RStore readStore(RJIO io, long length) throws IOException;
+	void writeStore(RStore<?> data, RJIO io) throws IOException;
+	RStore<?> readStore(RJIO io, long length) throws IOException;
 	
 	void writeAttributeList(RList list, RJIO io) throws IOException;
 	RList readAttributeList(RJIO io) throws IOException;
 	
-	void writeNames(RStore names, RJIO io) throws IOException;
-	RStore readNames(RJIO io, long length) throws IOException;
+	void writeNames(RStore<?> names, RJIO io) throws IOException;
+	RStore<?> readNames(RJIO io, long length) throws IOException;
 	
 }

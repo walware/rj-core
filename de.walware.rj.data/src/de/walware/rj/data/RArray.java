@@ -35,7 +35,7 @@ package de.walware.rj.data;
  * @see RDataUtil#getDataIdxs(int[], int, int)
  * @param <DataType> the type of the data store
  */
-public interface RArray<DataType extends RStore> extends RObject {
+public interface RArray<DataType extends RStore<?>> extends RObject {
 	
 	/**
 	 * Returns the length of the object. The length of an {@link RObject#TYPE_ARRAY array}
@@ -81,7 +81,7 @@ public interface RArray<DataType extends RStore> extends RObject {
 	 * @throws IndexOutOfBoundsException if dim &lt; 0 or dim &ge; getDim().getLength()
 	 * @since 0.5
 	 */
-	RStore getNames(int dim);
+	RStore<?> getNames(int dim);
 	
 	
 	@Override

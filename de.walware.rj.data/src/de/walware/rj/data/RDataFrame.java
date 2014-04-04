@@ -84,7 +84,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return <code>null</code>
 	 */
 	@Override
-	RStore getData();
+	RStore<?> getData();
 	
 	
 	/**
@@ -118,7 +118,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the data store of the column
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
-	public RStore getColumn(int idx);
+	public RStore<?> getColumn(int idx);
 	
 	/**
 	 * Returns the data store for the specified column of the data frame.
@@ -131,7 +131,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @return the data store of the column
 	 * @throws IndexOutOfBoundsException if <code>idx</code> &lt; 0 or <code>idx</code> &ge; column count
 	 */
-	public RStore getColumn(long idx);
+	public RStore<?> getColumn(long idx);
 	
 	/**
 	 * Returns the data store for the column with the specified name of the data frame.
@@ -144,7 +144,7 @@ public interface RDataFrame extends RList, RObject {
 	 * @param name the name of the column
 	 * @return the data store of the column or <code>null</code> (if no column with the specified name exists)
 	 */
-	public RStore getColumn(String name);
+	public RStore<?> getColumn(String name);
 	
 	/**
 	 * Returns the number of rows of the data frame.
@@ -162,11 +162,11 @@ public interface RDataFrame extends RList, RObject {
 	 * 
 	 * @return the row names
 	 */
-	RStore getRowNames();
+	RStore<?> getRowNames();
 	
 	
-//	void setColumn(int idx, RStore column);
-//	void insertColumn(int idx, RStore column);
+//	void setColumn(int idx, RStore<?> column);
+//	void insertColumn(int idx, RStore<?> column);
 //	void removeColumn(int idx);
 	
 //	void insertRow(int idx);

@@ -16,7 +16,7 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractFactorData extends AbstractRData
+public abstract class AbstractFactorData extends AbstractRData<Integer>
 		implements RFactorStore {
 	
 	

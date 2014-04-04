@@ -117,7 +117,7 @@ public class RLanguageImpl extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return null;
 	}
 	

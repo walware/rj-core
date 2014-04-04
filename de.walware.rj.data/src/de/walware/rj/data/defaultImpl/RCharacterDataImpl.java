@@ -24,7 +24,7 @@ import de.walware.rj.data.RJIO;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RCharacterDataImpl extends AbstractCharacterData
-		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
+		implements RDataResizeExtension<String>, ExternalizableRStore, Externalizable {
 	
 	
 	private int length;

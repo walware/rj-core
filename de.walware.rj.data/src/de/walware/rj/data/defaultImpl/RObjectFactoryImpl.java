@@ -62,7 +62,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @param classname the R class name
 	 * @return the R vector
 	 */
-	public <DataType extends RStore> RVector<DataType> createVector(final DataType data, final String classname) {
+	public <DataType extends RStore<?>> RVector<DataType> createVector(final DataType data, final String classname) {
 		return new RVectorImpl<DataType>(data, classname);
 	}
 	
@@ -75,7 +75,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @return the R vector
 	 */
 	@Override
-	public <DataType extends RStore> RVector<DataType> createVector(final DataType data) {
+	public <DataType extends RStore<?>> RVector<DataType> createVector(final DataType data) {
 		return createVector(data, data.getBaseVectorRClassName());
 	}
 	
@@ -289,18 +289,18 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Array/Matrix --*/
 	
-	public <DataType extends RStore> RArray<DataType> createArray(final DataType data, final int[] dim,
+	public <DataType extends RStore<?>> RArray<DataType> createArray(final DataType data, final int[] dim,
 			final String classname) {
 		return new RArrayImpl<DataType>(data, classname, dim);
 	}
 	
 	@Override
-	public <DataType extends RStore> RArray<DataType> createArray(final DataType data, final int[] dim) {
+	public <DataType extends RStore<?>> RArray<DataType> createArray(final DataType data, final int[] dim) {
 		return createArray(data, dim, (dim.length == 2) ? RObject.CLASSNAME_MATRIX :RObject.CLASSNAME_ARRAY);
 	}
 	
 	@Override
-	public <DataType extends RStore> RArray<DataType> createMatrix(final DataType data, final int dim1, final int dim2) {
+	public <DataType extends RStore<?>> RArray<DataType> createMatrix(final DataType data, final int dim1, final int dim2) {
 		return createArray(data, new int[] { dim1, dim2 }, RObject.CLASSNAME_MATRIX);
 	}
 	
@@ -373,11 +373,11 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- DataFrame --*/
 	
-	public RDataFrame createDataFrame(final RStore[] colDatas, final String[] colNames) {
+	public RDataFrame createDataFrame(final RStore<?>[] colDatas, final String[] colNames) {
 		return createDataFrame(colDatas, colNames, null);
 	}
 	
-	public RDataFrame createDataFrame(final RStore[] colDatas, final String[] colNames, final String[] rowNames) {
+	public RDataFrame createDataFrame(final RStore<?>[] colDatas, final String[] colNames, final String[] rowNames) {
 		final RObject[] colVectors = new RObject[colDatas.length];
 		for (int i = 0; i < colVectors.length; i++) {
 			colVectors[i] = createVector(colDatas[i]);
@@ -595,7 +595,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	@Override
-	public RStore readStore(final RJIO io, final long length) throws IOException {
+	public RStore<?> readStore(final RJIO io, final long length) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			final byte storeType = io.readByte();
 			if (length <= Integer.MAX_VALUE) {
@@ -663,7 +663,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	@Override
-	public void writeStore(final RStore data, final RJIO io) throws IOException {
+	public void writeStore(final RStore<?> data, final RJIO io) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			io.writeByte(data.getStoreType());
 			((ExternalizableRStore) data).writeExternal(io);
@@ -699,7 +699,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	@Override
-	public RStore readNames(final RJIO io, final long length) throws IOException {
+	public RStore<?> readNames(final RJIO io, final long length) throws IOException {
 		final byte type = io.readByte();
 		if (type == RStore.CHARACTER) {
 			return (length <= Integer.MAX_VALUE) ?
@@ -713,7 +713,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	}
 	
 	@Override
-	public void writeNames(final RStore names, final RJIO io) throws IOException {
+	public void writeNames(final RStore<?> names, final RJIO io) throws IOException {
 		if (names != null) {
 			final byte type = names.getStoreType();
 			if (type == RStore.CHARACTER) {

@@ -18,7 +18,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'logical'.</p>
  */
-public interface RLogicalStore extends RStore {
+public interface RLogicalStore extends RStore<Boolean> {
 	
 	
 	@Override

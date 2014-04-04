@@ -79,7 +79,7 @@ public class RLogicalDataStruct extends AbstractLogicalData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (LOGICAL == other.getStoreType()
 				&& -1 == other.getLength() );
 	}

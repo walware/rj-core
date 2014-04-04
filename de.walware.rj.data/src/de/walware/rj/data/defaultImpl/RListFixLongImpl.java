@@ -201,7 +201,7 @@ public class RListFixLongImpl extends AbstractRObject
 	}
 	
 	@Override
-	public final RStore getData() {
+	public final RStore<?> getData() {
 		return null;
 	}
 	

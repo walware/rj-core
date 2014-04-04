@@ -16,7 +16,7 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractIntegerData extends AbstractRData
+public abstract class AbstractIntegerData extends AbstractRData<Integer>
 		implements RIntegerStore {
 	
 	
@@ -116,7 +116,7 @@ public abstract class AbstractIntegerData extends AbstractRData
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		final long length = getLength();
 		if (INTEGER != other.getStoreType() || length != other.getLength()) {
 			return false;

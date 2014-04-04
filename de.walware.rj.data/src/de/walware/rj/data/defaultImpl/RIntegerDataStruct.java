@@ -79,7 +79,7 @@ public class RIntegerDataStruct extends AbstractIntegerData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (INTEGER == other.getStoreType()
 				&& -1 == other.getLength() );
 	}

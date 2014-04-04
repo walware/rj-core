@@ -37,7 +37,7 @@ package de.walware.rj.data;
  * 
  * @param <DataType> the type of the data store
  */
-public interface RVector<DataType extends RStore> extends RObject {
+public interface RVector<DataType extends RStore<?>> extends RObject {
 	
 	/**
 	 * Returns the length of the object. The length of an {@link RObject#TYPE_VECTOR vector}
@@ -58,7 +58,7 @@ public interface RVector<DataType extends RStore> extends RObject {
 	 * @return a data store with the names of the indexes or <code>null</code>
 	 * @since 0.5
 	 */
-	RStore getNames();
+	RStore<?> getNames();
 	
 	
 	@Override

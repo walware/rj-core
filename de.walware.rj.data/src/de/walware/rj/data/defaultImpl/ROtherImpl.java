@@ -87,7 +87,7 @@ public class ROtherImpl extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return null;
 	}
 	

@@ -18,7 +18,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'double'.</p>
  */
-public interface RNumericStore extends RStore {
+public interface RNumericStore extends RStore<Double> {
 	
 	
 	boolean isNaN(int idx);

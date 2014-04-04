@@ -127,7 +127,7 @@ public class RFactorDataStruct extends AbstractFactorData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (FACTOR == other.getStoreType()
 				&& this.isOrdered == ((RFactorStore) other).isOrdered()
 				&& this.levelCount == ((RFactorStore) other).getLevelCount()

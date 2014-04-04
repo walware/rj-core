@@ -16,7 +16,7 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
-public abstract class AbstractCharacterData extends AbstractRData
+public abstract class AbstractCharacterData extends AbstractRData<String>
 		implements RCharacterStore {
 	
 	
@@ -121,7 +121,7 @@ public abstract class AbstractCharacterData extends AbstractRData
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		final long length = getLength();
 		if (CHARACTER != other.getStoreType() || length != other.getLength()) {
 			return false;

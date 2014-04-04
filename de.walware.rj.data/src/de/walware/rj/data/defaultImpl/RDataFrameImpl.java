@@ -25,7 +25,7 @@ public class RDataFrameImpl extends RListImpl
 		implements RDataFrame, ExternalizableRObject {
 	
 	
-	private RStore rownamesAttribute;
+	private RStore<?> rownamesAttribute;
 	private long rowCount;
 	
 	
@@ -106,24 +106,24 @@ public class RDataFrameImpl extends RListImpl
 	}
 	
 	@Override
-	public RStore getColumn(final int idx) {
+	public RStore<?> getColumn(final int idx) {
 		final RObject obj = get(idx);
 		return (obj != null) ? obj.getData() : null;
 	}
 	
 	@Override
-	public RStore getColumn(final long idx) {
+	public RStore<?> getColumn(final long idx) {
 		final RObject obj = get(idx);
 		return (obj != null) ? obj.getData() : null;
 	}
 	
 	@Override
-	public RStore getColumn(final String name) {
+	public RStore<?> getColumn(final String name) {
 		final RObject obj = get(name);
 		return (obj != null) ? obj.getData() : null;
 	}
 	
-//	public void setColumn(final int idx, final RStore column) {
+//	public void setColumn(final int idx, final RStore<?> column) {
 //		if (this.length == 0) {
 //			throw new IndexOutOfBoundsException(Long.toString(idx));
 //		}
@@ -154,7 +154,7 @@ public class RDataFrameImpl extends RListImpl
 		return super.set(idx, component);
 	}
 	
-//	public void insertColumn(final int idx, final String name, final RStore column) {
+//	public void insertColumn(final int idx, final String name, final RStore<?> column) {
 //		if (column == null) {
 //			throw new NullPointerException();
 //		}
@@ -180,14 +180,14 @@ public class RDataFrameImpl extends RListImpl
 	}
 	
 	@Override
-	public RStore getRowNames() {
+	public RStore<?> getRowNames() {
 		return this.rownamesAttribute;
 	}
 	
 	public void insertRow(final int idx) {
 		final long length = getLength();
 		for (int i = 0; i < length; i++) {
-			((RDataResizeExtension) get(i)).insertNA(idx);
+			((RDataResizeExtension<?>) get(i)).insertNA(idx);
 		}
 		this.rowCount++;
 //		if (this.rownamesAttribute != null) {
@@ -198,7 +198,7 @@ public class RDataFrameImpl extends RListImpl
 	public void removeRow(final int idx) {
 		final long length = getLength();
 		for (int i = 0; i < length; i++) {
-			((RDataResizeExtension) this.get(i)).remove(idx);
+			((RDataResizeExtension<?>) this.get(i)).remove(idx);
 		}
 		this.rowCount--;
 //		if (this.rownamesAttribute != null) {

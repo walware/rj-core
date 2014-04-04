@@ -18,7 +18,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'character'.</p>
  */
-public interface RCharacterStore extends RStore {
+public interface RCharacterStore extends RStore<String> {
 	
 	
 	@Override

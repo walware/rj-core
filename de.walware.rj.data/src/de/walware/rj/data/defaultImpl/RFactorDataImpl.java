@@ -26,7 +26,7 @@ import de.walware.rj.data.RStore;
  * This implementation is limited to length of 2<sup>31</sup>-1.
  */
 public class RFactorDataImpl extends AbstractFactorData
-		implements RDataResizeExtension, ExternalizableRStore, Externalizable {
+		implements RDataResizeExtension<Integer>, ExternalizableRStore, Externalizable {
 	
 	
 	private int length;
@@ -389,7 +389,7 @@ public class RFactorDataImpl extends AbstractFactorData
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	

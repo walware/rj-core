@@ -89,7 +89,7 @@ public class RComplexDataStruct extends AbstractComplexData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (COMPLEX == other.getStoreType()
 				&& -1 == other.getLength() );
 	}

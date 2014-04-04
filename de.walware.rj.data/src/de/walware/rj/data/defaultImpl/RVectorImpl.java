@@ -20,7 +20,7 @@ import de.walware.rj.data.RStore;
 import de.walware.rj.data.RVector;
 
 
-public class RVectorImpl<DataType extends RStore> extends AbstractRObject
+public class RVectorImpl<DataType extends RStore<?>> extends AbstractRObject
 		implements RVector<DataType>, ExternalizableRObject {
 	
 	
@@ -28,7 +28,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	private long length;
 	
 	private String className1;
-	private RStore namesAttribute;
+	private RStore<?> namesAttribute;
 	
 	
 	public RVectorImpl(final DataType data, final String className1) {
@@ -59,7 +59,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 		}
 	}
 	
-	public RVectorImpl(final DataType data, final String className1, final RStore initialNames) {
+	public RVectorImpl(final DataType data, final String className1, final RStore<?> initialNames) {
 		if (data == null || className1 == null) {
 			throw new NullPointerException();
 		}
@@ -146,7 +146,7 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getNames() {
+	public RStore<?> getNames() {
 		return this.namesAttribute;
 	}
 	
@@ -162,12 +162,12 @@ public class RVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	public void insert(final int idx) {
-		((RDataResizeExtension) this.data).insertNA(idx);
+		((RDataResizeExtension<?>) this.data).insertNA(idx);
 		this.length++;
 	}
 	
 	public void remove(final int idx) {
-		((RDataResizeExtension) this.data).remove(idx);
+		((RDataResizeExtension<?>) this.data).remove(idx);
 		this.length--;
 	}
 	

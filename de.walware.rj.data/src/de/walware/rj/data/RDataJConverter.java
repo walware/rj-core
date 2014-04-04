@@ -48,7 +48,7 @@ public class RDataJConverter {
 		return null;
 	}
 	
-	public Object toJava(final RStore rData) {
+	public Object toJava(final RStore<?> rData) {
 		final Object[] array = rData.toArray();
 		if (!this.keepArray1 && array != null && array.length == 1) {
 			return array[0];

@@ -79,7 +79,7 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 	
 	
 	@Override
-	public boolean allEqual(final RStore other) {
+	public boolean allEqual(final RStore<?> other) {
 		return (CHARACTER == other.getStoreType()
 				&& other.getLength() == -1 );
 	}

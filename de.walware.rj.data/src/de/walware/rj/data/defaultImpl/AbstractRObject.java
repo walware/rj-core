@@ -81,7 +81,7 @@ public abstract class AbstractRObject implements RObject {
 		return new RObject[getNewArraySize(length)];
 	}
 	
-	protected static final RStore[] ensureCapacity(final RStore[] currentValues, final int length) {
+	protected static final RStore<?>[] ensureCapacity(final RStore<?>[] currentValues, final int length) {
 		if (currentValues.length >= length) {
 			return currentValues;
 		}
@@ -101,8 +101,8 @@ public abstract class AbstractRObject implements RObject {
 		return newValues;
 	}
 	
-	protected static final RStore[] prepareInsert(final RStore[] currentValues, final int currentLength, final int[] idxs) {
-		final RStore[] newValues = ensureCapacity(currentValues, currentLength+idxs.length);
+	protected static final RStore<?>[] prepareInsert(final RStore<?>[] currentValues, final int currentLength, final int[] idxs) {
+		final RStore<?>[] newValues = ensureCapacity(currentValues, currentLength+idxs.length);
 		int i = idxs.length-1;
 		System.arraycopy(currentValues, idxs[i], newValues, idxs[i]+i+1, currentLength-idxs[i]);
 		for (i--; i >= 0; i--) {
@@ -127,8 +127,8 @@ public abstract class AbstractRObject implements RObject {
 		return newValues;
 	}
 	
-	protected static final RStore[] remove(final RStore[] currentValues, final int currentLength, final int[] idxs) {
-		final RStore[] newValues = ensureCapacity(currentValues, currentLength-idxs.length);
+	protected static final RStore<?>[] remove(final RStore<?>[] currentValues, final int currentLength, final int[] idxs) {
+		final RStore<?>[] newValues = ensureCapacity(currentValues, currentLength-idxs.length);
 		if (currentValues != newValues) {
 			System.arraycopy(currentValues, 0, newValues, 0, idxs[0]);
 		}

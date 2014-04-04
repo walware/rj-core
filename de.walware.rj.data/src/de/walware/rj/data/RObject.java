@@ -188,7 +188,7 @@ public interface RObject {
 	 * 
 	 * @return the data store or <code>null</code>, if not supported by the object
 	 */
-	RStore getData();
+	RStore<?> getData();
 	
 	/**
 	 * Returns the attribute list of the object

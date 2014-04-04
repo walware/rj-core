@@ -11,6 +11,8 @@
 
 package de.walware.rj.data;
 
+import de.walware.rj.data.RComplexStore.Complex;
+
 
 /**
  * Interface for R data stores of type {@link RStore#COMPLEX}.
@@ -18,7 +20,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'complex'.</p>
  */
-public interface RComplexStore extends RStore {
+public interface RComplexStore extends RStore<Complex> {
 	
 	
 	final class Complex {

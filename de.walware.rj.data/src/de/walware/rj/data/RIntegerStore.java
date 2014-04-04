@@ -18,7 +18,7 @@ package de.walware.rj.data;
  * An R data store implements this interface if the R function
  * <code>typeof(object)</code> returns 'integer'.</p>
  */
-public interface RIntegerStore extends RStore {
+public interface RIntegerStore extends RStore<Integer> {
 	
 	
 	@Override
