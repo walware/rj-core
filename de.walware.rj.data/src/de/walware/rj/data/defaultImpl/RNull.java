@@ -58,6 +58,11 @@ public class RNull implements RObject {
 	}
 	
 	@Override
+	public int hashCode() {
+		return 15677;
+	}
+	
+	@Override
 	public boolean equals(final Object obj) {
 		return (this == obj || (
 				(obj instanceof RObject) && ((RObject) obj).getRObjectType() == RObject.TYPE_NULL) );

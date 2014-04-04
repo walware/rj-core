@@ -63,6 +63,11 @@ public class RMissing implements RObject {
 	}
 	
 	@Override
+	public int hashCode() {
+		return 68462137;
+	}
+	
+	@Override
 	public boolean equals(final Object obj) {
 		return (this == obj || (
 				(obj instanceof RObject) && ((RObject) obj).getRObjectType() == RObject.TYPE_MISSING) );
