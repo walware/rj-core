@@ -73,103 +73,6 @@
 	return (output)
 }
 
-.renderRd <- function(rd, pkg.name) {
-	rdHTML <- NULL
-	tmpout <- textConnection("rdHTML", open = "w", local = TRUE, encoding = "UTF-8")
-	tools:::Rd2HTML(rd, out = tmpout, dynamic = TRUE, package = pkg.name)
-	close(tmpout)
-	Encoding(rdHTML) <- "UTF-8"
-	return (rdHTML)
-}
-
-.statet.checkPkg <- function(id, libPath, name) {
-	descr.file <- file.path(libPath, name, "DESCRIPTION")
-	rdDB.base <- file.path(libPath, name, "help", name)
-	if (!file.exists(descr.file)) {
-		return (NULL)
-	}
-	if (!file.exists(paste(rdDB.base, "rdb", sep = "."))) {
-		stop("Missing Rd file.")
-	}
-	rdDB <- tools:::fetchRdDB(rdDB.base)
-	
-	getTEXT <- function(node) {
-		tags <- c("TEXT", "VERB")
-		.get <- function(x) {
-			if (is.list(x)) {
-				l <- length(x)
-				if (l == 0) {
-					return (NULL)
-				}
-				txts <- NULL
-				for (i in 1:l) {
-					txt <- .get(x[[i]])
-					if (!is.null(txt)) {
-						txts <- c(txts, txt)
-					}
-				}
-				return (txts)
-			}
-			if (is.character(x) && attr(x, "Rd_tag", exact= TRUE) %in% tags) {
-				return (x)
-			}
-		}
-		txt <- paste(.get(node), collapse = " ")
-		if (length(txt) == 1) {
-			txt <- gsub("([[:space:]]+)", " ", gsub("(^[[:space:]]+)|([[:space:]]+$)", "", txt))
-			return (txt)
-		}
-		else {
-			return ("")
-		}
-	}
-	
-	extractFields <- function(rd, rdData) {
-		for (i in seq(along = rd)) {
-			tag <- attr(rd[[i]], "Rd_tag", exact= TRUE)
-			if (is.null(tag)) {
-				next
-			}
-			if (tag == "\\alias") {
-				rdData$topics <- c(rdData$topics, getTEXT(rd[[i]]))
-				next
-			}
-			if (tag == "\\title") {
-				rdData$title <- getTEXT(rd[[i]])
-				next
-			}
-			if (tag == "\\keyword") {
-				rdData$keywords <- c(rdData$keywords, getTEXT(rd[[i]]))
-				next
-			}
-			if (tag == "\\concept") {
-				rdData$concepts <- c(rdData$concepts, getTEXT(rd[[i]]))
-				next
-			}
-		}
-		
-		return (rdData)
-	}
-	
-	createRdData <- function(rd) {
-		try( {
-			rdData <- list(title = NA_character_,
-					topics = character(length = 0),
-					keywords = character(length = 0),
-					concepts = character(length = 0) )
-			rdData <- extractFields(rd, rdData)
-			rdData$HTML <- .renderRd(rd, name)
-			class(rdData) <- "RdData"
-			rdData
-		}, silent = TRUE)
-	}
-	
-	data <- lapply(X = rdDB, FUN = createRdData)
-	data$.id <- id
-	data$.name <- name
-	return (data)
-}
-
 
 .statet.prepareSrcfile <- function(filename, path) {
 	map <- .rj.tmp$statet.SrcfileMap
@@ -340,6 +243,7 @@
 	return (invisible())
 }
 
+#### R env / R lib path (R pkg manager)
 
 .renv.checkLibs <- function() {
 	libs <- .libPaths()
@@ -361,7 +265,6 @@
 	names <- list.files(lib)
 	fields <- c('Package', 'Version', 'Title', 'Built')
 	result <- matrix(NA_character_, nrow= length(names), ncol= length(fields))
-	descrFields <- 
 	num <- 0L
 	for (name in names) {
 		pkgpath <- file.path(lib, name)
@@ -373,12 +276,19 @@
 			if (inherits(md, 'try-error')) {
 				next
 			}
-			desc <- md$DESCRIPTION[fields]
-			if (!length(desc)) {
+			descr <- md$DESCRIPTION[fields]
+			if (is.null(descr)) {
 				next
 			}
-			desc[1L] <- name
-			result[num <- num + 1, ] <- desc
+			enc <- md$DESCRIPTION['Encoding']
+			if (!is.na(enc)) {
+				txt <- try(iconv(descr[3L], from= enc, to= "UTF-8"))
+				if (!inherits(txt, "try-error")) {
+					descr[3L] <- txt
+				}
+			}
+			descr[1L] <- name
+			result[num <- num + 1, ] <- descr
 		}
 	}
 	result[seq.int(from= 1L, length.out= num), , drop= FALSE]
@@ -409,3 +319,114 @@
 	}
 }
 
+#### R help
+
+.rhelp.loadPkgDescr <- function(lib, name) {
+	fields <- c('Version', 'Title', 'Description', 'Author', 'Maintainer', 'URL', 'Built')
+	file <- file.path(lib, name, 'Meta', 'package.rds')
+	md <- readRDS(file)
+	descr <- md$DESCRIPTION[fields]
+	if (is.null(descr)) {
+		return (NULL)
+	}
+	enc <- md$DESCRIPTION['Encoding']
+	if (!is.na(enc)) {
+		txt <- try(iconv(descr[2L:5L], from= enc, to= "UTF-8"))
+		if (!inherits(txt, "try-error")) {
+			descr[2L:5L] <- txt
+		}
+	}
+	return (descr)
+}
+
+.renderRd <- function(rd, pkg.name) {
+	rdHTML <- NULL
+	tmpout <- textConnection("rdHTML", open = "w", local = TRUE, encoding = "UTF-8")
+	tools:::Rd2HTML(rd, out = tmpout, dynamic = TRUE, package = pkg.name)
+	close(tmpout)
+	Encoding(rdHTML) <- "UTF-8"
+	return (rdHTML)
+}
+
+.rhelp.loadPkgRd <- function(lib, name) {
+	rdDB.base <- file.path(lib, name, "help", name)
+	if (!file.exists(paste0(rdDB.base, ".rdb"))) {
+		stop("Missing Rd file.")
+	}
+	rdDB <- tools:::fetchRdDB(rdDB.base)
+	
+	getTEXT <- function(node) {
+		tags <- c("TEXT", "VERB")
+		.get <- function(x) {
+			if (is.list(x)) {
+				l <- length(x)
+				if (l == 0) {
+					return (NULL)
+				}
+				txts <- NULL
+				for (i in 1:l) {
+					txt <- .get(x[[i]])
+					if (!is.null(txt)) {
+						txts <- c(txts, txt)
+					}
+				}
+				return (txts)
+			}
+			if (is.character(x) && attr(x, "Rd_tag", exact= TRUE) %in% tags) {
+				return (x)
+			}
+		}
+		txt <- paste(.get(node), collapse = " ")
+		if (length(txt) == 1) {
+			txt <- gsub("([[:space:]]+)", " ",
+					gsub("(^[[:space:]]+)|([[:space:]]+$)", "", txt) )
+			return (txt)
+		}
+		else {
+			return ("")
+		}
+	}
+	
+	extractFields <- function(rd, rdData) {
+		for (i in seq(along = rd)) {
+			tag <- attr(rd[[i]], "Rd_tag", exact= TRUE)
+			if (is.null(tag)) {
+				next
+			}
+			if (tag == "\\alias") {
+				rdData$topics <- c(rdData$topics, getTEXT(rd[[i]]))
+				next
+			}
+			if (tag == "\\title") {
+				rdData$title <- getTEXT(rd[[i]])
+				next
+			}
+			if (tag == "\\keyword") {
+				rdData$keywords <- c(rdData$keywords, getTEXT(rd[[i]]))
+				next
+			}
+			if (tag == "\\concept") {
+				rdData$concepts <- c(rdData$concepts, getTEXT(rd[[i]]))
+				next
+			}
+		}
+		
+		return (rdData)
+	}
+	
+	createRdData <- function(rd) {
+		try( {
+			rdData <- list(title = NA_character_,
+					topics = character(length = 0),
+					keywords = character(length = 0),
+					concepts = character(length = 0) )
+			rdData <- extractFields(rd, rdData)
+			rdData$HTML <- .renderRd(rd, name)
+			class(rdData) <- "RdData"
+			rdData
+		}, silent = TRUE)
+	}
+	
+	data <- lapply(X = rdDB, FUN = createRdData)
+	return (data)
+}
