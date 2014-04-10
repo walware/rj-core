@@ -13,7 +13,7 @@ package de.walware.rj.renv;
 
 
 /**
- * Basic immutable implementation of {@link IRPkg}.
+ * Basic immutable R package, implementation of {@link IRPkg}.
  * 
  * @since 2.0
  */
@@ -32,8 +32,8 @@ public class RPkg implements IRPkg {
 		if (version == null) {
 			throw new NullPointerException("version"); //$NON-NLS-1$
 		}
-		this.name = name;
-		this.version = version;
+		this.name= name;
+		this.version= version;
 	}
 	
 	
@@ -61,7 +61,7 @@ public class RPkg implements IRPkg {
 		if (!(obj instanceof IRPkg)) {
 			return false;
 		}
-		final IRPkg other = (IRPkg) obj;
+		final IRPkg other= (IRPkg) obj;
 		return (this.name.equals(other.getName()) && this.version.equals(other.getVersion()));
 	}
 	
@@ -71,11 +71,9 @@ public class RPkg implements IRPkg {
 		if (this.version == RNumVersion.NONE) {
 			return this.name;
 		}
-		final StringBuilder sb = new StringBuilder(this.name.length() + this.version.toString().length() + 3);
+		final StringBuilder sb= new StringBuilder(this.name.length() + this.version.toString().length() + 12);
 		sb.append(this.name);
-		sb.append(' ');
-		sb.append('(');
-		sb.append(this.version.toString());
+		sb.append(" (" + "version= ").append(this.version.toString());
 		sb.append(')');
 		return sb.toString();
 	}

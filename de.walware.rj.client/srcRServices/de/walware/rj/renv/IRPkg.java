@@ -13,13 +13,27 @@ package de.walware.rj.renv;
 
 
 /**
+ * R package.
+ * 
+ * Basic interface for representation of an R package.
+ * 
  * @since 2.0
  */
 public interface IRPkg {
 	
 	
+	/**
+	 * The name of the package.
+	 * 
+	 * @return the name
+	 */
 	String getName();
 	
+	/**
+	 * The version of the package.
+	 * 
+	 * @return the version
+	 */
 	RNumVersion getVersion();
 	
 }

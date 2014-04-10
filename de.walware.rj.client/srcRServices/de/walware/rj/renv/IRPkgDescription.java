@@ -13,16 +13,16 @@ package de.walware.rj.renv;
 
 
 /**
+ * R package description.
+ * 
  * @since 2.0
  */
-public interface IRPackageDescription extends IRPkg {
+public interface IRPkgDescription extends IRPkg {
 	
 	
 	String getTitle();
 	
 	String getDescription();
-	
-	String getPriority();
 	
 	String getAuthor();
 	
@@ -30,5 +30,6 @@ public interface IRPackageDescription extends IRPkg {
 	
 	String getUrl();
 	
+	String getBuilt();
 	
 }

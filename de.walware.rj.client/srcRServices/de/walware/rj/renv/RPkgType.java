@@ -13,7 +13,7 @@ package de.walware.rj.renv;
 
 
 /**
- * Type ({@link #SOURCE source} or {@link #BINARY binary}) of R packages,.
+ * Type ({@link #SOURCE source} or {@link #BINARY binary}) of R packages.
  * 
  * @since 2.0
  */
