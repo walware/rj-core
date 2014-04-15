@@ -641,7 +641,7 @@ static SEXP newJavaGD_Cap(NewDevDesc *dd)
 		int count = dim[0] * dim[1];
 		
 		PROTECT(sRaster = allocVector(INTSXP, count));
-		{	unsigned int *raster = INTEGER(sRaster);
+		{	unsigned int *raster= (unsigned int *) INTEGER(sRaster);
 			jbyte* ba = (*env)->GetPrimitiveArrayCritical(env, jRaster, 0);
 			for (int i = 0, j = 0; i < count; i++, j+=4) {
 				raster[i] = R_RGB(ba[j+2], ba[j+1], ba[j+0]);
