@@ -12,6 +12,8 @@
 package de.walware.rj.server.srvext;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.walware.rj.RjInvalidConfigurationException;
 import de.walware.rj.server.RjsStatus;
 
 
@@ -149,14 +150,47 @@ public class ServerUtil {
 		return sb.substring(0, sb.length()-1);
 	}
 	
+	private static String encodeCodebaseEntry(String path) {
+		if (path == null || path.isEmpty()) {
+			return null;
+		}
+		URI uri= null;
+		try {
+			if (path.startsWith("file:")) {
+				path= path.substring(5);
+				uri= new URI("file", null, path, null);
+			}
+			else {
+				if (File.separatorChar == '\\') {
+					path= path.replace('\\', '/');
+				}
+				uri= new URI("file", null, path, null);
+			}
+		}
+		catch (final URISyntaxException e) {
+		}
+		if (uri != null) {
+			return uri.toString();
+		}
+		return null;
+	}
+	
+	/**
+	 * Concats the specified entries to a valid codebase property value.
+	 * The entries have to be path in the local file system. It is recommend to specify the entries
+	 * as URL with the schema 'file'.
+	 */
 	public static String concatCodebase(final String[] entries) {
 		if (entries.length == 0) {
 			return "";
 		}
 		final StringBuilder sb = new StringBuilder();
 		for (final String entry : entries) {
-			sb.append(new File(entry).toURI().toString());
-			sb.append(' ');
+			String path= encodeCodebaseEntry(entry);
+			if (path != null) {
+				sb.append(path);
+				sb.append(' ');
+			}
 		}
 		return sb.substring(0, sb.length()-1);
 	}
@@ -189,15 +223,6 @@ public class ServerUtil {
 				file.delete();
 			}
 		}
-	}
-	
-	
-	/**
-	 * @deprecated use {@link RJContext}
-	 */
-	@Deprecated
-	public static String[] searchRJLibs(final String libPath, final String[] libs) throws RjInvalidConfigurationException {
-		return new RJContext(libPath).searchRJLibs(libs);
 	}
 	
 }
