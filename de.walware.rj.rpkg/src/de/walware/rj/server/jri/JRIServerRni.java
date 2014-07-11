@@ -67,6 +67,16 @@ final class JRIServerRni {
 	public static final byte EVAL_MODE_FORCE = 1;
 	public static final byte EVAL_MODE_DATASLOT = 2;
 	
+	public static class RNullPointerException extends RjsException {
+		
+		private static final long serialVersionUID= 1L;
+		
+		public RNullPointerException() {
+			super(0, "R engine returned unexpected null pointer (out of memory?).");
+		}
+		
+	}
+	
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	private static final RObject[] EMPTY_ROBJECT_ARRAY = new RObject[0];
 	private static final String[] DATA_NAME_ARRAY = new String[] { ".Data" }; //$NON-NLS-1$
@@ -439,6 +449,15 @@ final class JRIServerRni {
 		return p;
 	}
 	
+	public long checkAndProtect(final long p) throws RNullPointerException {
+		if (p == 0) {
+			throw new RNullPointerException();
+		}
+		this.rEngine.rniProtect(p);
+		this.rniProtectedCounter++;
+		return p;
+	}
+	
 	public int saveProtected() {
 		return this.rniProtectedCounter;
 	}
@@ -635,7 +654,7 @@ final class JRIServerRni {
 			for (int i = 0; i < length; i++) {
 				itemPs[i] = assignDataStore(list.getColumn(i));
 			}
-			objP = protect(this.rEngine.rniPutVector(itemPs));
+			objP= checkAndProtect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
 				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
@@ -660,7 +679,7 @@ final class JRIServerRni {
 				this.rEngine.rniUnprotect(this.rniProtectedCounter - savedProtectedCounter);
 				this.rniProtectedCounter = savedProtectedCounter;
 			}
-			objP = protect(this.rEngine.rniPutVector(itemPs));
+			objP= checkAndProtect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
 				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
@@ -674,7 +693,7 @@ final class JRIServerRni {
 			for (int i = (int) s4obj.getLength()-1; i >= 0; i--) {
 				final RObject slotObj = s4obj.get(i);
 				if (slotObj != null && slotObj.getRObjectType() != RObject.TYPE_MISSING) {
-					objP = protect(this.rEngine.rniCons(
+					objP= checkAndProtect(this.rEngine.rniCons(
 							assignDataObject(slotObj), objP,
 							this.rEngine.rniInstallSymbol(s4obj.getName(i)), false ));
 				}
@@ -719,22 +738,24 @@ final class JRIServerRni {
 				"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
 	}
 	
-	public long assignDataStore(final RStore data) {
+	public long assignDataStore(final RStore data) throws RNullPointerException {
 		switch (data.getStoreType()) {
 		case RStore.LOGICAL:
-			return protect(this.rEngine.rniPutBoolArrayI(
+			return checkAndProtect(this.rEngine.rniPutBoolArrayI(
 					((JRILogicalDataImpl) data).getJRIValueArray() ));
 		case RStore.INTEGER:
-			return protect(this.rEngine.rniPutIntArray(
+			return checkAndProtect(this.rEngine.rniPutIntArray(
 					((JRIIntegerDataImpl) data).getJRIValueArray() ));
 		case RStore.NUMERIC:
-			return protect(this.rEngine.rniPutDoubleArray(
+			return checkAndProtect(this.rEngine.rniPutDoubleArray(
 					((JRINumericDataImpl) data).getJRIValueArray() ));
 		case RStore.COMPLEX: {
 			final JRIComplexDataShortImpl complex = (JRIComplexDataShortImpl) data;
-			final long realP = protect(this.rEngine.rniPutDoubleArray(complex.getJRIRealValueArray()));
-			final long imaginaryP = this.rEngine.rniPutDoubleArray(complex.getJRIImaginaryValueArray());
-			return protect(this.rEngine.rniEval(this.rEngine.rniCons(
+			final long realP= checkAndProtect(this.rEngine.rniPutDoubleArray(
+					complex.getJRIRealValueArray() ));
+			final long imaginaryP= checkAndProtect(this.rEngine.rniPutDoubleArray(
+					complex.getJRIImaginaryValueArray() ));
+			return checkAndProtect(this.rEngine.rniEval(this.rEngine.rniCons(
 					this.p_complexFun, this.rEngine.rniCons(
 							realP, this.rEngine.rniCons(
 									imaginaryP, this.p_NULL,
@@ -743,14 +764,15 @@ final class JRIServerRni {
 					0, true ),
 					this.p_BaseEnv )); }
 		case RStore.CHARACTER:
-			return protect(this.rEngine.rniPutStringArray(
+			return checkAndProtect(this.rEngine.rniPutStringArray(
 					((JRICharacterDataImpl) data).getJRIValueArray() ));
 		case RStore.RAW:
-			return protect(this.rEngine.rniPutRawArray(
+			return checkAndProtect(this.rEngine.rniPutRawArray(
 					((JRIRawDataImpl) data).getJRIValueArray() ));
 		case RStore.FACTOR: {
 			final JRIFactorDataImpl factor = (JRIFactorDataImpl) data;
-			final long objP = protect(this.rEngine.rniPutIntArray(factor.getJRIValueArray()));
+			final long objP= checkAndProtect(this.rEngine.rniPutIntArray(
+					factor.getJRIValueArray() ));
 			this.rEngine.rniSetAttr(objP, "levels",
 					this.rEngine.rniPutStringArray(factor.getJRILevelsArray()) );
 			this.rEngine.rniSetAttr(objP, "class",

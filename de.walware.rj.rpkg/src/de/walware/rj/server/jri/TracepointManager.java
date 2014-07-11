@@ -43,6 +43,7 @@ import de.walware.rj.server.dbg.TracepointEvent;
 import de.walware.rj.server.dbg.TracepointPosition;
 import de.walware.rj.server.dbg.TracepointState;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
+import de.walware.rj.server.jri.JRIServerRni.RNullPointerException;
 
 
 final class TracepointManager {
@@ -518,9 +519,9 @@ final class TracepointManager {
 			long editFunP= 0;
 			if (l > 0) {
 				// prepare
-				final long newMainFunP= this.rni.protect(this.rEngine.rniDuplicate(funInfo.orgMainFunP));
+				final long newMainFunP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(funInfo.orgMainFunP));
 				// if (subIndex != null) assert(this.rEngine.rniGetCloBodyExpr(newMainFunP) == bodyP);
-				long newMainBodyP= this.rni.protect(this.rEngine.rniDuplicate(
+				long newMainBodyP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
 						this.rEngine.rniGetCloBodyExpr(newMainFunP) ));
 				long newBodyP= newMainBodyP;
 				long subListP= 0;
@@ -541,7 +542,7 @@ final class TracepointManager {
 						subListP= 0;
 						subCloP= newBodyP;
 						// assert(this.rEngine.rniGetCloBodyExpr(subCloP) == bodyP);
-						newBodyP= this.rni.protect(this.rEngine.rniDuplicate(
+						newBodyP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
 								this.rEngine.rniGetCloBodyExpr(newBodyP) ));
 					}
 				}
@@ -549,8 +550,10 @@ final class TracepointManager {
 					throw new IllegalStateException("unsupported SXP-type: " + this.rEngine.rniExpType(newBodyP));
 				}
 				
-				final long filePathP= this.rni.protect(this.rEngine.rniPutString(srcfile.getPath()));
-				final long elementIdP= this.rni.protect(this.rEngine.rniPutString(elementTracepointPositions.getElementId()));
+				final long filePathP= this.rni.checkAndProtect(this.rEngine.rniPutString(
+						srcfile.getPath() ));
+				final long elementIdP= this.rni.checkAndProtect(this.rEngine.rniPutString(
+						elementTracepointPositions.getElementId() ));
 				
 				final int i= 0;
 				int j= 0;
@@ -644,7 +647,7 @@ final class TracepointManager {
 	private void addTrace(final long newP, final List<? extends TracepointPosition> list, final int depth,
 			final FunInfo funInfo, final long filePathP, final long elementIdP,
 			final int[] baseSrcref, final int[] lastSrcref)
-			throws UnexpectedRDataException {
+			throws UnexpectedRDataException, RNullPointerException {
 		final int length= this.rEngine.rniGetLength(newP);
 		final long newSrcrefP= this.rEngine.rniGetAttrBySym(newP, this.rni.p_srcrefSymbol);
 		int currentIdx= 1;
@@ -699,7 +702,7 @@ final class TracepointManager {
 				long orgP;
 				if (this.rEngine.rniGetLength(currentValueP) == 3
 						&& this.rEngine.rniCAR(currentValueP) == this.rni.p_functionSymbol) {
-					orgP= this.rEngine.rniDuplicate(currentValueP);
+					orgP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(currentValueP));
 				}
 				else {
 					orgP= 0;
@@ -766,7 +769,7 @@ final class TracepointManager {
 	
 	private long createTraceLang(long currentP, final List<? extends TracepointPosition> list,
 			final FunInfo funInfo, final long filePathP, final long elementIdP,
-			final int[] currentSrcref) {
+			final int[] currentSrcref) throws RNullPointerException {
 		for (int i= list.size()-1; i >= 0; i--) {
 			int n;
 			final TracepointPosition position= list.get(i);
@@ -802,7 +805,7 @@ final class TracepointManager {
 			else {
 				continue;
 			}
-			currentP= this.rni.protect(this.rEngine.rniCons(
+			currentP= this.rni.checkAndProtect(this.rEngine.rniCons(
 					this.rni.p_BlockSymbol, currentP,
 					0, true ));
 			this.rEngine.rniSetAttrBySym(currentP, this.rni.p_srcrefSymbol, createTraceSrcref(n,
@@ -812,11 +815,13 @@ final class TracepointManager {
 	}
 	
 	private long createBreakpointCall(final TracepointPosition position, final int[] srcref,
-			final FunInfo funInfo, final long filePathP, final long elementIdP, final int flags) {
-		final long exprP= this.rEngine.rniDuplicate(this.breakpointTmplP);
+			final FunInfo funInfo, final long filePathP, final long elementIdP, final int flags)
+			throws RNullPointerException {
+		final long exprP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(this.breakpointTmplP));
 		{	final long[] srcrefList= new long[2];
-			srcrefList[0]= this.rni.protect(this.rEngine.rniDuplicate(this.stepSrcrefTmplP));
-			srcrefList[1]= this.rni.protect(this.rEngine.rniPutIntArray(
+			srcrefList[0]= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
+					this.stepSrcrefTmplP ));
+			srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(
 					(srcref != null) ? srcref : NA_SRCREF ));
 			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_srcfileSymbol, funInfo.srcfileP);
 			if (filePathP != 0) {
@@ -838,16 +843,17 @@ final class TracepointManager {
 	}
 	
 	private long createTraceSrcref(final int n, final int[] srcref,
-			final long srcfileP, final long elementIdP) {
+			final long srcfileP, final long elementIdP)
+			throws RNullPointerException {
 		final long[] list= new long[n+2];
-		list[0]= this.rni.protect(this.rEngine.rniPutIntArray(srcref));
+		list[0]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
 		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_srcfileSymbol, srcfileP);
 		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_whatSymbol, this.stepNextValueP);
 		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_dbgElementIdSymbol, elementIdP);
 		for (int i= 1; i <= n; i++) {
 			list[i]= list[0];
 		}
-		list[n+1]= this.rni.protect(this.rEngine.rniPutIntArray(srcref));
+		list[n+1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
 		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.p_srcfileSymbol, srcfileP);
 		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.p_dbgElementIdSymbol, elementIdP);
 		return this.rEngine.rniPutVector(list);
@@ -1031,24 +1037,36 @@ final class TracepointManager {
 			}
 		}
 		
-		final long browserExprP= this.rni.protect(this.rEngine.rniDuplicate(this.browserExprP));
-		{	final long[] srcrefList= new long[2];
-			srcrefList[0]= this.rni.protect(this.rEngine.rniDuplicate(this.stepSrcrefTmplP));
-			srcrefList[1]= this.rni.protect(this.rEngine.rniPutIntArray(this.hitBreakpointSrcref));
+		try {
+			final long browserExprP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
+					this.browserExprP ));
+			
+			final long[] srcrefList= new long[2];
+			srcrefList[0]= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
+					this.stepSrcrefTmplP ));
+			srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(
+					this.hitBreakpointSrcref ));
 			if ((codeFlags & TracepointState.FLAG_MB_EXIT) == 0) {
 				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_whatSymbol, this.stepNextValueP);
-				srcrefList[1]= this.rni.protect(this.rEngine.rniDuplicate(this.stepSrcrefTmplP));
+				srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
+						this.stepSrcrefTmplP ));
 			}
 			this.rEngine.rniSetAttrBySym(browserExprP, this.rni.p_srcrefSymbol,
 					this.rEngine.rniPutVector(srcrefList) );
+			
+			return browserExprP;
 		}
-		
-		if (this.hitBreakpointSrcref != null && this.hitBreakpointSrcref.length >= 6) {
-			this.hitBreakpointState= breakpointState;
-			this.hitBreakpointFlags= flags;
-			this.hitBreakpointSrcfile= srcfileP;
+		catch (final RNullPointerException e) {
+			LOGGER.log(Level.WARNING, "Failed to create browser expression.", e);
+			return this.browserExprP;
 		}
-		return browserExprP;
+		finally {
+			if (this.hitBreakpointSrcref != null && this.hitBreakpointSrcref.length >= 6) {
+				this.hitBreakpointState= breakpointState;
+				this.hitBreakpointFlags= flags;
+				this.hitBreakpointSrcfile= srcfileP;
+			}
+		}
 	}
 	
 	private long getTracepointEvalExpr(final TracepointState breakpointState) {
