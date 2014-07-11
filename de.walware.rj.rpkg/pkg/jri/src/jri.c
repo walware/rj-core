@@ -315,196 +315,173 @@ SEXP jri_getObjectArray(JNIEnv *env, jarray o) {
 
 /** get contents of the object array in the form of int* */
 SEXP jri_getStringArray(JNIEnv *env, jarray o) {
-    SEXP ar;
-    int l, i;
-    const char *c;
-
-    profStart();
-    _dbg(rjprintf(" jarray %d\n",o));
-    if (!o) return R_NilValue;
-    l = (int)(*env)->GetArrayLength(env, o);
-    _dbg(rjprintf("convert string array of length %d\n",l));
-    PROTECT(ar = allocVector(STRSXP,l));
-    for (i = 0; i < l; i++) {
-	jobject sobj = (*env)->GetObjectArrayElement(env, o, i);
-	c = 0;
-	if (sobj) {
-	    /* we could (should?) check the type here ...
-	       if (!(*env)->IsInstanceOf(env, sobj, javaStringClass)) {
-	       printf(" not a String\n");
-	       } else
-	    */
-	    c = (*env)->GetStringUTFChars(env, sobj, 0);
+	SEXP ar;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert string array of length %d\n",l));
+	PROTECT(ar= allocVector(STRSXP, l));
+	for (int i= 0; i < l; i++) {
+		jobject sobj= (*env)->GetObjectArrayElement(env, o, i);
+		const char *c= 0;
+		if (sobj) {
+			/* we could (should?) check the type here ...
+			if (!(*env)->IsInstanceOf(env, sobj, javaStringClass)) {
+				printf(" not a String\n");
+			} else
+			 */
+			c= (*env)->GetStringUTFChars(env, sobj, 0);
+		}
+		if (!c)
+			SET_STRING_ELT(ar, i, R_NaString); /* this is probably redundant since the vector is pre-filled with NAs, but just in case ... */
+		else {
+			SET_STRING_ELT(ar, i, mkCharUTF8(c));
+			(*env)->ReleaseStringUTFChars(env, sobj, c);
+		}
 	}
-	if (!c)
-	    SET_STRING_ELT(ar, i, R_NaString); /* this is probably redundant since the vector is pre-filled with NAs, but just in case ... */
-	else {
-	    SET_STRING_ELT(ar, i, mkCharUTF8(c));
-	    (*env)->ReleaseStringUTFChars(env, sobj, c);
-	}
-    }
-    UNPROTECT(1);
-    _prof(profReport("RgetStringArrayCont[%d]:",o));
-    return ar;
+	UNPROTECT(1);
+	_prof(profReport("RgetStringArrayCont[%d]:",o));
+	return ar;
 }
 
 /** get contents of the integer array object (int) */
 SEXP jri_getIntArray(JNIEnv *env, jarray o) {
 	SEXP ar;
-	int l;
 	jint *ap;
 	
 	profStart();
 	_dbg(rjprintf(" jarray %d\n",o));
 	if (!o) return R_NilValue;
-	l=(int)(*env)->GetArrayLength(env, o);
+	int l= (int)(*env)->GetArrayLength(env, o);
 	_dbg(rjprintf("convert int array of length %d\n",l));
-	if (l < 0) return R_NilValue;
-	else if (l == 0) {
-		ar = allocVector(INTSXP, 0);
-	} else {
-		ap=(jint*)(*env)->GetIntArrayElements(env, o, 0);
-		if (!ap) {
-			jri_error("RgetIntArrayCont: can't fetch array contents");
-			return 0;
-		}
-		PROTECT(ar=allocVector(INTSXP,l));
-		memcpy(INTEGER(ar),ap,sizeof(jint)*l);
-		UNPROTECT(1);
-		(*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
+	ap= (jint*)(*env)->GetIntArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("RgetIntArrayCont: can't fetch array contents");
+		return 0;
 	}
+	ar= allocVector(INTSXP, l);
+	memcpy(INTEGER(ar), ap, sizeof(jint) * l);
+	(*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
 	_prof(profReport("RgetIntArrayCont[%d]:",o));
 	return ar;
 }
 
 /** get contents of the integer array object (int) */
 SEXP jri_getByteArray(JNIEnv *env, jarray o) {
-  SEXP ar;
-  int l;
-  jbyte *ap;
-
-  profStart();
-  _dbg(rjprintf(" jarray %d\n",o));
-  if (!o) return R_NilValue;
-  l = (int)(*env)->GetArrayLength(env, o);
-  _dbg(rjprintf("convert byte array of length %d\n",l));
-  if (l < 1) return R_NilValue;
-  ap = (jbyte*)(*env)->GetByteArrayElements(env, o, 0);
-  if (!ap) {
-      jri_error("jri_getByteArray: can't fetch array contents");
-      return 0;
-  }
-  ar = allocVector(RAWSXP, l);
-  memcpy(RAW(ar), ap, l);
-  (*env)->ReleaseByteArrayElements(env, o, ap, JNI_ABORT);
-  _prof(profReport("RgetByteArrayCont[%d]:",o));
-  return ar;
+	SEXP ar;
+	jbyte *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert byte array of length %d\n",l));
+	ap= (jbyte*)(*env)->GetByteArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("jri_getByteArray: can't fetch array contents");
+		return 0;
+	}
+	ar= allocVector(RAWSXP, l);
+	memcpy(RAW(ar), ap, l);
+	(*env)->ReleaseByteArrayElements(env, o, ap, JNI_ABORT);
+	_prof(profReport("RgetByteArrayCont[%d]:",o));
+	return ar;
 }
 
 /** get contents of the integer array object (int) into a logical R vector */
 SEXP jri_getBoolArrayI(JNIEnv *env, jarray o) {
-  SEXP ar;
-  int l;
-  jint *ap;
-
-  profStart();
-  _dbg(rjprintf(" jarray %d\n",o));
-  if (!o) return R_NilValue;
-  l=(int)(*env)->GetArrayLength(env, o);
-  _dbg(rjprintf("convert int array of length %d into R bool\n",l));
-  if (l<1) return R_NilValue;
-  ap=(jint*)(*env)->GetIntArrayElements(env, o, 0);
-  if (!ap) {
-      jri_error("RgetBoolArrayICont: can't fetch array contents");
-      return 0;
-  }
-  PROTECT(ar=allocVector(LGLSXP,l));
-  memcpy(LOGICAL(ar),ap,sizeof(jint)*l);
-  UNPROTECT(1);
-  (*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
-  _prof(profReport("RgetBoolArrayICont[%d]:",o));
-  return ar;
+	SEXP ar;
+	jint *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert int array of length %d into R bool\n",l));
+	ap= (jint*)(*env)->GetIntArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("RgetBoolArrayICont: can't fetch array contents");
+		return 0;
+	}
+	ar= allocVector(LGLSXP, l);
+	memcpy(LOGICAL(ar), ap, sizeof(jint) * l);
+	(*env)->ReleaseIntArrayElements(env, o, ap, JNI_ABORT);
+	_prof(profReport("RgetBoolArrayICont[%d]:",o));
+	return ar;
 }
 
 /** get contents of the boolean array object into a logical R vector */
 SEXP jri_getBoolArray(JNIEnv *env, jarray o) {
-  SEXP ar;
-  int l;
-  jboolean *ap;
-
-  profStart();
-  _dbg(rjprintf(" jarray %d\n",o));
-  if (!o) return R_NilValue;
-  l=(int)(*env)->GetArrayLength(env, o);
-  _dbg(rjprintf("convert boolean array of length %d into R bool\n",l));
-  if (l<1) return R_NilValue;
-  ap=(jboolean*)(*env)->GetBooleanArrayElements(env, o, 0);
-  if (!ap) {
-      jri_error("RgetBoolArrayCont: can't fetch array contents");
-      return 0;
-  }
-  PROTECT(ar=allocVector(LGLSXP,l));
-  {
-    int i=0;
-    int *lgl = LOGICAL(ar);
-    while (i<l) { lgl[i]=ap[i]?1:0; i++; }
-  }
-  UNPROTECT(1);
-  (*env)->ReleaseBooleanArrayElements(env, o, ap, JNI_ABORT);
-  _prof(profReport("RgetBoolArrayCont[%d]:",o));
-  return ar;
+	SEXP ar;
+	jboolean *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert boolean array of length %d into R bool\n",l));
+	ap= (jboolean*)(*env)->GetBooleanArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("RgetBoolArrayCont: can't fetch array contents");
+		return 0;
+	}
+	ar= allocVector(LGLSXP, l);
+	{	int *lgl= LOGICAL(ar);
+		for (int i= 0; i < l; i++) {
+			lgl[i]= ap[i] ? 1 : 0;
+		}
+	}
+	(*env)->ReleaseBooleanArrayElements(env, o, ap, JNI_ABORT);
+	_prof(profReport("RgetBoolArrayCont[%d]:",o));
+	return ar;
 }
 
 SEXP jri_getSEXPLArray(JNIEnv *env, jarray o) {
-    SEXP ar;
-    int l,i=0;
-    jlong *ap;
-    
-    profStart();
-    _dbg(rjprintf(" jarray %d\n",o));
-    if (!o) return R_NilValue;
-    l=(int)(*env)->GetArrayLength(env, o);
-    _dbg(rjprintf("convert SEXPL array of length %d\n",l));
-    if (l<1) return R_NilValue;
-    ap=(jlong*)(*env)->GetLongArrayElements(env, o, 0);
-    if (!ap) {
-        jri_error("getSEXPLArray: can't fetch array contents");
-        return 0;
-    }
-    PROTECT(ar=allocVector(VECSXP,l));
-    while (i<l) {
-        SET_VECTOR_ELT(ar, i, L2SEXP(ap[i]));
-        i++;
-    }
-    UNPROTECT(1);
-    (*env)->ReleaseLongArrayElements(env, o, ap, JNI_ABORT);
-    _prof(profReport("jri_getSEXPLArray[%d]:",o));
-    return ar;
+	SEXP ar;
+	jlong *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert SEXPL array of length %d\n",l));
+	ap= (jlong*)(*env)->GetLongArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("getSEXPLArray: can't fetch array contents");
+		return 0;
+	}
+	PROTECT(ar= allocVector(VECSXP, l));
+	for (int i= 0; i < l; i++) {
+		SET_VECTOR_ELT(ar, i, L2SEXP(ap[i]));
+	}
+	UNPROTECT(1);
+	(*env)->ReleaseLongArrayElements(env, o, ap, JNI_ABORT);
+	_prof(profReport("jri_getSEXPLArray[%d]:",o));
+	return ar;
 }
 
 /** get contents of the double array object (int) */
 SEXP jri_getDoubleArray(JNIEnv *env, jarray o) {
-  SEXP ar;
-  int l;
-  jdouble *ap;
-
-  profStart();
-  _dbg(rjprintf(" jarray %d\n",o));
-  if (!o) return R_NilValue;
-  l=(int)(*env)->GetArrayLength(env, o);
-  _dbg(rjprintf("convert double array of length %d\n",l));
-  if (l<1) return R_NilValue;
-  ap=(jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
-  if (!ap) {
-      jri_error("RgetDoubleArrayCont: can't fetch array contents");
-      return 0;
-  }
-  PROTECT(ar=allocVector(REALSXP,l));
-  memcpy(REAL(ar),ap,sizeof(jdouble)*l);
-  UNPROTECT(1);
-  (*env)->ReleaseDoubleArrayElements(env, o, ap, JNI_ABORT);
-  _prof(profReport("RgetDoubleArrayCont[%d]:",o));
-  return ar;
+	SEXP ar;
+	jdouble *ap;
+	
+	profStart();
+	_dbg(rjprintf(" jarray %d\n",o));
+	if (!o) return R_NilValue;
+	int l= (int)(*env)->GetArrayLength(env, o);
+	_dbg(rjprintf("convert double array of length %d\n",l));
+	ap= (jdouble*)(*env)->GetDoubleArrayElements(env, o, 0);
+	if (!ap) {
+		jri_error("RgetDoubleArrayCont: can't fetch array contents");
+		return 0;
+	}
+	ar= allocVector(REALSXP, l);
+	memcpy(REAL(ar), ap, sizeof(jdouble) * l);
+	(*env)->ReleaseDoubleArrayElements(env, o, ap, JNI_ABORT);
+	_prof(profReport("RgetDoubleArrayCont[%d]:",o));
+	return ar;
 }
 
 #if R_VERSION >= R_Version(2,7,0)
