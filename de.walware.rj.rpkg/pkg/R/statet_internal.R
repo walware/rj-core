@@ -350,9 +350,20 @@
 
 .rhelp.loadPkgRd <- function(lib, name) {
 	rdDB.base <- file.path(lib, name, "help", name)
-	if (!file.exists(paste0(rdDB.base, ".rdb"))) {
+	rdDB.file <- paste0(rdDB.base, ".rdb")
+	if (!file.exists(rdDB.file)) {
 		stop("Missing Rd file.")
 	}
+	
+	if (getRversion() >= "3.0.0") {
+		flushRdDB <- function() invisible(.Internal(lazyLoadDBflush(rdDB.file)))
+	}
+	else {
+		flushRdDB <- function() invisible()
+	}
+	
+	flushRdDB()
+	
 	rdDB <- tools:::fetchRdDB(rdDB.base)
 	
 	getTEXT <- function(node) {
@@ -428,5 +439,8 @@
 	}
 	
 	data <- lapply(X = rdDB, FUN = createRdData)
+	
+	flushRdDB()
+	
 	return (data)
 }
