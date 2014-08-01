@@ -164,15 +164,16 @@ public class ServerUtil {
 				if (File.separatorChar == '\\') {
 					path= path.replace('\\', '/');
 				}
+				if (path.charAt(0) != '/') {
+					path= '/' + path;
+				}
 				uri= new URI("file", null, path, null);
 			}
-		}
-		catch (final URISyntaxException e) {
-		}
-		if (uri != null) {
 			return uri.toString();
 		}
-		return null;
+		catch (final URISyntaxException e) {
+			throw new IllegalArgumentException("Invalid entry for codebase", e);
+		}
 	}
 	
 	/**
