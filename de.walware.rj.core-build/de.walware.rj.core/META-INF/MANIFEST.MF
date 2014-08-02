@@ -3,4 +3,4 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Library (Java-R) - Java Core
 Bundle-SymbolicName: de.walware.rj.core;singleton:=true
-Bundle-Version: 2.0.0.qualifier
+Bundle-Version: 2.0.0.b201408021330
