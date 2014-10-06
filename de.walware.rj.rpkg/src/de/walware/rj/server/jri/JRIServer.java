@@ -122,8 +122,8 @@ public final class JRIServer extends RJ
 	private static final long STALE_SPAN = 5L * 60L * 1000000000L;
 	
 	private static final int KILO = 1024;
-	private static final int MEGA = 1048576;
-	private static final int GIGA = 1073741824;
+	private static final int MEGA = 1024 * KILO;
+	private static final int GIGA = 1024 * MEGA;
 	
 	private static final long REQUIRED_JRI_API = 0x010a;
 	
@@ -340,6 +340,7 @@ public final class JRIServer extends RJ
 		// default true
 		this.rConfig.MainCStack_SetLimit = !"false".equalsIgnoreCase(
 				System.getProperty("de.walware.rj.rMainCStack_SetLimit") );
+		this.rMemSize= s2long(System.getenv("R_MAX_MEM_SIZE"), 0);
 		
 		this.mainLoopState = ENGINE_NOT_STARTED;
 		this.mainLoopClient0State = CLIENT_NONE;
