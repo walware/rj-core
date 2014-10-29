@@ -1022,7 +1022,7 @@ final class JRIServerDbg {
 	}
 	
 	String getFileEncoding(final long srcfileP) {
-		final long p = this.rEngine.rniGetVar(srcfileP, "encoding"); //$NON-NLS-1$
+		final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.encodingSymP);
 		if (p != 0) {
 			return this.rEngine.rniGetString(p);
 		}

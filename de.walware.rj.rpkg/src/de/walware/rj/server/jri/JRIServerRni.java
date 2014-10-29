@@ -102,6 +102,7 @@ final class JRIServerRni {
 	public final long p_classSymbol;
 	public final long p_dimNamesSymbol;
 	public final long p_editSymbol;
+	public final long encodingSymP;
 	public final long p_envSymbol;
 	public final long p_exprSymbol;
 	public final long p_errorSymbol;
@@ -209,6 +210,7 @@ final class JRIServerRni {
 			this.p_classSymbol = this.rEngine.rniInstallSymbol("class"); //$NON-NLS-1$
 			this.p_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames"); //$NON-NLS-1$
 			this.p_editSymbol = this.rEngine.rniInstallSymbol("edit"); //$NON-NLS-1$
+			this.encodingSymP= this.rEngine.rniInstallSymbol("encoding"); //$NON-NLS-1$
 			this.p_envSymbol = this.rEngine.rniInstallSymbol("env"); //$NON-NLS-1$
 			this.p_errorSymbol = this.rEngine.rniInstallSymbol("error"); //$NON-NLS-1$
 			this.p_exprSymbol = this.rEngine.rniInstallSymbol("expr"); //$NON-NLS-1$
@@ -581,8 +583,7 @@ final class JRIServerRni {
 			}
 			throw new IllegalStateException("JRI returned error code " + objP + " (pointer = 0x" + Long.toHexString(exprP) + ")");
 		}
-		this.rEngine.rniProtect(objP);
-		this.rniProtectedCounter++;
+		protect(objP);
 		if (this.rEngine.rniExpType(objP) == REXP.RAWSXP) {
 			final String className1 = this.rEngine.rniGetClassAttrString(objP);
 			if (className1 != null && className1.equals(".rj.eval.error")) {
