@@ -58,6 +58,7 @@ import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
 import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
+import de.walware.rj.data.defaultImpl.RMissing;
 import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleMessageCmdItem;
 import de.walware.rj.server.ConsoleReadCmdItem;
@@ -1366,8 +1367,9 @@ public final class JRIServer extends RJ
 			if (operation == DataCmdItem.FIND_DATA) {
 				final long[] foundP= rniFind(cmd.getDataText(), envirP, (cmd.getCmdOption() & 0x1000) != 0);
 				if (foundP != null) {
-					cmd.setAnswer(
-							this.rni.createDataObject(foundP[1], cmd.getCmdOption() & 0xfff),
+					cmd.setAnswer((foundP[1] != 0) ?
+									this.rni.createDataObject(foundP[1], cmd.getCmdOption() & 0xfff) :
+									RMissing.INSTANCE,
 							new JRIEnvironmentImpl(this.rni.getEnvName(foundP[0]), foundP[0],
 									null, null, this.rEngine.rniGetLength(foundP[0]),
 									this.rEngine.rniGetClassAttrString(foundP[0]) ));
@@ -1467,14 +1469,20 @@ public final class JRIServer extends RJ
 	
 	private long[] rniFind(final String name, long envirP, final boolean inherits) throws RjsException {
 		final long symbolP= this.rEngine.rniInstallSymbol(name);
-		long p= this.rEngine.rniGetVarBySym(envirP, symbolP);
+		long p= this.rEngine.rniGetVarBySym(envirP, symbolP, Rengine.FLAG_UNBOUND_P);
 		if (inherits) {
-			while (p == 0 && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
+			while (p == this.rni.rUnboundP && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
 					&& envirP != this.rni.p_EmptyEnv ) {
-				p= this.rEngine.rniGetVarBySym(envirP, symbolP);
+				p= this.rEngine.rniGetVarBySym(envirP, symbolP, Rengine.FLAG_UNBOUND_P);
 			}
 		}
-		return (p != 0) ? new long[] { envirP, p } : null;
+		if (p == this.rni.rUnboundP) {
+			return null;
+		}
+		if (p != 0) {
+			this.rni.protect(p);
+		}
+		return new long[] { envirP, p };
 	}
 	
 	/**

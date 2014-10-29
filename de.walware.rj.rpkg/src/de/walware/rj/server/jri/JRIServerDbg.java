@@ -374,8 +374,8 @@ final class JRIServerDbg {
 						
 						int[] srcref = getSrcrefObject(srcrefP);
 						if (srcref != null) {
-							final int[] add = getSrcrefObject(this.rEngine.rniGetVarBySym(
-									srcfileP, this.rni.p_linesSrcrefSymbol ));
+							final int[] add= getSrcrefObject(this.rEngine.rniGetVarBySym(
+									srcfileP, this.rni.p_linesSrcrefSymbol, 0 ));
 							if (add != null) {
 								srcref = Srcref.add(srcref, add);
 							}
@@ -548,15 +548,15 @@ final class JRIServerDbg {
 		String sourceCode = null;
 		int[] sourceSrcref = null;
 		{	if (contextSrcfileP != 0) {
-				final long sourceP = this.rEngine.rniGetVarBySym(
-						contextSrcfileP, this.rni.p_linesSymbol );
+				final long sourceP= this.rEngine.rniGetVarBySym(
+						contextSrcfileP, this.rni.p_linesSymbol, 0 );
 				if (sourceP != 0) {
 					final String[] sourceLines = this.rEngine.rniGetStringArray(sourceP);
 					if (sourceLines != null && sourceLines.length > 0) {
 						sourceType = FrameContext.SOURCETYPE_1_LINES;
 						sourceCode = this.utils.concat(sourceLines, '\n');
-						sourceSrcref = getSrcrefObject(this.rEngine.rniGetVarBySym(
-								contextSrcfileP, this.rni.p_linesSrcrefSymbol ));
+						sourceSrcref= getSrcrefObject(this.rEngine.rniGetVarBySym(
+								contextSrcfileP, this.rni.p_linesSrcrefSymbol, 0 ));
 					}
 				}
 			}
@@ -987,7 +987,7 @@ final class JRIServerDbg {
 	}
 	
 	String getFilePath(final long srcfileP, final long srcrefP) {
-		long p = this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_appFilePathSymbol);
+		long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_appFilePathSymbol, 0);
 		if (p == 0 && (srcrefP == 0
 				|| (p = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_appFilePathSymbol)) == 0 )) {
 			return null;
@@ -997,7 +997,7 @@ final class JRIServerDbg {
 	
 	String getFileName(final long srcfileP) {
 		String filename;
-		{	final long p = this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_filenameSymbol);
+		{	final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_filenameSymbol, 0);
 			if (p == 0
 					|| (filename = this.rEngine.rniGetString(p)) == null
 					|| filename.length() == 0) {
@@ -1009,7 +1009,7 @@ final class JRIServerDbg {
 		}
 		if (filename.charAt(0) != '/' && filename.charAt(0) != '\\'
 				&& filename.indexOf(':') < 0) {
-			{	final long p = this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_wdSymbol);
+			{	final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_wdSymbol, 0);
 				if (p != 0) {
 					final String wd = this.rEngine.rniGetString(p);
 					if (wd != null && wd.length() > 0) {
@@ -1022,7 +1022,7 @@ final class JRIServerDbg {
 	}
 	
 	String getFileEncoding(final long srcfileP) {
-		final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.encodingSymP);
+		final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.encodingSymP, 0);
 		if (p != 0) {
 			return this.rEngine.rniGetString(p);
 		}
@@ -1030,7 +1030,7 @@ final class JRIServerDbg {
 	}
 	
 	long getFileTimestamp(final long srcfileP) {
-		final long p = this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_timestampSymbol);
+		final long p= this.rEngine.rniGetVarBySym(srcfileP, this.rni.p_timestampSymbol, 0);
 		if (p != 0) {
 			final double[] array = this.rEngine.rniGetDoubleArray(p);
 			if (array != null && array.length > 0) {

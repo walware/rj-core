@@ -59,7 +59,12 @@ public class Rengine extends Thread {
 	public static final int SO_NaString     = 6;
 	/** constant to be used in {@link #rniSpecialObject} to return <code>R_BlankString</code> reference */
 	public static final int SO_BlankString  = 7;
-
+	
+	
+	public static final int FLAG_UNBOUND_0= 0x00000000;
+	public static final int FLAG_UNBOUND_P= 0x00000010;
+	
+	
 	/**	API version of the Rengine itself; see also rniGetVersion() for binary version. It's a good idea for the calling program to check the versions of both and abort if they don't match. This should be done using {@link #versionCheck}
 		@return version number as <code>long</code> in the form <code>0xMMmm</code> */
     public static long getVersion() {
@@ -467,11 +472,21 @@ public class Rengine extends Thread {
 		@param sym reference to a symbol
 		@return name of the symbol or <code>null</code> on error or if exp is no symbol */
 	public synchronized native String rniGetSymbolName(long sym);
-	/** RNI: install a symbol name
-		@since API 1.5, JRI 0.3
-		@param sym symbol name
-		@return reference to SYMSXP referencing the symbol */
-	public synchronized native long rniInstallSymbol(String sym);
+	
+	/** RNI:
+	 * Installs a symbol name.
+	 * @since API 1.5, JRI 0.3
+	 * @param name the symbol name
+	 * @return reference to SYMSXP referencing the symbol */
+	public synchronized native long rniInstallSymbol(String name);
+	
+	/** RNI:
+	 * Installs a symbol name.
+	 * @param namesP character vector with the the symbol name, a reference to a STRSXP
+	 * @param idx index of the symbol name in the character vector
+	 * @return reference to SYMSXP referencing the symbol
+	 **/
+	public synchronized native long rniInstallSymbolByStr(long namesP, int idx);
 
 	/** RNI: print.<p><i>Note:</i> May NOT be called inside any WriteConsole callback as it would cause an infinite loop.
 		@since API 1.8, JRI 0.4
@@ -515,25 +530,35 @@ public class Rengine extends Thread {
 		@return reference to a string vector of names in the environment */
 	public synchronized native long rniListEnv(long exp, boolean all);
 	
-	public synchronized native long rniGetPromise(long exp, int t);
+	/** RNI:
+	 * Gets the value of a promise object.
+	 * @param p
+	 * @param flags evaluate value: 0= no, 1= only constants, 2= yes
+	 * @return the value or 0 if not resolved
+	 */
+	public synchronized native long rniGetPromise(long p, int flags);
 	
 	/** RNI:
-	 * Get variable in an environment
+	 * Get variable in an environment.
 	 * 
-	 * @param rho reference to environment
-	 * @param sym symbol name
+	 * @param rhoP the environment, a reference to a ENVSXP
+	 * @param name the symbol name of the variable
 	 * @return reference to the value or 0 if not found
 	 **/
-	public synchronized native long rniGetVar(long rho, String sym);
+	public synchronized native long rniGetVar(long rhoP, String name);
 	
 	/** RNI:
-	 * Get variable in an environment
+	 * Get variable in an environment.
+	 * <p>
+	 * Supported flags:
+	 * unbound ({@link #FLAG_UNBOUND_0}, {@link #FLAG_UNBOUND_P})
 	 * 
-	 * @param rho reference to environment
-	 * @param sym symbol name as reference to a SYMSXP
+	 * @param rhoP the environment, a reference to a ENVSXP
+	 * @param nameP the symbol name of the variable, a reference to a SYMSXP
+	 * @param flags flags
 	 * @return reference to the value or 0 if not found
 	 **/
-	public synchronized native long rniGetVarBySym(long rho, long sym);
+	public synchronized native long rniGetVarBySym(long rhoP, long nameP, int flags);
 	
 	/** RNI: return a special object reference. Note that all such references are constants valid for the entire session and cannot be protected/preserved (they are persistent already).
 		@since API 1.9, JRI 0.5

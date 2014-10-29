@@ -52,6 +52,9 @@ extern int UserBreak;
 #include <R_ext/GraphicsEngine.h>
 
 
+static const jint FLAG_UNBOUND_P= 0x00000010;
+
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVersion
 (JNIEnv *env, jclass clazz)
 {
@@ -289,35 +292,53 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
 	return SEXP2L(R_lsInternal(rho ? L2SEXP(rho) : R_GlobalEnv, all));
 }
 
+
+struct safeGetVar_s {
+	SEXP rho, sym, val;
+};
+
+static void safeGetVar(void *data) {
+	struct safeGetVar_s *s= (struct safeGetVar_s*) data;
+	
+	s->val= Rf_findVarInFrame3(s->rho, s->sym, TRUE);
+}
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVar(
-		JNIEnv *env, jobject this, jlong rho, jstring symName)
-{
-	SEXP sVar = jri_installString(env, symName);
-	if (!sVar || sVar == R_NilValue) {
+		JNIEnv *env, jobject this, jlong rhoP, jstring name) {
+	struct safeGetVar_s s;
+	
+	s.rho= rhoP ? L2SEXP(rhoP) : R_GlobalEnv;
+	s.sym= jri_installString(env, name);
+	
+	if (!s.sym || s.sym == R_NilValue) {
 		return 0;
 	}
 	
-	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, sVar, TRUE);
-	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
+	return (R_ToplevelExec(safeGetVar, (void*) &s)
+					&& s.val != R_UnboundValue) ?
+			SEXP2L(s.val) : 0;
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVarBySym(
-		JNIEnv *env, jobject this, jlong rho, jlong symName)
-{	
-	SEXP sVar;
+		JNIEnv *env, jobject this, jlong rhoP, jlong nameSymP, jint flags) {
+	struct safeGetVar_s s;
 	
-	sVar = Rf_findVarInFrame3(rho ? L2SEXP(rho) : R_GlobalEnv, L2SEXP(symName), TRUE);
-	return (sVar != R_UnboundValue) ? SEXP2L(sVar) : 0;
+	s.rho= rhoP ? L2SEXP(rhoP) : R_GlobalEnv;
+	s.sym= L2SEXP(nameSymP);
+	
+	return (R_ToplevelExec(safeGetVar, (void*) &s)
+					&& ((flags & FLAG_UNBOUND_P) || s.val != R_UnboundValue) ) ?
+			SEXP2L(s.val) : 0;
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetPromise(
-		JNIEnv *env, jobject this, jlong p, jint t)
+		JNIEnv *env, jobject this, jlong p, jint flags)
 {
 	SEXP s = L2SEXP(p);
 	SEXP sVal = PRVALUE(s);
 	int er = 0;
 	if (sVal == R_UnboundValue) {
-		if (t == 0) {
+		if (!(flags & 0x7)) {
 			return 0;
 		}
 		switch (TYPEOF(PRCODE(s))) {
@@ -339,7 +360,7 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetPromise(
 			sVal = Rf_eval(s, R_BaseEnv);
 			break;
 		default:
-			if (t == 1) {
+			if ((flags & 0x7) == 1) {
 				return 0;
 			}
 			sVal = R_tryEval(s, R_BaseEnv, &er);
@@ -694,6 +715,11 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniInstallSymbol
 (JNIEnv *env, jobject this, jstring s)
 {
     return SEXP2L(jri_installString(env, s));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniInstallSymbolByStr(
+		JNIEnv *env, jobject this, jlong namesP, jint idx) {
+	return SEXP2L(install(CHAR(STRING_ELT(L2SEXP(namesP), idx))));
 }
 
 JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetSymbolName

@@ -219,15 +219,17 @@ final class TracepointManager {
 			final Long env= envTodo.remove(0);
 			envDone.add(env);
 			final int savedProtected= this.rni.saveProtected();
-			final String[] names= this.rEngine.rniGetStringArray(this.rEngine.rniListEnv(env.longValue(), true));
+			final long namesStrP= this.rni.protect(this.rEngine.rniListEnv(env.longValue(), true));
+			final String[] names= this.rEngine.rniGetStringArray(namesStrP);
 			for (int namesIdx= 0; namesIdx < names.length; namesIdx++) {
+				final String name= names[namesIdx];
 				if (this.rni.p_BaseEnv == env.longValue()
-						&& names[namesIdx].equals(".Last.value")) { //$NON-NLS-1$
+						&& name.equals(".Last.value")) { //$NON-NLS-1$
 					continue;
 				}
 				final long funP;
-				final String nameString= names[namesIdx];
-				{	long p= this.rEngine.rniGetVar(env.longValue(), nameString);
+				final long nameSymP= this.rEngine.rniInstallSymbolByStr(namesStrP, namesIdx);
+				{	long p= this.rEngine.rniGetVarBySym(env.longValue(), nameSymP, 0);
 					if (p == 0) {
 						continue;
 					}
@@ -251,12 +253,12 @@ final class TracepointManager {
 					commonInfo= null;
 				}
 				
-				final long nameStringP= this.rni.protect(this.rEngine.rniPutString(nameString));
+				final long nameStrP= this.rni.protect(this.rEngine.rniPutString(name));
 				
 				// method
 				List<FunInfo> methodInfos= null;
 				try {
-					final long nameEnvP= checkGeneric(orgFunP, nameStringP, env.longValue());
+					final long nameEnvP= checkGeneric(orgFunP, nameStrP, env.longValue());
 					
 					if (nameEnvP != 0) {
 						final String[] signatures= this.rEngine.rniGetStringArray(
@@ -312,7 +314,7 @@ final class TracepointManager {
 							catch (final Exception e) {
 								final LogRecord record= new LogRecord(Level.SEVERE,
 										"Method check failed for function ''{0}({1})'' in ''0x{2}''.");
-								record.setParameters(new Object[] { nameString, signatures[signarturesIdx], Long.toHexString(env.longValue()) });
+								record.setParameters(new Object[] { name, signatures[signarturesIdx], Long.toHexString(env.longValue()) });
 								record.setThrown(e);
 								JRIServerErrors.LOGGER.log(record);
 							}
@@ -322,7 +324,7 @@ final class TracepointManager {
 				catch (final Exception e) {
 					final LogRecord record= new LogRecord(Level.SEVERE,
 							"Generic check failed for function ''{0}'' in ''0x{1}''.");
-					record.setParameters(new Object[] { nameString, Long.toHexString(env.longValue()) });
+					record.setParameters(new Object[] { name, Long.toHexString(env.longValue()) });
 					record.setThrown(e);
 					JRIServerErrors.LOGGER.log(record);
 				}
@@ -330,7 +332,7 @@ final class TracepointManager {
 				for (int elementIdx= 0; elementIdx < elementList.size(); elementIdx++) {
 					if (commonInfo != null && commonInfo.done[0] < FunInfo.DONE_SET) {
 						final int funSet= trySetTracepoints(elementList.get(elementIdx),
-								commonInfo, nameString, nameStringP, env.longValue());
+								commonInfo, name, nameStrP, env.longValue());
 						if (funSet > resultCodes[elementIdx]) {
 							resultCodes[elementIdx]= funSet;
 							continue;
@@ -341,7 +343,7 @@ final class TracepointManager {
 							final FunInfo methodInfo= methodInfos.get(methodIdx);
 							if (methodInfo.done[0] < FunInfo.DONE_SET) {
 								final int methodSet= trySetTracepoints(elementList.get(elementIdx),
-										methodInfo, nameString, nameStringP, env.longValue());
+										methodInfo, name, nameStrP, env.longValue());
 								if (methodSet > resultCodes[elementIdx]) {
 									resultCodes[elementIdx]= methodSet;
 								}
@@ -371,7 +373,7 @@ final class TracepointManager {
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}
-		nameEnvP= this.rEngine.rniGetVarBySym(nameEnvP, this.rni.p_DotAllMTable);
+		nameEnvP= this.rEngine.rniGetVarBySym(nameEnvP, this.rni.p_DotAllMTable, 0);
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}

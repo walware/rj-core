@@ -85,7 +85,7 @@ final class JRIServerRni {
 	private final Rengine rEngine;
 	
 	public final long p_NULL;
-	public final long p_Unbound;
+	public final long rUnboundP;
 	public final long p_MissingArg;
 	public final long p_BaseEnv;
 	public final long p_GlobalEnv;
@@ -191,7 +191,7 @@ final class JRIServerRni {
 		final int savedProtected = saveProtected();
 		try {
 			this.p_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
-			this.p_Unbound = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
+			this.rUnboundP = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
 			this.p_MissingArg = this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
 			this.p_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
 			this.p_GlobalEnv = this.rEngine.rniSpecialObject(Rengine.SO_GlobalEnv);
@@ -1132,7 +1132,8 @@ final class JRIServerRni {
 				if (this.currentDepth > 1 && (flags & RObjectFactory.F_LOAD_ENVIR) == 0) {
 					return new RReferenceImpl(objP, RObject.TYPE_REFERENCE, "environment");
 				}
-				final String[] names = this.rEngine.rniGetStringArray(this.rEngine.rniListEnv(objP, true));
+				final long namesStrP= protect(this.rEngine.rniListEnv(objP, true));
+				final String[] names = this.rEngine.rniGetStringArray(namesStrP);
 				if (names != null) {
 					final String className1;
 					if (mode != EVAL_MODE_DATASLOT) {
@@ -1152,8 +1153,10 @@ final class JRIServerRni {
 						if (this.rniInterrupted) {
 							throw new CancellationException();
 						}
-						final long itemP = this.rEngine.rniGetVar(objP, names[i]);
+						final long nameSymP= this.rEngine.rniInstallSymbolByStr(namesStrP, i);
+						final long itemP= this.rEngine.rniGetVarBySym(objP, nameSymP, Rengine.FLAG_UNBOUND_P);
 						if (itemP != 0) {
+							protect(itemP);
 							itemObjects[i] = createDataObject(itemP, flags, EVAL_MODE_DEFAULT);
 							continue;
 						}
