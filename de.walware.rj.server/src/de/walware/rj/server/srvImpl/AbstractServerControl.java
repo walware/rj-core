@@ -413,7 +413,7 @@ public class AbstractServerControl {
 			record.setParameters(new Object[] { this.logPrefix, authType });
 			record.setThrown(e);
 			LOGGER.log(record);
-			throw new RjException(MessageFormat.format("Init authentication method failed '{0}'.", authType), e);
+			throw new RjException(MessageFormat.format("Init authentication method failed ''{0}''.", authType), e);
 		}
 	}
 	
