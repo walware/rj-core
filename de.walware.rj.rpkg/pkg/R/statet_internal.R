@@ -253,6 +253,14 @@
 	result
 }
 
+.renv.getBioCVersion <- function() {
+	v <- tools:::.BioC_version_associated_with_R_version
+	if (is.function(v)) {
+		v <- v()
+	}
+	return (v)
+}
+
 .renv.getAvailPkgs <- function(repo) {
 	fields= c('Package', 'Version', 'Priority', 'License',
 			'Depends', 'Imports', 'LinkingTo', 'Suggests', 'Enhances')
