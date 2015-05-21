@@ -25,6 +25,7 @@
 # Note: This script does not start an RMI registry! You have to launch it
 # as system daemon or manually (see Java documentation), e.g. by:
 #     $JAVA_HOME/bin/rmiregistry -J-Djava.rmi.server.codebase=file:///<path to file de.walware.rj.server.jar> &
+# or if appropriate by uncommenting the section "Start registry" in this script.
 ##
 # Author: Stephan Wahlbrink
 ###############################################################################
