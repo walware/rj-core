@@ -259,8 +259,8 @@ int initR(int argc, char **argv, unsigned long stacksize)
         strcpy(RUser, getenv("R_USER"));
     } else if (getenv("HOME")) {
         strcpy(RUser, getenv("HOME"));
-    } else if (getenv("HOMEDIR")) {
-        strcpy(RUser, getenv("HOMEDIR"));
+    } else if (getenv("HOMEDRIVE")) {
+        strcpy(RUser, getenv("HOMEDRIVE"));
         strcat(RUser, getenv("HOMEPATH"));
     } else
         GetCurrentDirectory(MAX_PATH, RUser);
