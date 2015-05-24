@@ -351,6 +351,9 @@ public final class JRIServer extends RJ
 		this.platformDataValues.put("os.name", System.getProperty("os.name"));
 		this.platformDataValues.put("os.arch", System.getProperty("os.arch"));
 		this.platformDataValues.put("os.version", System.getProperty("os.version"));
+		this.platformDataValues.put("file.separator", System.getProperty("file.separator"));
+		this.platformDataValues.put("path.separator", System.getProperty("path.separator"));
+		this.platformDataValues.put("line.separator", System.getProperty("line.separator"));
 	}
 	
 	
@@ -655,28 +658,30 @@ public final class JRIServer extends RJ
 	
 	private void loadPlatformData() {
 		final Map<String, String> platformDataCommands = new HashMap<String, String>();
-		platformDataCommands.put("os.type", ".Platform$OS.type");
-		platformDataCommands.put("file.sep", ".Platform$file.sep");
-		platformDataCommands.put("path.sep", ".Platform$path.sep");
-		platformDataCommands.put("version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
+		platformDataCommands.put("R:os.type", ".Platform$OS.type");
+		platformDataCommands.put("R:file.sep", ".Platform$file.sep");
+		platformDataCommands.put("R:path.sep", ".Platform$path.sep");
+		platformDataCommands.put("R.version.string", "paste(R.version$major, R.version$minor, sep=\".\")");
+		platformDataCommands.put("R:file.~", "path.expand(\"~\")");
 		
 		try {
-			for (final Entry<String, String> dataEntry : platformDataCommands.entrySet()) {
+			for (final Entry<String, String> entry : platformDataCommands.entrySet()) {
 				final DataCmdItem dataCmd= internalEvalData(new DataCmdItem(DataCmdItem.EVAL_EXPR_DATA,
-						0, (byte) 1, dataEntry.getValue(), null, null, null, null ));
+						0, (byte) 1, entry.getValue(), null, null, null, null ));
 				if (dataCmd != null && dataCmd.isOK()) {
 					final RObject data= dataCmd.getData();
 					if (data.getRObjectType() == RObject.TYPE_VECTOR) {
 						switch (data.getData().getStoreType()) {
 						case RStore.CHARACTER:
 							if (data.getLength() == 1) {
-								this.platformDataValues.put(dataEntry.getKey(), data.getData().get(0));
+								this.platformDataValues.put(entry.getKey(), data.getData().get(0));
+								this.platformDataValues.put(entry.getKey().substring(2), data.getData().get(0));
 								continue;
 							}
 						}
 					}
 				}
-				LOGGER.log(Level.WARNING, "The platform data item '" + dataEntry.getKey() + "' could not be created.");
+				LOGGER.log(Level.WARNING, "The platform data item '" + entry.getKey() + "' could not be created.");
 			}
 		}
 		catch (final Throwable e) {
