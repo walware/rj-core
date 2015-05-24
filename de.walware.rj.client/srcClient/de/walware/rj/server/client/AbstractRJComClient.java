@@ -1151,20 +1151,31 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
+	private Map<String, Object> getServerData() throws RemoteException {
+		if (this.platformData != null) {
+			return this.platformData;
+		}
+		final Map<String, Object> data= this.rjConsoleServer.getPlatformData();
+		if (data != null && data.containsKey("version.string")) { //$NON-NLS-1$
+			this.platformData= data;
+		}
+		return data;
+	}
+	
 	public final RPlatform getRPlatform() {
 		synchronized (this.platformLock) {
 			if (this.platformObj == null) {
 				try {
-					if (this.platformData == null) {
-						this.platformData = this.rjConsoleServer.getPlatformData();
+					final Map<String, Object> data= getServerData();
+					if (data != null && data.containsKey("version.string")) {
+						this.platformObj = new RPlatform((String) this.platformData.get("os.type"),
+								(String) this.platformData.get("file.sep"),
+								(String) this.platformData.get("path.sep"),
+								(String) this.platformData.get("version.string"),
+								(String) this.platformData.get("os.name"),
+								(String) this.platformData.get("os.arch"),
+								(String) this.platformData.get("os.version") );
 					}
-					this.platformObj = new RPlatform((String) this.platformData.get("os.type"),
-							(String) this.platformData.get("file.sep"),
-							(String) this.platformData.get("path.sep"),
-							(String) this.platformData.get("version.string"),
-							(String) this.platformData.get("os.name"),
-							(String) this.platformData.get("os.arch"),
-							(String) this.platformData.get("os.version") );
 				}
 				catch (final RemoteException e) {
 					log(new Status(IStatus.ERROR, RJ_CLIENT_ID,
@@ -1172,6 +1183,21 @@ public abstract class AbstractRJComClient implements ComHandler {
 				}
 			}
 			return this.platformObj;
+		}
+	}
+	
+	public final String getProperty(final String key) {
+		synchronized (this.platformLock) {
+			try {
+				final Map<String, Object> data= getServerData();
+				if (data != null) {
+					final Object value= data.get(key);
+					return (value instanceof String) ? (String) value : null;
+				}
+			}
+			catch (final RemoteException e) {
+			}
+			return null;
 		}
 	}
 	
