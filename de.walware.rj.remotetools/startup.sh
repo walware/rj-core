@@ -123,7 +123,7 @@ JAVA_HOME=
 ##
 # Example:
 #     RJS_HOME=`dirname "$SCRIPT"`
-#     RJS_WORK="~/.RJServer"
+#     RJS_WORK="~/R/rj-consoleserver/work"
 
 RJS_HOME=`dirname "$SCRIPT"`
 RJS_WORK=~/.RJServer
@@ -154,6 +154,7 @@ RJS_WORK=~/.RJServer
 # Add additional java options here
 ##
 # Example:
+#     JAVA_OPTS="-server -Djava.net.preferIPv4Stack=true"
 #     JAVA_OPTS="-server -Dde.walware.rj.rmi.disableSocketFactory=true"
 
 JAVA_OPTS="-server"
@@ -358,8 +359,6 @@ fi
 PATH=$R_HOME/bin$PATH_SEP$PATH
 LD_LIB_PATH=$R_HOME/lib
 #LD_PRELOAD_VALUE=$JAVA_HOME/jre/lib/amd64/server/libjsig.so
-
-#export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
 
 
 ## Start registry
