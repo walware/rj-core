@@ -253,7 +253,8 @@ public interface RService {
 	 * The builder is valid as long as the RService owns the consumer. After the service is for example
 	 * closed, it must not longer be used.</p>
 	 * 
-	 * @name name the name of the function, optional with prefix namespace
+	 * @param name the name of the function, optional with prefix namespace
+	 * 
 	 * @return a new function creator
 	 * @throws CoreException if the operation failed; the status
 	 *     of the exception contains detail about the cause
@@ -263,10 +264,11 @@ public interface RService {
 	/**
 	 * Creates a new creator for {@link RGraphic}s.
 	 * 
-	 * The default options are:
-	 *     <li>MANAGED_OFF: the graphic is not managed by this RService.
-	 *         Important: the caller is responsible to dispose the graphic.</li>
-	 *     <li>R_CLOSE_OFF: the graphic is not closed if the device is closed in R.</li>
+	 * <p>The default options are:</p><ul>
+	 *   <li>MANAGED_OFF: the graphic is not managed by this RService.
+	 *       Important: the caller is responsible to dispose the graphic.</li>
+	 *   <li>R_CLOSE_OFF: the graphic is not closed if the device is closed in R.</li>
+	 * </ul>
 	 * 
 	 * @param options optional options, <code>0</code> for default
 	 * @return a new graphic creator

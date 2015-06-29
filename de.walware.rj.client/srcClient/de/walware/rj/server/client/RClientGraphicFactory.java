@@ -30,16 +30,14 @@ public interface RClientGraphicFactory {
 	 * Indicates explicitly that the graphic will be added to a global graphic
 	 * collection.
 	 * 
-	 * Typically that means, the graphic isn't shown in the default graphic
-	 * view/window.
+	 * Typically that means, the graphic is shown in the default graphic view/window.
 	 */
 	int MANAGED_ON = 1 << 1;
 	
 	/**
 	 * Indicates that the graphic will not be added to a global graphic collection.
 	 * 
-	 * Typically that means, the graphic isn't shown in the default graphic
-	 * view/window.
+	 * Typically that means, the graphic isn't shown in the default graphic view/window.
 	 */
 	int MANAGED_OFF = 1 << 2;
 	
