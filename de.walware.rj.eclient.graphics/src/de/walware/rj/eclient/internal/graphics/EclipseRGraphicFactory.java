@@ -12,7 +12,6 @@
 package de.walware.rj.eclient.internal.graphics;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,8 +23,9 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
 import de.walware.ecommons.FastList;
-import de.walware.ecommons.collections.ConstArrayList;
 import de.walware.ecommons.ui.util.UIAccess;
+import de.walware.jcommons.collections.ImCollections;
+import de.walware.jcommons.collections.ImList;
 
 import de.walware.rj.server.client.RClientGraphic;
 import de.walware.rj.server.client.RClientGraphicActions;
@@ -251,8 +251,8 @@ public class EclipseRGraphicFactory implements RClientGraphicFactory, IERGraphic
 	
 	
 	@Override
-	public List<? extends IERGraphic> getAllGraphics() {
-		return new ConstArrayList<EclipseRGraphic>(fGraphics.toArray());
+	public ImList<? extends IERGraphic> getAllGraphics() {
+		return ImCollections.newList(fGraphics.toArray());
 	}
 	
 	@Override

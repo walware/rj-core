@@ -34,10 +34,9 @@ import org.eclipse.ui.statushandlers.StatusManager;
 
 import de.walware.ecommons.FastList;
 import de.walware.ecommons.IStatusChangeListener;
-import de.walware.ecommons.collections.CollectionUtils;
-import de.walware.ecommons.collections.ConstArrayList;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.util.UIAccess;
+import de.walware.jcommons.collections.ImCollections;
 
 import de.walware.rj.graphic.RGraphicInitialization;
 import de.walware.rj.graphic.utils.CachedMapping;
@@ -213,7 +212,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 									fInstructions = fInstructionsUpdate;
 									fInstructionsSize = fInstructionsUpdateStart + fInstructionsUpdateSize;
 								}
-								update = new ConstArrayList<IERGraphicInstruction>(fInstructionsUpdate)
+								update = ImCollections.newList(fInstructionsUpdate)
 										.subList(fInstructionsUpdateStart, fInstructionsUpdateStart + fInstructionsUpdateSize);
 //								System.out.println("InstrUpdate: \treset= " + reset + " \tcount= " + update.size() + " \ttdiff= " + ((stamp - fInstructionsNotifiedStamp) / MILLI_NANOS));
 								fInstructionsUpdateStart = fInstructionsSize;
@@ -642,7 +641,7 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	private List<IERGraphicInstruction> getCurrentInstructions() {
 		synchronized (fStateLock) {
 			flushNewInstructions();
-			return new ConstArrayList<IERGraphicInstruction>(fInstructionsUpdate).subList(0,
+			return ImCollections.newList(fInstructionsUpdate).subList(0,
 					fInstructionsSize + fInstructionsUpdateSize );
 		}
 	}
@@ -1166,8 +1165,8 @@ public class EclipseRGraphic implements RClientGraphic, IERGraphic {
 	public List<IERGraphicInstruction> getInstructions() {
 		synchronized (fInstructionsLock) {
 			return (fInstructionsSize > 0) ?
-					new ConstArrayList<IERGraphicInstruction>(fInstructions).subList(0, fInstructionsSize) :
-					CollectionUtils.<IERGraphicInstruction>emptyConstList();
+					ImCollections.newList(fInstructions).subList(0, fInstructionsSize) :
+					ImCollections.<IERGraphicInstruction>emptyList();
 		}
 	}
 	
