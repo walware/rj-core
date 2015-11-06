@@ -2,9 +2,9 @@
 <!-- Schema file written by PDE -->
 <schema targetNamespace="de.walware.rj.server" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
-      <appInfo>
+      <appinfo>
          <meta.schema plugin="de.walware.rj.server" id="rSetups" name="R Setups (Installations and Libraries)"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          This extension-point allows the definition and supply of R setups by Eclipse plug-ins. The definitions can be used to setup a correct environment to start R. In StatET they appear as preconfigured R environments.
 &lt;p&gt;An R setup (&lt;code&gt;setup&lt;/code&gt;) is identified by an unique id. It is composed of the base R installation and optional additional R library locations.
@@ -23,15 +23,15 @@ Additional hints for bundles providing base or library elements:&lt;/p&gt;
 &lt;li&gt;When integrating the plug-in or fragment in a feature set, it is recommend to enable &lt;code&gt;unpack&lt;/code&gt; option for that bundle.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;
-The existence and documentation of this extension-point does not give any advise if it is legal to distribute R together with other software in your individual situation.&lt;/p&gt;
+The existence and documentation of this extension-point does not give any advice whether it is legal to distribute R and/or R packages together with other software in your individual situation.&lt;/p&gt;
       </documentation>
    </annotation>
 
    <element name="extension">
       <annotation>
-         <appInfo>
+         <appinfo>
             <meta.element />
-         </appInfo>
+         </appinfo>
       </annotation>
       <complexType>
          <choice minOccurs="1" maxOccurs="unbounded">
@@ -58,9 +58,9 @@ The existence and documentation of this extension-point does not give any advise
                <documentation>
                   
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute translatable="true"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
@@ -79,9 +79,9 @@ It is identified by its unique id. To make it useful for a platform, it is neces
                <documentation>
                   A unique id for the R setup.
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="identifier"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
          <attribute name="name" type="string" use="required">
@@ -91,9 +91,9 @@ It is identified by its unique id. To make it useful for a platform, it is neces
 &lt;p&gt;
 The name is used in GUIs, so that the user can identify the R setup&lt;/p&gt;
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute translatable="true"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
          <attribute name="version" type="string">
@@ -110,9 +110,9 @@ The name is used in GUIs, so that the user can identify the R setup&lt;/p&gt;
 &lt;p&gt;
 Using this attribute enables to reuse the base installations with other R libraries. It is recommend to inheret only from R setups controlled by you or defined cleary with version number.&lt;/p&gt;
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
@@ -132,9 +132,9 @@ It is invalid to register multiple base installation for the same R setup. See g
                <documentation>
                   The id of the R setup.
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
          <attribute name="location" type="string" use="required">
@@ -143,9 +143,9 @@ It is invalid to register multiple base installation for the same R setup. See g
                   The R home directory location of the base installation.
 The sub-directories are &lt;code&gt;bin&lt;/code&gt;, &lt;code&gt;doc&lt;/code&gt;, ...
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="resource"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
@@ -163,9 +163,9 @@ The sub-directories are &lt;code&gt;bin&lt;/code&gt;, &lt;code&gt;doc&lt;/code&g
                <documentation>
                   The id of the R setup.
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="identifier" basedOn="de.walware.rj.rSetups/setup/@id"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
          <attribute name="group">
@@ -196,27 +196,27 @@ If not specified, &lt;code&gt;R_LIBS&lt;/code&gt; is used.
                   The directory location of the R library.
 The sub-directories represent the R packages.
                </documentation>
-               <appInfo>
+               <appinfo>
                   <meta.attribute kind="resource"/>
-               </appInfo>
+               </appinfo>
             </annotation>
          </attribute>
       </complexType>
    </element>
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="since"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          0.5.0
       </documentation>
    </annotation>
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="examples"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          &lt;i&gt;Definition of an R setup, its base installation and an add-on:&lt;/i&gt;&lt;br/&gt;
 &lt;br/&gt;
@@ -274,16 +274,15 @@ The directory structure for the platfrom specific R libraries would look like:
           - package1
           - package2
 &lt;/pre&gt;
-
       </documentation>
    </annotation>
 
 
 
    <annotation>
-      <appInfo>
+      <appinfo>
          <meta.section type="copyright"/>
-      </appInfo>
+      </appinfo>
       <documentation>
          Copyright (c) 2010-2015 Stephan Wahlbrink (WalWare.de) and others.
 All rights reserved. This program and the accompanying materials
