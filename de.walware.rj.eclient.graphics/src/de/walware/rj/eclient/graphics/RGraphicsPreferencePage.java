@@ -502,7 +502,7 @@ public class RGraphicsPreferencePage extends PreferencePage implements IWorkbenc
 	
 	
 	protected IScopeContext getScope() {
-		return new InstanceScope();
+		return InstanceScope.INSTANCE;
 	}
 	
 	protected void loadDisplayOptions() {
