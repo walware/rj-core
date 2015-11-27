@@ -25,4 +25,36 @@
 		<nature>org.eclipse.pde.PluginNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>srcJRIExamples</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/pkg/jri/examples</locationURI>
+		</link>
+		<link>
+			<name>srcJRI/org/rosuda/JRI</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/pkg/jri</locationURI>
+		</link>
+	</linkedResources>
+	<filteredResources>
+		<filter>
+			<id>1294755712699</id>
+			<name>srcJRI/org/rosuda/JRI</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*.java</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1294755712708</id>
+			<name>srcJRI/org/rosuda/JRI</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-*</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>
