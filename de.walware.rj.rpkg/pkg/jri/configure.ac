@@ -1,4 +1,4 @@
-AC_INIT([JRI],[0.3],[simon.urbanek@r-project.org])
+AC_INIT([JRI],[0.5],[simon.urbanek@r-project.org])
 AC_CONFIG_SRCDIR([src/jri.h])
 AC_CONFIG_HEADER([src/config.h])
 AC_CONFIG_AUX_DIR([tools])
@@ -83,6 +83,8 @@ AC_DEFUN([RUN_JAVA],
   $1=$acx_java_result
 ])
 
+OS_NAME=`uname -s 2>/dev/null`
+
 if test -n "${CONFIGURED}"; then
 ## re-map varibles that don't match
 JAVA_PROG="${JAVA}"
@@ -118,6 +120,12 @@ if test ${have_all_java} = no; then
 *** JDK is incomplete! Please make sure you have a complete JDK. JRE is *not* sufficient.])
 fi
 
+if test "x$OS_NAME" = xDarwin; then
+  ## we need to pull that out of R in case re-export fails (which is does on 10.11)
+  DYLD_FALLBACK_LIBRARY_PATH=`"${RBIN}" --slave --vanilla -e 'cat(Sys.getenv("DYLD_FALLBACK_LIBRARY_PATH"))'`
+  export DYLD_FALLBACK_LIBRARY_PATH
+fi
+
 ## this is where our test-class lives
 getsp_cp=tools
 
@@ -130,6 +138,7 @@ if test -n "${JAVA_PROG}" ; then
   fi
   acx_jc_result=
 fi
+
 
 if test -z "${CONFIGURED}"; then
 
@@ -213,26 +222,28 @@ LIBS="${LIBS} ${JAVA_LIBS0}"
 CFLAGS="${CFLAGS} ${JAVA_CFLAGS} ${JAVA_INC0}"
 
 AC_MSG_CHECKING([whether JNI programs can be compiled])
-AC_LINK_IFELSE([
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <jni.h>
 int main(void) {
     jobject o;
     return 0;
 }
-        ],[AC_MSG_RESULT(yes)],
+        ]])],
+        [AC_MSG_RESULT(yes)],
         [AC_MSG_ERROR([Cannot compile a simple JNI program. See config.log for details.])])
 
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${JAVA_LD_PATH0}
 export LD_LIBRARY_PATH
 
 AC_MSG_CHECKING([whether JNI programs can be run])
-AC_RUN_IFELSE([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <jni.h>
 int main(void) {
     jobject o;
     return 0;
 }
-        ],[AC_MSG_RESULT(yes)],
+        ]])],
+        [AC_MSG_RESULT(yes)],
         [AC_MSG_ERROR([Cannot run a simple JNI program - probably your jvm library is in non-standard location or JVM is unsupported. See config.log for details.])])
 
 AC_MSG_CHECKING([JNI data types])
@@ -241,7 +252,9 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void) {
   return (sizeof(int)==sizeof(jint) && sizeof(long)==sizeof(long) && sizeof(jbyte)==sizeof(char) && sizeof(jshort)==sizeof(short) && sizeof(jfloat)==sizeof(float) && sizeof(jdouble)==sizeof(double))?0:1;
 }
-        ]])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([One or more JNI types differ from the corresponding native type. You may need to use non-standard compiler flags or a different compiler in order to fix this.])],[])
+        ]])],
+        [AC_MSG_RESULT([ok])],
+        [AC_MSG_ERROR([One or more JNI types differ from the corresponding native type. You may need to use non-standard compiler flags or a different compiler in order to fix this.])],[])
 
 JNIPREFIX=lib
 CPICF=`"${RBIN}" CMD config CPICFLAGS`
@@ -288,25 +301,27 @@ origCFLAGS=$CFLAGS
 CFLAGS="${CFLAGS} ${R_CFLAGS} ${RINC}"
 
 AC_MSG_CHECKING([whether Rinterface.h exports R_CStackXXX variables])
-AC_COMPILE_IFELSE([
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #define CSTACK_DEFNS
 #include <R.h>
 #include <Rinterface.h>
 int main(void) {
     return R_CStackLimit?0:1;
 }
-        ],[AC_MSG_RESULT(yes)
+        ]])],
+        [AC_MSG_RESULT(yes)
            DEFFLAGS="${DEFFLAGS} -DRIF_HAS_CSTACK"],
         [AC_MSG_RESULT(no)])
 
 AC_MSG_CHECKING([whether Rinterface.h exports R_SignalHandlers])
-AC_COMPILE_IFELSE([
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include <R.h>
 #include <Rinterface.h>
 int main(void) {
     return R_SignalHandlers;
 }
-        ],[AC_MSG_RESULT(yes)
+        ]])],
+        [AC_MSG_RESULT(yes)
            DEFFLAGS="${DEFFLAGS} -DRIF_HAS_RSIGHAND"],
         [AC_MSG_RESULT(no)])
 
