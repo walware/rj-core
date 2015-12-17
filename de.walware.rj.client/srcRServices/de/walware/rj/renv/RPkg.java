@@ -15,7 +15,7 @@ package de.walware.rj.renv;
 /**
  * Basic immutable R package, implementation of {@link IRPkg}.
  * 
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public class RPkg implements IRPkg {
 	

@@ -289,7 +289,7 @@ public interface FunctionCall {
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
 	 * 
-	 * @since 2.0
+	 * @since de.walware.rj.services 2.0
 	 */
 	void evalAssign(String target, IProgressMonitor monitor) throws CoreException;
 	

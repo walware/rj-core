@@ -17,7 +17,7 @@ package de.walware.rj.renv;
  * 
  * Basic interface for representation of an R package.
  * 
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public interface IRPkg {
 	

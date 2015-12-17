@@ -15,7 +15,7 @@ package de.walware.rj.renv;
 /**
  * Type ({@link #SOURCE source} or {@link #BINARY binary}) of R packages.
  * 
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public enum RPkgType {
 	

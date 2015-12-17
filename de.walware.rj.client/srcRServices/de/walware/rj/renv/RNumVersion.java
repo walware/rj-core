@@ -16,7 +16,7 @@ import java.util.Iterator;
 
 
 /**
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public final class RNumVersion {
 	

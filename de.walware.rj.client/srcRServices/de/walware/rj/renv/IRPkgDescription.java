@@ -15,7 +15,7 @@ package de.walware.rj.renv;
 /**
  * R package description.
  * 
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public interface IRPkgDescription extends IRPkg {
 	

@@ -42,7 +42,7 @@ import de.walware.rj.services.RService;
  * <p>
  * The class can be reused.</p>
  * 
- * @since 2.0
+ * @since de.walware.rj.services 2.0
  */
 public class RPkgInstallation {
 	

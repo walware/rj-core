@@ -54,7 +54,7 @@ import de.walware.rj.graphic.RGraphic;
  * In general it is not necessary to surround R expressions with try-catch or similar construction
  * except the error object is expected as return value.</p>
  * 
- * @since 0.4.0
+ * @since de.walware.rj.services 0.4
  */
 public interface RService {
 	
@@ -62,23 +62,38 @@ public interface RService {
 	/**
 	 * Value for depth parameters indicating that the depth is not limited.
 	 * 
-	 * @since 0.5.0
+	 * @since de.walware.rj.services 0.5
 	 */
-	int DEPTH_INFINITE = -1;
+	int DEPTH_INFINITE= -1;
 	
 	/**
 	 * Value for depth parameters indicating to create only the specified object itself.
 	 * 
-	 * @since 0.5.0
+	 * @since de.walware.rj.services 0.5
 	 */
-	int DEPTH_ONE = 1;
+	int DEPTH_ONE= 1;
 	
 	/**
 	 * Value for depth parameters indicating to create only a reference to the specified object.
 	 * 
-	 * @since 1.1.0
+	 * @since de.walware.rj.services 1.1
 	 */
-	int DEPTH_REFERENCE = 0;
+	int DEPTH_REFERENCE= 0;
+	
+	
+	/**
+	 * Option flag indication to load environments directly instead of the reference only.
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 **/
+	int LOAD_ENVIR=                                         1 << 4;
+	
+	/**
+	 * Option flag indicating to eval all promises directly.
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 **/
+	int LOAD_PROMISE=                                       1 << 5;
 	
 	
 	RPlatform getPlatform();
@@ -275,7 +290,7 @@ public interface RService {
 	 * @throws CoreException if the operation failed; the status
 	 *     of the exception contains detail about the cause
 	 * 
-	 * @since 0.5.0
+	 * @since de.walware.rj.services 0.5
 	 */
 	RGraphicCreator createRGraphicCreator(int options) throws CoreException;
 //	void beginCatchRGraphics(int options);

@@ -25,8 +25,7 @@ import de.walware.rj.graphic.RGraphic;
  * are reused and not reseted.
  * 
  * @noimplement This interface is not intended to be implemented by clients.
- * @since 0.5.0
- * @provisional
+ * @since de.walware.rj.services 0.5
  */
 public interface RGraphicCreator {
 	

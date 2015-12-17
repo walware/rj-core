@@ -23,7 +23,7 @@ import de.walware.rj.services.RPlatform;
 
 
 /**
- * @since 2.0
+ * @since de.walware.rj.renv 2.0
  */
 public class RPkgUtil {
 	
