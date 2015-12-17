@@ -30,6 +30,7 @@ import de.walware.rj.data.RCharacterStore;
 import de.walware.rj.data.RComplexStore;
 import de.walware.rj.data.RDataFrame;
 import de.walware.rj.data.RDataUtil;
+import de.walware.rj.data.REnvironment;
 import de.walware.rj.data.RFactorStore;
 import de.walware.rj.data.RIntegerStore;
 import de.walware.rj.data.RLanguage;
@@ -120,6 +121,7 @@ final class JRIServerRni {
 	public final long p_nameSymbol;
 	public final long p_namesSymbol;
 	public final long p_newSymbol;
+	public final long nsSymbolP;
 	public final long p_onExitSymbol;
 	public final long p_originalSymbol;
 	public final long p_realSymbol;
@@ -151,6 +153,10 @@ final class JRIServerRni {
 	public final long p_ReFun;
 	public final long p_ImFun;
 	
+	public final long getNamespaceFunP;
+	public final long getNamespaceExportedNamesFunP;
+	public final long getNamespaceExportedValueFunP;
+	
 	private final long p_seqIntFun;
 	private final long p_lengthOutSymbol;
 	
@@ -159,7 +165,6 @@ final class JRIServerRni {
 	private final long getFHeaderFunP;
 	private final long deparseLineXCallP;
 	private final long deparseLinesXCallP;
-	private final long getEnvNameFunP;
 	
 	public final long p_evalTryCatch_errorExpr;
 	public final long p_evalTemp_classExpr;
@@ -228,6 +233,7 @@ final class JRIServerRni {
 			this.p_nameSymbol = this.rEngine.rniInstallSymbol("name"); //$NON-NLS-1$
 			this.p_namesSymbol = this.rEngine.rniInstallSymbol("names"); //$NON-NLS-1$
 			this.p_newSymbol = this.rEngine.rniInstallSymbol("new"); //$NON-NLS-1$
+			this.nsSymbolP= this.rEngine.rniInstallSymbol("ns"); //$NON-NLS-1$
 			this.p_onExitSymbol = this.rEngine.rniInstallSymbol("on.exit"); //$NON-NLS-1$
 			this.p_originalSymbol = this.rEngine.rniInstallSymbol("original"); //$NON-NLS-1$
 			this.p_realSymbol = this.rEngine.rniInstallSymbol("real"); //$NON-NLS-1$
@@ -276,6 +282,15 @@ final class JRIServerRni {
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.p_ImFun);
 			
+			this.getNamespaceFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getNamespace"), //$NON-NLS-1$
+					this.p_BaseEnv );
+			this.rEngine.rniPreserve(this.getNamespaceFunP);
+			this.getNamespaceExportedNamesFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getNamespaceExports"), //$NON-NLS-1$
+					this.p_BaseEnv );
+			this.rEngine.rniPreserve(this.getNamespaceExportedNamesFunP);
+			this.getNamespaceExportedValueFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getExportedValue"), //$NON-NLS-1$
+					this.p_BaseEnv );
+			this.rEngine.rniPreserve(this.getNamespaceExportedValueFunP);
 			
 			this.p_seqIntFun = this.rEngine.rniEval(
 					this.rEngine.rniInstallSymbol("seq.int"), //$NON-NLS-1$
@@ -291,10 +306,6 @@ final class JRIServerRni {
 					this.rEngine.rniParse("methods::.slotNames", 1), //$NON-NLS-1$
 					this.p_BaseEnv );
 			this.rEngine.rniPreserve(this.slotNamesFunP);
-			this.getEnvNameFunP = this.rEngine.rniEval(
-					this.rEngine.rniInstallSymbol("environmentName"), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.getEnvNameFunP);
 			
 			{	final long pasteFunP = protect(this.rEngine.rniEval(
 						this.rEngine.rniInstallSymbol("paste"), //$NON-NLS-1$
@@ -1130,22 +1141,14 @@ final class JRIServerRni {
 			}
 			case REXP.ENVSXP: {
 				if (this.currentDepth > 1 && (flags & RObjectFactory.F_LOAD_ENVIR) == 0) {
-					return new RReferenceImpl(objP, RObject.TYPE_REFERENCE, "environment");
+					return new RReferenceImpl(objP, RObject.TYPE_ENV, "environment");
 				}
 				final long namesStrP= protect(this.rEngine.rniListEnv(objP, true));
 				final String[] names = this.rEngine.rniGetStringArray(namesStrP);
 				if (names != null) {
-					final String className1;
-					if (mode != EVAL_MODE_DATASLOT) {
-						className1 = this.rEngine.rniGetClassAttrString(objP);
-					}
-					else {
-						className1 = null;
-					}
-					
 					if (objP == this.p_AutoloadEnv || names.length > this.maxEnvsLength) {
-						return new JRIEnvironmentImpl(getEnvName(objP), objP, null, null,
-								names.length, className1 );
+						return createEnvObject(objP, null, null, names.length,
+								(mode != EVAL_MODE_DATASLOT) );
 					}
 					
 					final RObject[] itemObjects = new RObject[names.length];
@@ -1165,8 +1168,8 @@ final class JRIServerRni {
 							continue;
 						}
 					}
-					return new JRIEnvironmentImpl(getEnvName(objP), objP, itemObjects, names,
-							names.length, className1 );
+					return createEnvObject(objP, itemObjects, names, names.length,
+							(mode != EVAL_MODE_DATASLOT) );
 				}
 				break;
 			}
@@ -1409,6 +1412,88 @@ final class JRIServerRni {
 		return null;
 	}
 	
+	
+	private long getNamespaceEnvP(final String nsName) throws RjsException {
+		if (nsName == null) {
+			throw new RjsException(CODE_DATA_EVAL_DATA, "Missing name for namespace.");
+		}
+		final long p= this.rEngine.rniEval(this.rEngine.rniCons(
+						this.getNamespaceFunP, this.rEngine.rniCons(
+								this.rEngine.rniPutString(nsName), this.p_NULL,
+								this.p_nameSymbol, false ),
+						0, true ),
+						this.p_BaseEnv );
+		if (p != 0) {
+			return p;
+		}
+		throw new RjsException(0, "Namespace '" + nsName + "' not available.");
+	}
+	
+	public RObject getNamespaceEnv(final String nsName, final int flags) throws RjsException {
+		final long envP= getNamespaceEnvP(nsName);
+		if (this.maxDepth == 0) {
+			return new RReferenceImpl(envP, RObject.TYPE_ENV, RObject.CLASSNAME_ENV);
+		}
+		
+		return createDataObject(envP, flags, EVAL_MODE_FORCE);
+	}
+	
+	public RObject getNamespaceExportsEnv(final String nsName, final int flags) throws RjsException {
+		final long envP= getNamespaceEnvP(nsName);
+		if (this.maxDepth == 0) {
+			final String className1= this.rEngine.rniGetClassAttrString(envP);
+			return new RReferenceImpl(0, RObject.TYPE_ENV,
+					(className1 != null) ? className1 : RObject.CLASSNAME_ENV );
+		}
+		
+		this.currentDepth++;
+		try {
+			final long namesStrP= this.rEngine.rniEval(this.rEngine.rniCons(
+							this.getNamespaceExportedNamesFunP, this.rEngine.rniCons(
+									envP, this.p_NULL,
+									this.nsSymbolP, false ),
+							0, true ),
+							this.p_BaseEnv );
+			if (namesStrP != 0) {
+				protect(namesStrP);
+				final String[] names= this.rEngine.rniGetStringArray(namesStrP);
+				if (names != null) {
+					final RObject[] itemObjects= new RObject[names.length];
+					for (int i = 0; i < names.length; i++) {
+						if (this.rniInterrupted) {
+							throw new CancellationException();
+						}
+						final long itemP= this.rEngine.rniEval(this.rEngine.rniCons(
+								this.getNamespaceExportedValueFunP, this.rEngine.rniCons(
+										envP, this.rEngine.rniCons(
+												this.rEngine.rniPutStringByStr(namesStrP, i), this.p_NULL,
+												this.p_nameSymbol, false ),
+										this.nsSymbolP, false ),
+								0, true ),
+								this.p_BaseEnv );
+						if (itemP != 0) {
+							protect(itemP);
+							itemObjects[i]= createDataObject(itemP, flags, EVAL_MODE_DEFAULT);
+							continue;
+						}
+						else {
+							itemObjects[i] = RMissing.INSTANCE;
+							continue;
+						}
+					}
+					return new JRIEnvironmentImpl(nsName, 0, itemObjects, names, names.length,
+							REnvironment.ENVTYPE_NAMESPACE_EXPORTS, null );
+				}
+			}
+			return new JRIEnvironmentImpl(nsName, 0, EMPTY_ROBJECT_ARRAY, EMPTY_STRING_ARRAY, 0,
+					REnvironment.ENVTYPE_NAMESPACE_EXPORTS, null );
+		}
+		finally {
+			this.currentDepth--;
+		}
+	}
+	
+	
 	public long seqLength(final double length) {
 		return this.rEngine.rniEval(this.rEngine.rniCons(
 				this.p_seqIntFun, this.rEngine.rniCons(
@@ -1445,25 +1530,45 @@ final class JRIServerRni {
 		return null;
 	}
 	
-	public String getEnvName(final long envP) {
-		if (envP == this.p_GlobalEnv) {
-			return "R_GlobalEnv";
+	public JRIEnvironmentImpl createEnvObject(final long objP,
+			final RObject[] itemObjects, final String[] names, final int length,
+			final boolean loadClassName) {
+		final byte type;
+		String envName;
+		if (objP == this.p_BaseEnv) {
+			type= REnvironment.ENVTYPE_BASE;
+			envName= REnvironment.ENVNAME_BASE;
 		}
-		else if (envP == this.p_EmptyEnv) {
-			return "R_EmptyEnv";
+		else if (objP == this.p_AutoloadEnv) {
+			type= REnvironment.ENVTYPE_AUTOLOADS;
+			envName= REnvironment.ENVNAME_AUTOLOADS;
+		}
+		else if (objP == this.p_GlobalEnv) {
+			type= REnvironment.ENVTYPE_GLOBAL;
+			envName= REnvironment.ENVNAME_GLOBAL;
+		}
+		else if (objP == this.p_EmptyEnv) {
+			type= REnvironment.ENVTYPE_EMTPY;
+			envName= REnvironment.ENVNAME_EMPTY;
 		}
 		else {
-			final long p;
-			if ((p = this.rEngine.rniEval(protect(this.rEngine.rniCons(
-					this.getEnvNameFunP, this.rEngine.rniCons(
-							envP, this.p_NULL,
-							this.p_envSymbol, false ),
-					0, true )),
-					this.p_BaseEnv )) != 0) {
-				return this.rEngine.rniGetString(p);
+			envName= this.rEngine.rniGetNamespaceEnvName(objP);
+			if (envName != null) {
+				type= REnvironment.ENVTYPE_NAMESPACE;
 			}
-			return null;
+			else {
+				envName= this.rEngine.rniGetAttrStringBySym(objP, this.p_nameSymbol);
+				if (envName != null && envName.startsWith("package:")) {
+					type= REnvironment.ENVTYPE_PACKAGE;
+				}
+				else {
+					type= 0;
+				}
+			}
 		}
+		
+		return new JRIEnvironmentImpl(envName, objP, itemObjects, names, length,
+				type, (loadClassName) ? this.rEngine.rniGetClassAttrString(objP) : null );
 	}
 	
 	public void addAllEnvs(final List<Long> envs, long envP) {

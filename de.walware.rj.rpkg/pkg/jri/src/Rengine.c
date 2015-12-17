@@ -292,6 +292,19 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
 	return SEXP2L(R_lsInternal(rho ? L2SEXP(rho) : R_GlobalEnv, all));
 }
 
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniIsNamespaceEnv(
+		JNIEnv *env, jobject this, jlong rhoP) {
+	SEXP rhoS= L2SEXP(rhoP);
+	return (R_IsNamespaceEnv(rhoS)) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetNamespaceEnvName(
+		JNIEnv *env, jobject this, jlong rhoP) {
+	SEXP rhoS= L2SEXP(rhoP);
+	return (R_IsNamespaceEnv(L2SEXP(rhoP))) ?
+			jri_putString(env, R_NamespaceEnvSpec(rhoS), 0) :
+			0;
+}
 
 struct safeGetVar_s {
 	SEXP rho, sym, val;
@@ -431,7 +444,7 @@ JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniExpType(
 	return p ? TYPEOF(L2SEXP(p)) : 0;
 }
 
-JNIEXPORT jobject JNICALL Java_org_rosuda_JRI_Rengine_rniGetClassAttrString(
+JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetClassAttrString(
 		JNIEnv *env, jobject this, jlong p)
 {
 	return jri_putString(env, Rf_getAttrib(L2SEXP(p), R_ClassSymbol), 0);
@@ -592,6 +605,15 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniPutString
     return SEXP2L(jri_getString(env, s));
 }
 
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniPutStringByStr(
+		JNIEnv *env, jobject this, jlong strP, jint idx) {
+	SEXP resultS;
+	PROTECT(resultS= allocVector(STRSXP, 1));
+	SET_STRING_ELT(resultS, 0, STRING_ELT(L2SEXP(strP), idx));
+	UNPROTECT(1);
+	return SEXP2L(resultS);
+}
+
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniPutStringArray
 (JNIEnv *env, jobject this, jobjectArray a)
 {
@@ -640,23 +662,6 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniDuplicate(
 	return SEXP2L(Rf_duplicate(L2SEXP(p)));
 }
 
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttr(
-		JNIEnv *env, jobject this, jlong p, jstring name)
-{
-    SEXP an = jri_installString(env, name);
-    if (!an || an==R_NilValue || p==0 || L2SEXP(p)==R_NilValue) return 0;
-    {
-        SEXP a = getAttrib(L2SEXP(p), an);
-        return (a==R_NilValue)?0:SEXP2L(a);
-    }
-}
-
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrBySym(
-		JNIEnv *env, jobject this, jlong p, jlong name)
-{
-	SEXP sAttr = Rf_getAttrib(L2SEXP(p), L2SEXP(name));
-	return (sAttr != R_NilValue) ? SEXP2L(sAttr) : 0;
-}
 
 JNIEXPORT jobjectArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrNames
 (JNIEnv *env, jobject this, jlong exp)
@@ -689,6 +694,29 @@ JNIEXPORT jobjectArray JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrNames
     return sa;
 }
 
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttr(
+		JNIEnv *env, jobject this, jlong p, jstring name)
+{
+    SEXP an = jri_installString(env, name);
+    if (!an || an==R_NilValue || p==0 || L2SEXP(p)==R_NilValue) return 0;
+    {
+        SEXP a = getAttrib(L2SEXP(p), an);
+        return (a==R_NilValue)?0:SEXP2L(a);
+    }
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrBySym(
+		JNIEnv *env, jobject this, jlong p, jlong name)
+{
+	SEXP attrS = Rf_getAttrib(L2SEXP(p), L2SEXP(name));
+	return (attrS != R_NilValue) ? SEXP2L(attrS) : 0;
+}
+
+JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetAttrStringBySym(
+		JNIEnv *env, jobject this, jlong p, jlong name) {
+	return jri_putString(env, Rf_getAttrib(L2SEXP(p), L2SEXP(name)), 0);
+}
+
 JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniSetAttr(
 		JNIEnv *env, jobject this, jlong p, jstring aName, jlong attr)
 {
@@ -718,8 +746,8 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniInstallSymbol
 }
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniInstallSymbolByStr(
-		JNIEnv *env, jobject this, jlong namesP, jint idx) {
-	return SEXP2L(install(CHAR(STRING_ELT(L2SEXP(namesP), idx))));
+		JNIEnv *env, jobject this, jlong strP, jint idx) {
+	return SEXP2L(install(CHAR(STRING_ELT(L2SEXP(strP), idx))));
 }
 
 JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetSymbolName

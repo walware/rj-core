@@ -339,6 +339,14 @@ public class Rengine extends Thread {
 	@param s initial contents of the first entry
 	@return reference to the resulting STRSXP */
     public synchronized native long rniPutString(String s);
+	/** RNI:
+	 * Creates a character vector of the length 1.
+	 * 
+	 * @param strP character vector with the string, a reference to a STRSXP
+	 * @param idx index of the string in the character vector
+	 * @return reference to the resulting STRSXP
+	 **/
+	public synchronized native long rniPutStringByStr(long strP, int idx);
     /** RNI: create a character vector
 	@param a initial contents of the vector
 	@return reference to the resulting STRSXP */
@@ -373,6 +381,13 @@ public class Rengine extends Thread {
 	
 	public synchronized native long rniDuplicate(long p);
 	
+	
+	/** RNI: get attribute names
+	 @param exp reference to the object whose attributes are requested
+	 @return a list of strings naming all attributes or <code>null</code> if there are none 
+	 @since API 1.9, JRI 0.5 */
+	public synchronized native String[] rniGetAttrNames(long exp);
+	
 	/** RNI:
 	 * Gets an attribute
 	 * 
@@ -391,11 +406,14 @@ public class Rengine extends Thread {
 	 **/
 	public synchronized native long rniGetAttrBySym(long p, long name);
 	
-	/** RNI: get attribute names
-	 @param exp reference to the object whose attributes are requested
-	 @return a list of strings naming all attributes or <code>null</code> if there are none 
-	 @since API 1.9, JRI 0.5 */
-    public synchronized native String[] rniGetAttrNames(long exp);
+	/** RNI:
+	 * Get a string attribute using an installed symbol
+	 * 
+	 * @param p reference to the object whose attribute is requested
+	 * @param name name of the attribute as reference to a SYMSXP
+	 * @return string attribute value or 0 if there is none/not a string
+	 **/
+	public synchronized native String rniGetAttrStringBySym(long p, long name);
 	
 	/** RNI:
 	 * Sets an attribute
@@ -482,11 +500,12 @@ public class Rengine extends Thread {
 	
 	/** RNI:
 	 * Installs a symbol name.
-	 * @param namesP character vector with the the symbol name, a reference to a STRSXP
+	 * 
+	 * @param strP character vector with the symbol name, a reference to a STRSXP
 	 * @param idx index of the symbol name in the character vector
 	 * @return reference to SYMSXP referencing the symbol
 	 **/
-	public synchronized native long rniInstallSymbolByStr(long namesP, int idx);
+	public synchronized native long rniInstallSymbolByStr(long strP, int idx);
 
 	/** RNI: print.<p><i>Note:</i> May NOT be called inside any WriteConsole callback as it would cause an infinite loop.
 		@since API 1.8, JRI 0.4
@@ -529,6 +548,10 @@ public class Rengine extends Thread {
 		@param all if set to <code>true</code> then all objects will be shown, otherwise hidden objects will be omitted
 		@return reference to a string vector of names in the environment */
 	public synchronized native long rniListEnv(long exp, boolean all);
+	
+	public synchronized native boolean rniIsNamespaceEnv(long rhoP);
+	
+	public synchronized native String rniGetNamespaceEnvName(long rhoP);
 	
 	/** RNI:
 	 * Gets the value of a promise object.

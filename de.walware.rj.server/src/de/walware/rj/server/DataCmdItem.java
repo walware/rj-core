@@ -69,28 +69,36 @@ public final class DataCmdItem extends MainCmdItem {
 	}
 	
 	
-	public static Operation EVAL_EXPR_VOID= new Operation("EVAL_EXPR_VOID", 1, //$NON-NLS-1$
+	public static final Operation EVAL_EXPR_VOID= new Operation("EVAL_EXPR_VOID", 1, //$NON-NLS-1$
 			Operation.EXPR, Operation.NONE, false);
-	public static Operation EVAL_FCALL_VOID= new Operation("EVAL_FCALL_VOID", 2, //$NON-NLS-1$
+	public static final Operation EVAL_FCALL_VOID= new Operation("EVAL_FCALL_VOID", 2, //$NON-NLS-1$
 			Operation.FCALL, Operation.NONE, false);
 	
-	public static Operation EVAL_EXPR_DATA= new Operation("EVAL_EXPR_DATA", 3, //$NON-NLS-1$
+	public static final Operation EVAL_EXPR_DATA= new Operation("EVAL_EXPR_DATA", 3, //$NON-NLS-1$
 			Operation.EXPR, Operation.NONE, true);
-	public static Operation EVAL_FCALL_DATA= new Operation("EVAL_FCALL_DATA", 4, //$NON-NLS-1$
+	public static final Operation EVAL_FCALL_DATA= new Operation("EVAL_FCALL_DATA", 4, //$NON-NLS-1$
 			Operation.FCALL, Operation.NONE, true);
-	public static Operation RESOLVE_DATA= new Operation("RESOLVE_DATA", 5, // EVAL_REF_DATA //$NON-NLS-1$
+	public static final Operation RESOLVE_DATA= new Operation("RESOLVE_DATA", 5, // EVAL_REF_DATA //$NON-NLS-1$
 			Operation.POINTER, Operation.NONE, true);
 	
-	public static Operation ASSIGN_DATA= new Operation("ASSIGN_DATA", 6, //$NON-NLS-1$
+	public static final Operation ASSIGN_DATA= new Operation("ASSIGN_DATA", 6, //$NON-NLS-1$
 			Operation.RDATA, Operation.EXPR, false);
-	public static Operation ASSIGN_FCALL= new Operation("ASSIGN_FCALL", 7, //$NON-NLS-1$
+	public static final Operation ASSIGN_FCALL= new Operation("ASSIGN_FCALL", 7, //$NON-NLS-1$
 			Operation.FCALL, Operation.EXPR, false);
 	
-	public static Operation FIND_DATA= new Operation("FIND_DATA", 8, //$NON-NLS-1$
+	public static final int FIND_DATA_OP= 8;
+	public static final Operation FIND_DATA= new Operation("FIND_DATA", FIND_DATA_OP, //$NON-NLS-1$
 			Operation.EXPR, Operation.NONE, true);
 	
+	public static final int EVAL_NAMESPACE_DATA_OP= 9;
+	public static final Operation EVAL_NAMESPACE_DATA= new Operation("EVAL_NAMESPACE_DATA", EVAL_NAMESPACE_DATA_OP, //$NON-NLS-1$
+			Operation.EXPR, Operation.NONE, false);
+	public static final int EVAL_NAMESPACE_EXPORTS_DATA_OP= 10;
+	public static final Operation EVAL_NAMESPACE_EXPORTS_DATA= new Operation("EVAL_NAMESPACE_EXPORTS_DATA", EVAL_NAMESPACE_EXPORTS_DATA_OP, //$NON-NLS-1$
+			Operation.EXPR, Operation.NONE, false);
 	
-	private static final Operation[] OPERATIONS= new Operation[9];
+	
+	private static final Operation[] OPERATIONS= new Operation[11];
 	
 	private static final void addOp(final Operation operation) {
 		if (OPERATIONS[operation.op] != null) {
@@ -115,6 +123,8 @@ public final class DataCmdItem extends MainCmdItem {
 		addOp(ASSIGN_DATA);
 		addOp(ASSIGN_FCALL);
 		addOp(FIND_DATA);
+		addOp(EVAL_NAMESPACE_DATA);
+		addOp(EVAL_NAMESPACE_EXPORTS_DATA);
 	}
 	
 	

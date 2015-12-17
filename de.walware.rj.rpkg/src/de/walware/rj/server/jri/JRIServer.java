@@ -1369,21 +1369,31 @@ public final class JRIServer extends RJ
 			
 			final long envirP= this.rni.resolveEnvironment(cmd.getRho());
 			
-			if (operation == DataCmdItem.FIND_DATA) {
+			switch (operation.op) {
+			case DataCmdItem.FIND_DATA_OP:
 				final long[] foundP= rniFind(cmd.getDataText(), envirP, (cmd.getCmdOption() & 0x1000) != 0);
 				if (foundP != null) {
 					cmd.setAnswer((foundP[1] != 0) ?
 									this.rni.createDataObject(foundP[1], cmd.getCmdOption() & 0xfff) :
 									RMissing.INSTANCE,
-							new JRIEnvironmentImpl(this.rni.getEnvName(foundP[0]), foundP[0],
+							this.rni.createEnvObject(foundP[0],
 									null, null, this.rEngine.rniGetLength(foundP[0]),
-									this.rEngine.rniGetClassAttrString(foundP[0]) ));
+									true ));
 				}
 				else {
 					cmd.setAnswer(null, null);
 				}
-			}
-			else {
+				break;
+			
+			case DataCmdItem.EVAL_NAMESPACE_DATA_OP:
+				cmd.setAnswer(this.rni.getNamespaceEnv(cmd.getDataText(), cmd.getCmdOption()), null);
+				break;
+			
+			case DataCmdItem.EVAL_NAMESPACE_EXPORTS_DATA_OP:
+				cmd.setAnswer(this.rni.getNamespaceExportsEnv(cmd.getDataText(), cmd.getCmdOption()), null);
+				break;
+			
+			default:
 				final long objP;
 				switch (operation.source) {
 				case Operation.NONE:

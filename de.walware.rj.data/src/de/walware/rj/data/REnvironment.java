@@ -31,7 +31,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	static final String ENVNAME_GLOBAL = "R_GlobalEnv";
+	String ENVNAME_GLOBAL = "R_GlobalEnv";
 	
 	/**
 	 * Environment name of the empty environment
@@ -39,7 +39,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	static final String ENVNAME_EMPTY = "R_EmptyEnv";
+	String ENVNAME_EMPTY = "R_EmptyEnv";
 	
 	/**
 	 * Environment name of the base environment
@@ -47,7 +47,7 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	static final String ENVNAME_BASE = "base";
+	String ENVNAME_BASE = "base";
 	
 	/**
 	 * Environment name of the Autoloads environment
@@ -55,13 +55,24 @@ public interface REnvironment extends RList {
 	 * 
 	 * Name: {@value}
 	 **/
-	static final String ENVNAME_AUTOLOADS = "Autoloads";
+	String ENVNAME_AUTOLOADS = "Autoloads";
 	
-	static final int ENVTYPE_BASE = 1;
-	static final int ENVTYPE_AUTOLOADS = 2;
-	static final int ENVTYPE_PACKAGE = 5;
-	static final int ENVTYPE_GLOBAL = 7;
-	static final int ENVTYPE_EMTPY = 9;
+	
+	byte ENVTYPE_BASE=                                      0x01;
+	byte ENVTYPE_AUTOLOADS=                                 0x02;
+	byte ENVTYPE_PACKAGE=                                   0x05;
+	byte ENVTYPE_GLOBAL=                                    0x07;
+	
+	byte ENVTYPE_EMTPY=                                     0x09;
+	
+	/**
+	 * @since de.walware.rj.data 2.1
+	 */
+	byte ENVTYPE_NAMESPACE=                                 0x0B;
+	/**
+	 * @since de.walware.rj.data 2.1
+	 */
+	byte ENVTYPE_NAMESPACE_EXPORTS=                         0x0C;
 	
 	
 	/**

@@ -29,17 +29,22 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		implements REnvironment, ExternalizableRObject {
 	
 	
+	private byte specialType;
+	
 	private String className1;
 	
-	private String id;
+	private String environmentName;
 	private long handle;
 	private RObject[] components;
 	private int length;
 	private RCharacterDataImpl namesAttribute;
 	
 	
-	public JRIEnvironmentImpl(final String name, final long handle, final RObject[] initialComponents, String[] initialNames, final int length, final String className1) {
-		this.id = name;
+	
+	public JRIEnvironmentImpl(final String envName, final long handle,
+			final RObject[] initialComponents, String[] initialNames, final int length,
+			final byte specialType, final String className1) {
+		this.environmentName= envName;
 		this.handle = handle;
 		this.components = initialComponents;
 		this.length = length;
@@ -47,6 +52,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 			initialNames = new String[length];
 		}
 		this.namesAttribute = (initialNames != null) ? new RCharacterDataImpl(initialNames, length) : null;
+		this.specialType= specialType;
 		this.className1 = className1;
 	}
 	
@@ -58,11 +64,12 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		//-- options
 		final int options = io.readInt();
 		//-- special attributes
+		this.specialType= (byte) ((options >>> 24) & 0xff);
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				io.readString() : RObject.CLASSNAME_ENV;
 		//-- data
 		this.handle = io.readLong();
-		this.id = io.readString();
+		this.environmentName = io.readString();
 		final int l = this.length = (int) io.readVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK));
 		
 		if ((options & RObjectFactory.O_NO_CHILDREN) != 0) {
@@ -87,6 +94,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		final int l = this.length;
 		//-- options
 		int options = io.getVULongGrade(l);
+		options|= (this.specialType << 24);
 		final boolean customClass = this.className1 != null
 				&& !this.className1.equals(RObject.CLASSNAME_ENV);
 		if (customClass) {
@@ -106,7 +114,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 		}
 		
 		io.writeLong(this.handle);
-		io.writeString(this.id);
+		io.writeString(this.environmentName);
 		io.writeVULong((byte) (options & RObjectFactory.O_LENGTHGRADE_MASK), l);
 		
 		if (this.components != null) {
@@ -136,18 +144,19 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	
 	@Override
 	public int getSpecialType() {
-		return 0;
+		return this.specialType;
 	}
 	
 	@Override
 	public String getEnvironmentName() {
-		return this.id;
+		return this.environmentName;
 	}
 	
 	@Override
 	public long getHandle() {
 		return this.handle;
 	}
+	
 	
 	@Override
 	public long getLength() {
@@ -249,6 +258,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	public boolean containsName(final String name) {
 		return (this.namesAttribute.indexOf(name) >= 0);
 	}
+	
 	
 	@Override
 	public String toString() {

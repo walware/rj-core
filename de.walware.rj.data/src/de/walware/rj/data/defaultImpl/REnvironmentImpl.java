@@ -26,6 +26,8 @@ public class REnvironmentImpl extends AbstractRObject
 		implements REnvironment, ExternalizableRObject {
 	
 	
+	private byte specialType;
+	
 	private String className1;
 	
 	private String environmentName;
@@ -37,7 +39,9 @@ public class REnvironmentImpl extends AbstractRObject
 	private RCharacterDataImpl namesAttribute;
 	
 	
-	protected REnvironmentImpl(final String name, final long handle, final RObject[] initialComponents, String[] initialNames, final int length, final String className1) {
+	protected REnvironmentImpl(final String name, final long handle,
+			final RObject[] initialComponents, String[] initialNames, final int length,
+			final byte specialType, final String className1) {
 		this.environmentName = name;
 		this.handle = handle;
 		this.components = initialComponents;
@@ -46,6 +50,7 @@ public class REnvironmentImpl extends AbstractRObject
 			initialNames = new String[length];
 		}
 		this.namesAttribute = new RCharacterDataImpl(initialNames, length);
+		this.specialType= specialType;
 		this.className1 = className1;
 	}
 	
@@ -57,6 +62,7 @@ public class REnvironmentImpl extends AbstractRObject
 		//-- options
 		final int options = io.readInt();
 		//-- special attributes
+		this.specialType= (byte) ((options >>> 24) & 0xff);
 		this.className1 = ((options & RObjectFactory.O_CLASS_NAME) != 0) ?
 				io.readString() : RObject.CLASSNAME_ENV;
 		//-- data
@@ -86,6 +92,7 @@ public class REnvironmentImpl extends AbstractRObject
 		final int l = this.length;
 		//-- options
 		int options = io.getVULongGrade(l);
+		options|= (this.specialType << 24);
 		final boolean customClass = !this.className1.equals(RObject.CLASSNAME_ENV);
 		if (customClass) {
 			options |= RObjectFactory.O_CLASS_NAME;
@@ -134,8 +141,7 @@ public class REnvironmentImpl extends AbstractRObject
 	
 	@Override
 	public int getSpecialType() {
-		// TODO implement including transfer
-		return 0;
+		return this.specialType;
 	}
 	
 	@Override
