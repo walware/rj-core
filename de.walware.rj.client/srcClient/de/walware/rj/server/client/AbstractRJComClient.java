@@ -40,6 +40,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 
 import de.walware.rj.RjException;
+import de.walware.rj.data.REnvironment;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RJIOExternalizable;
 import de.walware.rj.data.RList;
@@ -51,6 +52,7 @@ import de.walware.rj.server.ConsoleEngine;
 import de.walware.rj.server.ConsoleReadCmdItem;
 import de.walware.rj.server.CtrlCmdItem;
 import de.walware.rj.server.DataCmdItem;
+import de.walware.rj.server.DataCmdItem.Operation;
 import de.walware.rj.server.DbgCmdItem;
 import de.walware.rj.server.DbgCmdItem.CustomDataReader;
 import de.walware.rj.server.ExtUICmdItem;
@@ -1324,6 +1326,49 @@ public abstract class AbstractRJComClient implements ComHandler {
 			final long handle = reference.getHandle();
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.RESOLVE_DATA,
 					options, checkedDepth, Long.toString(handle), null, null, null, factoryId )), monitor );
+			
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Evaluation failed: " + status.getMessage(), null));
+				}
+			}
+			return ((DataCmdItem) this.dataAnswer[level]).getData();
+		}
+		finally {
+			finalizeDataLevel();
+		}
+	}
+	
+	public RObject evalData(final byte envType, final String name,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
+		if (name == null) {
+			throw new NullPointerException("name");
+		}
+		final Operation operation;
+		switch (envType) {
+		case REnvironment.ENVTYPE_NAMESPACE:
+			operation= DataCmdItem.EVAL_NAMESPACE_DATA;
+			break;
+		case REnvironment.ENVTYPE_NAMESPACE_EXPORTS:
+			operation= DataCmdItem.EVAL_NAMESPACE_EXPORTS_DATA;
+			break;
+		default:
+			throw new IllegalArgumentException("type= " + envType);
+		}
+		
+		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
+		final int level = newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new DataCmdItem(operation,
+					options, checkedDepth,
+					name, null, null, null, factoryId )), monitor );
+			
 			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
 				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
 				if (status.getSeverity() == RjsStatus.CANCEL) {
