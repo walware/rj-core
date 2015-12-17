@@ -18,8 +18,8 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 
+import de.walware.ecommons.ts.ISystemReadRunnable;
 import de.walware.ecommons.ts.ITool;
-import de.walware.ecommons.ts.IToolRunnable;
 import de.walware.ecommons.ts.IToolService;
 import de.walware.jcommons.collections.ImCollections;
 import de.walware.jcommons.collections.ImList;
@@ -28,13 +28,15 @@ import de.walware.rj.eclient.graphics.IERGraphic;
 import de.walware.rj.eclient.graphics.LocatorCallback;
 
 
+
+
 /**
  * Basic implementation for a local locator for R graphics.
  * <p>
  * Requests the user to locate point and converts the graphic coordinates to user coordinates.
  * It uses the tool service API (de.walware.ecommons.ts) to schedule the R job.</p>
  */
-public abstract class AbstractLocalLocator extends LocatorCallback implements IToolRunnable {
+public abstract class AbstractLocalLocator extends LocatorCallback implements ISystemReadRunnable {
 	
 	protected static final ImList<String> OK_CANCEL_STOP_TYPES= ImCollections.newList(
 			IERGraphic.LOCATOR_DONE, IERGraphic.LOCATOR_CANCEL );

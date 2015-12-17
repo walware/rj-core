@@ -36,7 +36,7 @@ import org.eclipse.ui.menus.CommandContributionItemParameter;
 import org.eclipse.ui.services.IServiceLocator;
 
 import de.walware.ecommons.FastList;
-import de.walware.ecommons.ts.ISystemRunnable;
+import de.walware.ecommons.ts.ISystemReadRunnable;
 import de.walware.ecommons.ts.ITool;
 import de.walware.ecommons.ui.SharedUIResources;
 import de.walware.ecommons.ui.actions.HandlerCollection;
@@ -124,7 +124,7 @@ public class RGraphicCompositeActionSet implements IERGraphic.ListenerLocatorExt
 		
 	}
 	
-	private static abstract class ConversionRunnable extends AbstractRToolRunnable implements ISystemRunnable {
+	private static abstract class ConversionRunnable extends AbstractRToolRunnable implements ISystemReadRunnable {
 		
 		private final IERGraphic fGraphic;
 		
