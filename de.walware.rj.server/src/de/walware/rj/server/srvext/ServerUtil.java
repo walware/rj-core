@@ -34,7 +34,7 @@ public class ServerUtil {
 	public static final String RJ_DATA_ID = "de.walware.rj.data";
 	public static final String RJ_SERVER_ID = "de.walware.rj.server";
 	
-	public static final int[] RJ_VERSION = new int[] { 2, 0, 0 };
+	public static final int[] RJ_VERSION = new int[] { 2, 1, 0 };
 	
 	public static final RjsStatus MISSING_ANSWER_STATUS = new RjsStatus(RjsStatus.ERROR, 121, "Server error (missing answer).");
 	

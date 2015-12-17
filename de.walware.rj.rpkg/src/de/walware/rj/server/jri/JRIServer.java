@@ -108,7 +108,7 @@ public final class JRIServer extends RJ
 		implements InternalEngine, RMainLoopCallbacks, ExtServer, DbgListener {
 	
 	
-	private static final int[] VERSION = new int[] { 2, 0, 0 };
+	private static final int[] VERSION = new int[] { 2, 1, 0 };
 	
 	private static final int ENGINE_NOT_STARTED = 0;
 	private static final int ENGINE_RUN_IN_R = 1;
