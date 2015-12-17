@@ -100,7 +100,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public static final String RJ_CLIENT_ID = "de.walware.rj.client";
 	
 	public static int[] version() {
-		return new int[] { 2, 0, 0 };
+		return new int[] { 2, 1, 0 };
 	}
 	
 	public static final int EXTRA_BEFORE = 1;
