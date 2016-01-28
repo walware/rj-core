@@ -207,6 +207,7 @@ public final class DataCmdItem extends MainCmdItem {
 		assert (op.reqRData == (data != null));
 		assert (op.reqTargetExpr == (targetExpr != null));
 		this.operation= op;
+		this.targetExpr= targetExpr;
 		this.sourceExpr= sourceExpr;
 		this.options= (OV_WAITFORCLIENT | (options & OM_CUSTOM));
 		if (data != null) {

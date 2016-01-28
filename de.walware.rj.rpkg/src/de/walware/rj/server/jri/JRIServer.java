@@ -1423,7 +1423,7 @@ public final class JRIServer extends RJ
 				case Operation.NONE:
 					break;
 				case Operation.EXPR:
-					rniAssign(cmd.getDataText(), objP, envirP);
+					rniAssign(cmd.getTargetExpr(), objP, envirP);
 					break;
 				}
 				
