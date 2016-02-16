@@ -17,8 +17,10 @@
 }
 
 .getDataVectorValues <- function(x, idxs, rowMapping) {
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
-			get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
+				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
 	x <- x[rowIdxs, drop= FALSE]
 	names(x) <- NULL
 	x
@@ -26,16 +28,23 @@
 
 .getDataVectorRowNames <- function(x, idxs, rowMapping) {
 	x.names <- names(x)
-	if (is.null(x.names)) {
+	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x.names[rowIdxs]
+	if (is.null(x.names))
+		rowIdxs
+	else
+		x.names[rowIdxs]
 }
 
 .getDataMatrixValues <- function(x, idxs, rowMapping) {
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
 	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
 	rownames(x) <- NULL
@@ -44,12 +53,17 @@
 
 .getDataMatrixRowNames <- function(x, idxs, rowMapping) {
 	x.names <- rownames(x)
-	if (is.null(x.names)) {
+	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x.names[rowIdxs]
+	if (is.null(x.names))
+		rowIdxs
+	else
+		x.names[rowIdxs]
 }
 
 .getDataArrayDimNames <- function(x, idxs) {
@@ -69,7 +83,9 @@
 }
 
 .getDataFrameValues <- function(x, idxs, rowMapping) {
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
 	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
 	attr(x, 'row.names') <- NULL
@@ -78,12 +94,17 @@
 
 .getDataFrameRowNames <- function(x, idxs, rowMapping) {
 	x.names <- attr(x, 'row.names', exact= TRUE)
-	if (is.null(x.names)) {
+	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
-	rowIdxs <- if (missing(rowMapping)) idxs[1L]:idxs[2L] else
+	rowIdxs <- if (missing(rowMapping))
+				idxs[1L]:idxs[2L]
+			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x.names[rowIdxs]
+	if (is.null(x.names))
+		rowIdxs
+	else
+		x.names[rowIdxs]
 }
 
 
