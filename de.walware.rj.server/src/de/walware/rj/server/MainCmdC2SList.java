@@ -99,6 +99,9 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_GRAPH_ITEM:
 				this.first = new GDCmdItem.Answer(io);
 				break;
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				this.first= new MainCtrlCmdItem(io);
+				break;
 			case MainCmdItem.T_DATA_ITEM:
 				this.first = new DataCmdItem(io);
 				break;
@@ -137,6 +140,9 @@ public final class MainCmdC2SList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_GRAPH_ITEM:
 				item = item.next = new GDCmdItem.Answer(io);
 				continue;
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				this.first= new MainCtrlCmdItem(io);
+				break;
 			case MainCmdItem.T_DATA_ITEM:
 				item = item.next = new DataCmdItem(io);
 				continue;

@@ -60,6 +60,7 @@ import de.walware.rj.server.GDCmdItem;
 import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
+import de.walware.rj.server.MainCtrlCmdItem;
 import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
 import de.walware.rj.server.RjsPing;
@@ -227,6 +228,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	private byte dataRequestCounter = (byte) (0xff & RAND.nextInt(255));
 	private final int[] dataRequestId = new int[32];
 	private final MainCmdItem[] dataAnswer = new MainCmdItem[32];
+	
+	private boolean runFinishTask;
 	
 	private boolean dbgOpRequest;
 	private DbgCmdItem dbgOpAnswer;
@@ -426,6 +429,10 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case MainCmdItem.T_GRAPH_ITEM:
 				runGC = true;
 				processGDCmd(this.mainIO);
+				continue;
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				runGC = true;
+				processMainCtrlCmd(this.mainIO);
 				continue;
 			case MainCmdItem.T_DATA_ITEM:
 				runGC = true;
@@ -651,6 +658,19 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
+	private final void processMainCtrlCmd(final RJIO io) throws IOException {
+		try {
+			final MainCtrlCmdItem item = new MainCtrlCmdItem(io);
+			addDataAnswer(item);
+		}
+		catch (final IOException e) {
+			throw e;
+		}
+		catch (final Exception e) {
+			log(new Status(IStatus.ERROR, RJ_CLIENT_ID, -1, "An error occurred when processing control command answer.", e));
+		}
+	}
+	
 	private final void processDataCmd(final RJIO io) throws IOException {
 		try {
 			final DataCmdItem item = new DataCmdItem(io);
@@ -684,6 +704,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			throw new UnsupportedOperationException("too much nested operations");
 		}
 		this.dataLevelAnswer = 0;
+		
 		return level;
 	}
 	
@@ -717,6 +738,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 		final int level = this.dataLevelRequest--;
 		this.dataAnswer[level] = null;
 		this.dataLevelAnswer = (this.dataAnswer[this.dataLevelRequest] != null) ? this.dataLevelRequest : 0;
+		
+		this.runFinishTask= true;
 	}
 	
 	public final int getDataLevel() {
@@ -1146,6 +1169,8 @@ public abstract class AbstractRJComClient implements ComHandler {
 	public final void answerConsole(final String input, final IProgressMonitor monitor) throws CoreException {
 		this.consoleReadCallback.setAnswer(input);
 		runMainLoop(null, this.consoleReadCallback, monitor);
+		
+		this.runFinishTask= false;
 	}
 	
 	public final boolean isConsoleReady() {
@@ -1202,6 +1227,35 @@ public abstract class AbstractRJComClient implements ComHandler {
 			return null;
 		}
 	}
+	
+	
+	public final void finishTask(
+			final IProgressMonitor monitor) throws CoreException {
+		if (!this.runFinishTask) {
+			return;
+		}
+		final int level= newDataLevel();
+		try {
+			runMainLoop(null, createDataRequestId(level, new MainCtrlCmdItem(MainCtrlCmdItem.OP_FINISH_TASK,
+					0 )), monitor);
+			if (this.dataAnswer[level] == null || !this.dataAnswer[level].isOK()) {
+				final RjsStatus status = (this.dataAnswer[level] != null) ? this.dataAnswer[level].getStatus() : MISSING_ANSWER_STATUS;
+				if (status.getSeverity() == RjsStatus.CANCEL) {
+					throw new CoreException(Status.CANCEL_STATUS);
+				}
+				else {
+					throw new CoreException(new Status(status.getSeverity(), RJ_CLIENT_ID, status.getCode(),
+							"Evaluation failed: " + status.getMessage(), null));
+				}
+			}
+			return;
+		}
+		finally {
+			finalizeDataLevel();
+			this.runFinishTask= false;
+		}
+	}
+	
 	
 	public final void evalVoid(final String expression, final RObject envir,
 			final IProgressMonitor monitor) throws CoreException {

@@ -107,6 +107,9 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				this.first = new ExtUICmdItem(io);
 				break;
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				this.first= new MainCtrlCmdItem(io);
+				break;
 			case MainCmdItem.T_DATA_ITEM:
 				this.first = new DataCmdItem(io);
 				break;
@@ -141,6 +144,9 @@ public final class MainCmdS2CList implements RjsComObject, Externalizable {
 			case MainCmdItem.T_EXTENDEDUI_ITEM:
 				item = item.next = new ExtUICmdItem(io);
 				continue;
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				this.first= new MainCtrlCmdItem(io);
+				break;
 			case MainCmdItem.T_DATA_ITEM:
 				item = item.next = new DataCmdItem(io);
 				continue;

@@ -59,9 +59,14 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	public static final byte T_S2C_C2S = 9;
 	
 	/**
+	 * {@link MainCtrlCmdItem}
+	 */
+	public static final byte T_MAIN_CTRL_ITEM=              0x10;
+	
+	/**
 	 * {@link DataCmdItem}
 	 */
-	public static final byte T_DATA_ITEM =                  0x10;
+	public static final byte T_DATA_ITEM =                  0x11;
 	
 	/**
 	 * {@link GraOpCmdItem}
@@ -72,6 +77,7 @@ public abstract class MainCmdItem implements RJIOExternalizable {
 	 * {@link DbgCmdItem}
 	 */
 	public static final byte T_DBG_ITEM =                   0x14;
+	
 	
 	/**
 	 * Inside server only

@@ -72,6 +72,7 @@ import de.walware.rj.server.GraOpCmdItem;
 import de.walware.rj.server.MainCmdC2SList;
 import de.walware.rj.server.MainCmdItem;
 import de.walware.rj.server.MainCmdS2CList;
+import de.walware.rj.server.MainCtrlCmdItem;
 import de.walware.rj.server.RJ;
 import de.walware.rj.server.RjsComConfig;
 import de.walware.rj.server.RjsComObject;
@@ -233,7 +234,7 @@ public final class JRIServer extends RJ
 		}
 		@Override
 		public void rWriteConsole(final Rengine re, final String text, final int oType) {
-			LOGGER.log(Level.WARNING, "HotMode - Console Output:\n" + text);
+			JRIServer.this.rWriteConsole(re, text, oType);
 		}
 		@Override
 		public void rFlushConsole(final Rengine re) {
@@ -245,7 +246,7 @@ public final class JRIServer extends RJ
 		}
 		@Override
 		public void rShowMessage(final Rengine re, final String message) {
-			LOGGER.log(Level.WARNING, "HotMode - Message:\n" + message);
+			JRIServer.this.rShowMessage(re, message);
 		}
 		@Override
 		public String rChooseFile(final Rengine re, final int newFile) {
@@ -1242,6 +1243,9 @@ public final class JRIServer extends RJ
 			}
 			switch (item.getCmdType()) {
 			
+			case MainCmdItem.T_MAIN_CTRL_ITEM:
+				item = internalExecCtrl((MainCtrlCmdItem) item);
+				continue;
 			case MainCmdItem.T_DATA_ITEM:
 				item = internalEvalData((DataCmdItem) item);
 				continue;
@@ -1344,11 +1348,49 @@ public final class JRIServer extends RJ
 	}
 	
 	/**
+	 * Executes an {@link MainCtrlCmdItem R ctrl command}.
+	 * Returns the result in the cmd object passed in, which is passed back out.
+	 * 
+	 * @param cmd the command item
+	 * @return the command item with setted answer
+	 */
+	private MainCtrlCmdItem internalExecCtrl(final MainCtrlCmdItem cmd) {
+		final byte savedSlot = this.currentSlot;
+		this.currentSlot = cmd.slot;
+		final boolean ownLock = this.rEngine.getRsync().safeLock();
+		try {
+			switch (cmd.getOp()) {
+			case MainCtrlCmdItem.OP_FINISH_TASK:
+				this.rEngine.jriFlushConsole();
+				break;
+				
+			default:
+				break;
+			}
+			
+			cmd.setAnswer(RjsStatus.OK_STATUS);
+		}
+		catch (final Throwable e) {
+			final String message = "Exec ctrl failed. Cmd:\n" + cmd.toString() + ".";
+			LOGGER.log(Level.SEVERE, message, e);
+			cmd.setAnswer(new RjsStatus(RjsStatus.ERROR, (CODE_DATA_COMMON | 0x1),
+					"Internal server error (see server log)." ));
+		}
+		finally {
+			this.currentSlot = savedSlot;
+			if (ownLock) {
+				this.rEngine.getRsync().unlock();
+			}
+		}
+		return cmd.waitForClient() ? cmd : null;
+	}
+	
+	/**
 	 * Executes an {@link DataCmdItem R data command} (assignment, evaluation, ...).
 	 * Returns the result in the cmd object passed in, which is passed back out.
 	 * 
-	 * @param cmd the data command item
-	 * @return the data command item with setted answer
+	 * @param cmd the command item
+	 * @return the command item with setted answer
 	 */
 	private DataCmdItem internalEvalData(final DataCmdItem cmd) {
 		final byte savedSlot = this.currentSlot;
@@ -2003,6 +2045,8 @@ public final class JRIServer extends RJ
 			}
 			final int savedSafeMode = beginSafeMode();
 			try {
+				this.rEngine.jriFlushConsole();
+				
 				this.rEngine.addMainLoopCallbacks(this.hotModeCallbacks);
 				internalMainFromR(new ConsoleReadCmdItem(2, ""));
 			}
