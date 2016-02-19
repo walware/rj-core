@@ -20,6 +20,8 @@
 		<module>../de.walware.rj.server.gd</module>
 		
 		<module>../de.walware.rj.remotetools</module>
+		
+		<module>../de.walware.rj.client</module>
 	</modules>
 	
 	<prerequisites>

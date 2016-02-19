@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: WalWare.de
+Bundle-Name: RJ RServices API and RJ Client Tools
+Bundle-SymbolicName: de.walware.rj.client;singleton:=true
+Bundle-Version: 2.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: de.walware.rj.data;bundle-version="[2.1.0,2.2.0)",
+ de.walware.rj.server;bundle-version="[2.1.0,2.2.0)"
+Import-Package: org.osgi.framework,
+ org.eclipse.core.runtime
+Export-Package: de.walware.rj.graphic;version="1.0.0",
+ de.walware.rj.graphic.utils;version="1.0.0",
+ de.walware.rj.renv;version="2.1.0",
+ de.walware.rj.server.client,
+ de.walware.rj.services;version="1.0.0",
+ de.walware.rj.services.utils;version="2.1.0",
+ de.walware.rj.services.utils.dataaccess;version="2.1.0"
