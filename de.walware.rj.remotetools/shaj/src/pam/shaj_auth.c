@@ -1,7 +1,7 @@
 /* Copyright 2005 Cenqua Pty Ltd. All Rights Reserved. See LICENSE.TXT in the distribution. */
 /* This file is based on passwd-pam.c in xscreensaver which is:
  * written by Bill Nottingham <notting@redhat.com> (and jwz) for
- * xscreensaver, Copyright (c) 1993-2015 Jamie Zawinski <jwz@jwz.org>
+ * xscreensaver, Copyright (c) 1993-2016 Jamie Zawinski <jwz@jwz.org>
  */
 #include <stdlib.h>
 #include <stdio.h>

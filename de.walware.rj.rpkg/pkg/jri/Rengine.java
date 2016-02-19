@@ -1,3 +1,15 @@
+/*=============================================================================#
+ # Copyright (c) 2004-2016 Simon Urbanek <simon.urbanek@r-project.org> and
+ # others. All rights reserved. This program and the accompanying materials
+ # are made available under the terms of the GNU Lesser General Public License
+ # v2.1 which accompanies this distribution, and is available at
+ # http://www.gnu.org/licenses/lgpl.html
+ # 
+ # Contributors:
+ #     Simon Urbanek - initial API and implementation
+ #     Stephan Wahlbrink (WalWare.de) - enhancements for RJ
+ #=============================================================================*/
+
 package org.rosuda.JRI;
 
 import java.io.IOException;

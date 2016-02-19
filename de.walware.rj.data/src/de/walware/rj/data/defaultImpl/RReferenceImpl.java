@@ -1,5 +1,5 @@
 /*=============================================================================#
- # Copyright (c) 2009-2015 Stephan Wahlbrink (WalWare.de) and others.
+ # Copyright (c) 2009-2016 Stephan Wahlbrink (WalWare.de) and others.
  # All rights reserved. This program and the accompanying materials
  # are made available under the terms of the GNU Lesser General Public License
  # v2.1 or newer, which accompanies this distribution, and is available at

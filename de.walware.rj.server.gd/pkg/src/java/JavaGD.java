@@ -2,7 +2,7 @@
 //  JavaGD - Java Graphics Device for R
 //  JavaGD.java - default GDInterface implementation for use in JavaGD
 // 
-//  Copyright (c) 2004-2015  Simon Urbanek
+//  Copyright (c) 2004-2016  Simon Urbanek
 // 
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
