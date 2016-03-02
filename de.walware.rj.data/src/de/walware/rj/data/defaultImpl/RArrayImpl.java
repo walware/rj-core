@@ -28,19 +28,19 @@ import de.walware.rj.data.RObjectFactory;
 import de.walware.rj.data.RStore;
 
 
-public class RArrayImpl<DataType extends RStore<?>> extends AbstractRObject
-		implements RArray<DataType>, ExternalizableRObject {
+public class RArrayImpl<TData extends RStore<?>> extends AbstractRObject
+		implements RArray<TData>, ExternalizableRObject {
 	
 	
 	private long length;
-	private DataType data;
+	private TData data;
 	
 	private String className1;
 	private RIntegerDataImpl dimAttribute;
 	private SimpleRListImpl<RStore<?>> dimnamesAttribute;
 	
 	
-	public RArrayImpl(final DataType data, final String className1, final int[] dim) {
+	public RArrayImpl(final TData data, final String className1, final int[] dim) {
 		if (data == null || className1 == null || dim == null) {
 			throw new NullPointerException();
 		}
@@ -76,7 +76,7 @@ public class RArrayImpl<DataType extends RStore<?>> extends AbstractRObject
 			this.dimnamesAttribute = new SimpleRListImpl<RStore<?>>(names1, names0);
 		}
 		//-- data
-		this.data = (DataType) factory.readStore(io, this.length);
+		this.data = (TData) factory.readStore(io, this.length);
 		
 		if ((options & RObjectFactory.O_CLASS_NAME) == 0) {
 			this.className1 = (dim.length == 2) ? RObject.CLASSNAME_MATRIX : RObject.CLASSNAME_ARRAY;
@@ -164,7 +164,7 @@ public class RArrayImpl<DataType extends RStore<?>> extends AbstractRObject
 	
 	
 	@Override
-	public DataType getData() {
+	public TData getData() {
 		return this.data;
 	}
 	

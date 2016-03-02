@@ -619,14 +619,18 @@ public class RDataUtil {
 		return obj;
 	}
 	
-	public static final <T extends RStore<?>> T checkLengthEqual(final T data, final long length) throws UnexpectedRDataException {
+	public static final <TData extends RStore<?>> TData checkLengthEqual(final TData data,
+			final long length)
+			throws UnexpectedRDataException {
 		if (data.getLength() != length) {
 			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but == " + length + " expected.");
 		}
 		return data;
 	}
 	
-	public static final <T extends RStore<?>> T checkLengthGreaterOrEqual(final T data, final long length) throws UnexpectedRDataException {
+	public static final <TData extends RStore<?>> TData checkLengthGreaterOrEqual(final TData data,
+			final long length)
+			throws UnexpectedRDataException {
 		if (data.getLength() < length) {
 			throw new UnexpectedRDataException("Unexpected R data length: " + data.getLength() + ", but >= " + length + " expected.");
 		}

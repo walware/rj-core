@@ -24,30 +24,30 @@ import de.walware.rj.data.RStore;
 import de.walware.rj.data.RVector;
 
 
-public class RVectorImpl<DataType extends RStore<?>> extends AbstractRObject
-		implements RVector<DataType>, ExternalizableRObject {
+public class RVectorImpl<TData extends RStore<?>> extends AbstractRObject
+		implements RVector<TData>, ExternalizableRObject {
 	
 	
-	private DataType data;
+	private TData data;
 	private long length;
 	
 	private String className1;
 	private RStore<?> namesAttribute;
 	
 	
-	public RVectorImpl(final DataType data, final String className1) {
+	public RVectorImpl(final TData data, final String className1) {
 		this(data, data.getLength(), className1, null);
 	}
 	
-	public RVectorImpl(final DataType data) {
+	public RVectorImpl(final TData data) {
 		this(data, data.getLength(), data.getBaseVectorRClassName(), null);
 	}
 	
-	public RVectorImpl(final DataType data, final String className1, final String[] initialNames) {
+	public RVectorImpl(final TData data, final String className1, final String[] initialNames) {
 		this(data, data.getLength(), className1, initialNames);
 	}
 	
-	public RVectorImpl(final DataType data, final long length, final String className1, final String[] initialNames) {
+	public RVectorImpl(final TData data, final long length, final String className1, final String[] initialNames) {
 		if (data == null || className1 == null) {
 			throw new NullPointerException();
 		}
@@ -63,7 +63,7 @@ public class RVectorImpl<DataType extends RStore<?>> extends AbstractRObject
 		}
 	}
 	
-	public RVectorImpl(final DataType data, final String className1, final RStore<?> initialNames) {
+	public RVectorImpl(final TData data, final String className1, final RStore<?> initialNames) {
 		if (data == null || className1 == null) {
 			throw new NullPointerException();
 		}
@@ -92,7 +92,7 @@ public class RVectorImpl<DataType extends RStore<?>> extends AbstractRObject
 			this.namesAttribute = factory.readNames(io, this.length);
 		}
 		//-- data
-		this.data = (DataType) factory.readStore(io, this.length);
+		this.data = (TData) factory.readStore(io, this.length);
 		if ((options & RObjectFactory.O_CLASS_NAME) == 0) {
 			this.className1 = this.data.getBaseVectorRClassName();
 		}
@@ -156,12 +156,12 @@ public class RVectorImpl<DataType extends RStore<?>> extends AbstractRObject
 	
 	
 	@Override
-	public DataType getData() {
+	public TData getData() {
 		return this.data;
 	}
 	
 	
-	public void setData(final DataType data) {
+	public void setData(final TData data) {
 		this.data = data;
 	}
 	

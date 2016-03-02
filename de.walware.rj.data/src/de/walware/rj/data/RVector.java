@@ -39,9 +39,9 @@ package de.walware.rj.data;
  * The data structure for multiple R objects is represented by the type 
  * {@link RObject#TYPE_LIST list} respectively the interface {@link RList}.</p>
  * 
- * @param <DataType> the type of the data store
+ * @param <TData> the type of the data store
  */
-public interface RVector<DataType extends RStore<?>> extends RObject {
+public interface RVector<TData extends RStore<?>> extends RObject {
 	
 	/**
 	 * Returns the length of the object. The length of an {@link RObject#TYPE_VECTOR vector}
@@ -66,7 +66,7 @@ public interface RVector<DataType extends RStore<?>> extends RObject {
 	
 	
 	@Override
-	DataType getData();
+	TData getData();
 	
 //	void insert(int idx);
 //	void remove(int idx);

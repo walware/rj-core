@@ -48,9 +48,9 @@ public interface RObjectFactory {
 //	RArgument createArgument(String name, String defaultSource);
 //	RFunction createFunction(RArgument[] argument);
 //	
-	<DataType extends RStore<?>> RVector<DataType> createVector(DataType data);
-	<DataType extends RStore<?>> RArray<DataType> createArray(DataType data, int[] dim);
-	<DataType extends RStore<?>> RArray<DataType> createMatrix(DataType data, int dim1, int dim2);
+	<TData extends RStore<?>> RVector<TData> createVector(TData data);
+	<TData extends RStore<?>> RArray<TData> createArray(TData data, int[] dim);
+	<TData extends RStore<?>> RArray<TData> createMatrix(TData data, int dim1, int dim2);
 	RList createList(RObject[] components, String[] names);
 //	RDataFrame createDataFrame(RData[] columns, String[] columnNames, String[] rowNames);
 	

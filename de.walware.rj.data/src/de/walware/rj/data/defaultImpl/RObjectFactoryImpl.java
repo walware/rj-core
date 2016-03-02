@@ -66,8 +66,8 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @param classname the R class name
 	 * @return the R vector
 	 */
-	public <DataType extends RStore<?>> RVector<DataType> createVector(final DataType data, final String classname) {
-		return new RVectorImpl<DataType>(data, classname);
+	public <TData extends RStore<?>> RVector<TData> createVector(final TData data, final String classname) {
+		return new RVectorImpl<TData>(data, classname);
 	}
 	
 	/**
@@ -79,7 +79,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @return the R vector
 	 */
 	@Override
-	public <DataType extends RStore<?>> RVector<DataType> createVector(final DataType data) {
+	public <TData extends RStore<?>> RVector<TData> createVector(final TData data) {
 		return createVector(data, data.getBaseVectorRClassName());
 	}
 	
@@ -293,18 +293,18 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	/*-- Array/Matrix --*/
 	
-	public <DataType extends RStore<?>> RArray<DataType> createArray(final DataType data, final int[] dim,
+	public <TData extends RStore<?>> RArray<TData> createArray(final TData data, final int[] dim,
 			final String classname) {
-		return new RArrayImpl<DataType>(data, classname, dim);
+		return new RArrayImpl<TData>(data, classname, dim);
 	}
 	
 	@Override
-	public <DataType extends RStore<?>> RArray<DataType> createArray(final DataType data, final int[] dim) {
+	public <TData extends RStore<?>> RArray<TData> createArray(final TData data, final int[] dim) {
 		return createArray(data, dim, (dim.length == 2) ? RObject.CLASSNAME_MATRIX :RObject.CLASSNAME_ARRAY);
 	}
 	
 	@Override
-	public <DataType extends RStore<?>> RArray<DataType> createMatrix(final DataType data, final int dim1, final int dim2) {
+	public <TData extends RStore<?>> RArray<TData> createMatrix(final TData data, final int dim1, final int dim2) {
 		return createArray(data, new int[] { dim1, dim2 }, RObject.CLASSNAME_MATRIX);
 	}
 	
