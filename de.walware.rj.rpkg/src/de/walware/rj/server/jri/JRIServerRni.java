@@ -726,6 +726,8 @@ final class JRIServerRni {
 				throw new RjsException(CODE_DATA_ASSIGN_DATA | 0x9, "The language data is invalid.");
 			}
 			switch (lang.getLanguageType()) {
+			case RLanguage.EXPRESSION:
+				return protect(objP);
 			case RLanguage.CALL: {
 				final long[] list = this.rEngine.rniGetVector(objP);
 				if (list != null && list.length == 1

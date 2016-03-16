@@ -45,9 +45,10 @@ public interface FunctionCall {
 	
 	
 	/**
-	 * Adds an argument with the given expression as value.
+	 * Adds an argument with the given R expression as value.
 	 * 
-	 * <p>The expression is used directly as value without any transformation.</p>
+	 * <p>The expression is parsed and lazily evaluated as known from function calls in R source
+	 * code.</p>
 	 * 
 	 * @param arg the name of the argument or <code>null</code> for unnamed
 	 * @param expression a single valid expression
@@ -58,9 +59,10 @@ public interface FunctionCall {
 	FunctionCall add(String arg, String expression);
 	
 	/**
-	 * Adds a unnamed argument with the given expression as value.
+	 * Adds a unnamed argument with the given R expression as value.
 	 * 
-	 * <p>The expression is used directly as value without any transformation.</p>
+	 * <p>The expression is parsed and lazily evaluated as known from function calls in R source
+	 * code.</p>
 	 * 
 	 * @param expression a single valid expression
 	 * @return a reference to this object
