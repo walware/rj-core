@@ -80,7 +80,6 @@ public abstract class AbstractLogicalData extends AbstractRData<Boolean>
 		setLogi(idx, AbstractCharacterData.toLogi(character));
 	}
 	
-	
 	@Override
 	public long indexOf(final String character, final long fromIdx) {
 		if (character == null) {
@@ -92,6 +91,26 @@ public abstract class AbstractLogicalData extends AbstractRData<Boolean>
 		catch (final NumberFormatException e) {
 			return -1;
 		}
+	}
+	
+	@Override
+	public byte getRaw(final int idx) {
+		return getLogi(idx) ? (byte) 1 : (byte) 0;
+	}
+	
+	@Override
+	public byte getRaw(final long idx) {
+		return getLogi(idx) ? (byte) 1 : (byte) 0;
+	}
+	
+	@Override
+	public void setRaw(final int idx, final byte raw) {
+		setLogi(idx, raw != 0);
+	}
+	
+	@Override
+	public void setRaw(final long idx, final byte raw) {
+		setLogi(idx, raw != 0);
 	}
 	
 	

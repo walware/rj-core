@@ -25,7 +25,13 @@ public abstract class AbstractNumericData extends AbstractRData<Double>
 	
 	
 	protected static final String toChar(final double num) {
-		return Double.toString(num); // not exactly like R
+		if (num == Double.POSITIVE_INFINITY) {
+			return "Inf"; //$NON-NLS-1$
+		}
+		else if (num == Double.NEGATIVE_INFINITY) {
+			return "-Inf"; //$NON-NLS-1$
+		}
+		return Double.toString(num);
 	}
 	
 	

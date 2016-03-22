@@ -406,7 +406,26 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
 		if (obj.getRObjectType() != RObject.TYPE_REFERENCE) {
-			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()));
+			throw new UnexpectedRDataException(
+					"Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) );
+		}
+		return (RReference) obj;
+	}
+	
+	public static final RReference checkRReference(final RObject obj, final byte referencedObjectType)
+			throws UnexpectedRDataException {
+		if (obj == null) {
+			throw new UnexpectedRDataException("Missing R object.");
+		}
+		if (obj.getRObjectType() != RObject.TYPE_REFERENCE) {
+			throw new UnexpectedRDataException(
+					"Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) );
+		}
+		final RReference reference= (RReference) obj;
+		if (reference.getReferencedRObjectType() != referencedObjectType) {
+			throw new UnexpectedRDataException(
+					"Unexpected referenced R object type: " + getObjectTypeName(obj.getRObjectType()) +
+					", but " + getObjectTypeName(referencedObjectType) + " expected." );
 		}
 		return (RReference) obj;
 	}
@@ -583,7 +602,9 @@ public class RDataUtil {
 			throw new UnexpectedRDataException("Missing R object.");
 		}
 		if (obj.getRObjectType() != objectType) {
-			throw new UnexpectedRDataException("Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) + ", but " + objectType + " expected.");
+			throw new UnexpectedRDataException(
+					"Unexpected R object type: " + getObjectTypeName(obj.getRObjectType()) +
+					", but " + getObjectTypeName(objectType) + " expected." );
 		}
 		return (RList) obj;
 	}
@@ -597,19 +618,25 @@ public class RDataUtil {
 	
 	
 	public static final int checkIntLength(final RObject obj) throws UnexpectedRDataException {
-		final long length = obj.getLength();
-		if (length < 0 || length > Integer.MAX_VALUE) {
-			throw new UnexpectedRDataException("Unexpected R object length: " + length + ", but <= 2^31-1 expected.");
-		}
-		return (int) length;
+		return checkIntLength(obj.getLength());
 	}
 	
 	public static final int checkIntLength(final RStore<?> data) throws UnexpectedRDataException {
-		final long length = data.getLength();
+		return checkIntLength(data.getLength());
+	}
+	
+	public static final int checkIntLength(final long length) throws UnexpectedRDataException {
 		if (length < 0 || length > Integer.MAX_VALUE) {
 			throw new UnexpectedRDataException("Unexpected R data length: " + length + ", but <= 2^31-1 expected.");
 		}
 		return (int) length;
+	}
+	
+	public static final int checkIntIdx(final long idx) throws UnexpectedRDataException {
+		if (idx < 0 || idx >= Integer.MAX_VALUE) {
+			throw new UnexpectedRDataException("Unexpected R data index: " + idx + ", but < 2^31-1 expected.");
+		}
+		return (int) idx;
 	}
 	
 	public static final <T extends RObject> T checkLengthEqual(final T obj, final long length) throws UnexpectedRDataException {

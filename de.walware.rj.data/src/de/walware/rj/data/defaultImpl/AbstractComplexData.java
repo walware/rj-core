@@ -25,10 +25,14 @@ public abstract class AbstractComplexData extends AbstractRData<RComplexStore.Co
 	
 	
 	protected static final String toChar(final double real, final double imaginary) {
-		final StringBuilder sb = new StringBuilder();
-		sb.append(real);
-		sb.append('+');
-		sb.append(imaginary);
+		final StringBuilder sb= new StringBuilder();
+		sb.append(AbstractNumericData.toChar(real));
+		{	final String imStr= AbstractNumericData.toChar(imaginary);
+			if (imStr.charAt(0) != '-') {
+				sb.append('+');
+			}
+			sb.append(imStr);
+		}
 		sb.append('i');
 		return sb.toString();
 	}
