@@ -61,6 +61,11 @@ public class RVectorDataAdapter extends AbstractRDataAdapter<RVector<?>, RVector
 	}
 	
 	@Override
+	protected String getSetDataFName() {
+		return "rj:::.setDataVectorValues"; //$NON-NLS-1$
+	}
+	
+	@Override
 	protected RVector<?> validateData(final RObject rObject, final RVector<?> referenceObject,
 			final Fragment<RVector<?>> fragment) throws UnexpectedRDataException {
 		final RVector<?> vector = RDataUtil.checkRVector(rObject);

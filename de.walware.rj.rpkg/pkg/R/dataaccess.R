@@ -1,6 +1,7 @@
-## data editor
+## data access / data editor
 
-.checkDataStruct <- function(x, xClass1, xDim) {
+.checkDataStruct <- function(x.env, x.expr, xClass1, xDim) {
+	x <- eval(expr= x.expr)
 	if (class(x)[1] != xClass1) {
 		return (FALSE)
 	}
@@ -16,18 +17,26 @@
 	}
 }
 
-.getDataVectorValues <- function(x, idxs, rowMapping) {
+.getDataVectorValues <- function(x.env, x.expr, idxs, rowMapping) {
 	rowIdxs <- if (missing(rowMapping))
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x <- x[rowIdxs, drop= FALSE]
+	x <- eval(expr= x.expr) [rowIdxs, drop= FALSE]
 	names(x) <- NULL
 	x
 }
 
-.getDataVectorRowNames <- function(x, idxs, rowMapping) {
-	x.names <- names(x)
+.setDataVectorValues <- function(x.env, x.expr, idxs, values) {
+	expr <- quote(x[idxs[1L]:idxs[2L]] <- values)
+	expr[[2]][[2]] <- x.expr[[1]]
+	eval(expr= as.expression(expr))
+	TRUE
+}
+
+.getDataVectorRowNames <- function(x.env, x.expr, idxs, rowMapping) {
+	x.names <- names(
+			eval(expr= x.expr) )
 	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
@@ -35,24 +44,24 @@
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	if (is.null(x.names))
-		rowIdxs
-	else
-		x.names[rowIdxs]
+	if (!is.null(x.names))
+		names(rowIdxs) <- x.names[rowIdxs]
+	rowIdxs
 }
 
-.getDataMatrixValues <- function(x, idxs, rowMapping) {
+.getDataMatrixValues <- function(x.env, x.expr, idxs, rowMapping) {
 	rowIdxs <- if (missing(rowMapping))
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
+	x <- eval(expr= x.expr) [rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
 	rownames(x) <- NULL
 	x
 }
 
-.getDataMatrixRowNames <- function(x, idxs, rowMapping) {
-	x.names <- rownames(x)
+.getDataMatrixRowNames <- function(x.env, x.expr, idxs, rowMapping) {
+	x.names <- rownames(
+			eval(expr= x.expr) )
 	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
@@ -60,40 +69,43 @@
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	if (is.null(x.names))
-		rowIdxs
-	else
-		x.names[rowIdxs]
+	if (!is.null(x.names))
+		names(rowIdxs) <- x.names[rowIdxs]
+	rowIdxs
 }
 
-.getDataArrayDimNames <- function(x, idxs) {
-	x.dimnames <- dimnames(x)
+.getDataArrayDimNames <- function(x.env, x.expr, idxs) {
+	x.dimnames <- dimnames(
+			eval(expr= x.expr) )
 	if (is.null(x.dimnames)) {
 		return (NULL)
 	}
 	names(x.dimnames)[idxs[1L]:idxs[2L]]
 }
 
-.getDataArrayDimItemNames <- function(x, dimIdx, idxs) {
-	x.dimnames <- dimnames(x)
+.getDataArrayDimItemNames <- function(x.env, x.expr, dimIdx, idxs) {
+	x.dimnames <- dimnames(
+			eval(expr= x.expr) )
 	if (is.null(x.dimnames)) {
 		return (NULL)
 	}
 	x.dimnames[[dimIdx]][idxs[1L]:idxs[2L]]
 }
 
-.getDataFrameValues <- function(x, idxs, rowMapping) {
+.getDataFrameValues <- function(x.env, x.expr, idxs, rowMapping) {
 	rowIdxs <- if (missing(rowMapping))
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	x <- x[rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
+	x <- eval(expr= x.expr) [rowIdxs, idxs[3L]:idxs[4L], drop= FALSE]
 	attr(x, 'row.names') <- NULL
 	x
 }
 
-.getDataFrameRowNames <- function(x, idxs, rowMapping) {
-	x.names <- attr(x, 'row.names', exact= TRUE)
+.getDataFrameRowNames <- function(x.env, x.expr, idxs, rowMapping) {
+	x.names <- attr(
+			eval(expr= x.expr),
+			'row.names', exact= TRUE )
 	if (is.null(x.names) && missing(rowMapping)) {
 		return (NULL)
 	}
@@ -101,10 +113,9 @@
 				idxs[1L]:idxs[2L]
 			else
 				get(rowMapping, envir= .rj.tmp)[idxs[1L]:idxs[2L]]
-	if (is.null(x.names))
-		rowIdxs
-	else
-		x.names[rowIdxs]
+	if (!is.null(x.names))
+		names(rowIdxs) <- x.names[rowIdxs]
+	rowIdxs
 }
 
 

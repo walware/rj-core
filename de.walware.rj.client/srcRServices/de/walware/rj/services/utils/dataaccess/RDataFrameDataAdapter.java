@@ -63,6 +63,11 @@ public class RDataFrameDataAdapter extends AbstractRDataAdapter<RDataFrame, RDat
 	}
 	
 	@Override
+	protected String getSetDataFName() {
+		return "rj:::.setDataFrameValues"; //$NON-NLS-1$
+	}
+	
+	@Override
 	protected RDataFrame validateData(final RObject rObject, final RDataFrame referenceObject,
 			final Fragment<RDataFrame> fragment) throws UnexpectedRDataException {
 		final RDataFrame dataframe = RDataUtil.checkRDataFrame(rObject, fragment.getColumnCount());

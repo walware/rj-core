@@ -62,12 +62,17 @@ public class RMatrixDataAdapter extends AbstractRDataAdapter<RArray<?>, RArray<?
 	}
 	
 	@Override
+	protected String getSetDataFName() {
+		return "rj:::.setDataMatrixValues";
+	}
+	
+	@Override
 	protected RArray<?> validateData(final RObject rObject, final RArray<?> referenceObject,
 			final Fragment<RArray<?>> fragment)
 			throws UnexpectedRDataException {
 		final RArray<?> array = RDataUtil.checkRArray(rObject, 2);
-		RDataUtil.checkColumnCountEqual(array, fragment.getColumnCount());
-		RDataUtil.checkRowCountEqual(array, fragment.getRowCount());
+		RDataUtil.checkColumnCountEqual(array, RDataUtil.checkIntLength(fragment.getColumnCount()));
+		RDataUtil.checkRowCountEqual(array, RDataUtil.checkIntLength(fragment.getRowCount()));
 		
 		RDataUtil.checkData(rObject.getData(), referenceObject.getData().getStoreType());
 		

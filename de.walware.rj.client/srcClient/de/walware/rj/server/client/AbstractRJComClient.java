@@ -260,7 +260,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 	
 	private final Lock clientWaitLock = new ReentrantLock();
 	private final Condition clientWaitCondition = this.clientWaitLock.newCondition();
-	private final List<Callable<Boolean>> cancelHandler = new ArrayList<Callable<Boolean>>();
+	private final List<Callable<Boolean>> cancelHandler = new ArrayList<>();
 	
 	
 	protected AbstractRJComClient() {
@@ -338,7 +338,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 		synchronized (this) {
 			if (this.rjConsoleServer == null) {
 				if (this.defferedRunnables == null) {
-					this.defferedRunnables = new ArrayList<Runnable>(8);
+					this.defferedRunnables = new ArrayList<>(8);
 				}
 				this.defferedRunnables.add(runnable);
 				return;

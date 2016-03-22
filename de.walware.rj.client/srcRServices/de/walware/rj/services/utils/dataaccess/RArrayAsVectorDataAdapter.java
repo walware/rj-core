@@ -21,6 +21,7 @@ import de.walware.rj.data.RVector;
 import de.walware.rj.data.UnexpectedRDataException;
 import de.walware.rj.data.defaultImpl.RObjectFactoryImpl;
 import de.walware.rj.services.FunctionCall;
+import de.walware.rj.services.IFQRObjectRef;
 import de.walware.rj.services.RService;
 import de.walware.rj.services.utils.dataaccess.LazyRStore.Fragment;
 
@@ -69,6 +70,11 @@ public class RArrayAsVectorDataAdapter extends AbstractRDataAdapter<RArray<?>, R
 	}
 	
 	@Override
+	protected String getSetDataFName() {
+		return "rj:::.setDataVectorValues"; //$NON-NLS-1$
+	}
+	
+	@Override
 	protected RVector<?> validateData(final RObject rObject, final RArray<?> referenceObject,
 			final Fragment<RVector<?>> fragment) throws UnexpectedRDataException {
 		final RVector<?> vector = RDataUtil.checkRVector(rObject);
@@ -84,13 +90,13 @@ public class RArrayAsVectorDataAdapter extends AbstractRDataAdapter<RArray<?>, R
 		throw new UnsupportedOperationException();
 	}
 	
-	public RVector<?> loadDimNames(final String expression, final RArray<?> referenceObject,
+	public RVector<?> loadDimNames(final IFQRObjectRef ref, final RArray<?> referenceObject,
 			final LazyRStore.Fragment<RVector<?>> fragment,
 			final RService r, final IProgressMonitor monitor) throws CoreException,
 			UnexpectedRDataException {
 		final RObject fragmentObject;
 		{	final FunctionCall fcall = r.createFunctionCall("rj:::.getDataArrayDimNames"); //$NON-NLS-1$
-			fcall.add("x", expression); //$NON-NLS-1$
+			addXRef(fcall, ref);
 			fcall.add("idxs", RObjectFactoryImpl.INSTANCE.createNumVector(new double[] { //$NON-NLS-1$
 					fragment.getRowBeginIdx() + 1,
 					fragment.getRowEndIdx(),
@@ -102,13 +108,13 @@ public class RArrayAsVectorDataAdapter extends AbstractRDataAdapter<RArray<?>, R
 		return validateRowNames(fragmentObject, referenceObject, fragment);
 	}
 	
-	public RVector<?> loadDimItemNames(final String expression, final RArray<?> referenceObject,
+	public RVector<?> loadDimItemNames(final IFQRObjectRef ref, final RArray<?> referenceObject,
 			final int dim, final LazyRStore.Fragment<RVector<?>> fragment,
 			final RService r, final IProgressMonitor monitor) throws CoreException,
 			UnexpectedRDataException {
 		final RObject fragmentObject;
 		{	final FunctionCall fcall = r.createFunctionCall("rj:::.getDataArrayDimItemNames"); //$NON-NLS-1$
-			fcall.add("x", expression); //$NON-NLS-1$
+			addXRef(fcall, ref);
 			fcall.addInt("dimIdx", dim + 1); //$NON-NLS-1$
 			fcall.add("idxs", RObjectFactoryImpl.INSTANCE.createNumVector(new double[] { //$NON-NLS-1$
 					fragment.getRowBeginIdx() + 1,
