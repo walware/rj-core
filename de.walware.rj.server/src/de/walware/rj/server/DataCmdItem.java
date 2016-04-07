@@ -168,8 +168,8 @@ public final class DataCmdItem extends MainCmdItem {
 		assert (op.reqTargetExpr == (targetExpr != null));
 		assert (factoryId == null || gFactories.containsKey(factoryId));
 		this.operation= op;
-		this.targetExpr= targetExpr;
 		this.sourceExpr= sourceExpr;
+		this.targetExpr= targetExpr;
 		this.options= (OV_WAITFORCLIENT | (options & OM_CUSTOM));
 		if (data != null) {
 			this.rdata= data;
@@ -194,6 +194,7 @@ public final class DataCmdItem extends MainCmdItem {
 		assert (op.reqTargetExpr == (targetExpr != null));
 		this.operation= op;
 		this.sourceExpr= sourceExpr;
+		this.targetExpr= targetExpr;
 		this.options= (OV_WAITFORCLIENT | (options & OM_CUSTOM));
 		if (data != null) {
 			this.rdata= data;
