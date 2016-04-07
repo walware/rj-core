@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ R Package
 Bundle-SymbolicName: de.walware.rj.rpkg
-Bundle-Version: 2.0.4.qualifier
+Bundle-Version: 2.0.5.qualifier
 Bundle-ClassPath: jri.jar,
  pkg/inst/server/rj.jar
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
