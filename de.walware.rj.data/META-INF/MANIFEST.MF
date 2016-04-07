@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Data
 Bundle-SymbolicName: de.walware.rj.data
-Bundle-Version: 2.0.0.qualifier
+Bundle-Version: 2.0.0.b201604071800
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: de.walware.rj.data,
  de.walware.rj.data.defaultImpl
