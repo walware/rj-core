@@ -188,34 +188,58 @@ public class RLogicalDataByteFixLongImpl extends AbstractLogicalData
 	
 	
 	@Override
-	public long indexOf(final int integer, final long fromIdx) {
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
+		{	while (i < this.boolValues.length) {
+				final byte[] bools= this.boolValues[i];
+				while (j < bools.length) {
+					if (bools[i] == NA_logical_BYTE) {
+						return (i * (long) SEGMENT_LENGTH) + j;
+					}
+				}
+				i++;
+				j= 0;
+			}
+		}
+		return -1;
+	}
+	
+	@Override
+	public long indexOf(final int integer, long fromIdx) {
 		if (integer == NA_integer_INT ) {
 			return -1;
 		}
-		int i = (int) (fromIdx / SEGMENT_LENGTH);
-		int j = (int) (fromIdx % SEGMENT_LENGTH);
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
 		if (integer != 0) {
 			while (i < this.boolValues.length) {
-				final byte[] bools = this.boolValues[i];
+				final byte[] bools= this.boolValues[i];
 				while (j < bools.length) {
 					if (bools[i] == TRUE_BYTE) {
 						return (i * (long) SEGMENT_LENGTH) + j;
 					}
 				}
 				i++;
-				j = 0;
+				j= 0;
 			}
 		}
 		else {
 			while (i < this.boolValues.length) {
-				final byte[] bools = this.boolValues[i];
+				final byte[] bools= this.boolValues[i];
 				while (j < bools.length) {
 					if (bools[i] == FALSE_BYTE) {
 						return (i * (long) SEGMENT_LENGTH) + j;
 					}
 				}
 				i++;
-				j = 0;
+				j= 0;
 			}
 		}
 		return -1;

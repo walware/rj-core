@@ -187,15 +187,18 @@ public class RRawDataImpl extends AbstractRawData
 	
 	
 	@Override
-	public long indexOf(final int integer, final long fromIdx) {
+	public long indexOf(final int integer, long fromIdx) {
 		if (fromIdx >= Integer.MAX_VALUE
 				|| (integer & 0xffffff00) != 0 ) {
 			return -1;
 		}
-		final byte raw = (byte) (integer & 0xff);
-		final int l = length();
-		final byte[] raws = this.byteValues;
-		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final byte raw= (byte) (integer & 0xff);
+		final int l= length();
+		final byte[] raws= this.byteValues;
+		for (int i= (int) fromIdx; i < l; i++) {
 			if (raws[i] == raw) {
 				return i;
 			}

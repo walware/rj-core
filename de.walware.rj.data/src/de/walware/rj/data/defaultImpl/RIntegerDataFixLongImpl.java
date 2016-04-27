@@ -168,24 +168,44 @@ public class RIntegerDataFixLongImpl extends AbstractIntegerData
 	
 	
 	@Override
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
+		while (i < this.intValues.length) {
+			final int[] ints= this.intValues[i];
+			while (j < ints.length) {
+				if (ints[i] == NA_integer_INT) {
+					return (i * (long) SEGMENT_LENGTH) + j;
+				}
+			}
+			i++;
+			j= 0;
+		}
+		return -1;
+	}
+	
+	@Override
 	public final long indexOf(final int integer, long fromIdx) {
 		if (integer == NA_integer_INT ) {
 			return -1;
 		}
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		int i = (int) (fromIdx / SEGMENT_LENGTH);
-		int j = (int) (fromIdx % SEGMENT_LENGTH);
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
 		while (i < this.intValues.length) {
-			final int[] ints = this.intValues[i];
+			final int[] ints= this.intValues[i];
 			while (j < ints.length) {
 				if (ints[i] == integer) {
 					return (i * (long) SEGMENT_LENGTH) + j;
 				}
 			}
 			i++;
-			j = 0;
+			j= 0;
 		}
 		return -1;
 	}

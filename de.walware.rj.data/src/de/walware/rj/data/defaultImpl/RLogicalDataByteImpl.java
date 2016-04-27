@@ -294,22 +294,43 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	
 	
 	@Override
-	public long indexOf(final int integer, final long fromIdx) {
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE) {
+			return -1;
+		}
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final long l= getLength();
+		final byte[] bools= this.boolValues;
+		for (int i= (int) fromIdx; i < l; i++) {
+			if (bools[i] == NA_logical_BYTE) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	@Override
+	public long indexOf(final int integer, long fromIdx) {
 		if (fromIdx >= Integer.MAX_VALUE
 				|| integer == NA_integer_INT ) {
 			return -1;
 		}
-		final int l = length();
-		final byte[] bools = this.boolValues;
+		if (fromIdx < 0) {
+			fromIdx = 0;
+		}
+		final int l= length();
+		final byte[] bools= this.boolValues;
 		if (integer != 0) {
-			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			for (int i= (int) fromIdx; i < l; i++) {
 				if (bools[i] == TRUE_BYTE) {
 					return i;
 				}
 			}
 		}
 		else {
-			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			for (int i= (int) fromIdx; i < l; i++) {
 				if (bools[i] == FALSE_BYTE) {
 					return i;
 				}

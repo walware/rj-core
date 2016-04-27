@@ -158,24 +158,44 @@ public class RCharacterDataFixLongImpl extends AbstractCharacterData
 	
 	
 	@Override
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
+		while (i < this.charValues.length) {
+			final String[] chars= this.charValues[i];
+			while (j < chars.length) {
+				if (chars[j] == null) {
+					return (i * (long) SEGMENT_LENGTH) + j;
+				}
+			}
+			i++;
+			j= 0;
+		}
+		return -1;
+	}
+	
+	@Override
 	public long indexOf(final String character, long fromIdx) {
 		if (character == null) {
 			return -1;
 		}
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		int i = (int) (fromIdx / SEGMENT_LENGTH);
-		int j = (int) (fromIdx % SEGMENT_LENGTH);
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
 		while (i < this.charValues.length) {
-			final String[] chars = this.charValues[i];
+			final String[] chars= this.charValues[i];
 			while (j < chars.length) {
 				if (chars[j] != null && chars[j].equals(character)) {
 					return (i * (long) SEGMENT_LENGTH) + j;
 				}
 			}
 			i++;
-			j = 0;
+			j= 0;
 		}
 		return -1;
 	}

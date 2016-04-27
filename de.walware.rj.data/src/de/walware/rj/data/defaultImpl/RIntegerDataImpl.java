@@ -254,14 +254,35 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	
 	@Override
-	public final long indexOf(final int integer, final long fromIdx) {
+	public final long indexOfNA(long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE) {
+			return -1;
+		}
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final int[] ints= this.intValues;
+		for (int i= (int) fromIdx; i < l; i++) {
+			if (ints[i] == NA_integer_INT) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	@Override
+	public final long indexOf(final int integer, long fromIdx) {
 		if (fromIdx >= Integer.MAX_VALUE
 				|| integer == NA_integer_INT ) {
 			return -1;
 		}
-		final int l = length();
-		final int[] ints = this.intValues;
-		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final int[] ints= this.intValues;
+		for (int i= (int) fromIdx; i < l; i++) {
 			if (ints[i] == integer) {
 				return i;
 			}

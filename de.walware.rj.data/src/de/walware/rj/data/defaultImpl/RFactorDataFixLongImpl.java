@@ -131,36 +131,36 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 	}
 	
 	@Override
-	public void setInt(final int idx, final int integer) {
-		if (integer <= 0 || integer > this.codeLabels.length()) {
+	public void setInt(final int idx, final int code) {
+		if (code <= 0 || code > this.codeLabels.length()) {
 			throw new IllegalArgumentException();
 		}
-		this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH] = integer;
+		this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH]= code;
 	}
 	
 	@Override
-	public void setInt(final long idx, final int integer) {
-		if (integer <= 0 || integer > this.codeLabels.length()) {
+	public void setInt(final long idx, final int code) {
+		if (code <= 0 || code > this.codeLabels.length()) {
 			throw new IllegalArgumentException();
 		}
-		this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)] = integer;
+		this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)] = code;
 	}
 	
 	@Override
 	public String getChar(final int idx) {
-		final int v = this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH];
-		return (v > 0) ? this.codeLabels.getChar(v - 1): null;
+		final int code= this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH];
+		return (code > 0) ? this.codeLabels.getChar(code - 1): null;
 	}
 	
 	@Override
 	public String getChar(final long idx) {
-		final int v = this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)];
-		return (v > 0) ? this.codeLabels.getChar(v - 1): null;
+		final int code= this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)];
+		return (code > 0) ? this.codeLabels.getChar(code - 1): null;
 	}
 	
 	@Override
 	public void setChar(final int idx, final String data) {
-		final int code = this.codeLabels.indexOf(data, 0) + 1;
+		final int code= this.codeLabels.indexOf(data, 0) + 1;
 		if (code <= 0) {
 			throw new IllegalArgumentException();
 		}
@@ -169,7 +169,7 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 	
 	@Override
 	public void setChar(final long idx, final String data) {
-		final int code = this.codeLabels.indexOf(data, 0) + 1;
+		final int code= this.codeLabels.indexOf(data, 0) + 1;
 		if (code <= 0) {
 			throw new IllegalArgumentException();
 		}
@@ -194,9 +194,9 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 			final String[] chars = data[i];
 			final int[] ints = this.codes[i];
 			for (int j = 0; j < ints.length; j++) {
-				final int v = ints[j];
-				if (v > 0) {
-					chars[j] = this.codeLabels.getChar(v - 1);
+				final int code= ints[j];
+				if (code > 0) {
+					chars[j] = this.codeLabels.getChar(code - 1);
 				}
 			}
 		}
@@ -209,10 +209,10 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 		if (idx < 0 || idx >= this.length) {
 			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		final int v = this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH];
-		return (v > 0) ?
-			Integer.valueOf(v) :
-			null;
+		final int code= this.codes[idx / SEGMENT_LENGTH][idx % SEGMENT_LENGTH];
+		return (code > 0) ?
+				Integer.valueOf(code) :
+				null;
 	}
 	
 	@Override
@@ -220,10 +220,10 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 		if (idx < 0 || idx >= this.length) {
 			throw new IndexOutOfBoundsException(Long.toString(idx));
 		}
-		final int v = this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)];
-		return (v > 0) ?
-			Integer.valueOf(v) :
-			null;
+		final int code= this.codes[(int) (idx / SEGMENT_LENGTH)][(int) (idx % SEGMENT_LENGTH)];
+		return (code > 0) ?
+				Integer.valueOf(code) :
+				null;
 	}
 	
 	@Override
@@ -234,9 +234,9 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 		for (int i = 0; i < this.codes.length; i++, k++) {
 			final int[] ints = this.codes[i];
 			for (int j = 0; j < ints.length; j++) {
-				final int v = ints[j];
-				if (v > 0) {
-					array[k] = Integer.valueOf(v);
+				final int code= ints[j];
+				if (code > 0) {
+					array[k] = Integer.valueOf(code);
 				}
 			}
 		}
@@ -245,31 +245,53 @@ public class RFactorDataFixLongImpl extends AbstractFactorData
 	
 	
 	@Override
-	public long indexOf(final int integer, long fromIdx) {
-		if (integer <= 0 || integer > this.codeLabels.length()) {
-			return -1;
-		}
+	public long indexOfNA(long fromIdx) {
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		int i = (int) (fromIdx / SEGMENT_LENGTH);
-		int j = (int) (fromIdx % SEGMENT_LENGTH);
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
 		while (i < this.codes.length) {
-			final int[] ints = this.codes[i];
+			final int[] ints= this.codes[i];
 			while (j < ints.length) {
-				if (ints[i] == integer) {
+				if (ints[i] == NA_integer_INT) {
 					return (i * (long) SEGMENT_LENGTH) + j;
 				}
 			}
 			i++;
-			j = 0;
+			j= 0;
+		}
+		return -1;
+	}
+	
+	@Override
+	public long indexOf(final int code, long fromIdx) {
+		if (code <= 0 || code > this.codeLabels.length()) {
+			return -1;
+		}
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		int i= (int) (fromIdx / SEGMENT_LENGTH);
+		int j= (int) (fromIdx % SEGMENT_LENGTH);
+		while (i < this.codes.length) {
+			final int[] ints= this.codes[i];
+			while (j < ints.length) {
+				if (ints[i] == code) {
+					return (i * (long) SEGMENT_LENGTH) + j;
+				}
+			}
+			i++;
+			j= 0;
 		}
 		return -1;
 	}
 	
 	@Override
 	public long indexOf(final String character, final long fromIdx) {
-		final int code = this.codeLabels.indexOf(character, 0) + 1;
+		final int code= ((character != null) ?
+				this.codeLabels.indexOf(character, 0) :
+				this.codeLabels.indexOfNA(0) ) + 1;
 		return indexOf(code, fromIdx);
 	}
 	

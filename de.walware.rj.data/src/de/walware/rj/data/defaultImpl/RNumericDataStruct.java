@@ -81,6 +81,12 @@ public class RNumericDataStruct extends AbstractNumericData {
 		throw new UnsupportedOperationException();
 	}
 	
+	
+	@Override
+	public long indexOfNA(final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override
 	public long indexOf(final int integer, final long fromIdx) {
 		throw new UnsupportedOperationException();

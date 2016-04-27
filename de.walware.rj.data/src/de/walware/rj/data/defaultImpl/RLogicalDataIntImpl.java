@@ -253,22 +253,43 @@ public class RLogicalDataIntImpl extends AbstractLogicalData
 	
 	
 	@Override
-	public long indexOf(final int integer, final long fromIdx) {
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE) {
+			return -1;
+		}
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final long l= getLength();
+		final int[] ints= this.boolValues;
+		for (int i= (int) fromIdx; i < l; i++) {
+			if (ints[i] == NA_integer_INT) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	@Override
+	public long indexOf(final int integer, long fromIdx) {
 		if (fromIdx >= Integer.MAX_VALUE
 				|| integer == NA_integer_INT ) {
 			return -1;
 		}
-		final int l = length();
-		final int[] ints = this.boolValues;
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final int[] ints= this.boolValues;
 		if (integer != 0) {
-			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			for (int i= (int) fromIdx; i < l; i++) {
 				if (ints[i] == TRUE_INT) {
 					return i;
 				}
 			}
 		}
 		else {
-			for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+			for (int i= (int) fromIdx; i < l; i++) {
 				if (ints[i] == FALSE_INT) {
 					return i;
 				}

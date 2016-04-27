@@ -71,6 +71,12 @@ public class RCharacterDataStruct extends AbstractCharacterData {
 		throw new UnsupportedOperationException();
 	}
 	
+	
+	@Override
+	public long indexOfNA(final long fromIdx) {
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override
 	public long indexOf(final int integer, final long fromIdx) {
 		throw new UnsupportedOperationException();

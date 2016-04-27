@@ -602,29 +602,23 @@ public abstract class AbstractRData<P> implements RStore<P> {
 	
 	
 	@Override
-	public boolean contains(final String character) {
-		return (indexOf(character) >= 0);
+	public boolean containsNA() {
+		return (indexOfNA(0) >= 0);
 	}
 	
 	@Override
-	public final long indexOf(final String character) {
-		return indexOf(character, 0);
+	public long indexOfNA() {
+		return indexOfNA(0);
 	}
 	
 	@Override
-	public long indexOf(final String character, long fromIdx) {
-		if (isStructOnly()) {
-			throw new UnsupportedOperationException();
-		}
-		if (character == null) {
-			return -1;
-		}
+	public long indexOfNA(long fromIdx) {
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		final long length = getLength();
+		final long length= getLength();
 		while (fromIdx < length) {
-			if (!isNA(fromIdx) && character.equals(getChar(fromIdx))) {
+			if (isNA(fromIdx)) {
 				return fromIdx;
 			}
 			fromIdx++;
@@ -634,7 +628,7 @@ public abstract class AbstractRData<P> implements RStore<P> {
 	
 	@Override
 	public boolean contains(final int integer) {
-		return (indexOf(integer) >= 0);
+		return (indexOf(integer, 0) >= 0);
 	}
 	
 	@Override
@@ -644,15 +638,40 @@ public abstract class AbstractRData<P> implements RStore<P> {
 	
 	@Override
 	public long indexOf(final int integer, long fromIdx) {
-		if (isStructOnly()) {
-			throw new UnsupportedOperationException();
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final long l= getLength();
+		while (fromIdx < l) {
+			if (!isNA(fromIdx) && integer == getInt(fromIdx)) {
+				return fromIdx;
+			}
+			fromIdx++;
+		}
+		return -1;
+	}
+	
+	@Override
+	public boolean contains(final String character) {
+		return (indexOf(character, 0) >= 0);
+	}
+	
+	@Override
+	public final long indexOf(final String character) {
+		return indexOf(character, 0);
+	}
+	
+	@Override
+	public long indexOf(final String character, long fromIdx) {
+		if (character == null) {
+			return -1;
 		}
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		final long length = getLength();
-		while (fromIdx < length) {
-			if (!isNA(fromIdx) && integer == getInt(fromIdx)) {
+		final long l= getLength();
+		while (fromIdx < l) {
+			if (!isNA(fromIdx) && character.equals(getChar(fromIdx))) {
 				return fromIdx;
 			}
 			fromIdx++;

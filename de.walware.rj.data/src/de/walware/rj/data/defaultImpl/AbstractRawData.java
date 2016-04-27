@@ -29,7 +29,7 @@ public abstract class AbstractRawData extends AbstractRData<Byte>
 	};
 	
 	protected static final String toChar(final byte raw) {
-		return new String(new char[] { HEX_CHARS[(raw & 0xf0) >> 4], HEX_CHARS[(raw & 0x0f)] });
+		return new String(new char[] { HEX_CHARS[(raw >>> 4) & 0x0F], HEX_CHARS[(raw & 0x0F)] });
 	}
 	
 	
@@ -92,6 +92,12 @@ public abstract class AbstractRawData extends AbstractRData<Byte>
 	@Override
 	public final String getChar(final long idx) {
 		return toChar(getRaw(idx));
+	}
+	
+	
+	@Override
+	public long indexOfNA(final long fromIdx) {
+		return -1;
 	}
 	
 }

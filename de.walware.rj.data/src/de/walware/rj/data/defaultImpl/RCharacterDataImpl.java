@@ -271,36 +271,71 @@ public class RCharacterDataImpl extends AbstractCharacterData
 	}
 	
 	
-	public int indexOf(final String character, int fromIdx) {
-		if (character == null) {
-			throw new NullPointerException();
+	@Override
+	public long indexOfNA(long fromIdx) {
+		if (fromIdx >= Integer.MAX_VALUE) {
+			return -1;
 		}
 		if (fromIdx < 0) {
-			fromIdx = 0;
+			fromIdx= 0;
 		}
-		final int l = length();
-		final String[] chars = this.charValues;
-		while (fromIdx < l) {
-			if (chars[fromIdx] != null && chars[fromIdx].equals(character)) {
-				return fromIdx;
+		final int l= length();
+		final String[] chars= this.charValues;
+		for (int i= (int) fromIdx; i < l; i++) {
+			if (chars[i] == null) {
+				return i;
 			}
-			fromIdx++;
+		}
+		return -1;
+	}
+	
+	public int indexOfNA(int fromIdx) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final String[] chars= this.charValues;
+		for (int i= fromIdx; i < l; i++) {
+			if (chars[i] == null) {
+				return i;
+			}
 		}
 		return -1;
 	}
 	
 	@Override
-	public long indexOf(final String character, final long fromIdx) {
+	public long indexOf(final String character, long fromIdx) {
 		if (character == null
 				|| fromIdx >= Integer.MAX_VALUE) {
 			return -1;
 		}
-		final int l = length();
-		final String[] chars = this.charValues;
-		for (int i = (fromIdx >= 0) ? ((int) fromIdx) : 0; i < l; i++) {
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final String[] chars= this.charValues;
+		for (int i= (int) fromIdx; i < l; i++) {
 			if (chars[i] != null && chars[i].equals(character)) {
 				return i;
 			}
+		}
+		return -1;
+	}
+	
+	public int indexOf(final String character, int fromIdx) {
+		if (character == null) {
+			throw new NullPointerException();
+		}
+		if (fromIdx < 0) {
+			fromIdx= 0;
+		}
+		final int l= length();
+		final String[] chars= this.charValues;
+		while (fromIdx < l) {
+			if (chars[fromIdx] != null && chars[fromIdx].equals(character)) {
+				return fromIdx;
+			}
+			fromIdx++;
 		}
 		return -1;
 	}

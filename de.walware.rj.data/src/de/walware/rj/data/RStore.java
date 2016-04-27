@@ -661,30 +661,32 @@ public interface RStore<P> {
 	
 	
 	/**
-	 * Returns if the store contains the specified character value.
+	 * Returns if the store contains the a NA value.
 	 * 
-	 * @param value the value to search for
-	 * @return <code>true</code> if the store contains the value, otherwise false
+	 * @return <code>true</code> if the store contains a NA value, otherwise false
+	 * 
+	 * @since de.walware.rj.data 3.0
 	 */
-	boolean contains(final String value);
+	boolean containsNA();
 	
 	/**
-	 * Returns the index of the first item in the store equal to the of the specified character value.
+	 * Returns the index of the first NA value in the store.
 	 * 
-	 * @param character the value to search for
 	 * @return index (zero-base) of first equal value, otherwise <code>-1</code>
+	 * 
+	 * @since de.walware.rj.data 3.0
 	 */
-	long indexOf(String character);
+	long indexOfNA();
 	
 	/**
-	 * Returns the index of the first item in the store equal to the of the specified character value,
-	 * starting from the specified index.
+	 * Returns the index of the first NA value in the store, starting from the specified index.
 	 * 
-	 * @param character the value to search for
 	 * @param fromIdx index (zero-based) from which to start the search
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
+	 * 
+	 * @since de.walware.rj.data 3.0
 	 */
-	long indexOf(String character, long fromIdx);
+	long indexOfNA(long fromIdx);
 	
 	/**
 	 * Returns if the store contains the specified integer value.
@@ -695,7 +697,8 @@ public interface RStore<P> {
 	boolean contains(final int integer);
 	
 	/**
-	 * Returns the index of the first item in the store equal to the of the specified integer value.
+	 * Returns the index of the first value in the store equal to the of the specified integer
+	 * value.
 	 * 
 	 * @param integer the value to search for
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
@@ -703,12 +706,40 @@ public interface RStore<P> {
 	long indexOf(int integer);
 	
 	/**
-	 * Returns if the store contains the specified integer value.
+	 * Returns the index of the first value in the store equal to the of the specified integer
+	 * value, starting from the specified index.
 	 * 
 	 * @param integer the value to search for
 	 * @param fromIdx index (zero-based) from which to start the search
 	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
 	 */
 	long indexOf(int integer, long fromIdx);
+	
+	/**
+	 * Returns if the store contains the specified character value.
+	 * 
+	 * @param value the value to search for
+	 * @return <code>true</code> if the store contains the value, otherwise false
+	 */
+	boolean contains(final String value);
+	
+	/**
+	 * Returns the index of the first value in the store equal to the of the specified character
+	 * value.
+	 * 
+	 * @param character the value to search for
+	 * @return index (zero-base) of first equal value, otherwise <code>-1</code>
+	 */
+	long indexOf(String character);
+	
+	/**
+	 * Returns the index of the first value in the store equal to the of the specified character
+	 * value, starting from the specified index.
+	 * 
+	 * @param character the value to search for
+	 * @param fromIdx index (zero-based) from which to start the search
+	 * @return index (zero-based) of first equal value, otherwise <code>-1</code>
+	 */
+	long indexOf(String character, long fromIdx);
 	
 }
