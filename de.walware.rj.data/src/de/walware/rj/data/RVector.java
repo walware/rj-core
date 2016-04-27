@@ -60,7 +60,8 @@ public interface RVector<TData extends RStore<?>> extends RObject {
 	 * names, the names are invalid, or names are disabled, the method returns <code>null</code>.
 	 * 
 	 * @return a data store with the names of the indexes or <code>null</code>
-	 * @since 0.5
+	 * 
+	 * @since de.walware.rj.data 0.5
 	 */
 	RStore<?> getNames();
 	

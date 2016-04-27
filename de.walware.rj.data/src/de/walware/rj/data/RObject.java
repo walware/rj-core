@@ -116,14 +116,14 @@ public interface RObject {
 	/**
 	 * Constant indicating an R object is missing (e.g. missing argument, missing slot value).
 	 * 
-	 * @since 0.5.0
+	 * @since de.walware.rj.data 0.5
 	 */
 	byte TYPE_MISSING =         0x11;
 	
 	/**
 	 * Constant indicating an R object is not yet evaluated.
 	 * 
-	 * @since 0.6.0
+	 * @since de.walware.rj.data 0.6
 	 */
 	byte TYPE_PROMISE =         0x12;
 	

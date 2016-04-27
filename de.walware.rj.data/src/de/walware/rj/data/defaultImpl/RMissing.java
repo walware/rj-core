@@ -23,7 +23,7 @@ import de.walware.rj.data.RStore;
 /**
  * Default implementation of an R object of type {@link RObject#TYPE_MISSING MISSING}.
  * 
- * @since 0.5.0
+ * @since de.walware.rj.data 0.5
  */
 public class RMissing implements RObject {
 	

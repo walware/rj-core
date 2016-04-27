@@ -70,7 +70,8 @@ public interface RArray<TData extends RStore<?>> extends RObject {
 	 * method returns <code>null</code>.
 	 * 
 	 * @return a charater data store with the names of the dimensions or <code>null</code>
-	 * @since 0.5
+	 * 
+	 * @since de.walware.rj.data 0.5
 	 */
 	RCharacterStore getDimNames();
 	
@@ -83,7 +84,8 @@ public interface RArray<TData extends RStore<?>> extends RObject {
 	 * @param dim the dimension index
 	 * @return a data store with the names of the indexes in the given dimensions or <code>null</code>
 	 * @throws IndexOutOfBoundsException if dim &lt; 0 or dim &ge; getDim().getLength()
-	 * @since 0.5
+	 * 
+	 * @since de.walware.rj.data 0.5
 	 */
 	RStore<?> getNames(int dim);
 	

@@ -20,6 +20,11 @@ import de.walware.rj.data.RObject;
 import de.walware.rj.data.RStore;
 
 
+/**
+ * Default implementation of an R object of type {@link RObject#TYPE_PROMISE PROMISE}.
+ * 
+ * @since de.walware.rj.data 0.6
+ */
 public class RPromise implements RObject {
 	
 	
