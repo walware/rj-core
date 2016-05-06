@@ -120,4 +120,10 @@ final class ServerUtils {
 				|| (rVersion[0] == major && rVersion[1] >= minor) ));
 	}
 	
+	public boolean isRVersionLess(final int major, final int minor) {
+		final int[] rVersion= getRVersion();
+		return (rVersion != null && (rVersion[0] < major
+				|| (rVersion[0] == major && rVersion[1] < minor) ));
+	}
+	
 }

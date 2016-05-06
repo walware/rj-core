@@ -619,19 +619,29 @@ public final class JRIServer extends RJ
 			
 			loadPlatformData();
 			
-			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN) {
-				if (this.rArgs.contains("--internet2")
-						|| "2".equals(System.getenv("R_NETWORK")) ) {
-					this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
+			{	final String rNetworkEnvVar= System.getenv("R_NETWORK");
+				if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN
+						&& (this.rArgs.contains("--internet2")
+								|| "2".equals(rNetworkEnvVar)) ) {
+					if (this.utils.isRVersionLess(3, 3)) {
+						this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
+					}
+					else {
+						this.rEngine.rniEval(this.rEngine.rniParse("options(`download.file.method`= 'wininet')", 1), 0);
+					}
 				}
-				if (this.rMemSize != 0) {
-					final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0);
-					if (rniP != 0) {
-						final long memSizeMB = this.rMemSize / MEGA;
-						final double[] array = this.rEngine.rniGetDoubleArray(rniP);
-						if (array != null && array.length == 1 && memSizeMB > array[0]) {
-							this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0);
-						}
+				else if ("1".equals(rNetworkEnvVar)) {
+					this.rEngine.rniEval(this.rEngine.rniParse("options(`download.file.method`= 'internal')", 1), 0);
+				}
+			}
+			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN
+					&& this.rMemSize != 0) {
+				final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0);
+				if (rniP != 0) {
+					final long memSizeMB = this.rMemSize / MEGA;
+					final double[] array = this.rEngine.rniGetDoubleArray(rniP);
+					if (array != null && array.length == 1 && memSizeMB > array[0]) {
+						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0);
 					}
 				}
 			}
