@@ -293,7 +293,7 @@ public final class JRIServer extends RJ
 	private final MainCmdItem[] mainLoopS2CNextCommandsFirst = new MainCmdItem[2];
 	private final MainCmdItem[] mainLoopS2CNextCommandsLast = new MainCmdItem[2];
 	private final MainCmdS2CList[] mainLoopS2CLastCommands = new MainCmdS2CList[] { new MainCmdS2CList(), new MainCmdS2CList() };
-	private final List<MainCmdItem> mainLoopS2CRequest = new ArrayList<MainCmdItem>();
+	private final List<MainCmdItem> mainLoopS2CRequest = new ArrayList<>();
 	private MainCmdItem mainLoopC2SCommandFirst;
 	private int mainLoopS2CAnswerFail;
 	
@@ -319,7 +319,7 @@ public final class JRIServer extends RJ
 	private final Object pluginsLock = new Object();
 	private ServerRuntimePlugin[] pluginsList = new ServerRuntimePlugin[0];
 	
-	private final Map<String, Object> platformDataValues = new HashMap<String, Object>();
+	private final Map<String, Object> platformDataValues = new HashMap<>();
 	
 	private final ServerUtils utils = new ServerUtils(this.platformDataValues);
 	
@@ -668,7 +668,7 @@ public final class JRIServer extends RJ
 	}
 	
 	private void loadPlatformData() {
-		final Map<String, String> platformDataCommands = new HashMap<String, String>();
+		final Map<String, String> platformDataCommands = new HashMap<>();
 		platformDataCommands.put("R:os.type", ".Platform$OS.type");
 		platformDataCommands.put("R:file.sep", ".Platform$file.sep");
 		platformDataCommands.put("R:path.sep", ".Platform$path.sep");
@@ -717,7 +717,7 @@ public final class JRIServer extends RJ
 	}
 	
 	private String[] checkArgs(final String[] args) {
-		final List<String> checked = new ArrayList<String>(args.length+1);
+		final List<String> checked = new ArrayList<>(args.length+1);
 		boolean saveState = false;
 		for (final String arg : args) {
 			if (arg != null && arg.length() > 0) {

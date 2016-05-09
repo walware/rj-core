@@ -67,7 +67,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	 * @return the R vector
 	 */
 	public <TData extends RStore<?>> RVector<TData> createVector(final TData data, final String classname) {
-		return new RVectorImpl<TData>(data, classname);
+		return new RVectorImpl<>(data, classname);
 	}
 	
 	/**
@@ -295,7 +295,7 @@ public class RObjectFactoryImpl implements RObjectFactory {
 	
 	public <TData extends RStore<?>> RArray<TData> createArray(final TData data, final int[] dim,
 			final String classname) {
-		return new RArrayImpl<TData>(data, classname, dim);
+		return new RArrayImpl<>(data, classname, dim);
 	}
 	
 	@Override

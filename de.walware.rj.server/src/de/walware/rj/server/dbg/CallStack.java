@@ -46,7 +46,7 @@ public class CallStack implements RJIOExternalizable {
 	
 	public CallStack(final RJIO io) throws IOException {
 		final int l= io.readInt();
-		final ArrayList<Frame> list= new ArrayList<Frame>(l);
+		final ArrayList<Frame> list= new ArrayList<>(l);
 		for (int i= 0; i < l; i++) {
 			final Frame frame= new Frame(i, io.readString());
 			frame.handle= io.readLong();

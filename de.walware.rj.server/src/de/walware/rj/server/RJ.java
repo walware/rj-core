@@ -71,7 +71,7 @@ public class RJ {
 			}
 			map = this.clientPropertiesMaps[slot];
 			if (map == null) {
-				this.clientPropertiesMaps[slot] = new HashMap<String, Object>();
+				this.clientPropertiesMaps[slot] = new HashMap<>();
 			}
 		}
 		map.put(key, value);
@@ -87,7 +87,7 @@ public class RJ {
 			}
 			map = this.clientPropertiesMaps[slot];
 			if (map == null) {
-				this.clientPropertiesMaps[slot] = map = new HashMap<String, Object>();
+				this.clientPropertiesMaps[slot] = map = new HashMap<>();
 			}
 		}
 		for (final Entry<String, ? extends Object> entry : properties.entrySet()) {

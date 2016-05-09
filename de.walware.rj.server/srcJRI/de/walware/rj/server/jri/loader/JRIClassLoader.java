@@ -241,9 +241,9 @@ public class JRIClassLoader extends RJClassLoader {
 	
 	protected JRIClassLoader() {
 		super(new URL[0], getSystemClassLoader());
-		this.libMap = new HashMap<String, UnixFile>();
-		this.classPath = new Vector<UnixFile>();
-		this.defaultLibPath = new LinkedHashSet<String>();
+		this.libMap = new HashMap<>();
+		this.classPath = new Vector<>();
+		this.defaultLibPath = new LinkedHashSet<>();
 		
 		if (verbose) {
 			LOGGER.log(Level.CONFIG, "System URL classloader: " + (this.useSystem ? "enabled" : "disabled"));
@@ -413,7 +413,7 @@ public class JRIClassLoader extends RJClassLoader {
 			pathList = pathList.trim();
 			if (pathList.length() > 0) {
 				final String[] split = PATH_SPLITTER.split(pathList);
-				final ArrayList<String> list = new ArrayList<String>(split.length);
+				final ArrayList<String> list = new ArrayList<>(split.length);
 				for (int i = 0; i < split.length; i++) {
 					final String path = checkDirPath(split[i]);
 					if (path != null) {
@@ -747,7 +747,7 @@ public class JRIClassLoader extends RJClassLoader {
 	 * @return the array of class paths used by this class loader
 	 */
 	public String[] getClassPath() {
-		final List<String> list = new ArrayList<String>();
+		final List<String> list = new ArrayList<>();
 		if (this.useSystem) {
 			final URL[] urls = getURLs();
 			for (final URL url : urls) {

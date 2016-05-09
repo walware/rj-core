@@ -198,7 +198,7 @@ public class JRIEnvironmentImpl extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getData() {
+	public RStore<?> getData() {
 		return null;
 	}
 	

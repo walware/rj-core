@@ -31,8 +31,8 @@ public class FunctionCallImpl implements FunctionCall {
 	
 	private final String name;
 	
-	private final List<String> argNames = new ArrayList<String>();
-	private final List<RObject> argValues = new ArrayList<RObject>();
+	private final List<String> argNames = new ArrayList<>();
+	private final List<RObject> argValues = new ArrayList<>();
 	
 	private final AbstractRJComClient rjs;
 	private final RObjectFactory rObjectFactory;

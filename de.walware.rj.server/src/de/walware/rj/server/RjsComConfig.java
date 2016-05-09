@@ -43,7 +43,7 @@ public class RjsComConfig {
 	public static final String RJ_DATA_STRUCTS_ENVS_MAX_LENGTH_PROPERTY_ID = "rj.data.structs.envs.max_length";
 	
 	
-	private static final Map<String, Object> PROPERTIES = new ConcurrentHashMap<String, Object>();
+	private static final Map<String, Object> PROPERTIES = new ConcurrentHashMap<>();
 	
 	
 	public static interface PathResolver {
@@ -110,8 +110,8 @@ public class RjsComConfig {
 	}
 	
 	
-	private static final ThreadLocal<RMIClientSocketFactory> gRMIClientSocketFactoriesInit = new ThreadLocal<RMIClientSocketFactory>();
-	private static final ConcurrentHashMap<String, RMIClientSocketFactory> gRMIClientSocketFactories = new ConcurrentHashMap<String, RMIClientSocketFactory>();
+	private static final ThreadLocal<RMIClientSocketFactory> gRMIClientSocketFactoriesInit = new ThreadLocal<>();
+	private static final ConcurrentHashMap<String, RMIClientSocketFactory> gRMIClientSocketFactories = new ConcurrentHashMap<>();
 	
 	
 	private static RMIClientSocketFactory getSystemRMIClientSocketFactory() {
@@ -141,7 +141,6 @@ public class RjsComConfig {
 		private RMIClientSocketFactory resolvedFactory;
 		
 		
-		@SuppressWarnings("unused")
 		public RjRMIClientSocketFactory() {
 		}
 		

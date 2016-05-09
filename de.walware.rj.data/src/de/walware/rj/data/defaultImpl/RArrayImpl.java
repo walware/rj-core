@@ -73,7 +73,7 @@ public class RArrayImpl<TData extends RStore<?>> extends AbstractRObject
 			for (int i = 0; i < dim.length; i++) {
 				names1[i] = factory.readNames(io, dim[i]);
 			}
-			this.dimnamesAttribute = new SimpleRListImpl<RStore<?>>(names1, names0);
+			this.dimnamesAttribute = new SimpleRListImpl<>(names1, names0);
 		}
 		//-- data
 		this.data = (TData) factory.readStore(io, this.length);

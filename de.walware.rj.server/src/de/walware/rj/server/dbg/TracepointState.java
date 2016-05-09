@@ -28,7 +28,7 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	
 	static final List<TracepointState> readList(final RJIO io) throws IOException {
 		final int l= io.readInt();
-		final List<TracepointState> list= new ArrayList<TracepointState>(l);
+		final List<TracepointState> list= new ArrayList<>(l);
 		String filePath= null;
 		String elementId= null;
 		for (int i= 0; i < l; i++) {

@@ -73,7 +73,7 @@ public class AbstractServerControl {
 	protected static final Logger LOGGER = Logger.getLogger("de.walware.rj.server");
 	
 	protected static Map<String, String> cliGetArgs(final String[] args, final int first) {
-		final Map<String, String> resolved = new HashMap<String, String>();
+		final Map<String, String> resolved = new HashMap<>();
 		for (int i = first; i < args.length; i++) {
 			if (args[i].length() == 0 || args[i].charAt(0) != '-') {
 				continue;

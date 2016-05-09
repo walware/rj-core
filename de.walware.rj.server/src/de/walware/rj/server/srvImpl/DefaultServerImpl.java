@@ -48,7 +48,7 @@ import de.walware.rj.server.srvext.ServerAuthMethod;
 public class DefaultServerImpl implements Server, RjsComConfig.PathResolver {
 	
 	
-	private static final List<Remote> clients = new CopyOnWriteArrayList<Remote>();
+	private static final List<Remote> clients = new CopyOnWriteArrayList<>();
 	
 	public static void removeClient(final Remote remote) {
 		clients.add(remote);

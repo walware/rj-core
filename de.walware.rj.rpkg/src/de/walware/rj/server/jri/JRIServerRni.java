@@ -638,7 +638,7 @@ final class JRIServerRni {
 	 * @throws RjsException 
 	 */ 
 	public long assignDataObject(final RObject obj) throws RjsException {
-		RStore names;
+		RStore<?> names;
 		long objP;
 		switch(obj.getRObjectType()) {
 		case RObject.TYPE_NULL:
@@ -752,7 +752,7 @@ final class JRIServerRni {
 				"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
 	}
 	
-	public long assignDataStore(final RStore data) throws RNullPointerException {
+	public long assignDataStore(final RStore<?> data) throws RNullPointerException {
 		switch (data.getStoreType()) {
 		case RStore.LOGICAL:
 			return checkAndProtect(this.rEngine.rniPutBoolArrayI(
@@ -944,7 +944,7 @@ final class JRIServerRni {
 				
 				if (dim != null) {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIArrayImpl<RNumericStore>(
+							new JRIArrayImpl<>(
 									RObjectFactoryImpl.NUM_STRUCT_DUMMY,
 									className1, dim ) :
 							new JRIArrayImpl<RNumericStore>(
@@ -953,7 +953,7 @@ final class JRIServerRni {
 				}
 				else {
 					return ((flags & F_ONLY_STRUCT) != 0) ?
-							new JRIVectorImpl<RNumericStore>(
+							new JRIVectorImpl<>(
 									RObjectFactoryImpl.NUM_STRUCT_DUMMY,
 									this.rEngine.rniGetVectorLength(objP), className1, null ) :
 							new JRIVectorImpl<RNumericStore>(
@@ -1331,7 +1331,7 @@ final class JRIServerRni {
 		return (namesP != 0) ? this.rEngine.rniGetStringArray(namesP) : null;
 	}
 	
-	private SimpleRListImpl<RStore> getDimNames(final long objP, final int length) {
+	private SimpleRListImpl<RCharacterStore> getDimNames(final long objP, final int length) {
 		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.p_dimNamesSymbol);
 		if (this.rEngine.rniExpType(namesP) == REXP.VECSXP) {
 			final long[] names1P = this.rEngine.rniGetVector(namesP);
@@ -1346,7 +1346,7 @@ final class JRIServerRni {
 						names1[i] = new RCharacterDataImpl(s);
 					}
 				}
-				return new SimpleRListImpl<RStore>(names1, names0);
+				return new SimpleRListImpl<>(names1, names0);
 			}
 		}
 		return null;

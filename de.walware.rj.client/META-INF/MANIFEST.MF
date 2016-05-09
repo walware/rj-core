@@ -4,7 +4,7 @@ Bundle-Vendor: WalWare.de
 Bundle-Name: RJ RServices API and RJ Client Tools
 Bundle-SymbolicName: de.walware.rj.client;singleton:=true
 Bundle-Version: 2.1.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.walware.rj.data;bundle-version="[2.1.0,2.2.0)",
  de.walware.rj.server;bundle-version="[2.1.0,2.2.0)"
 Import-Package: org.osgi.framework,

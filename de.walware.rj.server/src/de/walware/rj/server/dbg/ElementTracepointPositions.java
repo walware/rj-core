@@ -45,7 +45,7 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 		this.fileInfo= fileInfo;
 		this.elementId= elementId;
 		this.elementSrcref= elementSrcref;
-		this.positions= new ArrayList<TracepointPosition>(4);
+		this.positions= new ArrayList<>(4);
 	}
 	
 	public ElementTracepointPositions(final RJIO io) throws IOException {
@@ -53,7 +53,7 @@ public class ElementTracepointPositions implements RJIOExternalizable {
 		this.elementId= io.readString();
 		this.elementSrcref= io.readIntArray();
 		final int l= io.readInt();
-		this.positions= new ArrayList<TracepointPosition>(l);
+		this.positions= new ArrayList<>(l);
 		for (int i= 0; i < l; i++) {
 			this.positions.add(new TracepointPosition(io));
 		}

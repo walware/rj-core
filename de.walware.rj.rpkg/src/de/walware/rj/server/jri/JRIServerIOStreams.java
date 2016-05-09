@@ -84,7 +84,7 @@ class JRIServerIOStreams {
 		}
 		
 		protected ConsoleHandler[] getConsoleHandlers() {
-			final List<ConsoleHandler> consoleHandlers= new ArrayList<ConsoleHandler>();
+			final List<ConsoleHandler> consoleHandlers= new ArrayList<>();
 			final LogManager logManager= LogManager.getLogManager();
 			for (final Enumeration<String> loggerNames= logManager.getLoggerNames(); loggerNames.hasMoreElements(); ) {
 				final Logger logger= logManager.getLogger(loggerNames.nextElement());

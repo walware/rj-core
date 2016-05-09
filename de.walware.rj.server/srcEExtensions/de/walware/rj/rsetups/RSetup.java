@@ -31,9 +31,9 @@ public class RSetup {
 	
 	private String rHome;
 	
-	private final List<String> rLibsSite = new ArrayList<String>(2);
-	private final List<String> rLibs = new ArrayList<String>(2);
-	private final List<String> rLibsUser = new ArrayList<String>(2);
+	private final List<String> rLibsSite = new ArrayList<>(2);
+	private final List<String> rLibs = new ArrayList<>(2);
+	private final List<String> rLibsUser = new ArrayList<>(2);
 	
 	
 	public RSetup(final String id) {

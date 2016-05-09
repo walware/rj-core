@@ -140,7 +140,7 @@ public class RJContext {
 	protected List<PathEntry> getRJLibCandidates() throws RjInvalidConfigurationException {
 		final String[] paths = getLibDirPaths();
 		
-		final List<PathEntry> files = new ArrayList<PathEntry>(paths.length*10);
+		final List<PathEntry> files = new ArrayList<>(paths.length*10);
 		for (int i = 0; i < paths.length; i++) {
 			if (paths[i].length() > 0) {
 				File dir = new File(paths[i]);

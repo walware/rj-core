@@ -103,7 +103,6 @@ public class ServerUtil {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static void prettyPrint(final Map map, final StringBuilder sb) {
 		final String sep = System.getProperty("line.separator")+"\t";
 		final Set<Entry<?, ?>> entrySet = map.entrySet();
@@ -118,7 +117,7 @@ public class ServerUtil {
 		}
 	}
 	
-	public static void prettyPrint(final Collection list, final StringBuilder sb) {
+	public static void prettyPrint(final Collection<?> list, final StringBuilder sb) {
 		final String sep = System.getProperty("line.separator")+"\t";
 		for (final Object value : list) {
 			sb.append(sep);

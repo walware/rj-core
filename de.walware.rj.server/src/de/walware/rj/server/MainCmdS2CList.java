@@ -29,7 +29,7 @@ import de.walware.rj.data.RJIO;
 public final class MainCmdS2CList implements RjsComObject, Externalizable {
 	
 	
-	static final AutoIdMap<ComHandler> gComHandlers = new AutoIdMap<ComHandler>();
+	static final AutoIdMap<ComHandler> gComHandlers = new AutoIdMap<>();
 	
 	
 	private int id;

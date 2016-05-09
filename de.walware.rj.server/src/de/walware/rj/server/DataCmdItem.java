@@ -142,7 +142,7 @@ public final class DataCmdItem extends MainCmdItem {
 	
 	static RObjectFactory gDefaultFactory;
 	
-	static final Map<String, RObjectFactory> gFactories= new ConcurrentHashMap<String, RObjectFactory>();
+	static final Map<String, RObjectFactory> gFactories= new ConcurrentHashMap<>();
 	
 	private static final RObjectFactory getFactory(final String id) {
 		final RObjectFactory factory= gFactories.get(id);

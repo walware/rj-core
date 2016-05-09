@@ -52,7 +52,7 @@ public class ERJContext extends RJContext {
 	 */
 	@Override
 	public String[] searchRJLibs(final String[] libs) {
-		final Set<String> resolved = new LinkedHashSet<String>();
+		final Set<String> resolved = new LinkedHashSet<>();
 		for (final String lib : libs) {
 			final Bundle pluginBundle = Platform.getBundle(lib);
 			if (pluginBundle != null) {

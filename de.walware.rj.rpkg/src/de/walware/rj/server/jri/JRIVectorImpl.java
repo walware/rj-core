@@ -23,7 +23,7 @@ import de.walware.rj.data.defaultImpl.ExternalizableRObject;
 import de.walware.rj.data.defaultImpl.RCharacterDataImpl;
 
 
-public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
+public class JRIVectorImpl<DataType extends RStore<?>> extends AbstractRObject
 		implements RVector<DataType>, ExternalizableRObject {
 	
 	
@@ -31,7 +31,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	private long length;
 	
 	private String className1;
-	private RStore namesAttribute;
+	private RStore<?> namesAttribute;
 	
 	
 	public JRIVectorImpl(final DataType data, final String className1, final String[] initialNames) {
@@ -129,7 +129,7 @@ public class JRIVectorImpl<DataType extends RStore> extends AbstractRObject
 	}
 	
 	@Override
-	public RStore getNames() {
+	public RStore<?> getNames() {
 		return this.namesAttribute;
 	}
 	

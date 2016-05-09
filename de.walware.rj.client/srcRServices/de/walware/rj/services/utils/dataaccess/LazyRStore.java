@@ -87,14 +87,14 @@ public class LazyRStore<V> {
 	private final int maxFragmentCount;
 	private Fragment<V>[] fragments;
 	private int currentFragmentCount= 0;
-	private final Fragment<V> topFragment= new Fragment<V>(-1, 0, 0, 0, 0);
-	private final Fragment<V> bottomFragment= new Fragment<V>(-1, 0, 0, 0, 0);
+	private final Fragment<V> topFragment= new Fragment<>(-1, 0, 0, 0, 0);
+	private final Fragment<V> bottomFragment= new Fragment<>(-1, 0, 0, 0, 0);
 	
 	private final int fragmentRowCount;
 	private final int fragmentColCount;
 	private final long fragmentCountInRow;
 	
-	private final List<RDataAssignment> assignments= new ArrayList<RDataAssignment>();
+	private final List<RDataAssignment> assignments= new ArrayList<>();
 	
 	private int scheduledCount;
 	private Fragment<V> scheduleNext;
@@ -327,14 +327,14 @@ public class LazyRStore<V> {
 		final long rowEndIdx= Math.min(rowBeginIdx + this.fragmentRowCount, this.rowCount);
 		final long columnBeginIdx= (number % this.fragmentCountInRow) * this.fragmentColCount; 
 		final long columnEndIdx= Math.min(columnBeginIdx + this.fragmentColCount, this.columnCount);
-		return new Fragment<V>(number,
+		return new Fragment<>(number,
 				rowBeginIdx, (rowEndIdx - rowBeginIdx),
 				columnBeginIdx, (columnEndIdx - columnBeginIdx) );
 	}
 	
 	private Fragment<V> clearFragment(final int idx) {
 		final Fragment<V> oldFragment= this.fragments[idx];
-		final Fragment<V> newFragment= new Fragment<V>(oldFragment.number,
+		final Fragment<V> newFragment= new Fragment<>(oldFragment.number,
 				oldFragment.getRowBeginIdx(), oldFragment.getRowCount(),
 				oldFragment.getColumnBeginIdx(), oldFragment.getColumnCount() );
 		if (oldFragment.newer != null) {

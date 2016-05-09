@@ -135,7 +135,7 @@ final class TracepointManager {
 	private final Rengine rEngine;
 	private final JRIServerRni rni;
 	
-	private final Map<String, List<TracepointState>> tracepointMap= new HashMap<String, List<TracepointState>>();
+	private final Map<String, List<TracepointState>> tracepointMap= new HashMap<>();
 	
 	private boolean breakpointsEnabled= true;
 	
@@ -210,8 +210,8 @@ final class TracepointManager {
 		final int[] resultCodes= new int[elementList.size()];
 		Arrays.fill(resultCodes, ElementTracepointInstallationReport.NOTFOUND);
 		
-		final List<Long> envTodo= new ArrayList<Long>();
-		final List<Long> envDone= new ArrayList<Long>();
+		final List<Long> envTodo= new ArrayList<>();
+		final List<Long> envDone= new ArrayList<>();
 		this.rni.addAllEnvs(envTodo, this.rni.p_GlobalEnv);
 		this.dbg.addAllStackEnvs(envTodo);
 		
@@ -263,7 +263,7 @@ final class TracepointManager {
 					if (nameEnvP != 0) {
 						final String[] signatures= this.rEngine.rniGetStringArray(
 								this.rEngine.rniListEnv(nameEnvP, true) );
-						methodInfos= new ArrayList<FunInfo>(signatures.length);
+						methodInfos= new ArrayList<>(signatures.length);
 						for (int signarturesIdx= 0; signarturesIdx < signatures.length; signarturesIdx++) {
 							try {
 								final long methodP;
@@ -885,7 +885,7 @@ final class TracepointManager {
 						if (state.getType() == Tracepoint.TYPE_DELETED) {
 							continue;
 						}
-						pathList= new ArrayList<TracepointState>(8);
+						pathList= new ArrayList<>(8);
 						this.tracepointMap.put(path, pathList);
 					}
 				}

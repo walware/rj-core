@@ -89,11 +89,11 @@ final class JRIServerDbg {
 	private boolean isSuspended; // browser prompt
 	
 	private boolean deferredSuspend;
-	private final List<Long> contextTmpDebugFrames = new ArrayList<Long>();
-	private final List<Long> contextTmpDebugFuns = new ArrayList<Long>();
+	private final List<Long> contextTmpDebugFrames = new ArrayList<>();
+	private final List<Long> contextTmpDebugFuns = new ArrayList<>();
 	
 	private boolean checkToRelease;
-	private final List<Long> toRelease = new ArrayList<Long>();
+	private final List<Long> toRelease = new ArrayList<>();
 	
 	private final TracepointManager tracepointManager;
 	
@@ -336,7 +336,7 @@ final class JRIServerDbg {
 			return null;
 		}
 		
-		final List<CallStackFrame> list = new ArrayList<CallStackFrame>(n + 1);
+		final List<CallStackFrame> list = new ArrayList<>(n + 1);
 		{	long cdr = this.rni.evalExpr(this.sysCalls0CallP, 0, CODE_DBG_CONTEXT);
 			if (cdr == 0 || this.rEngine.rniExpType(cdr) != REXP.LISTSXP) {
 				if (n == 0 && cdr == this.rni.p_NULL) {
@@ -887,7 +887,7 @@ final class JRIServerDbg {
 		if (!this.contextTmpDebugFrames.isEmpty()) {
 			try {
 				long cdr = this.rni.evalExpr(this.sysFramesCallP, 0, CODE_DBG_DEBUG | 0xe);
-				final List<Long> stack = new ArrayList<Long>(this.contextTmpDebugFrames.size());
+				final List<Long> stack = new ArrayList<>(this.contextTmpDebugFrames.size());
 				boolean topInStack = false;
 				if (cdr != 0 && this.rEngine.rniExpType(cdr) == REXP.LISTSXP) {
 					while (cdr != 0) {

@@ -29,19 +29,19 @@ public class RUniqueCharacterDataWithHashImpl extends RUniqueCharacterDataImpl {
 	
 	public RUniqueCharacterDataWithHashImpl(final String names[]) {
 		super(names);
-		this.map = new HashMap<String, Integer>();
+		this.map = new HashMap<>();
 		initMap();
 	}
 	
 	RUniqueCharacterDataWithHashImpl(final RCharacterDataImpl source, final boolean reuse) {
 		super(source, reuse);
-		this.map = new HashMap<String, Integer>();
+		this.map = new HashMap<>();
 		initMap();
 	}
 	
 	public RUniqueCharacterDataWithHashImpl(final RJIO io, final int length) throws IOException {
 		super(io, length);
-		this.map = new HashMap<String, Integer>();
+		this.map = new HashMap<>();
 		initMap();
 	}
 	

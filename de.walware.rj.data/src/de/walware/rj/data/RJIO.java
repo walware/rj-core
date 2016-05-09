@@ -1023,7 +1023,7 @@ public final class RJIO {
 			return null;
 		}
 		try {
-			final HashMap<String, Object> map = new HashMap<String, Object>(length);
+			final HashMap<String, Object> map = new HashMap<>(length);
 			for (int i = 0; i < length; i++) {
 				map.put(readString(), in.readObject());
 			}

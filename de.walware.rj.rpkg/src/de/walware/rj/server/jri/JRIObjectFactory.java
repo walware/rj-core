@@ -108,7 +108,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readStore(final RJIO io, final long length) throws IOException {
+	public RStore<?> readStore(final RJIO io, final long length) throws IOException {
 		if ((io.flags & F_ONLY_STRUCT) == 0) {
 			final byte storeType = io.readByte();
 			switch (storeType) {
@@ -154,7 +154,7 @@ public class JRIObjectFactory extends RObjectFactoryImpl {
 	}
 	
 	@Override
-	public RStore readNames(final RJIO io, final long length) throws IOException {
+	public RStore<?> readNames(final RJIO io, final long length) throws IOException {
 		final byte type = io.readByte();
 		if (type == RStore.CHARACTER) {
 			return new JRICharacterDataImpl(io, (int) length);

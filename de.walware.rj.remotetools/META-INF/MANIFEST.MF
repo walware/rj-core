@@ -4,5 +4,5 @@ Bundle-Vendor: WalWare.de
 Bundle-Name: RJ Remote Tools
 Bundle-SymbolicName: de.walware.rj.remotetools
 Bundle-Version: 2.1.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.walware.rj.server;bundle-version="[2.1.0,2.2.0)"

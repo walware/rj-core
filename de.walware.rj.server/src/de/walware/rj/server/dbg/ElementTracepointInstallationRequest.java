@@ -35,7 +35,7 @@ public class ElementTracepointInstallationRequest implements RJIOExternalizable 
 	
 	public ElementTracepointInstallationRequest(final RJIO io) throws IOException {
 		final int l= io.readInt();
-		final List<ElementTracepointPositions> list= new ArrayList<ElementTracepointPositions>(l);
+		final List<ElementTracepointPositions> list= new ArrayList<>(l);
 		for (int i= 0; i < l; i++) {
 			list.add(new ElementTracepointPositions(io));
 		}

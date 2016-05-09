@@ -49,7 +49,7 @@ public class BinExchange implements RjsComObject, Externalizable {
 	private final static int DEFAULT_BUFFER_SIZE = 8192;
 	
 	
-	private final static AutoIdMap<OutputStream> gCOutList = new AutoIdMap<OutputStream>();
+	private final static AutoIdMap<OutputStream> gCOutList = new AutoIdMap<>();
 	
 	
 	static RjsComConfig.PathResolver gSPathResolver = new RjsComConfig.PathResolver() {

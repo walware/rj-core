@@ -37,7 +37,7 @@ public class RjsGraphicManager {
 	};
 	
 	
-	private final List<RjsGraphic> graphicList = new ArrayList<RjsGraphic>();
+	private final List<RjsGraphic> graphicList = new ArrayList<>();
 	
 	private RjsGraphic activeGraphic;
 	

@@ -63,8 +63,8 @@ public class RSetupUtil {
 	 * @return a list with available R setups
 	 */
 	public static List<RSetup> loadAvailableSetups(final Map<String, String> filter) {
-		final Set<String> ids = new HashSet<String>();
-		final List<RSetup> setups = new ArrayList<RSetup>();
+		final Set<String> ids = new HashSet<>();
+		final List<RSetup> setups = new ArrayList<>();
 		final IConfigurationElement[] configurationElements = Platform.getExtensionRegistry().getConfigurationElementsFor(EXTENSION_POINT_ID);
 		for (int i = 0; i < configurationElements.length; i++) {
 			if (configurationElements[i].getName().equals(SETUP_ELEMENT_NAME)) {
