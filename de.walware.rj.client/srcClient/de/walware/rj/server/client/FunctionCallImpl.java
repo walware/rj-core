@@ -175,15 +175,30 @@ public class FunctionCallImpl implements FunctionCall {
 	}
 	
 	@Override
+	public void evalVoid(final RObject envir, final IProgressMonitor monitor) throws CoreException {
+		final RList args = prepareArgs(monitor);
+		this.rjs.evalVoid(this.name, args, envir, monitor);
+	}
+	
+	@Override
 	public RObject evalData(final IProgressMonitor monitor) throws CoreException {
 		final RList args = prepareArgs(monitor);
 		return this.rjs.evalData(this.name, args, null, null, 0, RService.DEPTH_INFINITE, monitor);
 	}
 	
 	@Override
-	public RObject evalData(final String factoryId, final int options, final int depth, final IProgressMonitor monitor) throws CoreException {
+	public RObject evalData(final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
 		final RList args = prepareArgs(monitor);
 		return this.rjs.evalData(this.name, args, null, factoryId, options, depth, monitor);
+	}
+	
+	@Override
+	public RObject evalData(final RObject envir,
+			final String factoryId, final int options, final int depth,
+			final IProgressMonitor monitor) throws CoreException {
+		final RList args = prepareArgs(monitor);
+		return this.rjs.evalData(this.name, args, envir, factoryId, options, depth, monitor);
 	}
 	
 	@Override

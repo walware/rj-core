@@ -101,8 +101,8 @@ public interface RService {
 	/**
 	 * Performs the evaluation of the given expression in R without returning a value.
 	 * The method returns after the evaluation is finished.
-	 * <p>
-	 * The evaluation is performed in the global environment of R.</p>
+	 * 
+	 * <p>The evaluation is performed in the global environment of R.</p>
 	 * 
 	 * @param expression a single valid R expression to evaluate
 	 * @param monitor a progress monitor to catch cancellation and provide progress feedback.
@@ -112,14 +112,31 @@ public interface RService {
 	void evalVoid(String expression, IProgressMonitor monitor) throws CoreException;
 	
 	/**
+	 * Performs the evaluation of the given expression in R without returning a value.
+	 * The method returns after the evaluation is finished.
+	 * 
+	 * <p>This method allows advanced configuration for the evaluation.</p>
+	 * 
+	 * @param expression a single valid R expression to evaluate
+	 * @param envir the environment where to perform the evaluation; specified by an reference
+	 *     or language object, or <code>null</code> for the global environment
+	 * @param monitor a progress monitor to catch cancellation and provide progress feedback.
+	 * @throws CoreException if the operation was canceled or failed; the status
+	 *     of the exception contains detail about the cause
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 */
+	void evalVoid(String expression, RObject envir, IProgressMonitor monitor) throws CoreException;
+	
+	/**
 	 * Performs the evaluation of the given expression in R and returns its value as R data object.
 	 * The method returns after the evaluation is finished.
-	 * <p>
-	 * This is a short version of {@link #evalData(String, String, int, int, IProgressMonitor)}
+	 * 
+	 * <p>This is a short version of {@link #evalData(String, String, int, int, IProgressMonitor)}
 	 * sufficient for most purpose. The returned R data objects are created by the default factory
 	 * with no limit in the object tree depth.</p>
-	 * <p>
-	 * The evaluation is performed in the global environment of R.</p>
+	 * 
+	 * <p>The evaluation is performed in the global environment of R.</p>
 	 * 
 	 * @param expression a single valid R expression to evaluate
 	 * @param monitor a progress monitor to catch cancellation and provide progress feedback
@@ -132,10 +149,10 @@ public interface RService {
 	/**
 	 * Performs the evaluation of the given expression in R and returns its value. The method returns
 	 * after the evaluation is finished.
-	 * <p>
-	 * This method allows advanced configuration for the returned R data object.</p>
-	 * <p>
-	 * The evaluation is performed in the global environment of R.</p>
+	 * 
+	 * <p>This method allows advanced configuration for the returned R data object.</p>
+	 * 
+	 * <p>The evaluation is performed in the global environment of R.</p>
 	 * 
 	 * @param expression a single valid R expression to evaluate
 	 * @param factoryId the id of the factory to use when creating the RObject in this VM.
@@ -149,10 +166,38 @@ public interface RService {
 	 * @see #DEPTH_INFINITE
 	 * @see #DEPTH_ONE
 	 */
-	RObject evalData(String expression, String factoryId, int options, int depth, IProgressMonitor monitor) throws CoreException;
+	RObject evalData(String expression, String factoryId, int options, int depth,
+			IProgressMonitor monitor) throws CoreException;
+	
+	/**
+	 * Performs the evaluation of the given expression in R and returns its value. The method
+	 * returns after the evaluation is finished.
+	 * 
+	 * <p>This method allows advanced configuration for the evaluation and the returned R data
+	 * object.</p>
+	 * 
+	 * @param expression a single valid R expression to evaluate
+	 * @param envir the environment where to perform the evaluation; specified by an reference
+	 *     or language object, or <code>null</code> for the global environment
+	 * @param factoryId the id of the factory to use when creating the RObject in this VM.
+	 * @param options 0
+	 * @param depth object tree depth for the created return value
+	 * @param monitor a progress monitor to catch cancellation and provide progress feedback
+	 * @return the evaluated value as R data object
+	 * @throws CoreException if the operation was canceled or failed; the status
+	 *     of the exception contains detail about the cause
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 * 
+	 * @see #DEPTH_INFINITE
+	 * @see #DEPTH_ONE
+	 */
+	RObject evalData(String expression, RObject envir, String factoryId, int options, int depth,
+			IProgressMonitor monitor) throws CoreException;
 	
 	RObject evalData(RReference reference, IProgressMonitor monitor) throws CoreException;
-	RObject evalData(RReference reference, String factoryId, int options, int depth, IProgressMonitor monitor) throws CoreException;
+	RObject evalData(RReference reference, String factoryId, int options, int depth,
+			IProgressMonitor monitor) throws CoreException;
 	
 	/**
 	 * Performs the assignment of the given R data object to an expression in R. The method returns
@@ -207,7 +252,8 @@ public interface RService {
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	void uploadFile(InputStream in, long length, String fileName, int options, IProgressMonitor monitor) throws CoreException;
+	void uploadFile(InputStream in, long length, String fileName, int options,
+			IProgressMonitor monitor) throws CoreException;
 	
 //	void uploadFile(byte[], long length, String fileName, int options, IProgressMonitor monitor) throws CoreException;
 	
@@ -241,7 +287,8 @@ public interface RService {
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	void downloadFile(OutputStream out, String fileName, int options, IProgressMonitor monitor) throws CoreException;
+	void downloadFile(OutputStream out, String fileName, int options,
+			IProgressMonitor monitor) throws CoreException;
 	
 	/**
 	 * Downloads a file on the R host system into a byte array.
@@ -260,13 +307,14 @@ public interface RService {
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	byte[] downloadFile(String fileName, int options, IProgressMonitor monitor) throws CoreException;
+	byte[] downloadFile(String fileName, int options,
+			IProgressMonitor monitor) throws CoreException;
 	
 	/**
 	 * Creates a new function call builder for the specified function.
-	 * <p>
-	 * The builder is valid as long as the RService owns the consumer. After the service is for example
-	 * closed, it must not longer be used.</p>
+	 * 
+	 * <p>The builder is valid as long as the RService owns the consumer. After the service is for
+	 * example closed, it must not longer be used.</p>
 	 * 
 	 * @param name the name of the function, optional with prefix namespace
 	 * 

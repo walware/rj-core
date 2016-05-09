@@ -241,6 +241,22 @@ public interface FunctionCall {
 	void evalVoid(IProgressMonitor monitor) throws CoreException;
 	
 	/**
+	 * Performs the evaluation of this function call in R without returning a value.
+	 * The method returns after the evaluation is finished.
+	 * 
+	 * <p>This method allows advanced configuration for the evaluation.</p>
+	 * 
+	 * @param envir the environment where to perform the evaluation; specified by an reference
+	 *     or language object, or <code>null</code> for the global environment
+	 * @param monitor a progress monitor to catch cancellation and provide progress feedback.
+	 * @throws CoreException if the operation was canceled or failed; the status
+	 *     of the exception contains detail about the cause
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 */
+	void evalVoid(RObject envir, IProgressMonitor monitor) throws CoreException;
+	
+	/**
 	 * Performs the evaluation of the this function call in R and returns its value as R data object.
 	 * The method returns after the evaluation is finished.
 	 * 
@@ -273,7 +289,30 @@ public interface FunctionCall {
 	 * @throws CoreException if the operation was canceled or failed; the status
 	 *     of the exception contains detail about the cause
 	 */
-	RObject evalData(String factoryId, int options, int depth, IProgressMonitor monitor) throws CoreException;
+	RObject evalData(String factoryId, int options, int depth,
+			IProgressMonitor monitor) throws CoreException;
+	
+	/**
+	 * Performs the evaluation of the this function call in R and returns its value as R data object.
+	 * The method returns after the evaluation is finished.
+	 * 
+	 * <p>This method allows advanced configuration for the evaluation and the returned R data
+	 * object.</p>
+	 * 
+	 * @param envir the environment where to perform the evaluation; specified by an reference
+	 *     or language object, or <code>null</code> for the global environment
+	 * @param factoryId the id of the factory to use when creating the RObject in this VM.
+	 * @param options 0
+	 * @param depth object tree depth for the created return value
+	 * @param monitor a progress monitor to catch cancellation and provide progress feedback
+	 * @return the evaluated value as R data object
+	 * @throws CoreException if the operation was canceled or failed; the status
+	 *     of the exception contains detail about the cause
+	 * 
+	 * @since de.walware.rj.services 2.1
+	 */
+	RObject evalData(RObject envir, String factoryId, int options, int depth,
+			IProgressMonitor monitor) throws CoreException;
 	
 	/**
 	 * Performs the evaluation of the this function call in R and assign its return value to

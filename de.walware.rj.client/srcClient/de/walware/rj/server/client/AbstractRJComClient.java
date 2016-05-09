@@ -1257,10 +1257,24 @@ public abstract class AbstractRJComClient implements ComHandler {
 	}
 	
 	
+	public boolean isValidEnvir(final RObject envir) {
+		switch (envir.getRObjectType()) {
+		case RObject.TYPE_REFERENCE:
+			return (((RReference) envir).getReferencedRObjectType() == RObject.TYPE_ENV);
+		case RObject.TYPE_LANGUAGE:
+			return true;
+		default:
+			return false;
+		}
+	}
+	
 	public final void evalVoid(final String expression, final RObject envir,
 			final IProgressMonitor monitor) throws CoreException {
 		if (expression == null) {
 			throw new NullPointerException("expression");
+		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
 		}
 		final int level = newDataLevel();
 		try {
@@ -1291,6 +1305,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		if (args == null) {
 			throw new NullPointerException("args");
 		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
+		}
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.EVAL_FCALL_VOID,
@@ -1317,6 +1334,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 			final IProgressMonitor monitor) throws CoreException {
 		if (expression == null) {
 			throw new NullPointerException("expression");
+		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
 		}
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
@@ -1348,6 +1368,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		if (args == null) {
 			throw new NullPointerException("args");
+		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
 		}
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
 		final int level = newDataLevel();
@@ -1413,7 +1436,7 @@ public abstract class AbstractRJComClient implements ComHandler {
 			operation= DataCmdItem.EVAL_NAMESPACE_EXPORTS_DATA;
 			break;
 		default:
-			throw new IllegalArgumentException("type= " + envType);
+			throw new IllegalArgumentException("envType= " + envType);
 		}
 		
 		final byte checkedDepth = (depth < Byte.MAX_VALUE) ? (byte) depth : Byte.MAX_VALUE;
@@ -1448,6 +1471,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		if (data == null) {
 			throw new NullPointerException("data");
 		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
+		}
 		final int level = newDataLevel();
 		try {
 			runMainLoop(null, createDataRequestId(level, new DataCmdItem(DataCmdItem.ASSIGN_DATA,
@@ -1480,6 +1506,9 @@ public abstract class AbstractRJComClient implements ComHandler {
 		}
 		if (expression == null) {
 			throw new NullPointerException("expression");
+		}
+		if (envir != null && !isValidEnvir(envir)) {
+			throw new IllegalArgumentException("envir");
 		}
 		final int level = newDataLevel();
 		try {
