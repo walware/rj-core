@@ -130,13 +130,13 @@ public interface RClientGraphic {
 	 */
 	void addSetFill(int color);
 	/**
-	 * @see RLineSetting#RLineSetting(int, double)
+	 * @see RLineSetting#RLineSetting(int, double, byte, byte, float)
 	 */
-	void addSetLine(int type, double width);
+	void addSetLine(int type, float width, byte cap, byte join, float joinMiterLimit);
 	/**
 	 * @see RFontSetting#RFontSetting(String, int, double, double, double)
 	 */
-	void addSetFont(String family, int face, double pointSize, double lineHeight);
+	void addSetFont(String family, int face, float pointSize, float lineHeight);
 	/**
 	 * @see RLine#RLine(double, double, double, double)
 	 */

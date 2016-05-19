@@ -18,6 +18,18 @@ package de.walware.rj.graphic;
 public class RLineSetting extends RPaintSetting {
 	
 	
+	public static final int TYPE_BLANK= -1;
+	public static final int TYPE_SOLID= 0;
+	
+	public static final byte CAP_ROUND= 1;
+	public static final byte CAP_BUTT= 2;
+	public static final byte CAP_SQUARE= 3;
+	
+	public static final byte JOIN_ROUND= 1;
+	public static final byte JOIN_MITER= 2;
+	public static final byte JOIN_BEVEL= 3;
+	
+	
 	/**
 	 * Line type, ~R: <code>par(lty)</code>
 	 * <p>
@@ -28,7 +40,12 @@ public class RLineSetting extends RPaintSetting {
 	 */
 	public final int type;
 	
-	public final double width;
+	public final float width;
+	
+	public final byte cap;
+	
+	public final byte join;
+	public final float joinMiterLimit;
 	
 	
 	/**
@@ -37,9 +54,13 @@ public class RLineSetting extends RPaintSetting {
 	 * @param type line type
 	 * @param width line width
 	 */
-	public RLineSetting(final int type, final double width) {
-		this.type = type;
-		this.width = width;
+	public RLineSetting(final int type, final float width,
+			final byte cap, final byte join, final float joinMiterLimit) {
+		this.type= type;
+		this.width= width;
+		this.cap= cap;
+		this.join= join;
+		this.joinMiterLimit= joinMiterLimit;
 	}
 	
 	
@@ -54,11 +75,17 @@ public class RLineSetting extends RPaintSetting {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder(30);
+		final StringBuilder sb= new StringBuilder(30);
 		sb.append("RLineSetting[");
 		sb.append(this.type);
 		sb.append(", ");
 		sb.append(this.width);
+		sb.append(", ");
+		sb.append(this.cap);
+		sb.append(", ");
+		sb.append(this.join);
+		sb.append(", ");
+		sb.append(this.joinMiterLimit);
 		sb.append("]");
 		return sb.toString();
 	}

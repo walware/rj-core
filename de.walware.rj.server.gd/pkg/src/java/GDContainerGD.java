@@ -245,11 +245,9 @@ public class GDContainerGD extends GDInterface {
         c.add(new GDFill(cc));
     }
 
-    /** set line width and type
-     *  @param lwd line width (see <code>lwd</code> parameter in R)
-     *  @param lty line type (see <code>lty</code> parameter in R) */
     @Override
-    public void gdcSetLine(double lwd, int lty) {
+    public void gdcSetLine(final double lwd, final int lty,
+    		final byte cap, final byte join, final float joinMiterLimit) {
         if (c==null) return;
         c.add(new GDLinePar(lwd, lty));
     }

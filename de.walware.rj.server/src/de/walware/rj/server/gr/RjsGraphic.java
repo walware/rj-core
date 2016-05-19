@@ -129,9 +129,10 @@ public final class RjsGraphic {
 				this.devId, color, this.slot ));
 	}
 	
-	public void setLine(final int lty, final double lwd) {
+	public void setLine(final int lty, final float lwd,
+			final byte cap, final byte join, final float joinMiterLimit) {
 		this.rj.sendMainCmd(new GDCmdItem.SetLine(
-				this.devId, lty, lwd, this.slot ));
+				this.devId, lty, lwd, cap, join, joinMiterLimit, this.slot ));
 	}
 	
 	public void setClip(final double x0, final double x1, final double y0, final double y1) {
@@ -170,8 +171,8 @@ public final class RjsGraphic {
 	}
 	
 	
-	public void setFont(final double pointSize, final double lineheight,
-			final int face, final String family) {
+	public void setFont(final String family, final int face, final float pointSize,
+			final float lineheight) {
 		this.rj.sendMainCmd(new GDCmdItem.SetFont(
 				this.devId, family, face, pointSize, lineheight, this.slot ));
 		

@@ -369,6 +369,11 @@ public final class RJIO {
 		}
 	}
 	
+	public void writeFloat(final float value) throws IOException {
+		this.out.writeFloat(value);
+	}
+	
+	
 	public void writeByteData(final byte[] array, final int length) throws IOException {
 		final ObjectOutput out = this.out;
 		out.write(array, 0, length);
@@ -864,6 +869,10 @@ public final class RJIO {
 		final double[] array = new double[this.temp];
 		readDoubleData(array, array.length);
 		return array;
+	}
+	
+	public float readFloat() throws IOException {
+		return this.in.readFloat();
 	}
 	
 	public void readByteData(final byte[] array, final int length) throws IOException {

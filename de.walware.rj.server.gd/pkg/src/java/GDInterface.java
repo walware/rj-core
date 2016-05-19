@@ -299,8 +299,12 @@ public abstract class GDInterface {
 
     /** set line width and type
      *  @param lwd line width (see <code>lwd</code> parameter in R)
-     *  @param lty line type (see <code>lty</code> parameter in R) */
-    public abstract void gdcSetLine(double lwd, int lty);
+     *  @param lty line type (see <code>lty</code> parameter in R)
+     *  @param cap line cap (see <code>lend</code> parameter in R)
+     *  @param join line join (see <code>ljoin</code> parameter in R)
+     *  @param joinMiterLimit limit for mitered line joins (see <code>lmitre</code> parameter in R)
+     */
+    public abstract void gdcSetLine(double lwd, int lty, byte cap, byte join, float joinMiterLimit);
 
     /** set current font
      *  @param cex character expansion (see <code>cex</code> parameter in R)

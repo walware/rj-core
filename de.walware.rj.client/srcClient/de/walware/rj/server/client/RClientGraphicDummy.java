@@ -87,11 +87,12 @@ public class RClientGraphicDummy implements RClientGraphic {
 	}
 	
 	@Override
-	public void addSetLine(final int type, final double width) {
+	public void addSetLine(final int type, final float width,
+			final byte cap, final byte join, final float joinMiterLimit) {
 	}
 	
 	@Override
-	public void addSetFont(final String family, final int face, final double pointSize, final double lineHeight) {
+	public void addSetFont(final String family, final int face, final float pointSize, final float lineHeight) {
 	}
 	
 	@Override

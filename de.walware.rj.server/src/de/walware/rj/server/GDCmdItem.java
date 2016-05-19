@@ -656,15 +656,22 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		
 		private final int type;
-		private final double width;
+		private final float width;
+		private final byte cap;
+		private final byte join;
+		private final float joinMiterLimit;
 		
 		
-		public SetLine(final int devId, final int type, final double width,
+		public SetLine(final int devId, final int type, final float width,
+				final byte cap, final byte join, final float joinMiterLimit,
 				final byte slot) {
 			this.options = 0;
 			this.devId = devId;
-			this.type = type;
-			this.width = width;
+			this.type= type;
+			this.width= width;
+			this.cap= cap;
+			this.join= join;
+			this.joinMiterLimit= joinMiterLimit;
 			
 			this.slot = slot;
 		}
@@ -674,7 +681,10 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeInt(this.devId);
 			io.writeByte(SET_LINE);
 			io.writeInt(this.type);
-			io.writeDouble(this.width);
+			io.writeFloat(this.width);
+			io.writeByte(this.cap);
+			io.writeByte(this.join);
+			io.writeFloat(this.joinMiterLimit);
 		}
 		
 		
@@ -699,19 +709,19 @@ public abstract class GDCmdItem extends MainCmdItem {
 		
 		private final String family;
 		private final int face;
-		private final double pointSize;
-		private final double lineHeight;
+		private final float pointSize;
+		private final float lineHeight;
 		
 		
-		public SetFont(final int devId, final String family, final int face, final double pointSize,
-				final double lineHeight,
+		public SetFont(final int devId, final String family, final int face, final float pointSize,
+				final float lineHeight,
 				final byte slot) {
 			this.options = 0;
 			this.devId = devId;
-			this.family = family;
-			this.face = face;
-			this.pointSize = pointSize;
-			this.lineHeight = lineHeight;
+			this.family= family;
+			this.face= face;
+			this.pointSize= pointSize;
+			this.lineHeight= lineHeight;
 			
 			this.slot = slot;
 		}
@@ -722,8 +732,8 @@ public abstract class GDCmdItem extends MainCmdItem {
 			io.writeByte(SET_FONT);
 			io.writeString(this.family);
 			io.writeInt(this.face);
-			io.writeDouble(this.pointSize);
-			io.writeDouble(this.lineHeight);
+			io.writeFloat(this.pointSize);
+			io.writeFloat(this.lineHeight);
 		}
 		
 		

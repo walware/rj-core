@@ -125,8 +125,9 @@ public final class JavaGD extends GDInterface {
 	}
 	
 	@Override
-	public void gdcSetLine(final double lwd, final int lty) {
-		this.rjsGraphic.setLine(lty, lwd);
+	public void gdcSetLine(final double lwd, final int lty,
+			final byte cap, final byte join, final float joinMiterLimit) {
+		this.rjsGraphic.setLine(lty, (float) lwd, cap, join, joinMiterLimit);
 	}
 	
 	@Override
@@ -153,7 +154,7 @@ public final class JavaGD extends GDInterface {
 	@Override
 	public void gdcSetFont(final double cex, final double ps, final double lineheight, final int fontface, final String fontfamily) {
 //		System.out.println("Font: " + fontface + " \"" + fontfamily + "\"");
-		this.rjsGraphic.setFont(cex * ps, lineheight, fontface, fontfamily);
+		this.rjsGraphic.setFont(fontfamily, fontface, (float) (cex * ps), (float) lineheight);
 	}
 	
 	

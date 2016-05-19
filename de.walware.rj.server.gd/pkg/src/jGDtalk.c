@@ -164,10 +164,12 @@ static void sendGC(JNIEnv *env, newJavaGDDesc *xd, R_GE_gcontext *gc, int sendAl
 		chkX(env);
     }
 
-    if (sendAll || gc->lwd != lastGC.lwd || gc->lty != lastGC.lty) {
-		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceSetLine, gc->lwd, gc->lty);
+	if (sendAll || gc->lwd != lastGC.lwd || gc->lty != lastGC.lty
+			|| gc->lend != lastGC.lend || gc->ljoin != lastGC.ljoin || gc->lmitre != lastGC.lmitre) {
+		(*env)->CallVoidMethod(env, xd->talk, jmGDInterfaceSetLine, gc->lwd, gc->lty,
+				(jbyte) gc->lend, (jbyte) gc->ljoin, (jfloat) gc->lmitre );
 		chkX(env);
-    }
+	}
 
     if (sendAll || gc->cex!=lastGC.cex || gc->ps!=lastGC.ps || gc->lineheight!=lastGC.lineheight || gc->fontface!=lastGC.fontface || strcmp(gc->fontfamily, lastGC.fontfamily)) {
         jstring s = (*env)->NewStringUTF(env, gc->fontfamily);
@@ -840,7 +842,7 @@ Rboolean createJavaGD(newJavaGDDesc *xd) {
 		jmGDInterfaceCap = getJMethod(env, jc, "gdCap", "([I)[B", RJ_ERROR_RERROR);
 		jmGDInterfaceSetColor = getJMethod(env, jc, "gdcSetColor", "(I)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetFill = getJMethod(env, jc, "gdcSetFill", "(I)V", RJ_ERROR_RERROR);
-		jmGDInterfaceSetLine = getJMethod(env, jc, "gdcSetLine", "(DI)V", RJ_ERROR_RERROR);
+		jmGDInterfaceSetLine = getJMethod(env, jc, "gdcSetLine", "(DIBBF)V", RJ_ERROR_RERROR);
 		jmGDInterfaceSetFont = getJMethod(env, jc, "gdcSetFont", "(DDDILjava/lang/String;)V", RJ_ERROR_RERROR);
 		jcGDInterface = jc;
 	}

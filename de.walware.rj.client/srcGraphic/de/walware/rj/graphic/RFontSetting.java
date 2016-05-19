@@ -37,7 +37,7 @@ public class RFontSetting extends RPaintSetting {
 	/**
 	 * Font size in points, ~R: ps * cex.
 	 */
-	public final double pointSize;
+	public final float pointSize;
 	
 	/**
 	 * The line height factor, ~R: <code>par(lheight)</code>
@@ -53,7 +53,7 @@ public class RFontSetting extends RPaintSetting {
 	 * @param pointSize font size in points
 	 * @param lineHeight line height factor
 	 */
-	public RFontSetting(final String family, final int face, final double pointSize,
+	public RFontSetting(final String family, final int face, final float pointSize,
 			final double lineHeight) {
 		this.family = family;
 		this.face = face;

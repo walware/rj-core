@@ -549,14 +549,17 @@ public abstract class AbstractRJComClient implements ComHandler {
 			case GDCmdItem.SET_LINE:
 				getGraphic(devId).addSetLine(
 						io.readInt(),
-						io.readDouble() );
+						io.readFloat(),
+						io.readByte(),
+						io.readByte(),
+						io.readFloat() );
 				return;
 			case GDCmdItem.SET_FONT:
 				getGraphic(devId).addSetFont(
 						io.readString(),
 						io.readInt(),
-						io.readDouble(),
-						io.readDouble() );
+						io.readFloat(),
+						io.readFloat() );
 				return;
 				
 			case GDCmdItem.DRAW_LINE:
