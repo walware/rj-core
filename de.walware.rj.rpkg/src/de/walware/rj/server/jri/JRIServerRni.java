@@ -167,6 +167,8 @@ final class JRIServerRni {
 	private final long evalErrorHandlerExprP;
 	private final long rniTempEvalClassExprP;
 	
+	private final long rjTmpEnvP;
+	
 	public final long evalDummy_ExprP;
 	
 	private int rniProtectedCounter;
@@ -411,6 +413,10 @@ final class JRIServerRni {
 			
 			this.evalDummy_ExprP= this.rEngine.rniParse("1+1;", 1);
 			this.rEngine.rniPreserve(this.evalDummy_ExprP);
+			
+			this.rjTmpEnvP= this.rEngine.rniEval(
+					this.rEngine.rniParse("rj:::.rj.tmp", 1),
+					this.Base_EnvP );
 			
 			if (LOGGER.isLoggable(Level.FINER)) {
 				final StringBuilder sb= new StringBuilder("Pointers:");
@@ -1147,7 +1153,8 @@ final class JRIServerRni {
 				final long namesStrP= protect(this.rEngine.rniListEnv(objP, true));
 				final String[] names = this.rEngine.rniGetStringArray(namesStrP);
 				if (names != null) {
-					if (objP == this.p_AutoloadEnv || names.length > this.maxEnvsLength) {
+					if (objP == this.Autoload_EnvP || objP == this.rjTmpEnvP
+							|| names.length > this.maxEnvsLength) {
 						return createEnvObject(objP, null, null, names.length,
 								(mode != EVAL_MODE_DATASLOT) );
 					}
