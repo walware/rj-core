@@ -26,10 +26,10 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 	private final Rengine rEngine;
 	private final JRIServerRni rni;
 	
-	private final long p_xySymbol;
-	private final long p_devIdSymbol;
-	private final long p_convertUser2DevFun;
-	private final long p_convertDev2UserFun;
+	private final long xySymP;
+	private final long devIdSymP;
+	private final long convertUser2DevFunP;
+	private final long convertDev2UserFunP;
 	
 	
 	public JRIServerGraphics(final RJ server, final Rengine rEngine, final JRIServerRni rni) {
@@ -37,12 +37,12 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 		this.rEngine = rEngine;
 		this.rni = rni;
 		
-		this.p_xySymbol = this.rEngine.rniInstallSymbol("xy");
-		this.p_devIdSymbol = this.rEngine.rniInstallSymbol("devId");
+		this.xySymP= this.rEngine.rniInstallSymbol("xy");
+		this.devIdSymP= this.rEngine.rniInstallSymbol("devId");
 		
-		this.p_convertUser2DevFun = this.rni.protect(this.rEngine.rniEval(
+		this.convertUser2DevFunP= this.rni.protect(this.rEngine.rniEval(
 					this.rEngine.rniParse("rj:::.gr.convertUser2Dev", 1 ), 0));
-		this.p_convertDev2UserFun = this.rni.protect(this.rEngine.rniEval(
+		this.convertDev2UserFunP= this.rni.protect(this.rEngine.rniEval(
 				this.rEngine.rniParse("rj:::.gr.convertDev2User", 1 ), 0));
 	}
 	
@@ -100,12 +100,12 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 				xy[1] = coord.getY();
 				
 				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.p_convertDev2UserFun, this.rEngine.rniCons(
+						this.convertDev2UserFunP, this.rEngine.rniCons(
 								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
-										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.p_NULL,
-										this.p_devIdSymbol, false ),
-								this.p_xySymbol, false ),
-						0, true ), this.rni.p_BaseEnv );
+										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
+										this.devIdSymP, false ),
+								this.xySymP, false ),
+						0, true ), this.rni.Base_EnvP );
 				if (p != 0) {
 					xy = this.rEngine.rniGetDoubleArray(p);
 					if (xy != null) {
@@ -143,12 +143,12 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 				xy[1] = coord.getY();
 				
 				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.p_convertUser2DevFun, this.rEngine.rniCons(
+						this.convertUser2DevFunP, this.rEngine.rniCons(
 								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
-										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.p_NULL,
-										this.p_devIdSymbol, false ),
-								this.p_xySymbol, false ),
-						0, true ), this.rni.p_BaseEnv );
+										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
+										this.devIdSymP, false ),
+								this.xySymP, false ),
+						0, true ), this.rni.Base_EnvP );
 				if (p != 0) {
 					xy = this.rEngine.rniGetDoubleArray(p);
 					if (xy != null) {

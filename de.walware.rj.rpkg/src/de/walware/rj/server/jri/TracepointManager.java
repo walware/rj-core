@@ -144,6 +144,10 @@ final class TracepointManager {
 	private int[] hitBreakpointSrcref;
 	private long hitBreakpointSrcfile;
 	
+	private final long traceSymP;
+	private final long untraceSymP;
+	private final long AllMTableSymP;
+	
 	private final long editFArgsP;
 	private final long stepNextValueP;
 	private final long stepSrcrefTmplP;
@@ -158,11 +162,15 @@ final class TracepointManager {
 		this.rEngine= rni.getREngine();
 		this.rni= rni;
 		
+		this.traceSymP= this.rEngine.rniInstallSymbol("trace"); //$NON-NLS-1$
+		this.untraceSymP= this.rEngine.rniInstallSymbol("untrace"); //$NON-NLS-1$
+		this.AllMTableSymP= this.rEngine.rniInstallSymbol(".AllMTable"); //$NON-NLS-1$
+		
 		this.editFArgsP= this.rEngine.rniCons(
-				this.rni.p_MissingArg, this.rEngine.rniCons(
-						this.rni.p_MissingArg, this.rni.p_NULL,
-						this.rni.p_DotsSymbol, false ),
-				rni.p_fdefSymbol, false );
+				this.rni.MissingArg_P, this.rEngine.rniCons(
+						this.rni.MissingArg_P, this.rni.NULL_P,
+						this.rni.Ellipsis_SymP, false ),
+				rni.fdef_SymP, false );
 		this.rEngine.rniPreserve(this.editFArgsP);
 		
 		this.stepNextValueP= this.rEngine.rniPutString("browser:n"); //$NON-NLS-1$
@@ -170,7 +178,7 @@ final class TracepointManager {
 		
 		this.stepSrcrefTmplP= this.rEngine.rniPutIntArray(NA_SRCREF);
 		this.rEngine.rniPreserve(this.stepSrcrefTmplP);
-		this.rEngine.rniSetAttrBySym(this.stepSrcrefTmplP, this.rni.p_whatSymbol, this.stepNextValueP);
+		this.rEngine.rniSetAttrBySym(this.stepSrcrefTmplP, this.rni.what_SymP, this.stepNextValueP);
 		
 		this.breakpointTmplP= this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
 				"{ if (\"rj\" %in% loadedNamespaces()) rj:::.breakpoint() }", 1 ), //$NON-NLS-1$
@@ -212,7 +220,7 @@ final class TracepointManager {
 		
 		final List<Long> envTodo= new ArrayList<>();
 		final List<Long> envDone= new ArrayList<>();
-		this.rni.addAllEnvs(envTodo, this.rni.p_GlobalEnv);
+		this.rni.addAllEnvs(envTodo, this.rni.Global_EnvP);
 		this.dbg.addAllStackEnvs(envTodo);
 		
 		while (!envTodo.isEmpty()) {
@@ -223,7 +231,7 @@ final class TracepointManager {
 			final String[] names= this.rEngine.rniGetStringArray(namesStrP);
 			for (int namesIdx= 0; namesIdx < names.length; namesIdx++) {
 				final String name= names[namesIdx];
-				if (this.rni.p_BaseEnv == env.longValue()
+				if (this.rni.Base_EnvP == env.longValue()
 						&& name.equals(".Last.value")) { //$NON-NLS-1$
 					continue;
 				}
@@ -291,13 +299,13 @@ final class TracepointManager {
 								long localMethodP= this.rEngine.rniGetCloBodyExpr(mainOrgMethodP);
 								if (localMethodP == 0 || this.rEngine.rniExpType(localMethodP) != REXP.LANGSXP
 										|| this.rEngine.rniGetLength(localMethodP) < 3
-										|| this.rEngine.rniCAR(localMethodP) != this.rni.p_BlockSymbol) {
+										|| this.rEngine.rniCAR(localMethodP) != this.rni.Block_SymP) {
 									continue;
 								}
 								localMethodP= this.rEngine.rniCAR(this.rEngine.rniCDR(localMethodP));
 								if (localMethodP == 0 || this.rEngine.rniExpType(localMethodP) != REXP.LANGSXP
 										|| this.rEngine.rniGetLength(localMethodP) < 3
-										|| this.rEngine.rniCAR(localMethodP) != this.rni.p_AssignSymbol) {
+										|| this.rEngine.rniCAR(localMethodP) != this.rni.Assign_SymP) {
 									continue;
 								}
 								localMethodP= this.rEngine.rniCAR(this.rEngine.rniCDR(this.rEngine.rniCDR(localMethodP)));
@@ -373,18 +381,18 @@ final class TracepointManager {
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}
-		nameEnvP= this.rEngine.rniGetVarBySym(this.rni.p_DotAllMTable, nameEnvP, 0);
+		nameEnvP= this.rEngine.rniGetVarBySym(this.AllMTableSymP, nameEnvP, 0);
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}
 		
 		final long p= this.rEngine.rniEval(this.rEngine.rniCons(
-				this.rni.p_isGenericSymbol, this.rEngine.rniCons(
+				this.rni.isGeneric_SymP, this.rEngine.rniCons(
 						nameStringP, this.rEngine.rniCons(
 								envP, this.rEngine.rniCons(
-										funP, this.rni.p_NULL,
-										this.rni.p_fdefSymbol, false ),
-								this.rni.p_whereSymbol, false ),
+										funP, this.rni.NULL_P,
+										this.rni.fdef_SymP, false ),
+								this.rni.where_SymP, false ),
 						0, false ),
 				0, true ),
 				0 );
@@ -396,7 +404,7 @@ final class TracepointManager {
 		if (funInfo.orgBodyP == 0) {
 			return false;
 		}
-		funInfo.srcfileP= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.p_srcfileSymbol);
+		funInfo.srcfileP= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.srcfile_SymP);
 		if (funInfo.srcfileP == 0 || this.rEngine.rniExpType(funInfo.srcfileP) != REXP.ENVSXP) {
 			return false;
 		}
@@ -448,7 +456,7 @@ final class TracepointManager {
 		// element
 		ok= false;
 		if (elementTracepointPositions.getElementId() != null) {
-			final long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.p_appElementIdSymbol);
+			final long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.appElementId_SymP);
 			if (p != 0) {
 				if (elementTracepointPositions.getElementId().equals(this.rEngine.rniGetString(p))) {
 					ok= true;
@@ -458,7 +466,7 @@ final class TracepointManager {
 				}
 			}
 		}
-		{	long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.p_srcrefSymbol);
+		{	long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.srcref_SymP);
 			if (p != 0) {
 				p= this.rEngine.rniGetVectorElt(p, 0);
 				if (p != 0) {
@@ -490,7 +498,7 @@ final class TracepointManager {
 			long p;
 			if (funInfo.done[0] < FunInfo.DONE_CLEAR
 					&& funInfo.currentMainFunP != funInfo.orgMainFunP
-					&& (p= this.rEngine.rniGetAttrBySym(funInfo.currentMainFunP, this.rni.p_dbgElementIdSymbol)) != 0
+					&& (p= this.rEngine.rniGetAttrBySym(funInfo.currentMainFunP, this.rni.dbgElementId_SymP)) != 0
 					&& elementTracepointPositions.getElementId().equals(this.rEngine.rniGetString(p)) ) {
 				ok= true;
 				funInfo.done[0]= FunInfo.DONE_CLEAR;
@@ -504,19 +512,19 @@ final class TracepointManager {
 		int result= ElementTracepointInstallationReport.FOUND_UNCHANGED;
 		final int savedProtected= this.rni.saveProtected();
 		try {
-			long traceArgsP= this.rni.p_NULL;
+			long traceArgsP= this.rni.NULL_P;
 			traceArgsP= this.rEngine.rniCons(
 					envP, traceArgsP,
-					this.rni.p_whereSymbol, false );
+					this.rni.where_SymP, false );
 			if (funInfo.rawMethodSignature != null) {
 				final String[] signature= SIGNATURE_PATTERN.split(funInfo.rawMethodSignature);
 				traceArgsP= this.rEngine.rniCons(
 						this.rEngine.rniPutStringArray(signature), traceArgsP,
-						this.rni.p_signatureSymbol, false );
+						this.rni.signature_SymP, false );
 			}
 			traceArgsP= this.rEngine.rniCons(
 					nameStringP, traceArgsP,
-					this.rni.p_whatSymbol, false );
+					this.rni.what_SymP, false );
 			
 			long editFunP= 0;
 			if (l > 0) {
@@ -578,7 +586,7 @@ final class TracepointManager {
 				}
 				
 				if (subCloP != 0) {
-					this.rEngine.rniSetAttrBySym(subCloP, this.rni.p_originalSymbol,
+					this.rEngine.rniSetAttrBySym(subCloP, this.rni.original_SymP,
 							this.rEngine.rniDuplicate(subCloP));
 					this.rEngine.rniSetCloBody(subCloP, newBodyP);
 				}
@@ -589,9 +597,9 @@ final class TracepointManager {
 					newMainBodyP= newBodyP;
 				}
 				
-				this.rEngine.rniSetAttrBySym(newBodyP, this.rni.p_dbgElementIdSymbol, elementIdP);
+				this.rEngine.rniSetAttrBySym(newBodyP, this.rni.dbgElementId_SymP, elementIdP);
 				if (newBodyP != newMainBodyP) {
-					this.rEngine.rniSetAttrBySym(newMainBodyP, this.rni.p_dbgElementIdSymbol, elementIdP);
+					this.rEngine.rniSetAttrBySym(newMainBodyP, this.rni.dbgElementId_SymP, elementIdP);
 				}
 				this.rEngine.rniSetCloBody(newMainFunP, newMainBodyP);
 				editFunP= createEditFun(newMainFunP);
@@ -600,7 +608,7 @@ final class TracepointManager {
 			if (funInfo.currentMainFunP != funInfo.orgMainFunP) {
 				// unset
 				final long untraceP= this.rEngine.rniCons(
-						this.rni.p_untraceSymbol, traceArgsP,
+						this.untraceSymP, traceArgsP,
 						0, true );
 				this.rni.evalExpr(untraceP, 0, CODE_DBG_TRACE );
 				funInfo.currentMainFunP= funInfo.orgMainFunP;
@@ -608,9 +616,9 @@ final class TracepointManager {
 			result= ElementTracepointInstallationReport.FOUND_UNSET;
 			if (l > 0) { // set
 				final long traceP= this.rEngine.rniCons(
-						this.rni.p_traceSymbol, this.rEngine.rniCons(
+						this.traceSymP, this.rEngine.rniCons(
 								editFunP, traceArgsP,
-								this.rni.p_editSymbol, false ),
+								this.rni.edit_SymP, false ),
 						0, true );
 				this.rni.evalExpr(traceP, 0, CODE_DBG_TRACE );
 				result= ElementTracepointInstallationReport.FOUND_SET;
@@ -632,18 +640,18 @@ final class TracepointManager {
 	
 	private long createEditFun(final long newFDefP) {
 		final long fBodyP= this.rEngine.rniCons(
-				this.rni.p_BlockSymbol, this.rEngine.rniCons(
-						newFDefP, this.rni.p_NULL,
+				this.rni.Block_SymP, this.rEngine.rniCons(
+						newFDefP, this.rni.NULL_P,
 						0, false ),
 				0, true );
 		return this.rni.protect(this.rEngine.rniEval(this.rni.protect(this.rEngine.rniCons(
-				this.rni.p_functionSymbol, this.rEngine.rniCons(
+				this.rni.function_SymP, this.rEngine.rniCons(
 						this.editFArgsP, this.rEngine.rniCons(
-								fBodyP, this.rni.p_NULL,
+								fBodyP, this.rni.NULL_P,
 								0, false ),
 						0, false ),
 				0, true )),
-				this.rni.p_BaseEnv ));
+				this.rni.Base_EnvP ));
 	}
 	
 	private void addTrace(final long newP, final List<? extends TracepointPosition> list, final int depth,
@@ -651,7 +659,7 @@ final class TracepointManager {
 			final int[] baseSrcref, final int[] lastSrcref)
 			throws UnexpectedRDataException, RNullPointerException {
 		final int length= this.rEngine.rniGetLength(newP);
-		final long newSrcrefP= this.rEngine.rniGetAttrBySym(newP, this.rni.p_srcrefSymbol);
+		final long newSrcrefP= this.rEngine.rniGetAttrBySym(newP, this.rni.srcref_SymP);
 		int currentIdx= 1;
 		long currentP= newP;
 		for (int i= 0; i < list.size(); ) {
@@ -703,7 +711,7 @@ final class TracepointManager {
 				}
 				long orgP;
 				if (this.rEngine.rniGetLength(currentValueP) == 3
-						&& this.rEngine.rniCAR(currentValueP) == this.rni.p_functionSymbol) {
+						&& this.rEngine.rniCAR(currentValueP) == this.rni.function_SymP) {
 					orgP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(currentValueP));
 				}
 				else {
@@ -718,7 +726,7 @@ final class TracepointManager {
 						if (currentValueP == 0) {
 							throw new UnexpectedRDataException("closure");
 						}
-						this.rEngine.rniSetAttrBySym(currentValueP, this.rni.p_originalSymbol, orgP);
+						this.rEngine.rniSetAttrBySym(currentValueP, this.rni.original_SymP, orgP);
 						this.rEngine.rniSetCAR(currentP, currentValueP);
 					}
 				}
@@ -738,7 +746,7 @@ final class TracepointManager {
 		if (currentSrcrefP != 0) {
 			currentSrcref= this.rEngine.rniGetIntArray(currentSrcrefP);
 			this.rEngine.rniSetAttrBySym(currentSrcrefP,
-					this.rni.p_whatSymbol, this.stepNextValueP );
+					this.rni.what_SymP, this.stepNextValueP );
 		}
 		else if (baseSrcref != null && positionSrcref != null) {
 			currentSrcref= Srcref.add(baseSrcref, positionSrcref);
@@ -780,7 +788,7 @@ final class TracepointManager {
 						funInfo, filePathP, elementIdP, 0 );
 				currentP= this.rEngine.rniCons(
 						breakpointP, this.rEngine.rniCons(
-								currentP, this.rni.p_NULL,
+								currentP, this.rni.NULL_P,
 								0, false ),
 						0, false );
 				n= 1;
@@ -791,14 +799,14 @@ final class TracepointManager {
 				long exitP= createBreakpointCall(position, currentSrcref,
 						funInfo, filePathP, elementIdP, TracepointState.FLAG_MB_EXIT );
 				exitP= this.rni.protect(this.rEngine.rniCons(
-						this.rni.p_onExitSymbol, this.rEngine.rniCons(
-								exitP, this.rni.p_NULL,
+						this.rni.onExit_SymP, this.rEngine.rniCons(
+								exitP, this.rni.NULL_P,
 								0, false ),
 						0, true ));
 				currentP= this.rEngine.rniCons(
 						exitP, this.rEngine.rniCons(
 							entryP, this.rEngine.rniCons(
-									currentP, this.rni.p_NULL,
+									currentP, this.rni.NULL_P,
 									0, false ),
 							0, false ),
 						0, false );
@@ -808,9 +816,9 @@ final class TracepointManager {
 				continue;
 			}
 			currentP= this.rni.checkAndProtect(this.rEngine.rniCons(
-					this.rni.p_BlockSymbol, currentP,
+					this.rni.Block_SymP, currentP,
 					0, true ));
-			this.rEngine.rniSetAttrBySym(currentP, this.rni.p_srcrefSymbol, createTraceSrcref(n,
+			this.rEngine.rniSetAttrBySym(currentP, this.rni.srcref_SymP, createTraceSrcref(n,
 					(currentSrcref != null) ? currentSrcref : NA_SRCREF, funInfo.srcfileP, elementIdP ));
 		}
 		return currentP;
@@ -825,21 +833,21 @@ final class TracepointManager {
 					this.stepSrcrefTmplP ));
 			srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(
 					(srcref != null) ? srcref : NA_SRCREF ));
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_srcfileSymbol, funInfo.srcfileP);
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.srcfile_SymP, funInfo.srcfileP);
 			if (filePathP != 0) {
-				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_appFilePathSymbol, filePathP);
+				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.appFilePath_SymP, filePathP);
 			}
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_dbgElementIdSymbol, elementIdP);
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_atSymbol,
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.dbgElementId_SymP, elementIdP);
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.at_SymP,
 					this.rEngine.rniPutIntArray(position.getIndex()) );
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_idSymbol,
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.id_SymP,
 					this.rEngine.rniPutRawArray(RDataUtil.encodeLongToRaw(position.getId())) );
 			if (flags != 0) {
-				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_flagsSymbol,
+				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.flags_SymP,
 						this.rEngine.rniPutIntArray(new int[] { flags }) );
 			}
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_whatSymbol, this.stepNextValueP);
-			this.rEngine.rniSetAttrBySym(exprP, this.rni.p_srcrefSymbol, this.rEngine.rniPutVector(srcrefList));
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.what_SymP, this.stepNextValueP);
+			this.rEngine.rniSetAttrBySym(exprP, this.rni.srcref_SymP, this.rEngine.rniPutVector(srcrefList));
 		}
 		return exprP;
 	}
@@ -849,15 +857,15 @@ final class TracepointManager {
 			throws RNullPointerException {
 		final long[] list= new long[n+2];
 		list[0]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
-		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_srcfileSymbol, srcfileP);
-		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_whatSymbol, this.stepNextValueP);
-		this.rEngine.rniSetAttrBySym(list[0], this.rni.p_dbgElementIdSymbol, elementIdP);
+		this.rEngine.rniSetAttrBySym(list[0], this.rni.srcfile_SymP, srcfileP);
+		this.rEngine.rniSetAttrBySym(list[0], this.rni.what_SymP, this.stepNextValueP);
+		this.rEngine.rniSetAttrBySym(list[0], this.rni.dbgElementId_SymP, elementIdP);
 		for (int i= 1; i <= n; i++) {
 			list[i]= list[0];
 		}
 		list[n+1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
-		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.p_srcfileSymbol, srcfileP);
-		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.p_dbgElementIdSymbol, elementIdP);
+		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.srcfile_SymP, srcfileP);
+		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.dbgElementId_SymP, elementIdP);
 		return this.rEngine.rniPutVector(list);
 	}
 	
@@ -920,11 +928,11 @@ final class TracepointManager {
 		if (!this.breakpointsEnabled) {
 			return 0;
 		}
-		final long srcrefP= this.rEngine.rniGetAttrBySym(callP, this.rni.p_srcrefSymbol);
+		final long srcrefP= this.rEngine.rniGetAttrBySym(callP, this.rni.srcref_SymP);
 		if (srcrefP == 0) {
 			throw new RjException("Missing data: srcref.");
 		}
-		final long srcfileP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_srcfileSymbol);
+		final long srcfileP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.srcfile_SymP);
 		if (srcfileP == 0 || this.rEngine.rniExpType(srcfileP) != REXP.ENVSXP) {
 			throw new RjException("Missing data: srcfile env of srcref.");
 		}
@@ -932,8 +940,8 @@ final class TracepointManager {
 		if (filePath == null) {
 			throw new RjException("Missing data: path of srcref.");
 		}
-		final long idP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_idSymbol);
-		final long atP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_atSymbol);
+		final long idP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.id_SymP);
+		final long atP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.at_SymP);
 		if (idP == 0 || atP == 0 ) {
 			throw new RjException("Missing data: id/position.");
 		}
@@ -953,7 +961,7 @@ final class TracepointManager {
 				}
 				if (breakpointState == null) {
 					String elementId= null;
-					final long elementIdP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_dbgElementIdSymbol);
+					final long elementIdP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.dbgElementId_SymP);
 					if (elementIdP != 0) {
 						elementId= this.rEngine.rniGetString(elementIdP);
 					}
@@ -991,7 +999,7 @@ final class TracepointManager {
 		
 		int codeFlags= 0;
 		{	// load flags
-			final long p= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_flagsSymbol);
+			final long p= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.flags_SymP);
 			if (p != 0) {
 				codeFlags= this.rEngine.rniGetIntArray(p)[0];
 			}
@@ -1049,11 +1057,11 @@ final class TracepointManager {
 			srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(
 					this.hitBreakpointSrcref ));
 			if ((codeFlags & TracepointState.FLAG_MB_EXIT) == 0) {
-				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.p_whatSymbol, this.stepNextValueP);
+				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.what_SymP, this.stepNextValueP);
 				srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
 						this.stepSrcrefTmplP ));
 			}
-			this.rEngine.rniSetAttrBySym(browserExprP, this.rni.p_srcrefSymbol,
+			this.rEngine.rniSetAttrBySym(browserExprP, this.rni.srcref_SymP,
 					this.rEngine.rniPutVector(srcrefList) );
 			
 			return browserExprP;

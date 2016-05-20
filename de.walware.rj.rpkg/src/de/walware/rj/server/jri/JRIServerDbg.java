@@ -127,60 +127,60 @@ final class JRIServerDbg {
 		this.tracepointManager= new TracepointManager(this, rni);
 		
 		this.sysNFrameFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.nframe"), //$NON-NLS-1$
-				this.rni.p_BaseEnv );
+				this.rni.Base_EnvP );
 		this.rEngine.rniPreserve(this.sysNFrameFunP);
 		this.sysFramesFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.frames"), //$NON-NLS-1$
-				this.rni.p_BaseEnv );
+				this.rni.Base_EnvP );
 		this.rEngine.rniPreserve(this.sysFramesFunP);
 		this.sysCallFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.call"), //$NON-NLS-1$
-				this.rni.p_BaseEnv );
+				this.rni.Base_EnvP );
 		this.rEngine.rniPreserve(this.sysCallFunP);
 		this.sysFunctionFunP = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.function"), //$NON-NLS-1$
-				this.rni.p_BaseEnv );
+				this.rni.Base_EnvP );
 		this.rEngine.rniPreserve(this.sysFunctionFunP);
 		
-		this.sysNFrameCallP = this.rEngine.rniCons(this.sysNFrameFunP, this.rni.p_NULL,
+		this.sysNFrameCallP = this.rEngine.rniCons(this.sysNFrameFunP, this.rni.NULL_P,
 				0, true );
 		this.rEngine.rniPreserve(this.sysNFrameCallP);
-		this.sysFramesCallP = this.rEngine.rniCons(this.sysFramesFunP, this.rni.p_NULL,
+		this.sysFramesCallP = this.rEngine.rniCons(this.sysFramesFunP, this.rni.NULL_P,
 				0, true );
 		this.rEngine.rniPreserve(this.sysFramesCallP);
 		this.sysCalls0CallP = this.rEngine.rniCons(
 				this.rEngine.rniEval(this.rni.protect(this.rEngine.rniCons(
-						this.rni.p_functionSymbol, this.rEngine.rniCons(
-								this.rni.p_NULL, this.rEngine.rniCons(
+						this.rni.function_SymP, this.rEngine.rniCons(
+								this.rni.NULL_P, this.rEngine.rniCons(
 										this.rEngine.rniCons(
 												this.rEngine.rniEval(this.rEngine.rniInstallSymbol("sys.calls"), //$NON-NLS-1$
-														this.rni.p_BaseEnv ), this.rni.p_NULL,
-												0, true ), this.rni.p_NULL,
+														this.rni.Base_EnvP ), this.rni.NULL_P,
+												0, true ), this.rni.NULL_P,
 										0, true),
 								0, false ),
 						0, true )),
-						this.rni.p_BaseEnv ), this.rni.p_NULL,
+						this.rni.Base_EnvP ), this.rni.NULL_P,
 				0, true );
 		this.rEngine.rniPreserve(this.sysCalls0CallP);
 		this.sysCall0CallP = this.rEngine.rniCons(
 				this.rEngine.rniEval(this.rni.protect(this.rEngine.rniCons(
-						this.rni.p_functionSymbol, this.rEngine.rniCons(
-								this.rni.p_NULL, this.rEngine.rniCons(
-										this.rEngine.rniCons(this.sysCallFunP, this.rni.p_NULL,
-												0, true ), this.rni.p_NULL,
+						this.rni.function_SymP, this.rEngine.rniCons(
+								this.rni.NULL_P, this.rEngine.rniCons(
+										this.rEngine.rniCons(this.sysCallFunP, this.rni.NULL_P,
+												0, true ), this.rni.NULL_P,
 										0, true),
 								0, false ),
 						0, true )),
-						this.rni.p_BaseEnv ), this.rni.p_NULL,
+						this.rni.Base_EnvP ), this.rni.NULL_P,
 				0, true );
 		this.rEngine.rniPreserve(this.sysCall0CallP);
 		
 		this.getTopFrameCallP = this.rEngine.rniCons(
 				this.sysFramesFunP, this.rEngine.rniCons(
-						this.sysNFrameCallP, this.rni.p_NULL,
+						this.sysNFrameCallP, this.rni.NULL_P,
 						0, false), // which
 				0, true );
 		this.rEngine.rniPreserve(this.getTopFrameCallP);
 		
 		this.isFunP = this.rEngine.rniEval(this.rEngine.rniParse("methods::is", 1), //$NON-NLS-1$
-				this.rni.p_BaseEnv );
+				this.rni.Base_EnvP );
 		this.rEngine.rniPreserve(this.isFunP);
 		this.traceableStringP = this.rEngine.rniPutString("traceable"); //$NON-NLS-1$
 		this.rEngine.rniPreserve(this.traceableStringP);
@@ -201,7 +201,7 @@ final class JRIServerDbg {
 		disable(true);
 		
 		if (this.savedTracingState == 0) {
-			final long p = this.rEngine.rniEval(this.disableTraceingCallP, this.rni.p_BaseEnv);
+			final long p = this.rEngine.rniEval(this.disableTraceingCallP, this.rni.Base_EnvP);
 			if (p != 0) {
 				this.savedTracingState= this.rEngine.rniIsTrue(p) ? 1 : -1;
 			}
@@ -232,7 +232,7 @@ final class JRIServerDbg {
 		if (this.savedTracingState != 0) {
 			this.savedTracingState= 0;
 			if (this.savedTracingState == 1) {
-				this.rEngine.rniEval(this.enableTraceingCallP, this.rni.p_BaseEnv);
+				this.rEngine.rniEval(this.enableTraceingCallP, this.rni.Base_EnvP);
 			}
 		}
 	}
@@ -254,10 +254,10 @@ final class JRIServerDbg {
 		}
 		final long srcrefP;
 		{	final long call = this.rEngine.rniEval(this.sysCall0CallP, 0);
-			srcrefP = (call != 0) ? this.rEngine.rniGetAttrBySym(call, this.rni.p_srcrefSymbol) : 0;
+			srcrefP = (call != 0) ? this.rEngine.rniGetAttrBySym(call, this.rni.srcref_SymP) : 0;
 		}
 		if (srcrefP != 0) {
-			final long p = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_whatSymbol);
+			final long p = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.what_SymP);
 			if (p != 0) {
 				final String s = this.rEngine.rniGetString(p);
 				if (s != null && s.length() > 8 && s.startsWith("browser:")) { //$NON-NLS-1$
@@ -339,7 +339,7 @@ final class JRIServerDbg {
 		final List<CallStackFrame> list = new ArrayList<>(n + 1);
 		{	long cdr = this.rni.evalExpr(this.sysCalls0CallP, 0, CODE_DBG_CONTEXT);
 			if (cdr == 0 || this.rEngine.rniExpType(cdr) != REXP.LISTSXP) {
-				if (n == 0 && cdr == this.rni.p_NULL) {
+				if (n == 0 && cdr == this.rni.NULL_P) {
 					cdr = 0;
 				}
 				else {
@@ -359,12 +359,12 @@ final class JRIServerDbg {
 							call = this.rni.getSourceLine(car);
 						}
 						
-						srcrefP = this.rEngine.rniGetAttrBySym(car, this.rni.p_srcrefSymbol);
+						srcrefP = this.rEngine.rniGetAttrBySym(car, this.rni.srcref_SymP);
 					}
 				}
 				
 				if (srcrefP != 0) {
-					final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_srcfileSymbol);
+					final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.srcfile_SymP);
 					if (srcfileP != 0) {
 						final String fileName = getFileName(srcfileP);
 						if (fileName != null) {
@@ -375,7 +375,7 @@ final class JRIServerDbg {
 						int[] srcref = getSrcrefObject(srcrefP);
 						if (srcref != null) {
 							final int[] add= getSrcrefObject(this.rEngine.rniGetVarBySym(
-									this.rni.p_linesSrcrefSymbol, srcfileP, 0 ));
+									this.rni.linesSrcref_SymP, srcfileP, 0 ));
 							if (add != null) {
 								srcref = Srcref.add(srcref, add);
 							}
@@ -434,7 +434,7 @@ final class JRIServerDbg {
 		if (request.getPosition() != 0) {
 			final long currentCallP = this.rni.evalExpr(this.rEngine.rniCons(
 					this.sysCallFunP, this.rEngine.rniCons(
-							this.rEngine.rniPutIntArray(new int[] { request.getPosition() }), this.rni.p_NULL,
+							this.rEngine.rniPutIntArray(new int[] { request.getPosition() }), this.rni.NULL_P,
 							0, false),
 					0, true),
 					0, CODE_DBG_CONTEXT );
@@ -452,24 +452,24 @@ final class JRIServerDbg {
 		{	final long nextCallP = this.rEngine.rniEval((request.getPosition() < n) ?
 					this.rEngine.rniCons(
 							this.sysCallFunP, this.rEngine.rniCons(
-									this.rEngine.rniPutIntArray(new int[] { request.getPosition()+1 }), this.rni.p_NULL,
+									this.rEngine.rniPutIntArray(new int[] { request.getPosition()+1 }), this.rni.NULL_P,
 									0, false ),
 							0, true ) : this.sysCall0CallP,
 					0 );
 			if (nextCallP != 0) {
-				contextSrcrefP = this.rEngine.rniGetAttrBySym(nextCallP, this.rni.p_srcrefSymbol);
+				contextSrcrefP = this.rEngine.rniGetAttrBySym(nextCallP, this.rni.srcref_SymP);
 			}
 		}
 		if (contextSrcrefP != 0) {
 			exprSrcref = getSrcrefObject(contextSrcrefP);
-			contextSrcfileP = this.rEngine.rniGetAttrBySym(contextSrcrefP, this.rni.p_srcfileSymbol);
+			contextSrcfileP = this.rEngine.rniGetAttrBySym(contextSrcrefP, this.rni.srcfile_SymP);
 		}
 		
 		if (request.getPosition() != 0) {
 			{	// function
 				final long currentFunP = this.rEngine.rniEval(
 						this.rEngine.rniCons(this.sysFunctionFunP, this.rEngine.rniCons(
-								this.rEngine.rniPutIntArray(new int[] { request.getPosition() }), this.rni.p_NULL,
+								this.rEngine.rniPutIntArray(new int[] { request.getPosition() }), this.rni.NULL_P,
 								0, false ),
 						0, true ),
 						0 );
@@ -492,19 +492,19 @@ final class JRIServerDbg {
 					if (contextSrcfileP == 0) {
 						final long srcrefP = this.rEngine.rniGetAttr(bodyP, "wholeSrcref");
 						if (srcrefP != 0) {
-							final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_srcfileSymbol);
+							final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.srcfile_SymP);
 							if (srcfileP != 0) {
 								contextSrcrefP = srcrefP;
 								contextSrcfileP = srcfileP;
 							}
 						}
 					}
-					{	long srcrefP = this.rEngine.rniGetAttrBySym(bodyP, this.rni.p_srcrefSymbol);
+					{	long srcrefP = this.rEngine.rniGetAttrBySym(bodyP, this.rni.srcref_SymP);
 						if (srcrefP != 0) {
 							final long[] srcrefItemsP = this.rEngine.rniGetVector(srcrefP);
 							if (srcrefItemsP != null && srcrefItemsP.length > 0) {
 								srcrefP = srcrefItemsP[0];
-								final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_srcfileSymbol);
+								final long srcfileP = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.srcfile_SymP);
 								if (srcfileP != 0) {
 									if (contextSrcrefP == 0) {
 										contextSrcrefP = srcrefP;
@@ -520,9 +520,9 @@ final class JRIServerDbg {
 						}
 					}
 					if (contextSrcrefP == 0) {
-						contextSrcfileP = this.rEngine.rniGetAttrBySym(bodyP, this.rni.p_srcfileSymbol);
+						contextSrcfileP = this.rEngine.rniGetAttrBySym(bodyP, this.rni.srcfile_SymP);
 						if (contextSrcfileP == 0) {
-							contextSrcfileP = this.rEngine.rniGetAttrBySym(contextFunP, this.rni.p_srcfileSymbol);
+							contextSrcfileP = this.rEngine.rniGetAttrBySym(contextFunP, this.rni.srcfile_SymP);
 						}
 					}
 				}
@@ -549,14 +549,14 @@ final class JRIServerDbg {
 		int[] sourceSrcref = null;
 		{	if (contextSrcfileP != 0) {
 				final long sourceP= this.rEngine.rniGetVarBySym(
-						this.rni.p_linesSymbol, contextSrcfileP, 0 );
+						this.rni.lines_SymP, contextSrcfileP, 0 );
 				if (sourceP != 0) {
 					final String[] sourceLines = this.rEngine.rniGetStringArray(sourceP);
 					if (sourceLines != null && sourceLines.length > 0) {
 						sourceType = FrameContext.SOURCETYPE_1_LINES;
 						sourceCode = this.utils.concat(sourceLines, '\n');
 						sourceSrcref= getSrcrefObject(this.rEngine.rniGetVarBySym(
-								this.rni.p_linesSrcrefSymbol, contextSrcfileP, 0 ));
+								this.rni.linesSrcref_SymP, contextSrcfileP, 0 ));
 					}
 				}
 			}
@@ -668,7 +668,7 @@ final class JRIServerDbg {
 	}
 	
 	private boolean doSetDebug(long frameHandle, final int v, final boolean temp) {
-		if (frameHandle == this.rni.p_GlobalEnv) {
+		if (frameHandle == this.rni.Global_EnvP) {
 			frameHandle = 0;
 		}
 		final boolean changed = this.rEngine.rniSetDebug(frameHandle, v);
@@ -690,7 +690,7 @@ final class JRIServerDbg {
 			return handles;
 		}
 		if (n == 0) {
-			handles[0] = this.rni.p_GlobalEnv;
+			handles[0] = this.rni.Global_EnvP;
 			return handles;
 		}
 		
@@ -737,7 +737,7 @@ final class JRIServerDbg {
 		long handle = frame.getHandle();
 		if (handle == 0) {
 			if (frame.getPosition() == 0) {
-				handle = this.rni.p_GlobalEnv;
+				handle = this.rni.Global_EnvP;
 			}
 			else {
 				return;
@@ -934,11 +934,11 @@ final class JRIServerDbg {
 	
 	
 	long getTopFrame() {
-		return this.rEngine.rniEval(this.getTopFrameCallP, this.rni.p_BaseEnv);
+		return this.rEngine.rniEval(this.getTopFrameCallP, this.rni.Base_EnvP);
 	}
 	
 	void addAllStackEnvs(final List<Long> envs) throws RjsException {
-		this.rni.addAllEnvs(envs, this.rni.p_GlobalEnv);
+		this.rni.addAllEnvs(envs, this.rni.Global_EnvP);
 		{	long cdr= this.rni.evalExpr(this.sysFramesCallP, 0, CODE_DBG_TRACE);
 			if (cdr != 0 && this.rEngine.rniExpType(cdr) == REXP.LISTSXP) {
 				while (cdr != 0) {
@@ -964,7 +964,7 @@ final class JRIServerDbg {
 	}
 	
 	long getOrgFun(final long funP) {
-		final long p = this.rEngine.rniGetAttrBySym(funP, this.rni.p_originalSymbol);
+		final long p = this.rEngine.rniGetAttrBySym(funP, this.rni.original_SymP);
 		if (p != 0 && p != funP /*&& isTraceable(funP)*/) {
 			if (this.rEngine.rniExpType(p) != REXP.CLOSXP) {
 				return 0;
@@ -978,7 +978,7 @@ final class JRIServerDbg {
 		final long p = this.rEngine.rniEval(this.rEngine.rniCons(
 				this.isFunP, this.rEngine.rniCons(
 						funP, this.rEngine.rniCons(
-								this.traceableStringP, this.rni.p_NULL,
+								this.traceableStringP, this.rni.NULL_P,
 								0, false ),
 						0, false ),
 				0, true),
@@ -987,9 +987,9 @@ final class JRIServerDbg {
 	}
 	
 	String getFilePath(final long srcfileP, final long srcrefP) {
-		long p= this.rEngine.rniGetVarBySym(this.rni.p_appFilePathSymbol, srcfileP, 0);
+		long p= this.rEngine.rniGetVarBySym(this.rni.appFilePath_SymP, srcfileP, 0);
 		if (p == 0 && (srcrefP == 0
-				|| (p = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.p_appFilePathSymbol)) == 0 )) {
+				|| (p = this.rEngine.rniGetAttrBySym(srcrefP, this.rni.appFilePath_SymP)) == 0 )) {
 			return null;
 		}
 		return this.rEngine.rniGetString(p);
@@ -997,7 +997,7 @@ final class JRIServerDbg {
 	
 	String getFileName(final long srcfileP) {
 		String filename;
-		{	final long p= this.rEngine.rniGetVarBySym(this.rni.p_filenameSymbol, srcfileP, 0);
+		{	final long p= this.rEngine.rniGetVarBySym(this.rni.filename_SymP, srcfileP, 0);
 			if (p == 0
 					|| (filename = this.rEngine.rniGetString(p)) == null
 					|| filename.length() == 0) {
@@ -1009,7 +1009,7 @@ final class JRIServerDbg {
 		}
 		if (filename.charAt(0) != '/' && filename.charAt(0) != '\\'
 				&& filename.indexOf(':') < 0) {
-			{	final long p= this.rEngine.rniGetVarBySym(this.rni.p_wdSymbol, srcfileP, 0);
+			{	final long p= this.rEngine.rniGetVarBySym(this.rni.wd_SymP, srcfileP, 0);
 				if (p != 0) {
 					final String wd = this.rEngine.rniGetString(p);
 					if (wd != null && wd.length() > 0) {
@@ -1022,7 +1022,7 @@ final class JRIServerDbg {
 	}
 	
 	String getFileEncoding(final long srcfileP) {
-		final long p= this.rEngine.rniGetVarBySym(this.rni.encodingSymP, srcfileP, 0);
+		final long p= this.rEngine.rniGetVarBySym(this.rni.encoding_SymP, srcfileP, 0);
 		if (p != 0) {
 			return this.rEngine.rniGetString(p);
 		}
@@ -1030,7 +1030,7 @@ final class JRIServerDbg {
 	}
 	
 	long getFileTimestamp(final long srcfileP) {
-		final long p= this.rEngine.rniGetVarBySym(this.rni.p_timestampSymbol, srcfileP, 0);
+		final long p= this.rEngine.rniGetVarBySym(this.rni.timestamp_SymP, srcfileP, 0);
 		if (p != 0) {
 			final double[] array = this.rEngine.rniGetDoubleArray(p);
 			if (array != null && array.length > 0) {

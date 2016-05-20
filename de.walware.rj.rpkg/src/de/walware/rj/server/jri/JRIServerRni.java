@@ -85,90 +85,89 @@ final class JRIServerRni {
 	
 	private final Rengine rEngine;
 	
-	public final long p_NULL;
-	public final long rUnboundP;
-	public final long p_MissingArg;
-	public final long p_BaseEnv;
-	public final long p_GlobalEnv;
-	public final long p_EmptyEnv;
-	public final long p_AutoloadEnv;
-	public final long p_RJTempEnv;
+	public final long NULL_P;
+	public final long Unbound_P;
+	public final long MissingArg_P;
 	
-	public final long p_AssignSymbol;
-	public final long p_BlockSymbol;
-	public final long p_DotsSymbol;
-	public final long p_DotAllMTable;
-	public final long p_atSymbol;
-	public final long p_ClassSymbol;
-	public final long p_classSymbol;
-	public final long p_dimNamesSymbol;
-	public final long p_editSymbol;
-	public final long encodingSymP;
-	public final long p_envSymbol;
-	public final long p_exprSymbol;
-	public final long p_errorSymbol;
-	public final long p_imaginarySymbol;
-	public final long p_idSymbol;
-	public final long p_isGenericSymbol;
-	public final long p_fdefSymbol;
-	public final long p_filenameSymbol;
-	public final long p_flagsSymbol;
-	public final long p_functionSymbol;
-	public final long p_fromSymbol;
-	public final long p_levelsSymbol;
-	public final long p_linesSymbol;
-	public final long p_linesSrcrefSymbol;
-	public final long p_nameSymbol;
-	public final long p_namesSymbol;
-	public final long p_newSymbol;
-	public final long nsSymbolP;
-	public final long p_onExitSymbol;
-	public final long p_originalSymbol;
-	public final long p_realSymbol;
-	public final long p_rowNamesSymbol;
-	public final long p_signatureSymbol;
-	public final long p_srcfileSymbol;
-	public final long p_srcrefSymbol;
-	public final long p_timestampSymbol;
-	public final long p_traceSymbol;
-	public final long p_untraceSymbol;
-	public final long p_valueSymbol;
-	public final long p_whatSymbol;
-	public final long p_whereSymbol;
-	public final long p_wdSymbol;
-	public final long p_xSymbol;
-	public final long p_zSymbol;
+	public final long Base_EnvP;
+	public final long Global_EnvP;
+	public final long Empty_EnvP;
+	public final long Autoload_EnvP;
 	
-	public final long p_appFilePathSymbol;
-	public final long p_appElementIdSymbol;
-	public final long p_dbgElementIdSymbol;
+	public final long Assign_SymP;
+	public final long Block_SymP;
+	public final long Ellipsis_SymP;
+	public final long at_SymP;
+	public final long edit_SymP;
+	public final long encoding_SymP;
+	public final long env_SymP;
+	public final long expr_SymP;
+	public final long error_SymP;
+	public final long imaginary_SymP;
+	public final long id_SymP;
+	public final long isGeneric_SymP;
+	public final long fdef_SymP;
+	public final long filename_SymP;
+	public final long flags_SymP;
+	public final long function_SymP;
+	public final long from_SymP;
+	public final long lengthOut_SymP;
+	public final long lines_SymP;
+	public final long linesSrcref_SymP;
+	public final long name_SymP;
+	public final long names_SymP;
+	public final long ns_SymP;
+	public final long onExit_SymP;
+	public final long original_SymP;
+	public final long real_SymP;
+	public final long signature_SymP;
+	public final long srcfile_SymP;
+	public final long srcref_SymP;
+	public final long timestamp_SymP;
+	public final long value_SymP;
+	public final long what_SymP;
+	public final long where_SymP;
+	public final long wd_SymP;
+	public final long x_SymP;
+	public final long z_SymP;
 	
-	public final long p_TRUE;
-	public final long p_FALSE;
+	public final long TRUE_BoolP;
+	public final long FALSE_BoolP;
 	
-	public final long p_factorClassString;
-	public final long p_orderedClassString;
-	public final long p_dataframeClassString;
-	public final long p_complexFun;
-	public final long p_ReFun;
-	public final long p_ImFun;
+	public final long appFilePath_SymP;
+	public final long appElementId_SymP;
+	public final long dbgElementId_SymP;
 	
-	public final long getNamespaceFunP;
-	public final long getNamespaceExportedNamesFunP;
-	public final long getNamespaceExportedValueFunP;
+	private final long rniTempEnvP;
 	
-	private final long p_seqIntFun;
-	private final long p_lengthOutSymbol;
+	private final long classSymP;
+	private final long dimnamesSymP;
+	private final long rowNamesSymP;
+	private final long levelsSymP;
+	private final long newSymP;
+	private final long newClassSymP;
+	
+	private final long factorClassStringP;
+	private final long orderedClassStringP;
+	private final long dataframeClassStringP;
+	private final long complexFunP;
+	private final long ReFunP;
+	private final long ImFunP;
+	private final long seqIntFunP;
+	
+	private final long getNamespaceFunP;
+	private final long getNamespaceExportedNamesFunP;
+	private final long getNamespaceExportedValueFunP;
 	
 	private final long tryCatchFunP;
 	private final long slotNamesFunP;
 	private final long getFHeaderFunP;
 	private final long deparseLineXCallP;
 	private final long deparseLinesXCallP;
+	private final long evalErrorHandlerExprP;
+	private final long rniTempEvalClassExprP;
 	
-	public final long p_evalTryCatch_errorExpr;
-	public final long p_evalTemp_classExpr;
-	public final long p_evalDummyExpr;
+	public final long evalDummy_ExprP;
 	
 	private int rniProtectedCounter;
 	
@@ -184,7 +183,7 @@ final class JRIServerRni {
 	private int maxListsLength = 10000;
 	private final int[] maxListsLengthStack = new int[255];
 	
-	private boolean rniEvalTempAssigned;
+	private boolean rniTempEvalAssigned;
 	
 	boolean rniInterrupted;
 	
@@ -194,234 +193,237 @@ final class JRIServerRni {
 		
 		final int savedProtected = saveProtected();
 		try {
-			this.p_NULL = this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
-			this.rUnboundP = this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
-			this.p_MissingArg = this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
-			this.p_BaseEnv = this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
-			this.p_GlobalEnv = this.rEngine.rniSpecialObject(Rengine.SO_GlobalEnv);
-			this.p_EmptyEnv = this.rEngine.rniSpecialObject(Rengine.SO_EmptyEnv);
-			{	final long p = this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"), //$NON-NLS-1$
-						this.p_BaseEnv );
-				this.p_AutoloadEnv = (p != 0 && this.rEngine.rniExpType(p) == REXP.ENVSXP) ? p : 0;
+			this.NULL_P= this.rEngine.rniSpecialObject(Rengine.SO_NilValue);
+			this.Unbound_P= this.rEngine.rniSpecialObject(Rengine.SO_UnboundValue);
+			this.MissingArg_P= this.rEngine.rniSpecialObject(Rengine.SO_MissingArg);
+			this.Base_EnvP= this.rEngine.rniSpecialObject(Rengine.SO_BaseEnv);
+			this.Global_EnvP= this.rEngine.rniSpecialObject(Rengine.SO_GlobalEnv);
+			this.Empty_EnvP= this.rEngine.rniSpecialObject(Rengine.SO_EmptyEnv);
+			{	final long p= this.rEngine.rniEval(this.rEngine.rniInstallSymbol(".AutoloadEnv"), //$NON-NLS-1$
+						this.Base_EnvP );
+				this.Autoload_EnvP= (p != 0 && this.rEngine.rniExpType(p) == REXP.ENVSXP) ? p : 0;
 			}
 			
-			this.p_AssignSymbol = this.rEngine.rniInstallSymbol("<-"); //$NON-NLS-1$
-			this.p_BlockSymbol = this.rEngine.rniInstallSymbol("{"); //$NON-NLS-1$
-			this.p_DotsSymbol = this.rEngine.rniInstallSymbol("..."); //$NON-NLS-1$
-			this.p_DotAllMTable = this.rEngine.rniInstallSymbol(".AllMTable"); //$NON-NLS-1$
-			this.p_atSymbol = this.rEngine.rniInstallSymbol("at"); //$NON-NLS-1$
-			this.p_ClassSymbol = this.rEngine.rniInstallSymbol("Class"); //$NON-NLS-1$
-			this.p_classSymbol = this.rEngine.rniInstallSymbol("class"); //$NON-NLS-1$
-			this.p_dimNamesSymbol = this.rEngine.rniInstallSymbol("dimnames"); //$NON-NLS-1$
-			this.p_editSymbol = this.rEngine.rniInstallSymbol("edit"); //$NON-NLS-1$
-			this.encodingSymP= this.rEngine.rniInstallSymbol("encoding"); //$NON-NLS-1$
-			this.p_envSymbol = this.rEngine.rniInstallSymbol("env"); //$NON-NLS-1$
-			this.p_errorSymbol = this.rEngine.rniInstallSymbol("error"); //$NON-NLS-1$
-			this.p_exprSymbol = this.rEngine.rniInstallSymbol("expr"); //$NON-NLS-1$
-			this.p_fdefSymbol = this.rEngine.rniInstallSymbol("fdef"); //$NON-NLS-1$
-			this.p_filenameSymbol = this.rEngine.rniInstallSymbol("filename"); //$NON-NLS-1$
-			this.p_flagsSymbol = this.rEngine.rniInstallSymbol("flags"); //$NON-NLS-1$
-			this.p_functionSymbol = this.rEngine.rniInstallSymbol("function"); //$NON-NLS-1$
-			this.p_fromSymbol = this.rEngine.rniInstallSymbol("from"); //$NON-NLS-1$
-			this.p_idSymbol = this.rEngine.rniInstallSymbol("id"); //$NON-NLS-1$
-			this.p_isGenericSymbol = this.rEngine.rniInstallSymbol("isGeneric"); //$NON-NLS-1$
-			this.p_imaginarySymbol = this.rEngine.rniInstallSymbol("imaginary"); //$NON-NLS-1$
-			this.p_levelsSymbol = this.rEngine.rniInstallSymbol("levels"); //$NON-NLS-1$
-			this.p_linesSymbol = this.rEngine.rniInstallSymbol("lines"); //$NON-NLS-1$
-			this.p_linesSrcrefSymbol = this.rEngine.rniInstallSymbol("linesSrcref"); //$NON-NLS-1$
-			this.p_nameSymbol = this.rEngine.rniInstallSymbol("name"); //$NON-NLS-1$
-			this.p_namesSymbol = this.rEngine.rniInstallSymbol("names"); //$NON-NLS-1$
-			this.p_newSymbol = this.rEngine.rniInstallSymbol("new"); //$NON-NLS-1$
-			this.nsSymbolP= this.rEngine.rniInstallSymbol("ns"); //$NON-NLS-1$
-			this.p_onExitSymbol = this.rEngine.rniInstallSymbol("on.exit"); //$NON-NLS-1$
-			this.p_originalSymbol = this.rEngine.rniInstallSymbol("original"); //$NON-NLS-1$
-			this.p_realSymbol = this.rEngine.rniInstallSymbol("real"); //$NON-NLS-1$
-			this.p_rowNamesSymbol = this.rEngine.rniInstallSymbol("row.names"); //$NON-NLS-1$
-			this.p_signatureSymbol = this.rEngine.rniInstallSymbol("signature"); //$NON-NLS-1$
-			this.p_srcfileSymbol = this.rEngine.rniInstallSymbol("srcfile"); //$NON-NLS-1$
-			this.p_srcrefSymbol = this.rEngine.rniInstallSymbol("srcref"); //$NON-NLS-1$
-			this.p_timestampSymbol = this.rEngine.rniInstallSymbol("timestamp"); //$NON-NLS-1$
-			this.p_traceSymbol = this.rEngine.rniInstallSymbol("trace"); //$NON-NLS-1$
-			this.p_untraceSymbol = this.rEngine.rniInstallSymbol("untrace"); //$NON-NLS-1$
-			this.p_valueSymbol = this.rEngine.rniInstallSymbol("value"); //$NON-NLS-1$
-			this.p_whatSymbol = this.rEngine.rniInstallSymbol("what"); //$NON-NLS-1$
-			this.p_whereSymbol = this.rEngine.rniInstallSymbol("where"); //$NON-NLS-1$
-			this.p_wdSymbol = this.rEngine.rniInstallSymbol("wd"); //$NON-NLS-1$
-			this.p_xSymbol = this.rEngine.rniInstallSymbol("x"); //$NON-NLS-1$
-			this.p_zSymbol = this.rEngine.rniInstallSymbol("z"); //$NON-NLS-1$
+			this.Assign_SymP= this.rEngine.rniInstallSymbol("<-"); //$NON-NLS-1$
+			this.Block_SymP= this.rEngine.rniInstallSymbol("{"); //$NON-NLS-1$
+			this.Ellipsis_SymP= this.rEngine.rniInstallSymbol("..."); //$NON-NLS-1$
+			this.at_SymP= this.rEngine.rniInstallSymbol("at"); //$NON-NLS-1$
+			this.newClassSymP= this.rEngine.rniInstallSymbol("Class"); //$NON-NLS-1$
+			this.classSymP= this.rEngine.rniInstallSymbol("class"); //$NON-NLS-1$
+			this.dimnamesSymP= this.rEngine.rniInstallSymbol("dimnames"); //$NON-NLS-1$
+			this.edit_SymP= this.rEngine.rniInstallSymbol("edit"); //$NON-NLS-1$
+			this.encoding_SymP= this.rEngine.rniInstallSymbol("encoding"); //$NON-NLS-1$
+			this.env_SymP= this.rEngine.rniInstallSymbol("env"); //$NON-NLS-1$
+			this.error_SymP= this.rEngine.rniInstallSymbol("error"); //$NON-NLS-1$
+			this.expr_SymP= this.rEngine.rniInstallSymbol("expr"); //$NON-NLS-1$
+			this.fdef_SymP= this.rEngine.rniInstallSymbol("fdef"); //$NON-NLS-1$
+			this.filename_SymP= this.rEngine.rniInstallSymbol("filename"); //$NON-NLS-1$
+			this.flags_SymP= this.rEngine.rniInstallSymbol("flags"); //$NON-NLS-1$
+			this.function_SymP= this.rEngine.rniInstallSymbol("function"); //$NON-NLS-1$
+			this.from_SymP= this.rEngine.rniInstallSymbol("from"); //$NON-NLS-1$
+			this.id_SymP= this.rEngine.rniInstallSymbol("id"); //$NON-NLS-1$
+			this.isGeneric_SymP= this.rEngine.rniInstallSymbol("isGeneric"); //$NON-NLS-1$
+			this.imaginary_SymP= this.rEngine.rniInstallSymbol("imaginary"); //$NON-NLS-1$
+			this.lengthOut_SymP= this.rEngine.rniInstallSymbol("length.out"); //$NON-NLS-1$
+			this.levelsSymP= this.rEngine.rniInstallSymbol("levels"); //$NON-NLS-1$
+			this.lines_SymP= this.rEngine.rniInstallSymbol("lines"); //$NON-NLS-1$
+			this.linesSrcref_SymP= this.rEngine.rniInstallSymbol("linesSrcref"); //$NON-NLS-1$
+			this.name_SymP= this.rEngine.rniInstallSymbol("name"); //$NON-NLS-1$
+			this.names_SymP= this.rEngine.rniInstallSymbol("names"); //$NON-NLS-1$
+			this.newSymP= this.rEngine.rniInstallSymbol("new"); //$NON-NLS-1$
+			this.ns_SymP= this.rEngine.rniInstallSymbol("ns"); //$NON-NLS-1$
+			this.onExit_SymP= this.rEngine.rniInstallSymbol("on.exit"); //$NON-NLS-1$
+			this.original_SymP= this.rEngine.rniInstallSymbol("original"); //$NON-NLS-1$
+			this.real_SymP= this.rEngine.rniInstallSymbol("real"); //$NON-NLS-1$
+			this.rowNamesSymP= this.rEngine.rniInstallSymbol("row.names"); //$NON-NLS-1$
+			this.signature_SymP= this.rEngine.rniInstallSymbol("signature"); //$NON-NLS-1$
+			this.srcfile_SymP= this.rEngine.rniInstallSymbol("srcfile"); //$NON-NLS-1$
+			this.srcref_SymP= this.rEngine.rniInstallSymbol("srcref"); //$NON-NLS-1$
+			this.timestamp_SymP= this.rEngine.rniInstallSymbol("timestamp"); //$NON-NLS-1$
+			this.value_SymP= this.rEngine.rniInstallSymbol("value"); //$NON-NLS-1$
+			this.what_SymP= this.rEngine.rniInstallSymbol("what"); //$NON-NLS-1$
+			this.where_SymP= this.rEngine.rniInstallSymbol("where"); //$NON-NLS-1$
+			this.wd_SymP= this.rEngine.rniInstallSymbol("wd"); //$NON-NLS-1$
+			this.x_SymP= this.rEngine.rniInstallSymbol("x"); //$NON-NLS-1$
+			this.z_SymP= this.rEngine.rniInstallSymbol("z"); //$NON-NLS-1$
 			
-			this.p_appFilePathSymbol = this.rEngine.rniInstallSymbol("statet.Path");
-			this.p_appElementIdSymbol = this.rEngine.rniInstallSymbol("statet.ElementId");
-			this.p_dbgElementIdSymbol = this.rEngine.rniInstallSymbol("dbg.ElementId");
+			this.appFilePath_SymP= this.rEngine.rniInstallSymbol("statet.Path");
+			this.appElementId_SymP= this.rEngine.rniInstallSymbol("statet.ElementId");
+			this.dbgElementId_SymP= this.rEngine.rniInstallSymbol("dbg.ElementId");
 			
-			this.p_TRUE = this.rEngine.rniPutBoolArray(new boolean[] { true });
-			this.rEngine.rniPreserve(this.p_TRUE);
-			this.p_FALSE = this.rEngine.rniPutBoolArray(new boolean[] { false });
-			this.rEngine.rniPreserve(this.p_FALSE);
+			this.TRUE_BoolP= this.rEngine.rniPutBoolArray(new boolean[] { true });
+			this.rEngine.rniPreserve(this.TRUE_BoolP);
+			this.FALSE_BoolP= this.rEngine.rniPutBoolArray(new boolean[] { false });
+			this.rEngine.rniPreserve(this.FALSE_BoolP);
 			
-			this.p_RJTempEnv = this.rEngine.rniEval(this.rEngine.rniCons(
-					this.rEngine.rniInstallSymbol("new.env"), this.p_NULL, 0, true ), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.p_RJTempEnv);
-			this.p_orderedClassString = this.rEngine.rniPutStringArray(
+			this.rniTempEnvP= this.rEngine.rniEval(this.rEngine.rniCons(
+					this.rEngine.rniInstallSymbol("new.env"), this.NULL_P, 0, true ), //$NON-NLS-1$
+					this.Base_EnvP );
+			this.rEngine.rniPreserve(this.rniTempEnvP);
+			this.orderedClassStringP= this.rEngine.rniPutStringArray(
 					new String[] { "ordered", "factor" } ); //$NON-NLS-1$ //$NON-NLS-2$
-			this.rEngine.rniPreserve(this.p_orderedClassString);
-			this.p_factorClassString = this.rEngine.rniPutString("factor"); //$NON-NLS-1$
-			this.rEngine.rniPreserve(this.p_factorClassString);
-			this.p_dataframeClassString = this.rEngine.rniPutString("data.frame"); //$NON-NLS-1$
-			this.rEngine.rniPreserve(this.p_dataframeClassString);
+			this.rEngine.rniPreserve(this.orderedClassStringP);
+			this.factorClassStringP= this.rEngine.rniPutString("factor"); //$NON-NLS-1$
+			this.rEngine.rniPreserve(this.factorClassStringP);
+			this.dataframeClassStringP= this.rEngine.rniPutString("data.frame"); //$NON-NLS-1$
+			this.rEngine.rniPreserve(this.dataframeClassStringP);
 			
-			this.p_complexFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("complex"), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.p_complexFun);
-			this.p_ReFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Re"), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.p_ReFun);
-			this.p_ImFun = this.rEngine.rniEval(this.rEngine.rniInstallSymbol("Im"), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.p_ImFun);
+			this.complexFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("complex"), //$NON-NLS-1$
+					this.Base_EnvP );
+			this.rEngine.rniPreserve(this.complexFunP);
+			this.ReFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("Re"), //$NON-NLS-1$
+					this.Base_EnvP );
+			this.rEngine.rniPreserve(this.ReFunP);
+			this.ImFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("Im"), //$NON-NLS-1$
+					this.Base_EnvP );
+			this.rEngine.rniPreserve(this.ImFunP);
 			
-			this.getNamespaceFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getNamespace"), //$NON-NLS-1$
-					this.p_BaseEnv );
+			this.getNamespaceFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("getNamespace"), //$NON-NLS-1$
+					this.Base_EnvP );
 			this.rEngine.rniPreserve(this.getNamespaceFunP);
-			this.getNamespaceExportedNamesFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getNamespaceExports"), //$NON-NLS-1$
-					this.p_BaseEnv );
+			this.getNamespaceExportedNamesFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("getNamespaceExports"), //$NON-NLS-1$
+					this.Base_EnvP );
 			this.rEngine.rniPreserve(this.getNamespaceExportedNamesFunP);
-			this.getNamespaceExportedValueFunP= this.rEngine.rniEval(this.rEngine.rniInstallSymbol("getExportedValue"), //$NON-NLS-1$
-					this.p_BaseEnv );
+			this.getNamespaceExportedValueFunP= this.rEngine.rniEval(
+					this.rEngine.rniInstallSymbol("getExportedValue"), //$NON-NLS-1$
+					this.Base_EnvP );
 			this.rEngine.rniPreserve(this.getNamespaceExportedValueFunP);
 			
-			this.p_seqIntFun = this.rEngine.rniEval(
+			this.seqIntFunP= this.rEngine.rniEval(
 					this.rEngine.rniInstallSymbol("seq.int"), //$NON-NLS-1$
-					this.p_BaseEnv );
-			this.rEngine.rniPreserve(this.p_seqIntFun);
-			this.p_lengthOutSymbol = this.rEngine.rniInstallSymbol("length.out"); //$NON-NLS-1$
+					this.Base_EnvP );
+			this.rEngine.rniPreserve(this.seqIntFunP);
 			
-			this.tryCatchFunP = this.rEngine.rniEval(
+			this.tryCatchFunP= this.rEngine.rniEval(
 					this.rEngine.rniInstallSymbol("tryCatch"), //$NON-NLS-1$
-					this.p_BaseEnv );
+					this.Base_EnvP );
 			this.rEngine.rniPreserve(this.tryCatchFunP);
-			this.slotNamesFunP = this.rEngine.rniEval(
+			this.slotNamesFunP= this.rEngine.rniEval(
 					this.rEngine.rniParse("methods::.slotNames", 1), //$NON-NLS-1$
-					this.p_BaseEnv );
+					this.Base_EnvP );
 			this.rEngine.rniPreserve(this.slotNamesFunP);
 			
-			{	final long pasteFunP = protect(this.rEngine.rniEval(
+			{	final long pasteFunP= protect(this.rEngine.rniEval(
 						this.rEngine.rniInstallSymbol("paste"), //$NON-NLS-1$
-						this.p_BaseEnv ));
-				final long deparseFunP = protect(this.rEngine.rniEval(
+						this.Base_EnvP ));
+				final long deparseFunP= protect(this.rEngine.rniEval(
 						this.rEngine.rniInstallSymbol("deparse"), //$NON-NLS-1$
-						this.p_BaseEnv ));
+						this.Base_EnvP ));
 				
-				final long controlSymbolP = this.rEngine.rniInstallSymbol("control"); //$NON-NLS-1$
-				final long widthcutoffSymbolP = this.rEngine.rniInstallSymbol("width.cutoff"); //$NON-NLS-1$
-				final long collapseSymbolP = this.rEngine.rniInstallSymbol("collapse"); //$NON-NLS-1$
+				final long controlSymP= this.rEngine.rniInstallSymbol("control"); //$NON-NLS-1$
+				final long widthCutoffSymP= this.rEngine.rniInstallSymbol("width.cutoff"); //$NON-NLS-1$
+				final long collapseSymP= this.rEngine.rniInstallSymbol("collapse"); //$NON-NLS-1$
 				
-				final long deparseControlValueP = protect(this.rEngine.rniPutStringArray(
+				final long deparseControlValueP= protect(this.rEngine.rniPutStringArray(
 						new String[] { "keepInteger", "keepNA" } )); //$NON-NLS-1$ //$NON-NLS-2$
-				final long collapseValueP = protect(this.rEngine.rniPutString("")); //$NON-NLS-1$
+				final long collapseValueP= protect(this.rEngine.rniPutString("")); //$NON-NLS-1$
 				
 				{	// function(x)paste(deparse(expr=args(name=x),control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
-					final long fArgsP = protect(this.rEngine.rniCons(
-							this.p_MissingArg, this.p_NULL,
-							this.p_xSymbol, false ));
-					final long argsFunP = protect(this.rEngine.rniEval(
+					final long fArgsP= protect(this.rEngine.rniCons(
+							this.MissingArg_P, this.NULL_P,
+							this.x_SymP, false ));
+					final long argsFunP= protect(this.rEngine.rniEval(
 							this.rEngine.rniInstallSymbol("args"), //$NON-NLS-1$
-							this.p_BaseEnv ));
-					final long argsCallP = protect(this.rEngine.rniCons(
+							this.Base_EnvP ));
+					final long argsCallP= protect(this.rEngine.rniCons(
 							argsFunP, this.rEngine.rniCons(
-									this.p_xSymbol, this.p_NULL,
-									this.p_nameSymbol, false ),
+									this.x_SymP, this.NULL_P,
+									this.name_SymP, false ),
 							0, true ));
-					final long deparseCallP = protect(this.rEngine.rniCons(
+					final long deparseCallP= protect(this.rEngine.rniCons(
 							deparseFunP, this.rEngine.rniCons(
 									argsCallP, this.rEngine.rniCons(
 											deparseControlValueP, this.rEngine.rniCons(
-													this.rEngine.rniPutIntArray(new int[] { 500 }), this.p_NULL,
-													widthcutoffSymbolP, false ),
-											controlSymbolP, false ),
-									this.p_exprSymbol, false ),
+													this.rEngine.rniPutIntArray(new int[] { 500 }), this.NULL_P,
+													widthCutoffSymP, false ),
+											controlSymP, false ),
+									this.expr_SymP, false ),
 							0, true ));
-					final long fBodyP = this.rEngine.rniCons(
+					final long fBodyP= this.rEngine.rniCons(
 							pasteFunP, this.rEngine.rniCons(
 									deparseCallP, this.rEngine.rniCons(
-											collapseValueP, this.p_NULL,
-											collapseSymbolP, false ),
+											collapseValueP, this.NULL_P,
+											collapseSymP, false ),
 									0, false ),
 							0, true );
-					this.getFHeaderFunP = this.rEngine.rniEval(this.rEngine.rniCons(
-							this.p_functionSymbol, this.rEngine.rniCons(
+					this.getFHeaderFunP= this.rEngine.rniEval(this.rEngine.rniCons(
+							this.function_SymP, this.rEngine.rniCons(
 									fArgsP, this.rEngine.rniCons(
-											fBodyP, this.p_NULL,
+											fBodyP, this.NULL_P,
 											0, false ),
 									0, false ),
 							0, true ),
-							this.p_BaseEnv );
+							this.Base_EnvP );
 					this.rEngine.rniPreserve(this.getFHeaderFunP);
 				}
 				
 				{	// paste(deparse(expr=x,control=c("keepInteger", "keepNA"),width.cutoff=500L),collapse="")
-					final long deparseCallP = protect(this.rEngine.rniCons(
+					final long deparseCallP= protect(this.rEngine.rniCons(
 							deparseFunP, this.rEngine.rniCons(
-									this.p_xSymbol, this.rEngine.rniCons(
+									this.x_SymP, this.rEngine.rniCons(
 											deparseControlValueP, this.rEngine.rniCons(
-													this.rEngine.rniPutIntArray(new int[] { 500 }), this.p_NULL,
-													widthcutoffSymbolP, false ),
-											controlSymbolP, false ),
-									this.p_exprSymbol, false ),
+													this.rEngine.rniPutIntArray(new int[] { 500 }), this.NULL_P,
+													widthCutoffSymP, false ),
+											controlSymP, false ),
+									this.expr_SymP, false ),
 							0, true ));
 					this.rEngine.rniPreserve(deparseCallP);
-					this.deparseLineXCallP = this.rEngine.rniCons(
+					this.deparseLineXCallP= this.rEngine.rniCons(
 							pasteFunP, this.rEngine.rniCons(
 									deparseCallP, this.rEngine.rniCons(
-											collapseValueP, this.p_NULL,
-											collapseSymbolP, false ),
+											collapseValueP, this.NULL_P,
+											collapseSymP, false ),
 									0, false ),
 							0, true );
 					this.rEngine.rniPreserve(this.deparseLineXCallP);
 				}
 				{	// deparse(expr=x,control=c("keepInteger", "keepNA"),width.cutoff=80L)
-					this.deparseLinesXCallP = this.rEngine.rniCons(
+					this.deparseLinesXCallP= this.rEngine.rniCons(
 							deparseFunP, this.rEngine.rniCons(
-									this.p_xSymbol, this.rEngine.rniCons(
+									this.x_SymP, this.rEngine.rniCons(
 											deparseControlValueP, this.rEngine.rniCons(
-													this.rEngine.rniPutIntArray(new int[] { 80 }), this.p_NULL,
-													widthcutoffSymbolP, false ),
-											controlSymbolP, false ),
-									this.p_exprSymbol, false ),
+													this.rEngine.rniPutIntArray(new int[] { 80 }), this.NULL_P,
+													widthCutoffSymP, false ),
+											controlSymP, false ),
+									this.expr_SymP, false ),
 							0, true);
 					this.rEngine.rniPreserve(this.deparseLinesXCallP);
 				}
 			}
 			
-			this.p_evalTryCatch_errorExpr = this.rEngine.rniCons(
+			this.evalErrorHandlerExprP= this.rEngine.rniCons(
 					this.rEngine.rniEval(this.rEngine.rniParse("function(e){" +
 							"s<-raw(5);" +
 							"class(s)<-\".rj.eval.error\";" +
 							"attr(s,\"error\")<-e;" +
 							"attr(s,\"output\")<-paste(capture.output(print(e)),collapse=\"\\n\");" +
-							"invisible(s);}", 1 ), 0 ), this.p_NULL,
-					this.p_errorSymbol, false );
-			this.rEngine.rniPreserve(this.p_evalTryCatch_errorExpr);
+							"invisible(s);}", 1 ), 0 ), this.NULL_P,
+					this.error_SymP, false );
+			this.rEngine.rniPreserve(this.evalErrorHandlerExprP);
 			
-			this.p_evalTemp_classExpr = this.rEngine.rniParse("class(x);", 1);
-			this.rEngine.rniPreserve(this.p_evalTemp_classExpr);
+			this.rniTempEvalClassExprP= this.rEngine.rniParse("class(x);", 1);
+			this.rEngine.rniPreserve(this.rniTempEvalClassExprP);
 			
-			this.p_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
-			this.rEngine.rniPreserve(this.p_evalDummyExpr);
+			this.evalDummy_ExprP= this.rEngine.rniParse("1+1;", 1);
+			this.rEngine.rniPreserve(this.evalDummy_ExprP);
 			
 			if (LOGGER.isLoggable(Level.FINER)) {
-				final StringBuilder sb = new StringBuilder("Pointers:");
+				final StringBuilder sb= new StringBuilder("Pointers:");
 				
-				final Field[] fields = getClass().getDeclaredFields();
+				final Field[] fields= getClass().getDeclaredFields();
 				for (final Field field : fields) {
-					final String name = field.getName();
-					if (name.startsWith("p_") && Long.TYPE.equals(field.getType())) {
+					final String name= field.getName();
+					if (name.endsWith("P") && Long.TYPE.equals(field.getType())) {
 						sb.append("\n\t");
-						sb.append(name.substring(2));
-						sb.append(" = ");
+						sb.append(name.substring(0, name.length() - 1));
+						sb.append("= ");
 						try {
-							final long p = field.getLong(this);
+							final long p= field.getLong(this);
 							sb.append("0x");
 							sb.append(Long.toHexString(p));
 						}
@@ -499,15 +501,15 @@ final class JRIServerRni {
 		this.maxEnvsLength = this.maxEnvsLengthStack[this.stackPos];
 		this.maxListsLength = this.maxListsLengthStack[this.stackPos];
 		
-		if (this.rniEvalTempAssigned) {
-			this.rEngine.rniAssignVarBySym(this.p_xSymbol, this.p_NULL, this.p_RJTempEnv);
-			this.rniEvalTempAssigned = false;
+		if (this.rniTempEvalAssigned) {
+			this.rEngine.rniAssignVarBySym(this.x_SymP, this.NULL_P, this.rniTempEnvP);
+			this.rniTempEvalAssigned = false;
 		}
 	}
 	
 	
 	public long createFCall(final String name, final RList args) throws RjsException {
-		long argsP = this.p_NULL;
+		long argsP = this.NULL_P;
 		for (int i = (int) args.getLength() - 1; i >= 0; i--) {
 			final String argName = args.getName(i);
 			final RObject argValue = args.get(i);
@@ -516,7 +518,7 @@ final class JRIServerRni {
 				argValueP = assignDataObject(argValue);
 			}
 			else {
-				argValueP = this.p_MissingArg;
+				argValueP = this.MissingArg_P;
 			}
 			argsP = protect(this.rEngine.rniCons(argValueP, argsP,
 					(argName != null) ? this.rEngine.rniInstallSymbol(argName) : 0, false ));
@@ -554,7 +556,7 @@ final class JRIServerRni {
 	
 	public long resolveEnvironment(final RObject data) throws RjsException {
 		if (data == null) {
-			return this.p_GlobalEnv;
+			return this.Global_EnvP;
 		}
 		try {
 			long envP = 0;
@@ -581,8 +583,8 @@ final class JRIServerRni {
 	public long evalExpr(long exprP, final long envP, final int code) throws RjsException {
 		exprP = this.rEngine.rniCons(
 				this.tryCatchFunP, this.rEngine.rniCons(
-						exprP, this.p_evalTryCatch_errorExpr,
-						this.p_exprSymbol, false ),
+						exprP, this.evalErrorHandlerExprP,
+						this.expr_SymP, false ),
 				0, true );
 		final long objP = this.rEngine.rniEval(exprP, envP);
 		if (objP == 0) {
@@ -640,12 +642,12 @@ final class JRIServerRni {
 		switch(obj.getRObjectType()) {
 		case RObject.TYPE_NULL:
 		case RObject.TYPE_MISSING:
-			return this.p_NULL;
+			return this.NULL_P;
 		case RObject.TYPE_VECTOR: {
 			objP = assignDataStore(obj.getData());
 			names = ((RVector<?>) obj).getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.names_SymP, assignDataStore(names));
 			}
 			return objP; }
 		case RObject.TYPE_ARRAY:
@@ -666,12 +668,12 @@ final class JRIServerRni {
 			objP= checkAndProtect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.names_SymP, assignDataStore(names));
 			}
 			names = list.getRowNames();
-			this.rEngine.rniSetAttrBySym(objP, this.p_rowNamesSymbol, (names != null) ?
+			this.rEngine.rniSetAttrBySym(objP, this.rowNamesSymP, (names != null) ?
 					assignDataStore(names) : seqLength(list.getRowCount()) );
-			this.rEngine.rniSetAttrBySym(objP, this.p_classSymbol, this.p_dataframeClassString);
+			this.rEngine.rniSetAttrBySym(objP, this.classSymP, this.dataframeClassStringP);
 			return objP; }
 		case RObject.TYPE_LIST: {
 			final RList list = (RList) obj;
@@ -691,14 +693,14 @@ final class JRIServerRni {
 			objP= checkAndProtect(this.rEngine.rniPutVector(itemPs));
 			names = list.getNames();
 			if (names != null) {
-				this.rEngine.rniSetAttrBySym(objP, this.p_namesSymbol, assignDataStore(names));
+				this.rEngine.rniSetAttrBySym(objP, this.names_SymP, assignDataStore(names));
 			}
 			return objP; }
 		case RObject.TYPE_REFERENCE:
 			return ((RReference) obj).getHandle();
 		case RObject.TYPE_S4OBJECT: {
 			final RS4Object s4obj = (RS4Object) obj;
-			objP = this.p_NULL;
+			objP = this.NULL_P;
 			for (int i = (int) s4obj.getLength()-1; i >= 0; i--) {
 				final RObject slotObj = s4obj.get(i);
 				if (slotObj != null && slotObj.getRObjectType() != RObject.TYPE_MISSING) {
@@ -708,9 +710,9 @@ final class JRIServerRni {
 				}
 			}
 			return protect(evalExpr(this.rEngine.rniCons(
-					this.p_newSymbol, this.rEngine.rniCons(
+					this.newSymP, this.rEngine.rniCons(
 							this.rEngine.rniPutString(s4obj.getRClassName()), objP,
-							this.p_ClassSymbol, false ),
+							this.newClassSymP, false ),
 					0, true ),
 					0, (CODE_DATA_ASSIGN_DATA | 0x8) )); }
 		case RObject.TYPE_LANGUAGE: {
@@ -767,13 +769,13 @@ final class JRIServerRni {
 			final long imaginaryP= checkAndProtect(this.rEngine.rniPutDoubleArray(
 					complex.getJRIImaginaryValueArray() ));
 			return checkAndProtect(this.rEngine.rniEval(this.rEngine.rniCons(
-					this.p_complexFun, this.rEngine.rniCons(
+					this.complexFunP, this.rEngine.rniCons(
 							realP, this.rEngine.rniCons(
-									imaginaryP, this.p_NULL,
-									this.p_imaginarySymbol, false ),
-							this.p_realSymbol, false ),
+									imaginaryP, this.NULL_P,
+									this.imaginary_SymP, false ),
+							this.real_SymP, false ),
 					0, true ),
-					this.p_BaseEnv )); }
+					this.Base_EnvP )); }
 		case RStore.CHARACTER:
 			return checkAndProtect(this.rEngine.rniPutStringArray(
 					((JRICharacterDataImpl) data).getJRIValueArray() ));
@@ -787,7 +789,7 @@ final class JRIServerRni {
 			this.rEngine.rniSetAttr(objP, "levels",
 					this.rEngine.rniPutStringArray(factor.getJRILevelsArray()) );
 			this.rEngine.rniSetAttr(objP, "class",
-					factor.isOrdered() ? this.p_orderedClassString : this.p_factorClassString );
+					factor.isOrdered() ? this.orderedClassStringP : this.factorClassStringP );
 			return objP; }
 		default:
 			throw new UnsupportedOperationException("Data storage of type " + data.getStoreType() + " are not yet supported.");
@@ -886,7 +888,7 @@ final class JRIServerRni {
 								|| className1.equals("ordered")
 								|| this.rEngine.rniInherits(objP, "factor")) ) {
 					final String[] levels;
-					{	final long levelsP = this.rEngine.rniGetAttrBySym(objP, this.p_levelsSymbol);
+					{	final long levelsP = this.rEngine.rniGetAttrBySym(objP, this.levelsSymP);
 						levels = (levelsP != 0) ? this.rEngine.rniGetStringArray(levelsP) : null;
 					}
 					if (levels != null) {
@@ -1192,7 +1194,7 @@ final class JRIServerRni {
 				break; // invalid
 			}
 			case REXP.SYMSXP: {
-				if (objP == this.p_MissingArg) {
+				if (objP == this.MissingArg_P) {
 					return RMissing.INSTANCE;
 				}
 				return ((flags & F_ONLY_STRUCT) != 0) ? 
@@ -1230,9 +1232,9 @@ final class JRIServerRni {
 				return new ROtherImpl(className1);
 			}
 			}
-//				final long classP = this.rEngine.rniEval(this.rEngine.rniCons(this.p_classFun,
-//						this.rEngine.rniCons(objP, this.p_NULL, this.p_xSymbol, false), 0, true),
-//						this.p_BaseEnv);
+//				final long classP = this.rEngine.rniEval(this.rEngine.rniCons(this.classFunP,
+//						this.rEngine.rniCons(objP, this._NULL_P, , false), 0, true),
+//						this._Base_EnvP);
 			{	// Other type and fallback
 				final String className1 = getClassSave(objP);
 				return new ROtherImpl(className1);
@@ -1244,14 +1246,14 @@ final class JRIServerRni {
 	}
 	
 	private RObject createS4Obj(final long objP, final int rType, final int flags) {
-		final long classP = this.rEngine.rniGetAttrBySym(objP, this.p_classSymbol);
+		final long classP = this.rEngine.rniGetAttrBySym(objP, this.classSymP);
 		String className = null;
-		if (classP != 0 && classP != this.p_NULL) {
+		if (classP != 0 && classP != this.NULL_P) {
 			className = this.rEngine.rniGetString(classP);
 			final long slotNamesP = this.rEngine.rniEval(this.rEngine.rniCons(
 					this.slotNamesFunP, this.rEngine.rniCons(
-							classP, this.p_NULL,
-							this.p_xSymbol, false ),
+							classP, this.NULL_P,
+							this.x_SymP, false ),
 					0, true ),
 					0 );
 			if (slotNamesP != 0) {
@@ -1313,9 +1315,9 @@ final class JRIServerRni {
 		if (objP != 0) {
 			final String className1;
 			final long classP;
-			this.rniEvalTempAssigned = true;
-			if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)
-					&& (classP = this.rEngine.rniEval(this.p_evalTemp_classExpr, this.p_RJTempEnv)) != 0
+			this.rniTempEvalAssigned = true;
+			if (this.rEngine.rniAssignVarBySym(this.x_SymP, objP, this.rniTempEnvP)
+					&& (classP = this.rEngine.rniEval(this.rniTempEvalClassExprP, this.rniTempEnvP)) != 0
 					&& (className1 = this.rEngine.rniGetString(classP)) != null ) {
 				return className1;
 			}
@@ -1324,12 +1326,12 @@ final class JRIServerRni {
 	}
 	
 	private String[] getNames(final long objP) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.p_namesSymbol);
+		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.names_SymP);
 		return (namesP != 0) ? this.rEngine.rniGetStringArray(namesP) : null;
 	}
 	
 	private SimpleRListImpl<RCharacterStore> getDimNames(final long objP, final int length) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.p_dimNamesSymbol);
+		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.dimnamesSymP);
 		if (this.rEngine.rniExpType(namesP) == REXP.VECSXP) {
 			final long[] names1P = this.rEngine.rniGetVector(namesP);
 			if (names1P != null && names1P.length == length) {
@@ -1350,18 +1352,18 @@ final class JRIServerRni {
 	}
 	
 	private String[] getRowNames(final long objP) {
-		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.p_rowNamesSymbol);
+		final long namesP = this.rEngine.rniGetAttrBySym(objP, this.rowNamesSymP);
 		return (namesP != 0) ? this.rEngine.rniGetStringArray(namesP) : null;
 	}
 	
 	private double[] getComplexRe(final long objP) {
 		final double[] num;
 		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(
-				this.p_ReFun, this.rEngine.rniCons(
-						objP, this.p_NULL,
-						this.p_zSymbol, false ),
+				this.ReFunP, this.rEngine.rniCons(
+						objP, this.NULL_P,
+						this.z_SymP, false ),
 				0, true ),
-				this.p_BaseEnv );
+				this.Base_EnvP );
 		if (numP == 0) {
 			if (this.rniInterrupted) {
 				throw new CancellationException();
@@ -1377,11 +1379,11 @@ final class JRIServerRni {
 	private double[] getComplexIm(final long objP) {
 		final double[] num;
 		final long numP = this.rEngine.rniEval(this.rEngine.rniCons(
-				this.p_ImFun, this.rEngine.rniCons(
-						objP, this.p_NULL,
-						this.p_zSymbol, false ),
+				this.ImFunP, this.rEngine.rniCons(
+						objP, this.NULL_P,
+						this.z_SymP, false ),
 				0, true ),
-				this.p_BaseEnv );
+				this.Base_EnvP );
 		if (numP == 0) {
 			if (this.rniInterrupted) {
 				throw new CancellationException();
@@ -1399,10 +1401,10 @@ final class JRIServerRni {
 		final long argsP;
 		if ((argsP = this.rEngine.rniEval(this.rEngine.rniCons(
 						this.getFHeaderFunP, this.rEngine.rniCons(
-								cloP, this.p_NULL,
-								this.p_xSymbol, false ),
+								cloP, this.NULL_P,
+								this.x_SymP, false ),
 						0, true ),
-						this.p_BaseEnv )) != 0
+						this.Base_EnvP )) != 0
 				&& (args = this.rEngine.rniGetString(argsP)) != null
 				&& args.length() >= 11 ) { // "function ()".length
 //			return args.substring(9,);
@@ -1418,10 +1420,10 @@ final class JRIServerRni {
 		}
 		final long p= this.rEngine.rniEval(this.rEngine.rniCons(
 						this.getNamespaceFunP, this.rEngine.rniCons(
-								this.rEngine.rniPutString(nsName), this.p_NULL,
-								this.p_nameSymbol, false ),
+								this.rEngine.rniPutString(nsName), this.NULL_P,
+								this.name_SymP, false ),
 						0, true ),
-						this.p_BaseEnv );
+						this.Base_EnvP );
 		if (p != 0) {
 			return p;
 		}
@@ -1449,10 +1451,10 @@ final class JRIServerRni {
 		try {
 			final long namesStrP= this.rEngine.rniEval(this.rEngine.rniCons(
 							this.getNamespaceExportedNamesFunP, this.rEngine.rniCons(
-									envP, this.p_NULL,
-									this.nsSymbolP, false ),
+									envP, this.NULL_P,
+									this.ns_SymP, false ),
 							0, true ),
-							this.p_BaseEnv );
+							this.Base_EnvP );
 			if (namesStrP != 0) {
 				protect(namesStrP);
 				final String[] names= this.rEngine.rniGetStringArray(namesStrP);
@@ -1465,11 +1467,11 @@ final class JRIServerRni {
 						final long itemP= this.rEngine.rniEval(this.rEngine.rniCons(
 								this.getNamespaceExportedValueFunP, this.rEngine.rniCons(
 										envP, this.rEngine.rniCons(
-												this.rEngine.rniPutStringByStr(namesStrP, i), this.p_NULL,
-												this.p_nameSymbol, false ),
-										this.nsSymbolP, false ),
+												this.rEngine.rniPutStringByStr(namesStrP, i), this.NULL_P,
+												this.name_SymP, false ),
+										this.ns_SymP, false ),
 								0, true ),
-								this.p_BaseEnv );
+								this.Base_EnvP );
 						if (itemP != 0) {
 							protect(itemP);
 							itemObjects[i]= createDataObject(itemP, flags, EVAL_MODE_DEFAULT);
@@ -1495,20 +1497,20 @@ final class JRIServerRni {
 	
 	public long seqLength(final double length) {
 		return this.rEngine.rniEval(this.rEngine.rniCons(
-				this.p_seqIntFun, this.rEngine.rniCons(
-						this.rEngine.rniPutDoubleArray(new double[] { length }), this.p_NULL,
-						this.p_lengthOutSymbol, false ),
+				this.seqIntFunP, this.rEngine.rniCons(
+						this.rEngine.rniPutDoubleArray(new double[] { length }), this.NULL_P,
+						this.lengthOut_SymP, false ),
 				0, true ),
-				this.p_BaseEnv );
+				this.Base_EnvP );
 	}
 	
 	
 	public String getSourceLine(final long objP) {
-		this.rniEvalTempAssigned = true;
-		if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)) {
+		this.rniTempEvalAssigned = true;
+		if (this.rEngine.rniAssignVarBySym(this.x_SymP, objP, this.rniTempEnvP)) {
 			final String line;
 			final long lineP;
-			if ((lineP = this.rEngine.rniEval(this.deparseLineXCallP, this.p_RJTempEnv)) != 0
+			if ((lineP = this.rEngine.rniEval(this.deparseLineXCallP, this.rniTempEnvP)) != 0
 					&& (line = this.rEngine.rniGetString(lineP)) != null
 					&& line.length() > 0 ) {
 	//			return args.substring(9,);
@@ -1519,10 +1521,10 @@ final class JRIServerRni {
 	}
 	
 	public String[] getSourceLines(final long objP) {
-		this.rniEvalTempAssigned = true;
-		if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)) {
+		this.rniTempEvalAssigned = true;
+		if (this.rEngine.rniAssignVarBySym(this.x_SymP, objP, this.rniTempEnvP)) {
 			final long linesP;
-			if ((linesP = this.rEngine.rniEval(this.deparseLinesXCallP, this.p_RJTempEnv)) != 0) {
+			if ((linesP = this.rEngine.rniEval(this.deparseLinesXCallP, this.rniTempEnvP)) != 0) {
 				return this.rEngine.rniGetStringArray(linesP);
 			}
 		}
@@ -1534,19 +1536,19 @@ final class JRIServerRni {
 			final boolean loadClassName) {
 		final byte type;
 		String envName;
-		if (objP == this.p_BaseEnv) {
+		if (objP == this.Base_EnvP) {
 			type= REnvironment.ENVTYPE_BASE;
 			envName= REnvironment.ENVNAME_BASE;
 		}
-		else if (objP == this.p_AutoloadEnv) {
+		else if (objP == this.Autoload_EnvP) {
 			type= REnvironment.ENVTYPE_AUTOLOADS;
 			envName= REnvironment.ENVNAME_AUTOLOADS;
 		}
-		else if (objP == this.p_GlobalEnv) {
+		else if (objP == this.Global_EnvP) {
 			type= REnvironment.ENVTYPE_GLOBAL;
 			envName= REnvironment.ENVNAME_GLOBAL;
 		}
-		else if (objP == this.p_EmptyEnv) {
+		else if (objP == this.Empty_EnvP) {
 			type= REnvironment.ENVTYPE_EMTPY;
 			envName= REnvironment.ENVNAME_EMPTY;
 		}
@@ -1556,7 +1558,7 @@ final class JRIServerRni {
 				type= REnvironment.ENVTYPE_NAMESPACE;
 			}
 			else {
-				envName= this.rEngine.rniGetAttrStringBySym(objP, this.p_nameSymbol);
+				envName= this.rEngine.rniGetAttrStringBySym(objP, this.name_SymP);
 				if (envName != null && envName.startsWith("package:")) {
 					type= REnvironment.ENVTYPE_PACKAGE;
 				}
@@ -1571,7 +1573,7 @@ final class JRIServerRni {
 	}
 	
 	public void addAllEnvs(final List<Long> envs, long envP) {
-		while (envP != 0 && envP != this.p_EmptyEnv) {
+		while (envP != 0 && envP != this.Empty_EnvP) {
 			final Long handler= Long.valueOf(envP);
 			if (envs.contains(handler)) {
 				return;

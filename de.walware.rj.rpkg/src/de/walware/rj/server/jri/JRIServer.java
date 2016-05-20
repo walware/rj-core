@@ -1538,12 +1538,12 @@ public final class JRIServer extends RJ
 		final long symbolP= this.rEngine.rniInstallSymbol(name);
 		long p= this.rEngine.rniGetVarBySym(symbolP, envirP, Rengine.FLAG_UNBOUND_P);
 		if (inherits) {
-			while (p == this.rni.rUnboundP && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
-					&& envirP != this.rni.p_EmptyEnv ) {
+			while (p == this.rni.Unbound_P && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
+					&& envirP != this.rni.Empty_EnvP ) {
 				p= this.rEngine.rniGetVarBySym(symbolP, envirP, Rengine.FLAG_UNBOUND_P);
 			}
 		}
-		if (p == this.rni.rUnboundP) {
+		if (p == this.rni.Unbound_P) {
 			return null;
 		}
 		if (p != 0) {
@@ -1565,9 +1565,9 @@ public final class JRIServer extends RJ
 		}
 		long exprP= this.rni.protect(this.rni.resolveExpression(expression));
 		exprP= this.rEngine.rniCons(
-				this.rni.p_AssignSymbol, this.rEngine.rniCons(
+				this.rni.Assign_SymP, this.rEngine.rniCons(
 						exprP, this.rEngine.rniCons(
-								objP, this.rni.p_NULL,
+								objP, this.rni.NULL_P,
 								0, false ),
 						0, false ),
 				0, true );
@@ -1760,7 +1760,7 @@ public final class JRIServer extends RJ
 					Thread.sleep(10);
 				}
 				catch (final InterruptedException e) {}
-				this.rEngine.rniEval(this.rni.p_evalDummyExpr, 0);
+				this.rEngine.rniEval(this.rni.evalDummy_ExprP, 0);
 				this.rni.rniInterrupted = false;
 			}
 		}
@@ -1813,7 +1813,7 @@ public final class JRIServer extends RJ
 			CMD_OP: switch (cmd.getOp()) {
 			case SrvCmdItem.OP_CLEAR_SESSION:
 				this.rni.evalExpr(this.rni.resolveExpression("rj:::tmp.clear()"),
-						this.rni.p_GlobalEnv, CODE_SRV_EVAL_DATA);
+						this.rni.Global_EnvP, CODE_SRV_EVAL_DATA);
 				break CMD_OP;
 			}
 		}
