@@ -229,7 +229,7 @@ final class TracepointManager {
 				}
 				final long funP;
 				final long nameSymP= this.rEngine.rniInstallSymbolByStr(namesStrP, namesIdx);
-				{	long p= this.rEngine.rniGetVarBySym(env.longValue(), nameSymP, 0);
+				{	long p= this.rEngine.rniGetVarBySym(nameSymP, env.longValue(), 0);
 					if (p == 0) {
 						continue;
 					}
@@ -267,7 +267,7 @@ final class TracepointManager {
 						for (int signarturesIdx= 0; signarturesIdx < signatures.length; signarturesIdx++) {
 							try {
 								final long methodP;
-								{	long p= this.rEngine.rniGetVar(nameEnvP, signatures[signarturesIdx]);
+								{	long p= this.rEngine.rniGetVar(signatures[signarturesIdx], nameEnvP);
 									int type= this.rEngine.rniExpType(p);
 									if (type == REXP.PROMSXP) {
 										p= this.rEngine.rniGetPromise(p, 1);
@@ -373,7 +373,7 @@ final class TracepointManager {
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}
-		nameEnvP= this.rEngine.rniGetVarBySym(nameEnvP, this.rni.p_DotAllMTable, 0);
+		nameEnvP= this.rEngine.rniGetVarBySym(this.rni.p_DotAllMTable, nameEnvP, 0);
 		if (nameEnvP == 0 || this.rEngine.rniExpType(nameEnvP) != REXP.ENVSXP) {
 			return 0;
 		}

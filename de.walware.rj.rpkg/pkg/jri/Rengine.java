@@ -576,11 +576,11 @@ public class Rengine extends Thread {
 	/** RNI:
 	 * Get variable in an environment.
 	 * 
-	 * @param rhoP the environment, a reference to a ENVSXP
 	 * @param name the symbol name of the variable
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
 	 * @return reference to the value or 0 if not found
 	 **/
-	public synchronized native long rniGetVar(long rhoP, String name);
+	public synchronized native long rniGetVar(String name, long rhoP);
 	
 	/** RNI:
 	 * Get variable in an environment.
@@ -588,12 +588,12 @@ public class Rengine extends Thread {
 	 * Supported flags:
 	 * unbound ({@link #FLAG_UNBOUND_0}, {@link #FLAG_UNBOUND_P})
 	 * 
-	 * @param rhoP the environment, a reference to a ENVSXP
 	 * @param nameP the symbol name of the variable, a reference to a SYMSXP
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
 	 * @param flags flags
 	 * @return reference to the value or 0 if not found
 	 **/
-	public synchronized native long rniGetVarBySym(long rhoP, long nameP, int flags);
+	public synchronized native long rniGetVarBySym(long nameP, long rhoP, int flags);
 	
 	/** RNI: return a special object reference. Note that all such references are constants valid for the entire session and cannot be protected/preserved (they are persistent already).
 		@since API 1.9, JRI 0.5
@@ -640,15 +640,25 @@ public class Rengine extends Thread {
 	 */
 	public native int rniSetProcessJEvents(int flag);
 	
-    /** RNI: assign a value to an environment
-	@param name name
-	@param exp value
-	@param rho environment (use 0 for the global environment)
-	@return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
-        @since API 1.10, JRI 0.5-1 (existed before but returned <code>void</code>)
-    */
-    public synchronized native boolean rniAssign(String name, long exp, long rho);
-    
+	/** RNI:
+	 * Assigns a value to an environment
+	 * @param name the symbol name of the variable
+	 * @param valP the value
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
+	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
+	 * @since API 1.10, JRI 0.5-1 (existed before but returned <code>void</code>)
+	 */
+	public synchronized native boolean rniAssign(String name, long valP, long rhoP);
+	
+	/** RNI:
+	 * Assigns a value to an environment
+	 * @param nameP the symbol name of the variable, a reference to a SYMSXP
+	 * @param valP the value
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
+	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
+	 */
+	public synchronized native boolean rniAssignVarBySym(long nameP, long valP, long rhoP);
+	
     /** RNI: run the main loop.<br> <i>Note:</i> this is an internal method and it doesn't return until the loop exits. Don't use directly! */
     public native void rniRunMainLoop();
     

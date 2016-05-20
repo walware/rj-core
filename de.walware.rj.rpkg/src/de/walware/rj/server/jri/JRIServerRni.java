@@ -168,7 +168,6 @@ final class JRIServerRni {
 	
 	public final long p_evalTryCatch_errorExpr;
 	public final long p_evalTemp_classExpr;
-	public final long p_evalTemp_rmExpr;
 	public final long p_evalDummyExpr;
 	
 	private int rniProtectedCounter;
@@ -407,8 +406,6 @@ final class JRIServerRni {
 			
 			this.p_evalTemp_classExpr = this.rEngine.rniParse("class(x);", 1);
 			this.rEngine.rniPreserve(this.p_evalTemp_classExpr);
-			this.p_evalTemp_rmExpr = this.rEngine.rniParse("rm(x);", 1);
-			this.rEngine.rniPreserve(this.p_evalTemp_rmExpr);
 			
 			this.p_evalDummyExpr = this.rEngine.rniParse("1+1;", 1);
 			this.rEngine.rniPreserve(this.p_evalDummyExpr);
@@ -503,7 +500,7 @@ final class JRIServerRni {
 		this.maxListsLength = this.maxListsLengthStack[this.stackPos];
 		
 		if (this.rniEvalTempAssigned) {
-			this.rEngine.rniEval(this.p_evalTemp_rmExpr, this.p_RJTempEnv);
+			this.rEngine.rniAssignVarBySym(this.p_xSymbol, this.p_NULL, this.p_RJTempEnv);
 			this.rniEvalTempAssigned = false;
 		}
 	}
@@ -1159,7 +1156,7 @@ final class JRIServerRni {
 							throw new CancellationException();
 						}
 						final long nameSymP= this.rEngine.rniInstallSymbolByStr(namesStrP, i);
-						final long itemP= this.rEngine.rniGetVarBySym(objP, nameSymP, Rengine.FLAG_UNBOUND_P);
+						final long itemP= this.rEngine.rniGetVarBySym(nameSymP, objP, Rengine.FLAG_UNBOUND_P);
 						if (itemP != 0) {
 							protect(itemP);
 							itemObjects[i] = createDataObject(itemP, flags, EVAL_MODE_DEFAULT);
@@ -1317,7 +1314,7 @@ final class JRIServerRni {
 			final String className1;
 			final long classP;
 			this.rniEvalTempAssigned = true;
-			if (this.rEngine.rniAssign("x", objP, this.p_RJTempEnv)
+			if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)
 					&& (classP = this.rEngine.rniEval(this.p_evalTemp_classExpr, this.p_RJTempEnv)) != 0
 					&& (className1 = this.rEngine.rniGetString(classP)) != null ) {
 				return className1;
@@ -1508,7 +1505,7 @@ final class JRIServerRni {
 	
 	public String getSourceLine(final long objP) {
 		this.rniEvalTempAssigned = true;
-		if (this.rEngine.rniAssign("x", objP, this.p_RJTempEnv)) {
+		if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)) {
 			final String line;
 			final long lineP;
 			if ((lineP = this.rEngine.rniEval(this.deparseLineXCallP, this.p_RJTempEnv)) != 0
@@ -1523,7 +1520,7 @@ final class JRIServerRni {
 	
 	public String[] getSourceLines(final long objP) {
 		this.rniEvalTempAssigned = true;
-		if (this.rEngine.rniAssign("x", objP, this.p_RJTempEnv)) {
+		if (this.rEngine.rniAssignVarBySym(this.p_xSymbol, objP, this.p_RJTempEnv)) {
 			final long linesP;
 			if ((linesP = this.rEngine.rniEval(this.deparseLinesXCallP, this.p_RJTempEnv)) != 0) {
 				return this.rEngine.rniGetStringArray(linesP);

@@ -1536,11 +1536,11 @@ public final class JRIServer extends RJ
 	
 	private long[] rniFind(final String name, long envirP, final boolean inherits) throws RjsException {
 		final long symbolP= this.rEngine.rniInstallSymbol(name);
-		long p= this.rEngine.rniGetVarBySym(envirP, symbolP, Rengine.FLAG_UNBOUND_P);
+		long p= this.rEngine.rniGetVarBySym(symbolP, envirP, Rengine.FLAG_UNBOUND_P);
 		if (inherits) {
 			while (p == this.rni.rUnboundP && (envirP= this.rEngine.rniParentEnv(envirP)) != 0
 					&& envirP != this.rni.p_EmptyEnv ) {
-				p= this.rEngine.rniGetVarBySym(envirP, symbolP, Rengine.FLAG_UNBOUND_P);
+				p= this.rEngine.rniGetVarBySym(symbolP, envirP, Rengine.FLAG_UNBOUND_P);
 			}
 		}
 		if (p == this.rni.rUnboundP) {
