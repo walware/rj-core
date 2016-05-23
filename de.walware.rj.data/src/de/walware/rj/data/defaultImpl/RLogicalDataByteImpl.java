@@ -99,8 +99,7 @@ public class RLogicalDataByteImpl extends AbstractLogicalData
 	
 	public RLogicalDataByteImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
-		this.boolValues = new byte[length];
-		io.readByteData(this.boolValues, length);
+		this.boolValues = io.readByteData(new byte[length], length);
 	}
 	
 	@Override

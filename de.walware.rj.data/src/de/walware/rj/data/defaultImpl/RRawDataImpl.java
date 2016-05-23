@@ -54,8 +54,7 @@ public class RRawDataImpl extends AbstractRawData
 	
 	public RRawDataImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
-		this.byteValues = new byte[length];
-		io.readByteData(this.byteValues, length);
+		this.byteValues = io.readByteData(new byte[length], length);
 	}
 	
 	@Override

@@ -474,30 +474,30 @@ public final class RJIO {
 		return this.in.readInt();
 	}
 	
-	public void readIntData(final int[] array, final int length) throws IOException {
+	public int[] readIntData(final int[] array, final int length) throws IOException {
 		final ObjectInput in = this.in;
 		if (length <= 256) {
 			switch (length) {
 			case 0:
-				return;
+				return array;
 			case 1:
 				array[0] = in.readInt();
-				return;
+				return array;
 			case 2:
 				array[0] = in.readInt();
 				array[1] = in.readInt();
-				return;
+				return array;
 			case 3:
 				array[0] = in.readInt();
 				array[1] = in.readInt();
 				array[2] = in.readInt();
-				return;
+				return array;
 			case 4:
 				array[0] = in.readInt();
 				array[1] = in.readInt();
 				array[2] = in.readInt();
 				array[3] = in.readInt();
-				return;
+				return array;
 			default:
 				final int bn = length << 2;
 				in.readFully(this.ba, 0, bn);
@@ -508,14 +508,14 @@ public final class RJIO {
 							((this.ba[ib+2] & 0xff) << 8) |
 							((this.ba[ib+3] & 0xff)) );
 				}
-				return;
+				return array;
 			}
 		}
 		else if (length <= IB_LENGTH) {
 			readFullyBB((length << 2));
 			this.ib.clear();
 			this.ib.get(array, 0, length);
-			return;
+			return array;
 		}
 		else {
 			int ir = 0;
@@ -566,7 +566,7 @@ public final class RJIO {
 				this.ib.clear();
 				this.ib.get(array, ir, bToComplete >>> 2);
 			}
-			return;
+			return array;
 		}
 	}
 	
@@ -733,19 +733,19 @@ public final class RJIO {
 		return this.in.readDouble();
 	}
 	
-	public void readDoubleData(final double[] array, final int length) throws IOException {
+	public double[] readDoubleData(final double[] array, final int length) throws IOException {
 		final ObjectInput in = this.in;
 		if (length <= 32) {
 			switch (length) {
 			case 0:
-				return;
+				return array;
 			case 1:
 				array[0] = Double.longBitsToDouble(in.readLong());
-				return;
+				return array;
 			case 2:
 				array[0] = Double.longBitsToDouble(in.readLong());
 				array[1] = Double.longBitsToDouble(in.readLong());
-				return;
+				return array;
 			default:
 				final int bn = length << 3;
 				in.readFully(this.ba, 0, bn);
@@ -760,14 +760,14 @@ public final class RJIO {
 							((this.ba[db+6] & 0xff) << 8) |
 							((this.ba[db+7] & 0xff)) );
 				}
-				return;
+				return array;
 			}
 		}
 		else if (length <= DB_LENGTH) {
 			readFullyBB((length << 3));
 			this.db.clear();
 			this.db.get(array, 0, length);
-			return;
+			return array;
 		}
 		else {
 			int dr = 0;
@@ -855,41 +855,37 @@ public final class RJIO {
 				this.db.clear();
 				this.db.get(array, dr, bToComplete >>> 3);
 			}
-			return;
+			return array;
 		}
 	}
 	
 	public double[] readDoubleArray() throws IOException {
-		final double[] array = new double[this.temp = this.in.readInt()];
-		readDoubleData(array, array.length);
-		return array;
+		final int l= this.temp = this.in.readInt();
+		return readDoubleData(new double[l], l);
 	}
 	
 	public double[] readDoubleArray2() throws IOException {
-		final double[] array = new double[this.temp];
-		readDoubleData(array, array.length);
-		return array;
+		final int l= this.temp;
+		return readDoubleData(new double[l], l);
 	}
 	
 	public float readFloat() throws IOException {
 		return this.in.readFloat();
 	}
 	
-	public void readByteData(final byte[] array, final int length) throws IOException {
+	public byte[] readByteData(final byte[] array, final int length) throws IOException {
 		this.in.readFully(array, 0, length);
-		return;
+		return array;
 	}
 	
 	public byte[] readByteArray() throws IOException {
-		final byte[] array = new byte[this.temp = this.in.readInt()];
-		readByteData(array, array.length);
-		return array;
+		final int l= this.temp = this.in.readInt();
+		return readByteData(new byte[l], l);
 	}
 	
 	public byte[] readByteArray2() throws IOException {
-		final byte[] array = new byte[this.temp];
-		readByteData(array, array.length);
-		return array;
+		final int l= this.temp;
+		return readByteData(new byte[l], l);
 	}
 	
 	private String readString(final int cn, final char[] ca, final ObjectInput in) throws IOException {

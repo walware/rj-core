@@ -65,8 +65,7 @@ public class RFactorDataImpl extends AbstractFactorData
 	public RFactorDataImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
 		this.isOrdered = io.readBoolean();
-		this.codes = new int[length];
-		io.readIntData(this.codes, length);
+		this.codes = io.readIntData(new int[length], length);
 		this.codeLabels = readLabels(io, io.readInt());
 	}
 	protected RCharacterDataImpl readLabels(final RJIO io, final int l) throws IOException {

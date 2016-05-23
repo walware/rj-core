@@ -74,10 +74,8 @@ public class RComplexDataBImpl extends AbstractComplexData
 	
 	public RComplexDataBImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
-		this.realValues = new double[length];
-		this.imaginaryValues = new double[length];
-		io.readDoubleData(this.realValues, length);
-		io.readDoubleData(this.imaginaryValues, length);
+		this.realValues = io.readDoubleData(new double[length], length);
+		this.imaginaryValues = io.readDoubleData(new double[length], length);
 	}
 	
 	@Override

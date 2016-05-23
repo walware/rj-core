@@ -68,8 +68,7 @@ public class RIntegerDataImpl extends AbstractIntegerData
 	
 	public RIntegerDataImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
-		this.intValues = new int[length];
-		io.readIntData(this.intValues, length);
+		this.intValues = io.readIntData(new int[length], length);
 	}
 	
 	@Override

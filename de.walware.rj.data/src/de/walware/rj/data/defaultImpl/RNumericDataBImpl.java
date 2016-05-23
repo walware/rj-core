@@ -63,8 +63,7 @@ public class RNumericDataBImpl extends AbstractNumericData
 	
 	public RNumericDataBImpl(final RJIO io, final int length) throws IOException {
 		this.length = length;
-		this.realValues = new double[length];
-		io.readDoubleData(this.realValues, length);
+		this.realValues = io.readDoubleData(new double[length], length);
 	}
 	
 	@Override
