@@ -76,6 +76,14 @@ tmp.remove <- function(name, envir = .rj.tmp) {
 	return (invisible())
 }
 
+tmp.removeAll <- function(id, envir = .rj.tmp) {
+	names <- ls(envir= envir, pattern= paste0("^\\Q", id, "\\E"))
+	if (length(names)) {
+		rm(list= names, envir= envir, inherits= FALSE)
+	}
+	return (invisible())
+}
+
 tmp.setReverseIndex <- function(name, index, len = NA, envir = .rj.tmp) {
 	index = get(index, envir= envir, inherits= FALSE)
 	if (is.na(len)) {
