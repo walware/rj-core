@@ -79,7 +79,7 @@ public class RMissing implements RObject {
 	
 	@Override
 	public String toString() {
-		return "RObject type=MISSING";
+		return "RObject type=RMissing";
 	}
 	
 }

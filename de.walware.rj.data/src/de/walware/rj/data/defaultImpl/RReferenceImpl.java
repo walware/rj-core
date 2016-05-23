@@ -17,6 +17,7 @@ package de.walware.rj.data.defaultImpl;
 
 import java.io.IOException;
 
+import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RList;
 import de.walware.rj.data.RObject;
@@ -108,6 +109,14 @@ public class RReferenceImpl implements RReference, ExternalizableRObject {
 		return (this == obj
 				|| (obj instanceof RReference
 						&& this.handle == ((RReference) obj).getHandle() ));
+	}
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append("RObjectReference type= ").append(RDataUtil.getObjectTypeName(this.type));
+		sb.append(", class= ").append(getRClassName());
+		return sb.toString();
 	}
 	
 }

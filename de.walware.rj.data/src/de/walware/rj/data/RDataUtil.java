@@ -111,6 +111,8 @@ public class RDataUtil {
 			return "RS4Object";
 		case RObject.TYPE_ENV:
 			return "REnvironment";
+		case RObject.TYPE_LANGUAGE:
+			return "RLanguage";
 		case RObject.TYPE_FUNCTION:
 			return "RFunction";
 		case RObject.TYPE_REFERENCE:
@@ -118,9 +120,9 @@ public class RDataUtil {
 		case RObject.TYPE_OTHER:
 			return "<other>";
 		case RObject.TYPE_MISSING:
-			return "<missing>";
+			return "RMissing";
 		case RObject.TYPE_PROMISE:
-			return "<promise>";
+			return "RPromise";
 		default:
 			return "<unkown>";
 		}

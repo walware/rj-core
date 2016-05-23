@@ -74,7 +74,7 @@ public class RNull implements RObject {
 	
 	@Override
 	public String toString() {
-		return "RObject type=NULL";
+		return "RObject type=RNull";
 	}
 	
 }

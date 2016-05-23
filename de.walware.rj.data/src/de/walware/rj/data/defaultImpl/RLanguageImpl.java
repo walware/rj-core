@@ -125,4 +125,23 @@ public class RLanguageImpl extends AbstractRObject
 		return null;
 	}
 	
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append("RObject type=RLanguage, class=").append(getRClassName());
+		if (this.source != null) {
+			sb.append("\n\tsource: ");
+			final int idx= this.source.indexOf('\n');
+			if (idx >= 0) {
+				sb.append(this.source.substring(0, idx));
+				sb.append(" ...");
+			}
+			else {
+				sb.append(this.source);
+			}
+		}
+		return sb.toString();
+	}
+	
 }

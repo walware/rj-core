@@ -754,7 +754,7 @@ final class JRIServerRni {
 			break;
 		}
 		throw new RjsException((CODE_DATA_ASSIGN_DATA | 0x7),
-				"The assignment for R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " is not yet supported." );
+				"The instantiation of R objects of type " + RDataUtil.getObjectTypeName(obj.getRObjectType()) + " in R is not yet supported." );
 	}
 	
 	public long assignDataStore(final RStore<?> data) throws RNullPointerException {

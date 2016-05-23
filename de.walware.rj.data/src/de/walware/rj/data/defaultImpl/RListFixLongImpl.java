@@ -213,7 +213,7 @@ public class RListFixLongImpl extends AbstractRObject
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("RObject type=list, class=").append(getRClassName());
+		sb.append("RObject type=RList, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(this.length);
 		if (this.components != null) {
 			sb.append("\n\tdata: ");

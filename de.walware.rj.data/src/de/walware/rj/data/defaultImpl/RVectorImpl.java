@@ -179,7 +179,7 @@ public class RVectorImpl<TData extends RStore<?>> extends AbstractRObject
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("RObject type=vector, class=").append(getRClassName());
+		sb.append("RObject type=RVector, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(getLength());
 		sb.append("\n\tdata: ");
 		sb.append(this.data.toString());

@@ -264,7 +264,7 @@ public class REnvironmentImpl extends AbstractRObject
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("RObject type=environment, class=").append(getRClassName());
+		sb.append("RObject type=REnvironment, class=").append(getRClassName());
 		sb.append("\n\tlength=").append(this.length);
 		if (this.components != null) {
 			sb.append("\n\tdata: ");
