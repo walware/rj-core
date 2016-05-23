@@ -154,10 +154,10 @@ final class TracepointManager {
 	
 	private final long breakpointTmplP;
 	private final long browserExprP;
-	private final long getTraceExprEvalEnvCallP;
+	private final long getTraceExprEnvCallP;
 	
 	
-	public TracepointManager(final JRIServerDbg dbg, final JRIServerRni rni) {
+	public TracepointManager(final JRIServerDbg dbg, final JRIServerRni rni) throws RjsException {
 		this.dbg= dbg;
 		this.rEngine= rni.getREngine();
 		this.rni= rni;
@@ -166,33 +166,27 @@ final class TracepointManager {
 		this.untraceSymP= this.rEngine.rniInstallSymbol("untrace"); //$NON-NLS-1$
 		this.AllMTableSymP= this.rEngine.rniInstallSymbol(".AllMTable"); //$NON-NLS-1$
 		
-		this.editFArgsP= this.rEngine.rniCons(
+		this.editFArgsP= this.rni.checkAndPreserve(this.rEngine.rniCons(
 				this.rni.MissingArg_P, this.rEngine.rniCons(
 						this.rni.MissingArg_P, this.rni.NULL_P,
 						this.rni.Ellipsis_SymP, false ),
-				rni.fdef_SymP, false );
-		this.rEngine.rniPreserve(this.editFArgsP);
+				rni.fdef_SymP, false ));
 		
-		this.stepNextValueP= this.rEngine.rniPutString("browser:n"); //$NON-NLS-1$
-		this.rEngine.rniPreserve(this.stepNextValueP);
+		this.stepNextValueP= this.rni.checkAndPreserve(this.rEngine.rniPutString("browser:n")); //$NON-NLS-1$
 		
-		this.stepSrcrefTmplP= this.rEngine.rniPutIntArray(NA_SRCREF);
-		this.rEngine.rniPreserve(this.stepSrcrefTmplP);
+		this.stepSrcrefTmplP= this.rni.checkAndPreserve(this.rEngine.rniPutIntArray(NA_SRCREF));
 		this.rEngine.rniSetAttrBySym(this.stepSrcrefTmplP, this.rni.what_SymP, this.stepNextValueP);
 		
-		this.breakpointTmplP= this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
-				"{ if (\"rj\" %in% loadedNamespaces()) rj:::.breakpoint() }", 1 ), //$NON-NLS-1$
-				0 );
-		this.rEngine.rniPreserve(this.breakpointTmplP);
+		this.breakpointTmplP= this.rni.checkAndPreserve(this.rEngine.rniGetVectorElt(
+				this.rEngine.rniParse(
+						"{ if (\"rj\" %in% loadedNamespaces()) rj:::.breakpoint() }", 1 ), //$NON-NLS-1$
+				0 ));
 		
-		this.browserExprP= this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
+		this.browserExprP= this.rni.checkAndPreserve(this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
 				"{ browser(skipCalls= 3L) }", 1 ), //$NON-NLS-1$
-				0 );
-		this.rEngine.rniPreserve(this.browserExprP);
+				0 ));
 		
-		this.getTraceExprEvalEnvCallP= this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
-				"base::new.env(parent= base::sys.frame(-1))", 1), 0); //$NON-NLS-1$
-		this.rEngine.rniPreserve(this.getTraceExprEvalEnvCallP);
+		this.getTraceExprEnvCallP= this.rni.checkAndPreserve(this.dbg.createSysFrameCall(-1));
 	}
 	
 	
@@ -224,20 +218,28 @@ final class TracepointManager {
 		this.dbg.addAllStackEnvs(envTodo);
 		
 		while (!envTodo.isEmpty()) {
-			final Long env= envTodo.remove(0);
-			envDone.add(env);
+			final long envP;
+			{	final Long env= envTodo.remove(0);
+				envDone.add(env);
+				envP= env.longValue();
+			}
+			if (this.rni.isInternEnv(envP)) {
+				continue;
+			}
+			
 			final int savedProtected= this.rni.saveProtected();
-			final long namesStrP= this.rni.protect(this.rEngine.rniListEnv(env.longValue(), true));
+			final long namesStrP= this.rni.protect(this.rEngine.rniListEnv(envP, true));
 			final String[] names= this.rEngine.rniGetStringArray(namesStrP);
 			for (int namesIdx= 0; namesIdx < names.length; namesIdx++) {
 				final String name= names[namesIdx];
-				if (this.rni.Base_EnvP == env.longValue()
-						&& name.equals(".Last.value")) { //$NON-NLS-1$
+				if (name == null
+						|| ((envP == this.rni.Base_EnvP || envP == this.rni.BaseNamespace_EnvP)
+								&& name.equals(".Last.value") )) { //$NON-NLS-1$
 					continue;
 				}
 				final long funP;
 				final long nameSymP= this.rEngine.rniInstallSymbolByStr(namesStrP, namesIdx);
-				{	long p= this.rEngine.rniGetVarBySym(nameSymP, env.longValue(), 0);
+				{	long p= this.rEngine.rniGetVarBySym(nameSymP, envP, 0);
 					if (p == 0) {
 						continue;
 					}
@@ -266,7 +268,7 @@ final class TracepointManager {
 				// method
 				List<FunInfo> methodInfos= null;
 				try {
-					final long nameEnvP= checkGeneric(orgFunP, nameStrP, env.longValue());
+					final long nameEnvP= checkGeneric(orgFunP, nameStrP, envP);
 					
 					if (nameEnvP != 0) {
 						final String[] signatures= this.rEngine.rniGetStringArray(
@@ -322,7 +324,7 @@ final class TracepointManager {
 							catch (final Exception e) {
 								final LogRecord record= new LogRecord(Level.SEVERE,
 										"Method check failed for function ''{0}({1})'' in ''0x{2}''.");
-								record.setParameters(new Object[] { name, signatures[signarturesIdx], Long.toHexString(env.longValue()) });
+								record.setParameters(new Object[] { name, signatures[signarturesIdx], Long.toHexString(envP) });
 								record.setThrown(e);
 								JRIServerErrors.LOGGER.log(record);
 							}
@@ -332,7 +334,7 @@ final class TracepointManager {
 				catch (final Exception e) {
 					final LogRecord record= new LogRecord(Level.SEVERE,
 							"Generic check failed for function ''{0}'' in ''0x{1}''.");
-					record.setParameters(new Object[] { name, Long.toHexString(env.longValue()) });
+					record.setParameters(new Object[] { name, Long.toHexString(envP) });
 					record.setThrown(e);
 					JRIServerErrors.LOGGER.log(record);
 				}
@@ -340,7 +342,7 @@ final class TracepointManager {
 				for (int elementIdx= 0; elementIdx < elementList.size(); elementIdx++) {
 					if (commonInfo != null && commonInfo.done[0] < FunInfo.DONE_SET) {
 						final int funSet= trySetTracepoints(elementList.get(elementIdx),
-								commonInfo, name, nameStrP, env.longValue());
+								commonInfo, name, nameStrP, envP);
 						if (funSet > resultCodes[elementIdx]) {
 							resultCodes[elementIdx]= funSet;
 							continue;
@@ -351,7 +353,7 @@ final class TracepointManager {
 							final FunInfo methodInfo= methodInfos.get(methodIdx);
 							if (methodInfo.done[0] < FunInfo.DONE_SET) {
 								final int methodSet= trySetTracepoints(elementList.get(elementIdx),
-										methodInfo, name, nameStrP, env.longValue());
+										methodInfo, name, nameStrP, envP);
 								if (methodSet > resultCodes[elementIdx]) {
 									resultCodes[elementIdx]= methodSet;
 								}
@@ -387,15 +389,15 @@ final class TracepointManager {
 		}
 		
 		final long p= this.rEngine.rniEval(this.rEngine.rniCons(
-				this.rni.isGeneric_SymP, this.rEngine.rniCons(
-						nameStringP, this.rEngine.rniCons(
-								envP, this.rEngine.rniCons(
-										funP, this.rni.NULL_P,
-										this.rni.fdef_SymP, false ),
-								this.rni.where_SymP, false ),
-						0, false ),
-				0, true ),
-				0 );
+						this.rni.isGeneric_SymP, this.rEngine.rniCons(
+								nameStringP, this.rEngine.rniCons(
+										envP, this.rEngine.rniCons(
+												funP, this.rni.NULL_P,
+												this.rni.fdef_SymP, false ),
+										this.rni.where_SymP, false ),
+								0, false ),
+						0, true ),
+				this.rni.rniSafeGlobalExecEnvP );
 		return (p != 0 && this.rEngine.rniIsTrue(p)) ? nameEnvP : 0;
 	}
 	
@@ -404,7 +406,7 @@ final class TracepointManager {
 		if (funInfo.orgBodyP == 0) {
 			return false;
 		}
-		funInfo.srcfileP= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.srcfile_SymP);
+		funInfo.srcfileP= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.dbg.srcfile_SymP);
 		if (funInfo.srcfileP == 0 || this.rEngine.rniExpType(funInfo.srcfileP) != REXP.ENVSXP) {
 			return false;
 		}
@@ -466,7 +468,7 @@ final class TracepointManager {
 				}
 			}
 		}
-		{	long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.rni.srcref_SymP);
+		{	long p= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.dbg.srcref_SymP);
 			if (p != 0) {
 				p= this.rEngine.rniGetVectorElt(p, 0);
 				if (p != 0) {
@@ -607,20 +609,20 @@ final class TracepointManager {
 			
 			if (funInfo.currentMainFunP != funInfo.orgMainFunP) {
 				// unset
-				final long untraceP= this.rEngine.rniCons(
-						this.untraceSymP, traceArgsP,
-						0, true );
-				this.rni.evalExpr(untraceP, 0, CODE_DBG_TRACE );
+				this.rni.evalExpr(this.rEngine.rniCons(
+								this.untraceSymP, traceArgsP,
+								0, true ),
+						this.rni.rniSafeGlobalExecEnvP, CODE_DBG_TRACE );
 				funInfo.currentMainFunP= funInfo.orgMainFunP;
 			}
 			result= ElementTracepointInstallationReport.FOUND_UNSET;
 			if (l > 0) { // set
-				final long traceP= this.rEngine.rniCons(
-						this.traceSymP, this.rEngine.rniCons(
-								editFunP, traceArgsP,
-								this.rni.edit_SymP, false ),
-						0, true );
-				this.rni.evalExpr(traceP, 0, CODE_DBG_TRACE );
+				this.rni.evalExpr(this.rEngine.rniCons(
+								this.traceSymP, this.rEngine.rniCons(
+										editFunP, traceArgsP,
+										this.rni.edit_SymP, false ),
+								0, true ), 
+						this.rni.rniSafeGlobalExecEnvP, CODE_DBG_TRACE );
 				result= ElementTracepointInstallationReport.FOUND_SET;
 			}
 		}
@@ -645,13 +647,13 @@ final class TracepointManager {
 						0, false ),
 				0, true );
 		return this.rni.protect(this.rEngine.rniEval(this.rni.protect(this.rEngine.rniCons(
-				this.rni.function_SymP, this.rEngine.rniCons(
-						this.editFArgsP, this.rEngine.rniCons(
-								fBodyP, this.rni.NULL_P,
+						this.rni.function_SymP, this.rEngine.rniCons(
+								this.editFArgsP, this.rEngine.rniCons(
+										fBodyP, this.rni.NULL_P,
+										0, false ),
 								0, false ),
-						0, false ),
-				0, true )),
-				this.rni.Base_EnvP ));
+						0, true )),
+				this.rni.rniSafeBaseExecEnvP ));
 	}
 	
 	private void addTrace(final long newP, final List<? extends TracepointPosition> list, final int depth,
@@ -659,7 +661,7 @@ final class TracepointManager {
 			final int[] baseSrcref, final int[] lastSrcref)
 			throws UnexpectedRDataException, RNullPointerException {
 		final int length= this.rEngine.rniGetLength(newP);
-		final long newSrcrefP= this.rEngine.rniGetAttrBySym(newP, this.rni.srcref_SymP);
+		final long newSrcrefP= this.rEngine.rniGetAttrBySym(newP, this.dbg.srcref_SymP);
 		int currentIdx= 1;
 		long currentP= newP;
 		for (int i= 0; i < list.size(); ) {
@@ -720,9 +722,11 @@ final class TracepointManager {
 				addTrace(currentValueP, list.subList(j, k), depth+1,
 						funInfo, filePathP, elementIdP, baseSrcref, currentSrcref );
 				if (orgP != 0) {
-					orgP= this.rEngine.rniEval(orgP, 0);
+					orgP= this.rEngine.rniEval(orgP,
+							this.rni.rniSafeBaseExecEnvP );
 					if (orgP != 0) {
-						currentValueP= this.rEngine.rniEval(currentValueP, 0);
+						currentValueP= this.rEngine.rniEval(currentValueP, 
+								this.rni.rniSafeBaseExecEnvP );
 						if (currentValueP == 0) {
 							throw new UnexpectedRDataException("closure");
 						}
@@ -818,7 +822,7 @@ final class TracepointManager {
 			currentP= this.rni.checkAndProtect(this.rEngine.rniCons(
 					this.rni.Block_SymP, currentP,
 					0, true ));
-			this.rEngine.rniSetAttrBySym(currentP, this.rni.srcref_SymP, createTraceSrcref(n,
+			this.rEngine.rniSetAttrBySym(currentP, this.dbg.srcref_SymP, createTraceSrcref(n,
 					(currentSrcref != null) ? currentSrcref : NA_SRCREF, funInfo.srcfileP, elementIdP ));
 		}
 		return currentP;
@@ -833,7 +837,7 @@ final class TracepointManager {
 					this.stepSrcrefTmplP ));
 			srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(
 					(srcref != null) ? srcref : NA_SRCREF ));
-			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.srcfile_SymP, funInfo.srcfileP);
+			this.rEngine.rniSetAttrBySym(srcrefList[1], this.dbg.srcfile_SymP, funInfo.srcfileP);
 			if (filePathP != 0) {
 				this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.appFilePath_SymP, filePathP);
 			}
@@ -847,7 +851,7 @@ final class TracepointManager {
 						this.rEngine.rniPutIntArray(new int[] { flags }) );
 			}
 			this.rEngine.rniSetAttrBySym(srcrefList[1], this.rni.what_SymP, this.stepNextValueP);
-			this.rEngine.rniSetAttrBySym(exprP, this.rni.srcref_SymP, this.rEngine.rniPutVector(srcrefList));
+			this.rEngine.rniSetAttrBySym(exprP, this.dbg.srcref_SymP, this.rEngine.rniPutVector(srcrefList));
 		}
 		return exprP;
 	}
@@ -857,14 +861,14 @@ final class TracepointManager {
 			throws RNullPointerException {
 		final long[] list= new long[n+2];
 		list[0]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
-		this.rEngine.rniSetAttrBySym(list[0], this.rni.srcfile_SymP, srcfileP);
+		this.rEngine.rniSetAttrBySym(list[0], this.dbg.srcfile_SymP, srcfileP);
 		this.rEngine.rniSetAttrBySym(list[0], this.rni.what_SymP, this.stepNextValueP);
 		this.rEngine.rniSetAttrBySym(list[0], this.rni.dbgElementId_SymP, elementIdP);
 		for (int i= 1; i <= n; i++) {
 			list[i]= list[0];
 		}
 		list[n+1]= this.rni.checkAndProtect(this.rEngine.rniPutIntArray(srcref));
-		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.srcfile_SymP, srcfileP);
+		this.rEngine.rniSetAttrBySym(list[n+1], this.dbg.srcfile_SymP, srcfileP);
 		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.dbgElementId_SymP, elementIdP);
 		return this.rEngine.rniPutVector(list);
 	}
@@ -928,11 +932,11 @@ final class TracepointManager {
 		if (!this.breakpointsEnabled) {
 			return 0;
 		}
-		final long srcrefP= this.rEngine.rniGetAttrBySym(callP, this.rni.srcref_SymP);
+		final long srcrefP= this.rEngine.rniGetAttrBySym(callP, this.dbg.srcref_SymP);
 		if (srcrefP == 0) {
 			throw new RjException("Missing data: srcref.");
 		}
-		final long srcfileP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.srcfile_SymP);
+		final long srcfileP= this.rEngine.rniGetAttrBySym(srcrefP, this.dbg.srcfile_SymP);
 		if (srcfileP == 0 || this.rEngine.rniExpType(srcfileP) != REXP.ENVSXP) {
 			throw new RjException("Missing data: srcfile env of srcref.");
 		}
@@ -1022,9 +1026,9 @@ final class TracepointManager {
 				return 0;
 			}
 			
-			this.dbg.disable(true);
+			this.dbg.beginSafeMode();
 			try {
-				final long envP= this.rEngine.rniEval(this.getTraceExprEvalEnvCallP, 0);
+				final long envP= this.rni.createNewEnv(this.getTraceExprEnvCallP);
 				if (envP == 0) {
 					LOGGER.log(Level.SEVERE, "Creating environment for breakpoint condition failed.");
 					return 0;
@@ -1039,11 +1043,10 @@ final class TracepointManager {
 //				LOGGER.log(Level.FINER, "Skipping breakpoint because evaluating the condition failed.", e);
 				// evaluation failed (expression invalid...)
 //				TODO notify ?
-//				e.printStackTrace();
 				return 0;
 			}
 			finally {
-				this.dbg.disable(false);
+				this.dbg.endSafeMode();
 			}
 		}
 		
@@ -1061,7 +1064,7 @@ final class TracepointManager {
 				srcrefList[1]= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
 						this.stepSrcrefTmplP ));
 			}
-			this.rEngine.rniSetAttrBySym(browserExprP, this.rni.srcref_SymP,
+			this.rEngine.rniSetAttrBySym(browserExprP, this.dbg.srcref_SymP,
 					this.rEngine.rniPutVector(srcrefList) );
 			
 			return browserExprP;

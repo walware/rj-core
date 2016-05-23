@@ -625,24 +625,29 @@ public final class JRIServer extends RJ
 						&& (this.rArgs.contains("--internet2")
 								|| "2".equals(rNetworkEnvVar)) ) {
 					if (this.utils.isRVersionLess(3, 3)) {
-						this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1), 0);
+						this.rEngine.rniEval(this.rEngine.rniParse("utils::setInternet2(use=TRUE)", 1),
+								this.rni.rniSafeBaseExecEnvP );
 					}
 					else {
-						this.rEngine.rniEval(this.rEngine.rniParse("options(`download.file.method`= 'wininet')", 1), 0);
+						this.rEngine.rniEval(this.rEngine.rniParse("base::options(download.file.method= 'wininet')", 1),
+								this.rni.rniSafeBaseExecEnvP );
 					}
 				}
 				else if ("1".equals(rNetworkEnvVar)) {
-					this.rEngine.rniEval(this.rEngine.rniParse("options(`download.file.method`= 'internal')", 1), 0);
+					this.rEngine.rniEval(this.rEngine.rniParse("base::options(download.file.method= 'internal')", 1),
+							this.rni.rniSafeBaseExecEnvP );
 				}
 			}
 			if (this.rClassLoader.getOSType() == RJClassLoader.OS_WIN
 					&& this.rMemSize != 0) {
-				final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1), 0);
+				final long rniP = this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit()", 1),
+						this.rni.rniSafeBaseExecEnvP );
 				if (rniP != 0) {
 					final long memSizeMB = this.rMemSize / MEGA;
 					final double[] array = this.rEngine.rniGetDoubleArray(rniP);
 					if (array != null && array.length == 1 && memSizeMB > array[0]) {
-						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size="+memSizeMB+")", 1), 0);
+						this.rEngine.rniEval(this.rEngine.rniParse("utils::memory.limit(size= "+memSizeMB+")", 1),
+								this.rni.rniSafeBaseExecEnvP );
 					}
 				}
 			}
@@ -658,6 +663,11 @@ public final class JRIServer extends RJ
 			if (!this.hotModeRequested) {
 				return;
 			}
+		}
+		catch (final Throwable e) {
+			LOGGER.log(Level.SEVERE, "Failed to initialize engine.", e);
+			AbstractServerControl.exit(162);
+			throw new RuntimeException(); // for final fields
 		}
 		finally {
 			this.rEngine.addMainLoopCallbacks(JRIServer.this);
@@ -1760,7 +1770,8 @@ public final class JRIServer extends RJ
 					Thread.sleep(10);
 				}
 				catch (final InterruptedException e) {}
-				this.rEngine.rniEval(this.rni.evalDummy_ExprP, 0);
+				this.rEngine.rniEval(this.rni.evalDummy_ExprP,
+						this.rni.rniSafeBaseExecEnvP );
 				this.rni.rniInterrupted = false;
 			}
 		}
@@ -1813,7 +1824,7 @@ public final class JRIServer extends RJ
 			CMD_OP: switch (cmd.getOp()) {
 			case SrvCmdItem.OP_CLEAR_SESSION:
 				this.rni.evalExpr(this.rni.resolveExpression("rj:::tmp.clear()"),
-						this.rni.Global_EnvP, CODE_SRV_EVAL_DATA);
+						this.rni.rniSafeGlobalExecEnvP, CODE_SRV_EVAL_DATA );
 				break CMD_OP;
 			}
 		}

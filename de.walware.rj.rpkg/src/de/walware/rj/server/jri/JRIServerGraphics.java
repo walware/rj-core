@@ -41,9 +41,11 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 		this.devIdSymP= this.rEngine.rniInstallSymbol("devId");
 		
 		this.convertUser2DevFunP= this.rni.protect(this.rEngine.rniEval(
-					this.rEngine.rniParse("rj:::.gr.convertUser2Dev", 1 ), 0));
+				this.rEngine.rniParse("rj:::.gr.convertUser2Dev", 1 ),
+				this.rni.rniSafeBaseExecEnvP ));
 		this.convertDev2UserFunP= this.rni.protect(this.rEngine.rniEval(
-				this.rEngine.rniParse("rj:::.gr.convertDev2User", 1 ), 0));
+				this.rEngine.rniParse("rj:::.gr.convertDev2User", 1 ),
+				this.rni.rniSafeBaseExecEnvP ));
 	}
 	
 	
@@ -99,13 +101,14 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 				xy[0] = coord.getX();
 				xy[1] = coord.getY();
 				
-				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.convertDev2UserFunP, this.rEngine.rniCons(
-								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
-										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
-										this.devIdSymP, false ),
-								this.xySymP, false ),
-						0, true ), this.rni.Base_EnvP );
+				final long p= this.rEngine.rniEval(this.rEngine.rniCons(
+								this.convertDev2UserFunP, this.rEngine.rniCons(
+										this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
+												this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
+												this.devIdSymP, false ),
+										this.xySymP, false ),
+								0, true ),
+						this.rni.rniSafeBaseExecEnvP );
 				if (p != 0) {
 					xy = this.rEngine.rniGetDoubleArray(p);
 					if (xy != null) {
@@ -143,12 +146,13 @@ public final class JRIServerGraphics extends RjsGraphicManager {
 				xy[1] = coord.getY();
 				
 				final long p = this.rEngine.rniEval(this.rEngine.rniCons(
-						this.convertUser2DevFunP, this.rEngine.rniCons(
-								this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
-										this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
-										this.devIdSymP, false ),
-								this.xySymP, false ),
-						0, true ), this.rni.Base_EnvP );
+								this.convertUser2DevFunP, this.rEngine.rniCons(
+										this.rEngine.rniPutDoubleArray(xy), this.rEngine.rniCons(
+												this.rEngine.rniPutIntArray(new int[] { devId + 1 }), this.rni.NULL_P,
+												this.devIdSymP, false ),
+										this.xySymP, false ),
+								0, true ),
+						this.rni.rniSafeBaseExecEnvP );
 				if (p != 0) {
 					xy = this.rEngine.rniGetDoubleArray(p);
 					if (xy != null) {

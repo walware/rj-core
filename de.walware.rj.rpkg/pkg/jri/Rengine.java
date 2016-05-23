@@ -61,7 +61,7 @@ public class Rengine extends Thread {
 	public static final int SO_GlobalEnv    = 1;
 	/** constant to be used in {@link #rniSpecialObject} to return <code>R_EmptyEnv</code> reference */
 	public static final int SO_EmptyEnv     = 2;
-	/** constant to be used in {@link #rniSpecialObject} to return <code>R_baseEnv</code> reference */
+	/** constant to be used in {@link #rniSpecialObject} to return <code>R_BaseEnv</code> reference */
 	public static final int SO_BaseEnv      = 3;
 	/** constant to be used in {@link #rniSpecialObject} to return <code>R_UnboundValue</code> reference */
 	public static final int SO_UnboundValue = 4;
@@ -71,6 +71,9 @@ public class Rengine extends Thread {
 	public static final int SO_NaString     = 6;
 	/** constant to be used in {@link #rniSpecialObject} to return <code>R_BlankString</code> reference */
 	public static final int SO_BlankString  = 7;
+	
+	/** constant to be used in {@link #rniSpecialObject} to return <code>R_BaseNamespace</code> reference */
+	public static final int SO_BaseNamespaceEnv= 13;
 	
 	
 	public static final int FLAG_UNBOUND_0= 0x00000000;
@@ -315,6 +318,7 @@ public class Rengine extends Thread {
 	@param exp reference to REALSXP
 	@return contents or <code>null</code> if the reference is not REALSXP */
     public synchronized native double[] rniGetDoubleArray(long exp);
+	
     /** RNI: get the contents of a raw vector
 	 @since API 1.9, JRI 0.5
 	 @param exp reference to RAWSXP
@@ -539,21 +543,19 @@ public class Rengine extends Thread {
 		@param exp reference to an R object */
 	public synchronized native void rniRelease(long exp);
 	
+	
+	/*--- Env ---*/
+	
+	public synchronized native boolean rniIsNamespaceEnv(long rhoP);
+	
+	public synchronized native String rniGetNamespaceEnvName(long rhoP);
+	
 	/** RNI: return the parent environment
 		@since API 1.9, JRI 0.5
 		@param exp reference to environment
 		@return parent environment */
 	public synchronized native long rniParentEnv(long exp);
-
-	/** RNI: find variable in an environment
-		@since API 1.9, JRI 0.5
-		@param sym symbol name
-		@param rho reference to environment
-		@return reference to the value or UnboundValue if not found */
-	public synchronized native long rniFindVar(String sym, long rho);
 	
-	public synchronized native long rniFindFunBySym(long sym, long rho);
-
 	/** RNI: return the list of variable names of an environment
 		@since API 1.9, JRI 0.5
 		@param exp reference to the environment
@@ -561,20 +563,8 @@ public class Rengine extends Thread {
 		@return reference to a string vector of names in the environment */
 	public synchronized native long rniListEnv(long exp, boolean all);
 	
-	public synchronized native boolean rniIsNamespaceEnv(long rhoP);
-	
-	public synchronized native String rniGetNamespaceEnvName(long rhoP);
-	
 	/** RNI:
-	 * Gets the value of a promise object.
-	 * @param p
-	 * @param flags evaluate value: 0= no, 1= only constants, 2= yes
-	 * @return the value or 0 if not resolved
-	 */
-	public synchronized native long rniGetPromise(long p, int flags);
-	
-	/** RNI:
-	 * Get variable in an environment.
+	 * Gets variable value in an environment.
 	 * 
 	 * @param name the symbol name of the variable
 	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
@@ -583,7 +573,7 @@ public class Rengine extends Thread {
 	public synchronized native long rniGetVar(String name, long rhoP);
 	
 	/** RNI:
-	 * Get variable in an environment.
+	 * Gets variable value in an environment.
 	 * <p>
 	 * Supported flags:
 	 * unbound ({@link #FLAG_UNBOUND_0}, {@link #FLAG_UNBOUND_P})
@@ -595,15 +585,55 @@ public class Rengine extends Thread {
 	 **/
 	public synchronized native long rniGetVarBySym(long nameP, long rhoP, int flags);
 	
+	/** RNI: find variable value in an environment
+		@since API 1.9, JRI 0.5
+		@param sym symbol name
+		@param rho reference to environment
+		@return reference to the value or UnboundValue if not found */
+	public synchronized native long rniFindVar(String sym, long rho);
+	
+	public synchronized native long rniFindFunBySym(long sym, long rho);
+	
+	/** RNI:
+	 * Assigns a variable to an environment
+	 * @param name the symbol name of the variable
+	 * @param valP the value
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
+	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
+	 * @since API 1.10, JRI 0.5-1 (existed before but returned <code>void</code>)
+	 */
+	public synchronized native boolean rniAssign(String name, long valP, long rhoP);
+	
+	/** RNI:
+	 * Assigns a variable to an environment
+	 * @param nameP the symbol name of the variable, a reference to a SYMSXP
+	 * @param valP the value
+	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
+	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
+	 */
+	public synchronized native boolean rniAssignVarBySym(long nameP, long valP, long rhoP);
+	
+	
+	/** RNI:
+	 * Gets the value of a promise object.
+	 * @param p
+	 * @param flags evaluate value: 0= no, 1= only constants, 2= yes
+	 * @return the value or 0 if not resolved
+	 */
+	public synchronized native long rniGetPromise(long p, int flags);
+	
 	/** RNI: return a special object reference. Note that all such references are constants valid for the entire session and cannot be protected/preserved (they are persistent already).
 		@since API 1.9, JRI 0.5
 		@param which constant referring to a particular special object (see SO_xxx constants)
 		@return reference to a special object or 0 if the kind of object it unknown/unsupported */
 	public synchronized native long rniSpecialObject(int which);
 	
-	//--- dbg ---
+	/*--- Debug ---*/
+	
 	public synchronized native int rniGetDebug(long p);
+	
 	public synchronized native boolean rniSetDebug(long p, int v);
+	
 	
 	//--- was API 1.4 but it only caused portability problems, so we got rid of it
     //public static native void rniSetEnv(String key, String val);
@@ -639,25 +669,6 @@ public class Rengine extends Thread {
 	 * @return result code (currently unused)
 	 */
 	public native int rniSetProcessJEvents(int flag);
-	
-	/** RNI:
-	 * Assigns a value to an environment
-	 * @param name the symbol name of the variable
-	 * @param valP the value
-	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
-	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
-	 * @since API 1.10, JRI 0.5-1 (existed before but returned <code>void</code>)
-	 */
-	public synchronized native boolean rniAssign(String name, long valP, long rhoP);
-	
-	/** RNI:
-	 * Assigns a value to an environment
-	 * @param nameP the symbol name of the variable, a reference to a SYMSXP
-	 * @param valP the value
-	 * @param rhoP the environment, a reference to a ENVSXP (0 for the global environment)
-	 * @return <code>true</code> if successful, <code>false</code> on failure (usually this means that the binding is locked)
-	 */
-	public synchronized native boolean rniAssignVarBySym(long nameP, long valP, long rhoP);
 	
     /** RNI: run the main loop.<br> <i>Note:</i> this is an internal method and it doesn't return until the loop exits. Don't use directly! */
     public native void rniRunMainLoop();

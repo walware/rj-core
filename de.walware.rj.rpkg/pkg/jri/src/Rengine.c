@@ -178,44 +178,6 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniEval
 	return SEXP2L(es);
 }
 
-struct safeAssign_s {
-	SEXP symS, valS, rhoS;
-};
-
-static void safeAssign(void *data) {
-	struct safeAssign_s *s = (struct safeAssign_s*) data;
-	
-	Rf_defineVar(s->symS, s->valS, s->rhoS);
-}
-
-JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniAssign(
-		JNIEnv *env, jobject this,
-		jstring name, jlong valP, jlong rhoP) {
-	struct safeAssign_s s;
-	
-	s.symS= jri_installString(env, name);
-	if (!s.symS || s.symS == R_NilValue) {
-		return JNI_FALSE;
-	}
-	s.valS= (valP) ? L2SEXP(valP) : R_NilValue;
-	s.rhoS= (rhoP) ? L2SEXP(rhoP) : R_GlobalEnv;
-	
-	/* we have to use R_ToplevelExec because defineVar may fail on locked bindings */
-	return (R_ToplevelExec(safeAssign, (void*) &s)) ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniAssignVarBySym(
-		JNIEnv *env, jobject this,
-		jlong nameP, jlong valP, jlong rhoP) {
-	struct safeAssign_s s;
-	
-	s.symS= L2SEXP(nameP);
-	s.valS= (valP) ? L2SEXP(valP) : R_NilValue;
-	s.rhoS= (rhoP) ? L2SEXP(rhoP) : R_GlobalEnv;
-	
-	/* we have to use R_ToplevelExec because defineVar may fail on locked bindings */
-	return (R_ToplevelExec(safeAssign, (void*) &s)) ? JNI_TRUE : JNI_FALSE;
-}
 
 JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniProtect
 (JNIEnv *env, jobject this, jlong exp)
@@ -247,66 +209,8 @@ JNIEXPORT void JNICALL Java_org_rosuda_JRI_Rengine_rniPrintValue
 	Rf_PrintValue(exp ? L2SEXP(exp) : R_NilValue);
 }
 
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniParentEnv
-(JNIEnv *env, jobject this, jlong exp)
-{
-  return SEXP2L(ENCLOS(exp ? L2SEXP(exp) : R_GlobalEnv));
-}
 
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindVar
-(JNIEnv *env, jobject this, jstring symName, jlong rho)
-{
-	SEXP sym = jri_installString(env, symName);
-	if (!sym || sym == R_NilValue) return 0;
-
-	return SEXP2L(Rf_findVar(sym, rho ? L2SEXP(rho) : R_GlobalEnv));
-}
-
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindFunBySym(
-		JNIEnv *env, jobject this,
-		jlong name, jlong rho)
-{
-	SEXP s;
-	SEXP rhoS= (rho) ? L2SEXP(rho) : R_GlobalEnv;
-	while (rhoS != R_EmptyEnv) {
-		s= findVarInFrame3(rhoS, L2SEXP(name), TRUE);
-		if (s != R_UnboundValue) {
-			if (TYPEOF(s) == PROMSXP) {
-				if (PRVALUE(s) != R_UnboundValue) {
-					s= PRVALUE(s);
-				} else {
-					switch (TYPEOF(PRCODE(s))) {
-					case SPECIALSXP:
-					case BUILTINSXP:
-					case CLOSXP:
-						s= Rf_eval(s, R_BaseEnv);
-					}
-				}
-				if (s == R_UnboundValue) {
-					return 0;
-				}
-			}
-			switch (TYPEOF(s)) {
-			case CLOSXP:
-			case BUILTINSXP:
-			case SPECIALSXP:
-				return SEXP2L(s);
-			default:
-				if (s == R_MissingArg) {
-					return 0;
-				}
-			}
-		}
-		rhoS= ENCLOS(rhoS);
-	}
-	return 0;
-}
-
-JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
-(JNIEnv *env, jobject this, jlong rho, jboolean all)
-{
-	return SEXP2L(R_lsInternal(rho ? L2SEXP(rho) : R_GlobalEnv, all));
-}
+/*--- Env ---*/
 
 JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniIsNamespaceEnv(
 		JNIEnv *env, jobject this, jlong rhoP) {
@@ -320,6 +224,18 @@ JNIEXPORT jstring JNICALL Java_org_rosuda_JRI_Rengine_rniGetNamespaceEnvName(
 	return (R_IsNamespaceEnv(L2SEXP(rhoP))) ?
 			jri_putString(env, R_NamespaceEnvSpec(rhoS), 0) :
 			0;
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniParentEnv
+(JNIEnv *env, jobject this, jlong exp)
+{
+  return SEXP2L(ENCLOS(exp ? L2SEXP(exp) : R_GlobalEnv));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniListEnv
+(JNIEnv *env, jobject this, jlong rho, jboolean all)
+{
+	return SEXP2L(R_lsInternal(rho ? L2SEXP(rho) : R_GlobalEnv, all));
 }
 
 struct safeGetVar_s {
@@ -360,6 +276,102 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetVarBySym(
 					&& ((flags & FLAG_UNBOUND_P) || s.valS != R_UnboundValue) ) ?
 			SEXP2L(s.valS) : 0;
 }
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindVar
+(JNIEnv *env, jobject this, jstring symName, jlong rho)
+{
+	SEXP sym = jri_installString(env, symName);
+	if (!sym || sym == R_NilValue) return 0;
+
+	return SEXP2L(Rf_findVar(sym, rho ? L2SEXP(rho) : R_GlobalEnv));
+}
+
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniFindFunBySym(
+		JNIEnv *env, jobject this,
+		jlong nameP, jlong rhoP) {
+	struct safeGetVar_s s;
+	
+	s.symS= L2SEXP(nameP);
+	s.rhoS= (rhoP) ? L2SEXP(rhoP) : R_GlobalEnv;
+	
+	while (s.rhoS != R_EmptyEnv) {
+		if (R_ToplevelExec(safeGetVar, (void*) &s)) {
+			SEXP valS= s.valS;
+			if (valS != R_UnboundValue) {
+				if (TYPEOF(valS) == PROMSXP) {
+					if (PRVALUE(valS) != R_UnboundValue) {
+						valS= PRVALUE(valS);
+					} else {
+						switch (TYPEOF(PRCODE(valS))) {
+						case SPECIALSXP:
+						case BUILTINSXP:
+						case CLOSXP:
+							valS= Rf_eval(valS, R_BaseEnv);
+						}
+					}
+					if (valS == R_UnboundValue) {
+						return 0;
+					}
+				}
+				switch (TYPEOF(valS)) {
+				case CLOSXP:
+				case BUILTINSXP:
+				case SPECIALSXP:
+					return SEXP2L(valS);
+				default:
+					if (valS == R_MissingArg) {
+						return 0;
+					}
+				}
+			}
+			s.rhoS= ENCLOS(s.rhoS);
+		}
+		else {
+			return 0;
+		}
+	}
+	return 0;
+}
+
+struct safeAssign_s {
+	SEXP symS, valS, rhoS;
+};
+
+static void safeAssign(void *data) {
+	struct safeAssign_s *s = (struct safeAssign_s*) data;
+	
+	Rf_defineVar(s->symS, s->valS, s->rhoS);
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniAssign(
+		JNIEnv *env, jobject this,
+		jstring name, jlong valP, jlong rhoP) {
+	struct safeAssign_s s;
+	
+	s.symS= jri_installString(env, name);
+	if (!s.symS || s.symS == R_NilValue) {
+		return JNI_FALSE;
+	}
+	s.valS= (valP) ? L2SEXP(valP) : R_NilValue;
+	s.rhoS= (rhoP) ? L2SEXP(rhoP) : R_GlobalEnv;
+	
+	/* we have to use R_ToplevelExec because defineVar may fail on locked bindings */
+	return (R_ToplevelExec(safeAssign, (void*) &s)) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniAssignVarBySym(
+		JNIEnv *env, jobject this,
+		jlong nameP, jlong valP, jlong rhoP) {
+	struct safeAssign_s s;
+	
+	s.symS= L2SEXP(nameP);
+	s.valS= (valP) ? L2SEXP(valP) : R_NilValue;
+	s.rhoS= (rhoP) ? L2SEXP(rhoP) : R_GlobalEnv;
+	
+	/* we have to use R_ToplevelExec because defineVar may fail on locked bindings */
+	return (R_ToplevelExec(safeAssign, (void*) &s)) ? JNI_TRUE : JNI_FALSE;
+}
+
 
 JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetPromise(
 		JNIEnv *env, jobject this, jlong p, jint flags)
@@ -412,17 +424,18 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniSpecialObject
   case 5: return SEXP2L(R_MissingArg);
   case 6: return SEXP2L(R_NaString);
   case 7: return SEXP2L(R_BlankString);
+  case 13: return SEXP2L(R_BaseNamespace);
   }
   return 0;
 }
 
 
-//--- dbg ---
+/*--- Debug ---*/
 
 JNIEXPORT jint JNICALL Java_org_rosuda_JRI_Rengine_rniGetDebug(
-		JNIEnv *env, jobject this, jlong s)
+		JNIEnv *env, jobject this, jlong p)
 {	
-	return RDEBUG((s) ? L2SEXP(s) : R_GlobalEnv);
+	return RDEBUG((p) ? L2SEXP(p) : R_GlobalEnv);
 }
 
 JNIEXPORT jboolean JNICALL Java_org_rosuda_JRI_Rengine_rniSetDebug(
