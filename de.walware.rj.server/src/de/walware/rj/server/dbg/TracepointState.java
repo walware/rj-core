@@ -103,6 +103,11 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	public static final int FLAG_EXPR_INVALID=             0x01000000;
 	public static final int FLAG_EXPR_EVAL_FAILED=         0x02000000;
 	
+	public static final String EB_FILEPATH= "exception"; //$NON-NLS-1$
+	
+	
+	private static final int[] NO_IDX= new int[0];
+	
 	
 	private int type;
 	
@@ -117,7 +122,6 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 	protected String expr;
 	
 	
-	
 	public TracepointState(final int type,
 			final String filePath, final long id, final String elementId, final int[] index,
 			final String elementLabel, final int flags, final String expr) {
@@ -129,6 +133,22 @@ public class TracepointState implements Tracepoint, Comparable<TracepointState>,
 		this.id= id;
 		this.elementId= elementId;
 		this.index= index;
+		this.elementLabel= elementLabel;
+		this.flags= flags;
+		this.expr= expr;
+	}
+	
+	public TracepointState(final int type,
+			final String filePath, final long id, final String elementId,
+			final String elementLabel, final int flags, final String expr) {
+		if (filePath == null || elementId == null) {
+			throw new NullPointerException();
+		}
+		this.type= type;
+		this.filePath= filePath;
+		this.id= id;
+		this.elementId= elementId;
+		this.index= NO_IDX;
 		this.elementLabel= elementLabel;
 		this.flags= flags;
 		this.expr= expr;

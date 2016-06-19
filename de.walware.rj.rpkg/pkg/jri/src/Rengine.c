@@ -429,6 +429,13 @@ JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniSpecialObject
   return 0;
 }
 
+JNIEXPORT jlong JNICALL Java_org_rosuda_JRI_Rengine_rniGetOptionBySym(
+		JNIEnv *env, jobject this, jlong symP) {
+	SEXP valS= Rf_GetOption1(L2SEXP(symP));
+	return (valS != R_NilValue) ? SEXP2L(valS) : 0;
+}
+
+
 
 /*--- Debug ---*/
 

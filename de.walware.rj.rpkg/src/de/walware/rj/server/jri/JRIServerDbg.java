@@ -118,6 +118,8 @@ final class JRIServerDbg {
 			System.getProperty("de.walware.rj.dbg.stepfilter.disabled")); //$NON-NLS-1$
 	
 	private boolean isSuspended; // browser prompt
+	private int suspendedNFrame;
+	private long suspendedFrameP;
 	
 	private boolean deferredSuspend;
 	private final List<Long> contextTmpDebugFrames = new ArrayList<>();
@@ -363,6 +365,8 @@ final class JRIServerDbg {
 			this.tracepointManager.handleSuspended(srcrefP);
 			
 			this.isSuspended= true;
+			this.suspendedNFrame= getNFrame();
+			this.suspendedFrameP= (this.suspendedNFrame != 0) ? getTopFrame() : this.rni.Global_EnvP;
 		}
 		finally {
 			endSafeMode();
@@ -384,15 +388,19 @@ final class JRIServerDbg {
 	 * @throws RjException if an error occurred when executing the command
 	 */
 	public long execRJCommand(final String commandId, final long argsP) throws RjException {
+		if (this.disabled > 0) {
+			return 0;
+		}
+		
 		this.rni.newDataLevel(255, Integer.MAX_VALUE, Integer.MAX_VALUE);
 		final int savedProtected = this.rni.saveProtected();
 		try {
 			this.rni.protect(argsP);
 			if (commandId.equals("checkBreakpoint")) { //$NON-NLS-1$
-				if (this.disabled > 0) {
-					return 0;
-				}
 				return this.tracepointManager.checkBreakpoint(argsP);
+			}
+			else if (commandId.equals("checkEB")) { //$NON-NLS-1$
+				return this.tracepointManager.checkEB(argsP);
 			}
 		}
 		finally {
@@ -486,10 +494,21 @@ final class JRIServerDbg {
 					n++;
 					break;
 				}
-				if (call != null
-						&& (call.startsWith(".doTrace") || call.startsWith("rj:::.breakpoint(")) ) { //$NON-NLS-1$ //$NON-NLS-2$
-					n = i;
-					break;
+				if (call != null) {
+					if (call.startsWith(".doTrace") //$NON-NLS-1$
+							|| call.startsWith("rj:::.breakpoint(") ) { //$NON-NLS-1$
+						n= i;
+						break;
+					}
+					if (call.startsWith("rj:::.checkError(")) { //$NON-NLS-1$
+						if (item.getCall() != null && item.getCall().startsWith("stop(")) {
+							n= i - 1;
+							list.remove(n);
+							break;
+						}
+						n= i;
+						break;
+					}
 				}
 				cdr = this.rEngine.rniCDR(cdr);
 			}
@@ -852,7 +871,7 @@ final class JRIServerDbg {
 		if (fName == null) {
 			return false;
 		}
-		final long frameP = getTopFrame();
+		final long frameP= getTopFrame();
 		long funP;
 		{	long exprP = this.rEngine.rniParse(fName, 1);
 			final long[] list;
@@ -965,7 +984,7 @@ final class JRIServerDbg {
 			}
 		}
 		
-		this.deferredSuspend = false;
+		this.deferredSuspend= false;
 		
 		if (!this.contextTmpDebugFuns.isEmpty()) {
 			try {
@@ -978,44 +997,61 @@ final class JRIServerDbg {
 				this.contextTmpDebugFuns.clear();
 			}
 		}
-		if (!this.contextTmpDebugFrames.isEmpty()) {
+		
+		if (!this.contextTmpDebugFrames.isEmpty() || this.suspendedNFrame != 0) {
+			beginSafeMode();
 			try {
-				long cdr= this.rni.evalExpr(this.sysFramesCallP,
-						this.rni.rniSafeBaseExecEnvP, CODE_DBG_DEBUG | 0xe );
-				final List<Long> stack = new ArrayList<>(this.contextTmpDebugFrames.size());
-				boolean topInStack = false;
-				if (cdr != 0 && this.rEngine.rniExpType(cdr) == REXP.LISTSXP) {
-					while (cdr != 0) {
-						final long car = this.rEngine.rniCAR(cdr);
-						if (car != 0 && this.rEngine.rniExpType(car) == REXP.ENVSXP) {
-							final Long handle = Long.valueOf(car);
-							if (!stack.contains(handle)
-									&& this.rEngine.rniGetDebug(car) != 0) {
-								if (this.contextTmpDebugFrames.contains(handle)) {
-									stack.add(handle);
-									topInStack = true;
+				if (!this.contextTmpDebugFrames.isEmpty()) {
+					try {
+						long cdr= this.rni.evalExpr(this.sysFramesCallP,
+								this.rni.rniSafeBaseExecEnvP, CODE_DBG_DEBUG | 0xe );
+						final List<Long> stack = new ArrayList<>(this.contextTmpDebugFrames.size());
+						boolean topInStack = false;
+						if (cdr != 0 && this.rEngine.rniExpType(cdr) == REXP.LISTSXP) {
+							while (cdr != 0) {
+								final long car = this.rEngine.rniCAR(cdr);
+								if (car != 0 && this.rEngine.rniExpType(car) == REXP.ENVSXP) {
+									final Long handle = Long.valueOf(car);
+									if (!stack.contains(handle)
+											&& this.rEngine.rniGetDebug(car) != 0) {
+										if (this.contextTmpDebugFrames.contains(handle)) {
+											stack.add(handle);
+											topInStack = true;
+										}
+										else {
+											topInStack = false;
+										}
+									}
 								}
-								else {
-									topInStack = false;
-								}
+								cdr = this.rEngine.rniCDR(cdr);
 							}
 						}
-						cdr = this.rEngine.rniCDR(cdr);
+						
+						if (topInStack) {
+							stack.remove(stack.size()-1);
+						}
+						for (int i = stack.size()-1; i >= 0; i--) {
+							this.rEngine.rniSetDebug(stack.get(i).longValue(), 0);
+						}
+					}
+					catch (final Throwable e) {
+						LOGGER.log(Level.SEVERE, "An error occured when checking suspended frames", e);
+					}
+					finally {
+						this.contextTmpDebugFrames.clear();
 					}
 				}
 				
-				if (topInStack) {
-					stack.remove(stack.size()-1);
+				if (this.suspendedNFrame != 0) {
+					final int nFrame= getNFrame();
+					if (nFrame < this.suspendedNFrame) {
+						this.suspendedNFrame= 0;
+						this.suspendedFrameP= 0;
+					}
 				}
-				for (int i = stack.size()-1; i >= 0; i--) {
-					this.rEngine.rniSetDebug(stack.get(i).longValue(), 0);
-				}
-			}
-			catch (final Throwable e) {
-				LOGGER.log(Level.SEVERE, "An error occured when checking suspended frames", e);
 			}
 			finally {
-				this.contextTmpDebugFrames.clear();
+				endSafeMode();
 			}
 		}
 	}
@@ -1059,6 +1095,15 @@ final class JRIServerDbg {
 	long getTopFrame() {
 		return this.rEngine.rniEval(this.getTopFrameCallP,
 				this.rni.rniSafeBaseExecEnvP );
+	}
+	
+	
+	int getSuspendedNFrame() {
+		return this.suspendedNFrame;
+	}
+	
+	long getSuspendedFrame() {
+		return this.suspendedFrameP;
 	}
 	
 	long createSysFrameCall(final int which) {

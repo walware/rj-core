@@ -1,5 +1,5 @@
 /*=============================================================================#
- # Copyright (c) 2011-2016 Stephan Wahlbrink (WalWare.de) and others.
+ # Copyright (c) 2016 Stephan Wahlbrink (WalWare.de) and others.
  # All rights reserved. This program and the accompanying materials
  # are made available under the terms of either (per the licensee's choosing)
  #   - the Eclipse Public License v1.0
@@ -15,21 +15,10 @@
 
 package de.walware.rj.server.dbg;
 
+import de.walware.rj.data.RJIOExternalizable;
 
-public interface Tracepoint {
+
+public abstract class TracepointInstallationRequest implements RJIOExternalizable {
 	
-	/** all breakpoint types */
-	byte TYPE_BREAKPOINT=                                   0x0_0000_000F;
-	/** function breakpoint */
-	byte TYPE_FB=                                           0x0_0000_0001;
-	/** line breakpoint */
-	byte TYPE_LB=                                           0x0_0000_0002;
-	/** exception breakpoint */
-	byte TYPE_EB=                                           0x0_0000_0005;
-	
-	int TYPE_DELETED=                                       0x0_0100_0000;
-	
-	
-	int getType();
 	
 }

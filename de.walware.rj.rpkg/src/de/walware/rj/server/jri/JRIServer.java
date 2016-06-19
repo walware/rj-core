@@ -84,6 +84,7 @@ import de.walware.rj.server.dbg.DbgFilterState;
 import de.walware.rj.server.dbg.DbgListener;
 import de.walware.rj.server.dbg.DbgRequest;
 import de.walware.rj.server.dbg.ElementTracepointInstallationRequest;
+import de.walware.rj.server.dbg.FlagTracepointInstallationRequest;
 import de.walware.rj.server.dbg.FrameContextDetailRequest;
 import de.walware.rj.server.dbg.SetDebugRequest;
 import de.walware.rj.server.dbg.TracepointEvent;
@@ -1703,6 +1704,10 @@ public final class JRIServer extends RJ
 				cmd.setAnswer(RjsStatus.OK_STATUS);
 				break CMD_OP;
 			
+			case DbgCmdItem.OP_INSTALL_TP_FLAGS:
+				cmd.setAnswer(this.dbg.getTracepointManager().installTracepoints(
+						(FlagTracepointInstallationRequest) cmd.getData() ));
+				break CMD_OP;
 			case DbgCmdItem.OP_INSTALL_TP_POSITIONS:
 				cmd.setAnswer(this.dbg.getTracepointManager().installTracepoints(
 						(ElementTracepointInstallationRequest) cmd.getData() ));

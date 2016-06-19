@@ -1,6 +1,6 @@
 Encoding: UTF-8
 Package: rj
-Version: 2.1.0-8
+Version: 2.1.0-10
 Title: RJ - R Package for high-level Java-R library RJ
 Author: Stephan Wahlbrink, Tobias Verbeke, low-level R binding based on the JRI library by Simon Urbanek
 Maintainer: Stephan Wahlbrink <stephan.wahlbrink@walware.de>

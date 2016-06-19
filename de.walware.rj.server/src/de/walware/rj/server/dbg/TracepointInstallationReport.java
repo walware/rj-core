@@ -21,7 +21,7 @@ import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RJIOExternalizable;
 
 
-public class ElementTracepointInstallationReport implements RJIOExternalizable {
+public class TracepointInstallationReport implements RJIOExternalizable {
 	
 	
 	public static final int NOTFOUND= 1;
@@ -33,11 +33,11 @@ public class ElementTracepointInstallationReport implements RJIOExternalizable {
 	private final int[] results;
 	
 	
-	public ElementTracepointInstallationReport(final int[] resultCodes) {
+	public TracepointInstallationReport(final int[] resultCodes) {
 		this.results= resultCodes;
 	}
 	
-	public ElementTracepointInstallationReport(final RJIO io) throws IOException {
+	public TracepointInstallationReport(final RJIO io) throws IOException {
 		this.results= io.readIntArray();
 	}
 	

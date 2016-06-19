@@ -23,11 +23,12 @@ import de.walware.rj.data.RJIOExternalizable;
 
 public class SetDebugRequest implements RJIOExternalizable {
 	
-	public static final int FRAME=                       0x00000001;
-	public static final int FUNCTION=                    0x00000002;
+	public static final int FRAME=                          1 << 0;
+	public static final int FUNCTION=                       1 << 1;
 	
-	private static final int ENABLED=                     0x01000000;
-	private static final int TEMP=                        0x00000100;
+	private static final int ENABLED=                       1 << 0 << 24;
+	
+	private static final int TEMP=                          1 << 8;
 	
 	
 	private final long frameId;
@@ -113,12 +114,12 @@ public class SetDebugRequest implements RJIOExternalizable {
 		return this.fName;
 	}
 	
-	public int getDebug() {
-		return ((this.properties & 0xff000000) >>> 24);
-	}
-	
 	public boolean isTemp() {
 		return ((this.properties & TEMP) != 0);
+	}
+	
+	public int getDebug() {
+		return ((this.properties & 0xff000000) >>> 24);
 	}
 	
 }

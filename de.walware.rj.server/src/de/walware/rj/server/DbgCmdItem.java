@@ -27,13 +27,14 @@ import de.walware.rj.server.dbg.CtrlReport;
 import de.walware.rj.server.dbg.DbgEnablement;
 import de.walware.rj.server.dbg.DbgFilterState;
 import de.walware.rj.server.dbg.DbgRequest;
-import de.walware.rj.server.dbg.ElementTracepointInstallationReport;
 import de.walware.rj.server.dbg.ElementTracepointInstallationRequest;
+import de.walware.rj.server.dbg.FlagTracepointInstallationRequest;
 import de.walware.rj.server.dbg.FrameContext;
 import de.walware.rj.server.dbg.FrameContextDetailRequest;
 import de.walware.rj.server.dbg.SetDebugReport;
 import de.walware.rj.server.dbg.SetDebugRequest;
 import de.walware.rj.server.dbg.TracepointEvent;
+import de.walware.rj.server.dbg.TracepointInstallationReport;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
 
 
@@ -52,7 +53,8 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 	public static final byte OP_CTRL_STEP_INTO=             0012;
 	public static final byte OP_CTRL_STEP_OVER=             0014;
 	public static final byte OP_CTRL_STEP_RETURN=           0016;
-	public static final byte OP_INSTALL_TP_POSITIONS=       0020;
+	public static final byte OP_INSTALL_TP_FLAGS=           0020;
+	public static final byte OP_INSTALL_TP_POSITIONS=       0021;
 	
 	// -- C2S sync + async
 	public static final byte OP_SET_ENABLEMENT=             0031;
@@ -97,6 +99,8 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 				return new DbgEnablement(io);
 			case OP_RESET_FILTER_STATE:
 				return new DbgFilterState(io);
+			case OP_INSTALL_TP_FLAGS:
+				return new FlagTracepointInstallationRequest(io);
 			case OP_INSTALL_TP_POSITIONS:
 				return new ElementTracepointInstallationRequest(io);
 			case OP_UPDATE_TP_STATES:
@@ -126,8 +130,9 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 			case OP_SET_ENABLEMENT:
 			case OP_RESET_FILTER_STATE:
 				break; // status
+			case OP_INSTALL_TP_FLAGS:
 			case OP_INSTALL_TP_POSITIONS:
-				return new ElementTracepointInstallationReport(io);
+				return new TracepointInstallationReport(io);
 			case OP_UPDATE_TP_STATES:
 				break; // status
 			default:
@@ -337,8 +342,11 @@ public final class DbgCmdItem extends MainCmdItem implements RjsComObject, Exter
 		case OP_CTRL_STEP_RETURN:
 			sb.append("CTRL_STEP_RETURN"); //$NON-NLS-1$
 			break;
+		case OP_INSTALL_TP_FLAGS:
+			sb.append("INSTALL_TP_FLAGS"); //$NON-NLS-1$
+			break;
 		case OP_INSTALL_TP_POSITIONS:
-			sb.append("INSTALL_TRACEPOINTS"); //$NON-NLS-1$
+			sb.append("INSTALL_TP_POSITIONS"); //$NON-NLS-1$
 			break;
 		case OP_SET_ENABLEMENT:
 			sb.append("SET_ENABLEMENT"); //$NON-NLS-1$

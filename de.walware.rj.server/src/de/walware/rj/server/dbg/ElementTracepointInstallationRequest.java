@@ -20,16 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.walware.rj.data.RJIO;
-import de.walware.rj.data.RJIOExternalizable;
 
 
-public class ElementTracepointInstallationRequest implements RJIOExternalizable {
+public class ElementTracepointInstallationRequest extends TracepointInstallationRequest {
 	
 	
 	private final List<? extends ElementTracepointPositions> requests;
 	
 	
-	public ElementTracepointInstallationRequest(final List<? extends ElementTracepointPositions> checkedList) {
+	public ElementTracepointInstallationRequest(
+			final List<? extends ElementTracepointPositions> checkedList) {
 		this.requests= checkedList;
 	}
 	

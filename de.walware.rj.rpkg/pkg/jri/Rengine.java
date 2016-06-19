@@ -628,6 +628,8 @@ public class Rengine extends Thread {
 		@return reference to a special object or 0 if the kind of object it unknown/unsupported */
 	public synchronized native long rniSpecialObject(int which);
 	
+	public synchronized native long rniGetOptionBySym(long symP);
+	
 	/*--- Debug ---*/
 	
 	public synchronized native int rniGetDebug(long p);

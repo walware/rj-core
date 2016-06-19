@@ -33,13 +33,14 @@ import de.walware.rj.data.RDataUtil;
 import de.walware.rj.data.UnexpectedRDataException;
 import de.walware.rj.server.RjsException;
 import de.walware.rj.server.RjsStatus;
-import de.walware.rj.server.dbg.ElementTracepointInstallationReport;
 import de.walware.rj.server.dbg.ElementTracepointInstallationRequest;
 import de.walware.rj.server.dbg.ElementTracepointPositions;
+import de.walware.rj.server.dbg.FlagTracepointInstallationRequest;
 import de.walware.rj.server.dbg.SrcfileData;
 import de.walware.rj.server.dbg.Srcref;
 import de.walware.rj.server.dbg.Tracepoint;
 import de.walware.rj.server.dbg.TracepointEvent;
+import de.walware.rj.server.dbg.TracepointInstallationReport;
 import de.walware.rj.server.dbg.TracepointPosition;
 import de.walware.rj.server.dbg.TracepointState;
 import de.walware.rj.server.dbg.TracepointStatesUpdate;
@@ -143,6 +144,7 @@ final class TracepointManager {
 	private int hitBreakpointFlags;
 	private int[] hitBreakpointSrcref;
 	private long hitBreakpointSrcfile;
+	private long hitBreakpointFrameP;
 	
 	private final long traceSymP;
 	private final long untraceSymP;
@@ -153,8 +155,12 @@ final class TracepointManager {
 	private final long stepSrcrefTmplP;
 	
 	private final long breakpointTmplP;
-	private final long browserExprP;
+	private final long errorHandlerP;
+	
 	private final long getTraceExprEnvCallP;
+	private final long getRootEvalCallCallP;
+	
+	private final long browserExprP;
 	
 	
 	public TracepointManager(final JRIServerDbg dbg, final JRIServerRni rni) throws RjsException {
@@ -181,12 +187,15 @@ final class TracepointManager {
 				this.rEngine.rniParse(
 						"{ if (\"rj\" %in% loadedNamespaces()) rj:::.breakpoint() }", 1 ), //$NON-NLS-1$
 				0 ));
+		this.errorHandlerP= this.rni.checkAndPreserve(this.rEngine.rniParse(
+				"rj:::.checkError()", 1 ));
+		
+		this.getRootEvalCallCallP= this.rni.checkAndPreserve(this.dbg.createSysCallCall(-3));
+		this.getTraceExprEnvCallP= this.rni.checkAndPreserve(this.dbg.createSysFrameCall(-1));
 		
 		this.browserExprP= this.rni.checkAndPreserve(this.rEngine.rniGetVectorElt(this.rEngine.rniParse(
 				"{ browser(skipCalls= 3L) }", 1 ), //$NON-NLS-1$
 				0 ));
-		
-		this.getTraceExprEnvCallP= this.rni.checkAndPreserve(this.dbg.createSysFrameCall(-1));
 	}
 	
 	
@@ -199,6 +208,49 @@ final class TracepointManager {
 	}
 	
 	
+	public TracepointInstallationReport installTracepoints(final FlagTracepointInstallationRequest request) 
+			throws RjsException {
+		final byte[] types= request.getTypes();
+		final int[] flags= request.getFlags();
+		final int[] resultCodes= new int[types.length];
+		
+		for (int i= 0; i < types.length; i++) {
+			switch (types[i]) {
+			case Tracepoint.TYPE_EB:
+				resultCodes[i]= setEBreakpoint(flags[i]);
+				break;
+			default:
+				resultCodes[i]= TracepointInstallationReport.NOTFOUND;
+				break;
+			}
+		}
+		
+		return new TracepointInstallationReport(resultCodes);
+	}
+	
+	private int setEBreakpoint(final int flags) {
+		try {
+			if ((flags & TracepointState.FLAG_ENABLED) != 0) {
+				final long handlerP= createExceptionHandler();
+				if (this.rni.setOption(this.rni.error_SymP, handlerP)) {
+					return TracepointInstallationReport.FOUND_SET;
+				}
+			}
+			else {
+				if (this.rni.setOption(this.rni.error_SymP, this.rni.NULL_P)) {
+					return TracepointInstallationReport.FOUND_UNSET;
+				}
+			}
+		}
+		catch (final Exception e) {
+			final LogRecord record= new LogRecord(Level.SEVERE,
+					"An error occurred when setting dbg error handler.");
+			record.setThrown(e);
+			JRIServerErrors.LOGGER.log(record);
+		}
+		return TracepointInstallationReport.NOTFOUND;
+	}
+	
 	/**
 	 * Installs the specified tracepoints
 	 * 
@@ -206,11 +258,11 @@ final class TracepointManager {
 	 * @return a report
 	 * @throws RjsException
 	 */
-	public ElementTracepointInstallationReport installTracepoints(final ElementTracepointInstallationRequest request)
+	public TracepointInstallationReport installTracepoints(final ElementTracepointInstallationRequest request)
 			throws RjsException {
 		final List<? extends ElementTracepointPositions> elementList= request.getRequests();
 		final int[] resultCodes= new int[elementList.size()];
-		Arrays.fill(resultCodes, ElementTracepointInstallationReport.NOTFOUND);
+		Arrays.fill(resultCodes, TracepointInstallationReport.NOTFOUND);
 		
 		final List<Long> envTodo= new ArrayList<>();
 		final List<Long> envDone= new ArrayList<>();
@@ -375,7 +427,7 @@ final class TracepointManager {
 			LOGGER.log(Level.FINER, sb.toString());
 		}
 		
-		return new ElementTracepointInstallationReport(resultCodes);
+		return new TracepointInstallationReport(resultCodes);
 	}
 	
 	private long checkGeneric(final long funP, final long nameStringP, final long envP) throws Exception {
@@ -433,14 +485,14 @@ final class TracepointManager {
 		final SrcfileData srcfile= elementTracepointPositions.getSrcfile();
 		boolean ok= false;
 		if (srcfile.getPath() == null) {
-			return ElementTracepointInstallationReport.NOTFOUND;
+			return TracepointInstallationReport.NOTFOUND;
 		}
 		if (funInfo.fileType == FunInfo.FILE_PATH) {
 			if (funInfo.file.equals(srcfile.getPath())) {
 				ok= true;
 			}
 			else {
-				return ElementTracepointInstallationReport.NOTFOUND;
+				return TracepointInstallationReport.NOTFOUND;
 			}
 		}
 		if (!ok && funInfo.fileType == FunInfo.FILE_NAME) {
@@ -448,11 +500,11 @@ final class TracepointManager {
 				ok= true;
 			}
 			else {
-				return ElementTracepointInstallationReport.NOTFOUND;
+				return TracepointInstallationReport.NOTFOUND;
 			}
 		}
 		if (!ok) {
-			return ElementTracepointInstallationReport.NOTFOUND;
+			return TracepointInstallationReport.NOTFOUND;
 		}
 		
 		// element
@@ -464,7 +516,7 @@ final class TracepointManager {
 					ok= true;
 				}
 				else {
-					return ElementTracepointInstallationReport.NOTFOUND;
+					return TracepointInstallationReport.NOTFOUND;
 				}
 			}
 		}
@@ -507,11 +559,11 @@ final class TracepointManager {
 			}
 		}
 		if (!ok) {
-			return ElementTracepointInstallationReport.NOTFOUND;
+			return TracepointInstallationReport.NOTFOUND;
 		}
 		
 		// ok
-		int result= ElementTracepointInstallationReport.FOUND_UNCHANGED;
+		int result= TracepointInstallationReport.FOUND_UNCHANGED;
 		final int savedProtected= this.rni.saveProtected();
 		try {
 			long traceArgsP= this.rni.NULL_P;
@@ -615,7 +667,7 @@ final class TracepointManager {
 						this.rni.rniSafeGlobalExecEnvP, CODE_DBG_TRACE );
 				funInfo.currentMainFunP= funInfo.orgMainFunP;
 			}
-			result= ElementTracepointInstallationReport.FOUND_UNSET;
+			result= TracepointInstallationReport.FOUND_UNSET;
 			if (l > 0) { // set
 				this.rni.evalExpr(this.rEngine.rniCons(
 								this.traceSymP, this.rEngine.rniCons(
@@ -623,7 +675,7 @@ final class TracepointManager {
 										this.rni.edit_SymP, false ),
 								0, true ), 
 						this.rni.rniSafeGlobalExecEnvP, CODE_DBG_TRACE );
-				result= ElementTracepointInstallationReport.FOUND_SET;
+				result= TracepointInstallationReport.FOUND_SET;
 			}
 		}
 		catch (final Exception e) {
@@ -788,7 +840,7 @@ final class TracepointManager {
 			int n;
 			final TracepointPosition position= list.get(i);
 			if (position.getType() == Tracepoint.TYPE_LB) {
-				final long breakpointP= createBreakpointCall(position, currentSrcref,
+				final long breakpointP= createBreakpointHandler(position, currentSrcref,
 						funInfo, filePathP, elementIdP, 0 );
 				currentP= this.rEngine.rniCons(
 						breakpointP, this.rEngine.rniCons(
@@ -798,9 +850,9 @@ final class TracepointManager {
 				n= 1;
 			}
 			else if (position.getType() == Tracepoint.TYPE_FB) {
-				final long entryP= createBreakpointCall(position, currentSrcref,
+				final long entryP= createBreakpointHandler(position, currentSrcref,
 						funInfo, filePathP, elementIdP, TracepointState.FLAG_MB_ENTRY );
-				long exitP= createBreakpointCall(position, currentSrcref,
+				long exitP= createBreakpointHandler(position, currentSrcref,
 						funInfo, filePathP, elementIdP, TracepointState.FLAG_MB_EXIT );
 				exitP= this.rni.protect(this.rEngine.rniCons(
 						this.rni.onExit_SymP, this.rEngine.rniCons(
@@ -828,7 +880,7 @@ final class TracepointManager {
 		return currentP;
 	}
 	
-	private long createBreakpointCall(final TracepointPosition position, final int[] srcref,
+	private long createBreakpointHandler(final TracepointPosition position, final int[] srcref,
 			final FunInfo funInfo, final long filePathP, final long elementIdP, final int flags)
 			throws RNullPointerException {
 		final long exprP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(this.breakpointTmplP));
@@ -871,6 +923,10 @@ final class TracepointManager {
 		this.rEngine.rniSetAttrBySym(list[n+1], this.dbg.srcfile_SymP, srcfileP);
 		this.rEngine.rniSetAttrBySym(list[n+1], this.rni.dbgElementId_SymP, elementIdP);
 		return this.rEngine.rniPutVector(list);
+	}
+	
+	private long createExceptionHandler() throws RNullPointerException {
+		return this.errorHandlerP;
 	}
 	
 	/**
@@ -951,7 +1007,7 @@ final class TracepointManager {
 		}
 		final long id= RDataUtil.decodeLongFromRaw(this.rEngine.rniGetRawArray(idP));
 		final int[] index= this.rEngine.rniGetIntArray(atP);
-		TracepointState breakpointState= null;
+		TracepointState tracepointState= null;
 		synchronized (this.tracepointMap) {
 			final List<TracepointState> list= this.tracepointMap.get(filePath);
 			if (list != null) {
@@ -959,11 +1015,11 @@ final class TracepointManager {
 					final TracepointState state= list.get(i);
 					if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
 							&& id == state.getId()) {
-						breakpointState= state;
+						tracepointState= state;
 						break;
 					}
 				}
-				if (breakpointState == null) {
+				if (tracepointState == null) {
 					String elementId= null;
 					final long elementIdP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.dbgElementId_SymP);
 					if (elementIdP != 0) {
@@ -975,7 +1031,7 @@ final class TracepointManager {
 							if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
 									&& elementId.equals(state.getElementId())
 									&& Arrays.equals(index, state.getIndex()) ) {
-								breakpointState= state;
+								tracepointState= state;
 								break;
 							}
 						}
@@ -983,18 +1039,18 @@ final class TracepointManager {
 				}
 			}
 		}
-		if (breakpointState == null) {
+		if (tracepointState == null) {
 			LOGGER.log(Level.FINE, "Skipping breakpoint because of missing state.");
 			return 0;
 		}
-		if (!breakpointState.isEnabled()) {
+		if (!tracepointState.isEnabled()) {
 //			LOGGER.log(Level.FINER, "Skipping breakpoint because it is disabled.");
 			return 0;
 		}
 		
 		this.hitBreakpointState= null;
 		this.hitBreakpointSrcref= this.rEngine.rniGetIntArray(srcrefP);
-		if (this.hitBreakpointSrcref == null) {
+		if (this.hitBreakpointSrcref == null || this.hitBreakpointSrcref.length < 6) {
 			throw new RjException("Missing data: srcref values.");
 		}
 		if (!this.breakpointsEnabled) {
@@ -1010,8 +1066,8 @@ final class TracepointManager {
 		}
 		int flags= 0;
 		{	// check flags
-			final int stateFlags= breakpointState.getFlags();
-			if (breakpointState.getType() == Tracepoint.TYPE_FB) {
+			final int stateFlags= tracepointState.getFlags();
+			if (tracepointState.getType() == Tracepoint.TYPE_FB) {
 				if ((codeFlags & stateFlags & (TracepointState.FLAG_MB_ENTRY | TracepointState.FLAG_MB_EXIT)) == 0) {
 //					LOGGER.log(Level.FINER, "Skipping breakpoint because current position is disabled.");
 					return 0;
@@ -1019,8 +1075,8 @@ final class TracepointManager {
 			}
 			flags |= (codeFlags & 0x00ff0000);
 		}
-		if (breakpointState.getExpr() != null) { // check expr
-			final long exprP= getTracepointEvalExpr(breakpointState);
+		if (tracepointState.getExpr() != null) { // check expr
+			final long exprP= getTracepointEvalExpr(tracepointState);
 			if (exprP == 0) {
 //				LOGGER.log(Level.WARNING, "Creating expression for breakpoint condition failed.");
 				return 0;
@@ -1074,11 +1130,82 @@ final class TracepointManager {
 			return this.browserExprP;
 		}
 		finally {
-			if (this.hitBreakpointSrcref != null && this.hitBreakpointSrcref.length >= 6) {
-				this.hitBreakpointState= breakpointState;
-				this.hitBreakpointFlags= flags;
-				this.hitBreakpointSrcfile= srcfileP;
+			this.hitBreakpointState= tracepointState;
+			this.hitBreakpointFlags= flags;
+			this.hitBreakpointSrcfile= srcfileP;
+			this.hitBreakpointFrameP= 0;
+		}
+	}
+	
+	public long checkEB(final long argsP) {
+		this.dbg.beginSafeMode();
+		try {
+			final int nFrame= this.dbg.getNFrame();
+			if (nFrame <= 1) {
+				return 0;
 			}
+			final int suspendedNFrame= this.dbg.getSuspendedNFrame();
+			final long suspendedFrame= this.dbg.getSuspendedFrame();
+			final long frameP= this.rEngine.rniEval(this.getTraceExprEnvCallP,
+					this.rni.rniSafeBaseExecEnvP );
+			if (frameP != 0) {
+				if (nFrame - 1 == suspendedNFrame && frameP == suspendedFrame) {
+					return 0;
+				}
+				if ((nFrame == 4 && frameP == this.rni.Global_EnvP)
+						|| (nFrame - 4 == suspendedFrame && frameP == suspendedFrame) ) {
+					final long callP= this.rEngine.rniEval(this.getRootEvalCallCallP,
+							this.rni.rniSafeGlobalExecEnvP );
+					if (callP != 0) {
+						final String call= this.rni.getSourceLine(callP);
+						if (call != null && call.startsWith("rj:::")) {
+							return 0;
+						}
+					}
+				}
+			}
+			
+			TracepointState tracepointState= null;
+			final int flags= 0;
+			synchronized (this.tracepointMap) {
+				final List<TracepointState> list= this.tracepointMap.get(TracepointState.EB_FILEPATH);
+				if (list != null) {
+					for (final TracepointState state : list) {
+						if (state.getElementId().equals("*")) {
+							tracepointState= state;
+							break;
+						}
+					}
+				}
+			}
+			if (tracepointState == null) {
+				LOGGER.log(Level.FINE, "Skipping exception because of missing state.");
+				return 0;
+			}
+			if (!tracepointState.isEnabled()) {
+				return 0;
+			}
+			
+			try {
+				final long browserExprP= this.rni.checkAndProtect(this.rEngine.rniDuplicate(
+						this.browserExprP ));
+				
+				return browserExprP;
+			}
+			catch (final RNullPointerException e) {
+				LOGGER.log(Level.WARNING, "Failed to create browser expression.", e);
+				return this.browserExprP;
+			}
+			finally {
+				this.hitBreakpointState= tracepointState;
+				this.hitBreakpointFlags= flags;
+				this.hitBreakpointSrcfile= 0;
+				this.hitBreakpointSrcref= null;
+				this.hitBreakpointFrameP= frameP;
+			}
+		}
+		finally {
+			this.dbg.endSafeMode();
 		}
 	}
 	
@@ -1135,13 +1262,17 @@ final class TracepointManager {
 		final TracepointState state= this.hitBreakpointState;
 		if (state != null) {
 			this.hitBreakpointState= null;
-			if (srcrefP != 0) {
-				final int[] current= this.rEngine.rniGetIntArray(srcrefP);
-				if (Arrays.equals(this.hitBreakpointSrcref, current)) { // compare srcfile?
-					this.dbg.sendNotification(new TracepointEvent(TracepointEvent.KIND_ABOUT_TO_HIT,
-							state.getType(), state.getFilePath(), state.getId(),
-							state.getElementLabel(), this.hitBreakpointFlags, null ));
-				}
+			if (state.getType() == Tracepoint.TYPE_EB) {
+				this.dbg.sendNotification(new TracepointEvent(TracepointEvent.KIND_ABOUT_TO_HIT,
+						state.getType(), state.getFilePath(), state.getId(),
+						state.getElementId(),
+						this.hitBreakpointFlags, null ));
+			}
+			else if (srcrefP != 0 && Arrays.equals(this.hitBreakpointSrcref, this.rEngine.rniGetIntArray(srcrefP))) { // compare srcfile?
+				this.dbg.sendNotification(new TracepointEvent(TracepointEvent.KIND_ABOUT_TO_HIT,
+						state.getType(), state.getFilePath(), state.getId(),
+						state.getElementLabel(),
+						this.hitBreakpointFlags, null ));
 			}
 		}
 	}

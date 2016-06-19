@@ -150,6 +150,7 @@ final class JRIServerRni {
 	private final long complexFunP;
 	private final long ReFunP;
 	private final long ImFunP;
+	private final long optionsSymP;
 	private final long seqIntFunP;
 	
 	private final long getNamespaceFunP;
@@ -237,6 +238,7 @@ final class JRIServerRni {
 			this.ns_SymP= this.rEngine.rniInstallSymbol("ns"); //$NON-NLS-1$
 			this.on_SymP= this.rEngine.rniInstallSymbol("on"); //$NON-NLS-1$
 			this.onExit_SymP= this.rEngine.rniInstallSymbol("on.exit"); //$NON-NLS-1$
+			this.optionsSymP= this.rEngine.rniInstallSymbol("options"); //$NON-NLS-1$
 			this.original_SymP= this.rEngine.rniInstallSymbol("original"); //$NON-NLS-1$
 			this.output_SymP= this.rEngine.rniInstallSymbol("output"); //$NON-NLS-1$
 			this.parentSymP= this.rEngine.rniInstallSymbol("parent"); //$NON-NLS-1$
@@ -1557,6 +1559,16 @@ final class JRIServerRni {
 			}
 		}
 		return null;
+	}
+	
+	public boolean setOption(final long symP, final long valP) {
+		final long p= this.rEngine.rniEval(this.rEngine.rniCons(
+						this.optionsSymP, this.rEngine.rniCons(
+								valP, this.NULL_P,
+								symP, false),
+						0, true),
+				this.rniSafeGlobalExecEnvP );
+		return (p != 0);
 	}
 	
 	
