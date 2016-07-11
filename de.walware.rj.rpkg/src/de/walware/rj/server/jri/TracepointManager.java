@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -58,6 +59,8 @@ final class TracepointManager {
 	
 	private static final int[] LOCAL_METHOD_INDEX= new int[] { 2, 3 };
 	private static final Pattern SIGNATURE_PATTERN= Pattern.compile("\\#"); //$NON-NLS-1$
+	
+	private static final String TOPLEVEL_ELEMENT_ID= "200:"; //$NON-NLS-1$
 	
 	
 	private static final class FunInfo {
@@ -132,11 +135,59 @@ final class TracepointManager {
 	}
 	
 	
+	private static boolean isLBorFB(final int type) {
+		return (type == Tracepoint.TYPE_LB || type == Tracepoint.TYPE_FB);
+	}
+	
+	private static TracepointPosition getTBPosition(final ElementTracepointPositions positions,
+			final int[] srcref) {
+		final int[] baseSrcref= positions.getElementSrcref();
+		for (final TracepointPosition position : positions.getPositions()) {
+			final int[] positionSrcref;
+			if (position.getType() == Tracepoint.TYPE_TB
+					&& (positionSrcref= position.getSrcref()) != null
+					&& Srcref.addLine(baseSrcref[Srcref.BEGIN_LINE], positionSrcref[Srcref.BEGIN_LINE]) == srcref[Srcref.BEGIN_LINE]) {
+				return position;
+			}
+		}
+		return null;
+	}
+	
+	private static TracepointState getBState(final List<TracepointState> list, final long id) {
+		for (int i= 0; i < list.size(); i++) {
+			final TracepointState state= list.get(i);
+			if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
+					&& id == state.getId()) {
+				return state;
+			}
+		}
+		return null;
+	}
+	
+	private static TracepointState getBState(final List<TracepointState> list,
+			final String elementId, final int[] index) {
+		if (elementId != null && index != null) {
+			for (int i= 0; i < list.size(); i++) {
+				final TracepointState state= list.get(i);
+				if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
+						&& elementId.equals(state.getElementId())
+						&& Arrays.equals(index, state.getIndex()) ) {
+					return state;
+				}
+			}
+		}
+		return null;
+	}
+	
+	
 	private final JRIServerDbg dbg;
 	private final Rengine rEngine;
 	private final JRIServerRni rni;
 	
-	private final Map<String, List<TracepointState>> tracepointMap= new HashMap<>();
+	private final Map<String, ElementTracepointPositions> tbPositionMap= new HashMap<>();
+	private final List<ElementTracepointPositions> tbHistory= new ArrayList<>(10);
+	
+	private final Map<String, List<TracepointState>> tracepointStateMap= new HashMap<>();
 	
 	private boolean breakpointsEnabled= true;
 	
@@ -217,7 +268,7 @@ final class TracepointManager {
 		for (int i= 0; i < types.length; i++) {
 			switch (types[i]) {
 			case Tracepoint.TYPE_EB:
-				resultCodes[i]= setEBreakpoint(flags[i]);
+				resultCodes[i]= setEB(flags[i]);
 				break;
 			default:
 				resultCodes[i]= TracepointInstallationReport.NOTFOUND;
@@ -228,7 +279,7 @@ final class TracepointManager {
 		return new TracepointInstallationReport(resultCodes);
 	}
 	
-	private int setEBreakpoint(final int flags) {
+	private int setEB(final int flags) {
 		try {
 			if ((flags & TracepointState.FLAG_ENABLED) != 0) {
 				final long handlerP= createExceptionHandler();
@@ -251,6 +302,40 @@ final class TracepointManager {
 		return TracepointInstallationReport.NOTFOUND;
 	}
 	
+	private void addTB(final ElementTracepointPositions positions) {
+		final SrcfileData srcfile= positions.getSrcfile();
+		this.tbPositionMap.put(srcfile.getPath(), positions);
+		
+		for (final ListIterator<ElementTracepointPositions> iter= this.tbHistory.listIterator(); iter.hasNext();) {
+			final ElementTracepointPositions old= iter.next();
+			if (old.getSrcfile().equals(srcfile)) {
+				iter.set(positions);
+				break;
+			}
+		}
+	}
+	
+	private void updateTBHistory(final ElementTracepointPositions positions) {
+		final SrcfileData srcfile= positions.getSrcfile();
+		for (final ListIterator<ElementTracepointPositions> iter= this.tbHistory.listIterator(); iter.hasNext();) {
+			final ElementTracepointPositions old= iter.next();
+			if (old == positions || old.getSrcfile().equals(srcfile)) {
+				if (iter.previousIndex() == 0) {
+					if (old != positions) {
+						iter.set(positions);
+					}
+					return;
+				}
+				iter.remove();
+				break;
+			}
+		}
+		if (this.tbHistory.size() >= 10) {
+			this.tbHistory.remove(this.tbHistory.size() - 1);
+		}
+		this.tbHistory.add(0, positions);
+	}
+	
 	/**
 	 * Installs the specified tracepoints
 	 * 
@@ -263,6 +348,22 @@ final class TracepointManager {
 		final List<? extends ElementTracepointPositions> elementList= request.getRequests();
 		final int[] resultCodes= new int[elementList.size()];
 		Arrays.fill(resultCodes, TracepointInstallationReport.NOTFOUND);
+		
+		{	int todo= 0;
+			for (int elementIdx= 0; elementIdx < elementList.size(); elementIdx++) {
+				final ElementTracepointPositions elementTracepointPositions= elementList.get(elementIdx);
+				if (elementTracepointPositions.getElementId().startsWith(TOPLEVEL_ELEMENT_ID)) {
+					addTB(elementTracepointPositions);
+					continue;
+				}
+				else {
+					todo++;
+				}
+			}
+			if (todo == 0) {
+				return new TracepointInstallationReport(resultCodes);
+			}
+		}
 		
 		final List<Long> envTodo= new ArrayList<>();
 		final List<Long> envDone= new ArrayList<>();
@@ -392,6 +493,10 @@ final class TracepointManager {
 				}
 				
 				for (int elementIdx= 0; elementIdx < elementList.size(); elementIdx++) {
+					final ElementTracepointPositions elementTracepointPositions= elementList.get(elementIdx);
+					if (elementTracepointPositions.getElementId().startsWith(TOPLEVEL_ELEMENT_ID)) {
+						continue;
+					}
 					if (commonInfo != null && commonInfo.done[0] < FunInfo.DONE_SET) {
 						final int funSet= trySetTracepoints(elementList.get(elementIdx),
 								commonInfo, name, nameStrP, envP);
@@ -404,7 +509,7 @@ final class TracepointManager {
 						for (int methodIdx= 0; methodIdx < methodInfos.size(); methodIdx++) {
 							final FunInfo methodInfo= methodInfos.get(methodIdx);
 							if (methodInfo.done[0] < FunInfo.DONE_SET) {
-								final int methodSet= trySetTracepoints(elementList.get(elementIdx),
+								final int methodSet= trySetTracepoints(elementTracepointPositions,
 										methodInfo, name, nameStrP, envP);
 								if (methodSet > resultCodes[elementIdx]) {
 									resultCodes[elementIdx]= methodSet;
@@ -458,8 +563,8 @@ final class TracepointManager {
 		if (funInfo.orgBodyP == 0) {
 			return false;
 		}
-		funInfo.srcfileP= this.rEngine.rniGetAttrBySym(funInfo.orgBodyP, this.dbg.srcfile_SymP);
-		if (funInfo.srcfileP == 0 || this.rEngine.rniExpType(funInfo.srcfileP) != REXP.ENVSXP) {
+		funInfo.srcfileP= this.dbg.getSrcfileEnvP(funInfo.orgBodyP);
+		if (funInfo.srcfileP == 0) {
 			return false;
 		}
 		funInfo.file= this.dbg.getFilePath(funInfo.srcfileP, 0);
@@ -937,9 +1042,9 @@ final class TracepointManager {
 	 * @return update result status
 	 */
 	public RjsStatus updateTracepointStates(final TracepointStatesUpdate request) {
-		synchronized (this.tracepointMap) {
+		synchronized (this.tracepointStateMap) {
 			if (request.getReset()) {
-				this.tracepointMap.clear();
+				this.tracepointStateMap.clear();
 			}
 			final List<TracepointState> list= request.getStates();
 			String path= null;
@@ -948,13 +1053,13 @@ final class TracepointManager {
 				final TracepointState state= list.get(i);
 				if (path != state.getFilePath()) {
 					path= state.getFilePath();
-					pathList= this.tracepointMap.get(path);
+					pathList= this.tracepointStateMap.get(path);
 					if (pathList == null) {
 						if (state.getType() == Tracepoint.TYPE_DELETED) {
 							continue;
 						}
 						pathList= new ArrayList<>(8);
-						this.tracepointMap.put(path, pathList);
+						this.tracepointStateMap.put(path, pathList);
 					}
 				}
 				final int idx= pathList.indexOf(state);
@@ -972,8 +1077,8 @@ final class TracepointManager {
 				}
 				pathList.add(state);
 			}
-			if (this.tracepointMap.size() > 32) {
-				final Iterator<Entry<String, List<TracepointState>>> iter= this.tracepointMap.entrySet().iterator();
+			if (this.tracepointStateMap.size() > 32) {
+				final Iterator<Entry<String, List<TracepointState>>> iter= this.tracepointStateMap.entrySet().iterator();
 				while (iter.hasNext()) {
 					if (iter.next().getValue().isEmpty()) {
 						iter.remove();
@@ -992,8 +1097,8 @@ final class TracepointManager {
 		if (srcrefP == 0) {
 			throw new RjException("Missing data: srcref.");
 		}
-		final long srcfileP= this.rEngine.rniGetAttrBySym(srcrefP, this.dbg.srcfile_SymP);
-		if (srcfileP == 0 || this.rEngine.rniExpType(srcfileP) != REXP.ENVSXP) {
+		final long srcfileP= this.dbg.getSrcfileEnvP(srcrefP);
+		if (srcfileP == 0) {
 			throw new RjException("Missing data: srcfile env of srcref.");
 		}
 		final String filePath= this.dbg.getFilePath(srcfileP, srcrefP);
@@ -1006,40 +1111,20 @@ final class TracepointManager {
 			throw new RjException("Missing data: id/position.");
 		}
 		final long id= RDataUtil.decodeLongFromRaw(this.rEngine.rniGetRawArray(idP));
-		final int[] index= this.rEngine.rniGetIntArray(atP);
 		TracepointState tracepointState= null;
-		synchronized (this.tracepointMap) {
-			final List<TracepointState> list= this.tracepointMap.get(filePath);
+		synchronized (this.tracepointStateMap) {
+			final List<TracepointState> list= this.tracepointStateMap.get(filePath);
 			if (list != null) {
-				for (int i= 0; i < list.size(); i++) {
-					final TracepointState state= list.get(i);
-					if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
-							&& id == state.getId()) {
-						tracepointState= state;
-						break;
-					}
-				}
-				if (tracepointState == null) {
-					String elementId= null;
-					final long elementIdP= this.rEngine.rniGetAttrBySym(srcrefP, this.rni.dbgElementId_SymP);
-					if (elementIdP != 0) {
-						elementId= this.rEngine.rniGetString(elementIdP);
-					}
-					if (elementId != null) {
-						for (int i= 0; i < list.size(); i++) {
-							final TracepointState state= list.get(i);
-							if ((state.getType() & Tracepoint.TYPE_BREAKPOINT) != 0
-									&& elementId.equals(state.getElementId())
-									&& Arrays.equals(index, state.getIndex()) ) {
-								tracepointState= state;
-								break;
-							}
-						}
-					}
+				tracepointState= getBState(list, id);
+				if (tracepointState == null
+						|| !isLBorFB(tracepointState.getType() & Tracepoint.TYPE_BREAKPOINT) ) {
+					tracepointState= getBState(list,
+							this.rEngine.rniGetAttrStringBySym(srcrefP, this.rni.dbgElementId_SymP),
+							this.rEngine.rniGetIntArray(atP) );
 				}
 			}
 		}
-		if (tracepointState == null) {
+		if (tracepointState == null || !isLBorFB(tracepointState.getType())) {
 			LOGGER.log(Level.FINE, "Skipping breakpoint because of missing state.");
 			return 0;
 		}
@@ -1137,6 +1222,101 @@ final class TracepointManager {
 		}
 	}
 	
+	public long checkTB(final long argsP) {
+		final long[] argValuesP;
+		if (this.tbPositionMap.isEmpty()
+				|| argsP == 0
+				|| (argValuesP= this.rEngine.rniGetVector(argsP)) == null || argValuesP.length < 2) {
+			return 0;
+		}
+		
+		final long srcrefP= this.dbg.getExpr0SrcrefP(argValuesP[0]);
+		if (srcrefP == 0) {
+			return 0;
+		}
+		final long srcfileP= this.dbg.getSrcfileEnvP(srcrefP);
+		if (srcfileP == 0) {
+			return 0;
+		}
+		ElementTracepointPositions positions= null;
+		String filePath= this.dbg.getFilePath(srcfileP, srcrefP);
+		if (filePath != null) {
+			positions= this.tbPositionMap.get(filePath);
+		}
+		else {
+			final String fileName= this.dbg.getFileName(srcfileP);
+			if (fileName != null) {
+				for (final ElementTracepointPositions candidate : this.tbPositionMap.values()) {
+					if (fileName.equals(candidate.getSrcfile().getName())) {
+						positions= candidate;
+						filePath= positions.getSrcfile().getPath();
+						break;
+					}
+				}
+			}
+		}
+		if (filePath == null) {
+			return 0;
+		}
+		{	final long timestamp= this.dbg.getFileTimestamp(srcfileP);
+			if (positions == null || positions.getSrcfile().getTimestamp() != timestamp) {
+				for (int i= 0; i < this.tbHistory.size(); i++) {
+					final ElementTracepointPositions candidate= this.tbHistory.get(i);
+					if (filePath.equals(candidate.getSrcfile().getPath())
+							&& timestamp == candidate.getSrcfile().getTimestamp() ) {
+						positions= candidate;
+						break;
+					}
+				}
+			}
+		}
+		if (positions == null) {
+			return 0;
+		}
+		updateTBHistory(positions);
+		
+		final long frameP= argValuesP[1];
+		if (this.rEngine.rniExpType(frameP) != REXP.ENVSXP) {
+			return 0;
+		}
+		
+		this.hitBreakpointState= null;
+		this.hitBreakpointSrcref= this.rEngine.rniGetIntArray(srcrefP);
+		if (this.hitBreakpointSrcref == null || this.hitBreakpointSrcref.length < 6) {
+			return 0;
+		}
+		
+		final TracepointPosition position= getTBPosition(positions, this.hitBreakpointSrcref);
+		if (position == null) {
+			return 0;
+		}
+		
+		TracepointState tracepointState= null;
+		synchronized (this.tracepointStateMap) {
+			final List<TracepointState> list= this.tracepointStateMap.get(filePath);
+			if (list != null) {
+				tracepointState= getBState(list, position.getId());
+			}
+		}
+		if (tracepointState == null || tracepointState.getType() != Tracepoint.TYPE_TB) {
+			LOGGER.log(Level.FINE, "Skipping breakpoint because of missing state.");
+			return 0;
+		}
+		if (!tracepointState.isEnabled()) {
+//			LOGGER.log(Level.FINER, "Skipping breakpoint because it is disabled.");
+			return 0;
+		}
+		
+		this.rEngine.rniSetDebug(frameP, 1);
+		
+		this.hitBreakpointState= tracepointState;
+		this.hitBreakpointFlags= 0;
+		this.hitBreakpointSrcfile= srcfileP;
+		this.hitBreakpointFrameP= frameP;
+		
+		return 0;
+	}
+	
 	public long checkEB(final long argsP) {
 		this.dbg.beginSafeMode();
 		try {
@@ -1167,8 +1347,8 @@ final class TracepointManager {
 			
 			TracepointState tracepointState= null;
 			final int flags= 0;
-			synchronized (this.tracepointMap) {
-				final List<TracepointState> list= this.tracepointMap.get(TracepointState.EB_FILEPATH);
+			synchronized (this.tracepointStateMap) {
+				final List<TracepointState> list= this.tracepointStateMap.get(TracepointState.EB_FILEPATH);
 				if (list != null) {
 					for (final TracepointState state : list) {
 						if (state.getElementId().equals("*")) {
@@ -1233,11 +1413,11 @@ final class TracepointManager {
 			this.rni.protect(exprP);
 		}
 		if (parsed || stateWithData != breakpointState) {
-			synchronized (this.tracepointMap) {
+			synchronized (this.tracepointStateMap) {
 				if (parsed) {
 					stateWithData.setParsedExpr(exprP);
 				}
-				final List<TracepointState> list= this.tracepointMap.get(breakpointState.getFilePath());
+				final List<TracepointState> list= this.tracepointStateMap.get(breakpointState.getFilePath());
 				if (list != null) {
 					for (int i= 0; i < list.size(); i++) {
 						final TracepointState state= list.get(i);

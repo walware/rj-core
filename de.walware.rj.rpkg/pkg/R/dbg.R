@@ -18,6 +18,7 @@
 	if (tracingState(FALSE)) {
 		on.exit(tracingState(TRUE))
 	}
+	
 	if ("rj" %in% loadedNamespaces()) {
 		answer <- .Call("Re_ExecJCommand", "dbg:checkEB", NULL, 0L,
 				PACKAGE= "(embedding)" )
@@ -27,4 +28,10 @@
 			eval(expr= answer, envir= envir)
 		}
 	}
+}
+
+.checkTB <- function(expr, env) {
+	answer <- .Call("Re_ExecJCommand", "dbg:checkTB", list(expr, env), 0L,
+			PACKAGE= "(embedding)" )
+	
 }

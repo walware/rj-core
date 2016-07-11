@@ -96,15 +96,19 @@ public class Srcref {
 		return diff;
 	}
 	
+	public static int addLine(final int base, final int diff) {
+		if (base > 0 && diff > 0) {
+			return base + diff - 1;
+		}
+		else {
+			return NA;
+		}
+	}
+	
 	public static int[] add(final int[] base, final int[] diff) {
 		final int[] sum= new int[6];
 		
-		if (base[BEGIN_LINE] > 0 && diff[BEGIN_LINE] > 0) {
-			sum[BEGIN_LINE]= base[BEGIN_LINE] + diff[BEGIN_LINE] - 1;
-		}
-		else {
-			sum[BEGIN_LINE]= NA;
-		}
+		sum[BEGIN_LINE]= addLine(base[BEGIN_LINE], diff[BEGIN_LINE]);
 		if (diff[BEGIN_LINE] == 1) {
 			if (base[BEGIN_COLUMN] > 0 && diff[BEGIN_COLUMN] > 0) {
 				sum[BEGIN_COLUMN]= base[BEGIN_COLUMN] + diff[BEGIN_COLUMN] - 1;
@@ -124,12 +128,7 @@ public class Srcref {
 			sum[BEGIN_BYTE]= base[BEGIN_BYTE];
 		}
 		
-		if (base[BEGIN_LINE] > 0 && diff[END_LINE] > 0) {
-			sum[END_LINE]= base[BEGIN_LINE] + diff[END_LINE] - 1;
-		}
-		else {
-			sum[END_LINE]= NA;
-		}
+		sum[END_LINE]= addLine(base[BEGIN_LINE], diff[END_LINE]);
 		if (diff[END_LINE] == 1) {
 			if (base[BEGIN_COLUMN] > 0 && diff[END_COLUMN] > 0) {
 				sum[END_COLUMN]= base[BEGIN_COLUMN] + diff[END_COLUMN] - 1;

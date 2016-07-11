@@ -396,10 +396,12 @@ final class JRIServerDbg {
 		final int savedProtected = this.rni.saveProtected();
 		try {
 			this.rni.protect(argsP);
-			if (commandId.equals("checkBreakpoint")) { //$NON-NLS-1$
+			switch (commandId) {
+			case "checkBreakpoint": //$NON-NLS-1$
 				return this.tracepointManager.checkBreakpoint(argsP);
-			}
-			else if (commandId.equals("checkEB")) { //$NON-NLS-1$
+			case "checkTB": //$NON-NLS-1$
+				return this.tracepointManager.checkTB(argsP);
+			case "checkEB": //$NON-NLS-1$
 				return this.tracepointManager.checkEB(argsP);
 			}
 		}
@@ -1143,6 +1145,26 @@ final class JRIServerDbg {
 				0, true),
 				this.rni.rniSafeGlobalExecEnvP );
 		return (p != 0 && this.rEngine.rniIsTrue(p));
+	}
+	
+	long getExpr0SrcrefP(final long exprP) {
+		if (exprP != 0) {
+			final long listP= this.rEngine.rniGetAttrBySym(exprP, this.srcref_SymP);
+			if (listP != 0) {
+				return this.rEngine.rniGetVectorElt(listP, 0);
+			}
+		}
+		return 0;
+	}
+	
+	long getSrcfileEnvP(final long p) { // srcfileP or bodyP
+		if (p != 0) {
+			final long srcfileP= this.rEngine.rniGetAttrBySym(p, this.srcfile_SymP);
+			if (srcfileP != 0 && this.rEngine.rniExpType(srcfileP) == REXP.ENVSXP) {
+				return srcfileP;
+			}
+		}
+		return 0;
 	}
 	
 	String getFilePath(final long srcfileP, final long srcrefP) {

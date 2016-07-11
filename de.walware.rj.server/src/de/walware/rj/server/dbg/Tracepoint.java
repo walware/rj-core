@@ -24,6 +24,8 @@ public interface Tracepoint {
 	byte TYPE_FB=                                           0x0_0000_0001;
 	/** line breakpoint */
 	byte TYPE_LB=                                           0x0_0000_0002;
+	/** toplevel line breakpoint */
+	byte TYPE_TB=                                           0x0_0000_0003;
 	/** exception breakpoint */
 	byte TYPE_EB=                                           0x0_0000_0005;
 	

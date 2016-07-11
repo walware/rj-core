@@ -16,6 +16,7 @@
 package de.walware.rj.server.dbg;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import de.walware.rj.data.RJIO;
 import de.walware.rj.data.RJIOExternalizable;
@@ -74,6 +75,28 @@ public class SrcfileData implements RJIOExternalizable {
 	 */
 	public long getTimestamp() {
 		return this.timestamp;
+	}
+	
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(this.path) * 17
+				^ Objects.hashCode(this.name)
+				^ (int)(this.timestamp ^ (this.timestamp >>> 32));
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj instanceof SrcfileData) {
+			final SrcfileData other= (SrcfileData) obj;
+			return (Objects.equals(this.path, other.path)
+					&& Objects.equals(this.name, other.name)
+					&& this.timestamp == other.timestamp );
+		}
+		return super.equals(obj);
 	}
 	
 	

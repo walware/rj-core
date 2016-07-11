@@ -188,6 +188,26 @@
 }
 
 
+.searchExpr <- function(expr, cond, max.depth= 5, depth= 1) {
+	if (expr[[1]] == "{") {
+		for (i in seq_along(expr)) {
+			if (cond(expr[[i]])) {
+				return (i);
+			}
+		}
+	}
+	for (i in seq_along(expr)) {
+		if (depth < max.depth && length(expr[[i]]) > 1) {
+			idx <- .searchExpr(expr= expr[[i]], cond= cond,
+					max.depth= max.depth, depth= depth + 1)
+			if (!is.null(idx)) {
+				return (c(i, idx))
+			}
+		}
+	}
+	return (NULL)
+}
+
 #' Initializes the debug tools
 .statet.initDebug <- function() {
 	if (options("keep.source") != TRUE) {
@@ -200,6 +220,7 @@
 		ffun <- get(fname, envir= envir)
 		fbody <- body(ffun)
 		l <- length(fbody)
+		
 		if (length(fbody[[l]]) == 2 && fbody[[l]][[1]] == "return") {
 			c1 <- quote(rj:::.statet.extSrcfile(x))
 			c1[[2]] <- fbody[[l]][[2]]
@@ -207,34 +228,54 @@
 			body(ffun) <- fbody
 			return (.patchPackage(fname, ffun, envir= envir))
 		}
-		cat("Could not install rj extension for '", fname, "'.\n", sep= "")
-		return (FALSE)
+		else {
+			cat("Could not install rj extension 'extSrcfile' for '", fname, "'.\n", sep= "")
+			return (FALSE)
+		}
 	}
 	.injectSource <- function(fname, envir) {
 		ffun <- get(fname, envir= envir)
 		fbody <- body(ffun)
 		l <- length(fbody)
-		for (i in 1L:l) {
-			if (length(fbody[[i]]) == 3 && fbody[[i]][[1]] == "<-" && fbody[[i]][[2]] == "exprs") {
-				c1 <- quote(rj:::.statet.extSource(x))
-				c1[[2]] <- fbody[[i]][[3]]
-				fbody[[i]][[3]] <- c1
-				body(ffun) <- fbody
-				return (.patchPackage(fname, ffun, envir= envir))
-			}
+		changed <- FALSE
+		
+		idx <- .searchExpr(fbody, function(expr) {
+					return (length(expr) == 3 && expr[[1]] == "<-"
+							&& expr[[2]] == "exprs")
+				})
+		if (!is.null(idx)) {
+			c1 <- quote(rj:::.statet.extSource(x))
+			c1[[2]] <- fbody[[idx]][[3]]
+			fbody[[idx]][[3]] <- c1
+			changed <- TRUE
 		}
-		# For 2.14.0
-		for (i in 1L:l) {
-			if (length(fbody[[i]]) == 4 && length(fbody[[i]][[4]]) == 3
-					&& fbody[[i]][[4]][[1]] == "<-" && fbody[[i]][[4]][[2]] == "exprs") {
-				c1 <- quote(rj:::.statet.extSource(x))
-				c1[[2]] <- fbody[[i]][[4]][[3]]
-				fbody[[i]][[4]][[3]] <- c1
-				body(ffun) <- fbody
-				return (.patchPackage(fname, ffun, envir= envir))
-			}
+		else {
+			cat("Could not install rj extension 'extSource' for '", fname, "'.\n", sep= "")
 		}
-		cat("Could not install rj extension for '", fname, "'.\n", sep= "")
+		
+		idx <- .searchExpr(fbody, function(expr) {
+				return (length(expr) == 3 && expr[[1]] == "<-"
+						&& expr[[2]] == "yy"
+						&& length(expr[[3]]) == 2 && expr[[3]][[1]] == "withVisible")
+				})
+		if (!is.null(idx)) {
+			idx.group <- idx[1L:length(idx) - 1]
+			idx.insert <- idx[length(idx)]
+			c.group <- fbody[[idx.group]]
+			tmp <- idx.insert:length(c.group)
+			c.group[tmp + 1] <- c.group[tmp]
+			c.group[[idx.insert]] <- quote(rj:::.checkTB(ei, envir))
+			fbody[[idx.group]] <- c.group
+			changed <- TRUE
+		}
+		else {
+			cat("Could not install rj extension 'checkTB' for '", fname, "'.\n", sep= "")
+		}
+		
+		if (changed) {
+			body(ffun) <- fbody
+			return (.patchPackage(fname, ffun, envir= envir))
+		}
 		return (FALSE)
 	}
 	.injectSource("source", baseEnv)
