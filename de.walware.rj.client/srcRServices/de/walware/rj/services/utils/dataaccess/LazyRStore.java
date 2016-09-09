@@ -14,6 +14,7 @@ package de.walware.rj.services.utils.dataaccess;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 
 /**
@@ -72,11 +73,15 @@ public class LazyRStore<V> {
 		
 	}
 	
+	
+	public static final int FORCE_SYNC= 1 << 0;
+	
 	public static interface Updater<T> {
 		
 		
 		void scheduleUpdate(LazyRStore<T> store,
-				RDataAssignment assignment, Fragment<T> fragment);
+				RDataAssignment assignment, Fragment<T> fragment,
+				int flags, IProgressMonitor monitor);
 		
 	}
 	
@@ -152,7 +157,8 @@ public class LazyRStore<V> {
 	}
 	
 	
-	public LazyRStore.Fragment<V> getFragment(final long rowIdx, final long columnIdx) {
+	public LazyRStore.Fragment<V> getFragment(final long rowIdx, final long columnIdx,
+			final int flags, final IProgressMonitor monitor) {
 		if (rowIdx >= this.rowCount) {
 			return null;
 		}
@@ -163,21 +169,23 @@ public class LazyRStore<V> {
 			return fragment;
 		}
 		
-		final boolean scheduleUpdate= (this.scheduledCount == 0);
+		boolean scheduleUpdate= (this.scheduledCount == 0);
 		
 		this.scheduleNext= this.topFragment;
+		
 		if ((fragment.state & Fragment.SCHEDULED) == 0) {
 			fragment.state= Fragment.SCHEDULED;
 			this.scheduledCount++;
-			
-			if (scheduleUpdate) {
-				this.updater.scheduleUpdate(this, null, fragment);
-			}
+		}
+		
+		if (scheduleUpdate || (flags & FORCE_SYNC) != 0) {
+			this.updater.scheduleUpdate(this, null, fragment, flags, monitor);
 			
 			if ((fragment.state & Fragment.SET) != 0) {
 				return fragment;
 			}
 		}
+		
 		return null;
 	}
 	
@@ -205,7 +213,8 @@ public class LazyRStore<V> {
 		return null;
 	}
 	
-	public void set(final RDataAssignment assignment) {
+	public void set(final RDataAssignment assignment,
+			final int flags, final IProgressMonitor monitor) {
 		final Fragment<V> fragment= clear(assignment);
 		this.assignments.add(assignment);
 		
@@ -219,7 +228,7 @@ public class LazyRStore<V> {
 		}
 		
 		if (scheduleUpdate) {
-			this.updater.scheduleUpdate(this, assignment, fragment);
+			this.updater.scheduleUpdate(this, assignment, fragment, flags, monitor);
 		}
 	}
 	
